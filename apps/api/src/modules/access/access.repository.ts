@@ -1,0 +1,31 @@
+import type { WorkspaceTransaction } from '@api/core/db/tx'
+import { rolePermissions, roles } from '@api/modules/access/access.table'
+import type { Permission, SystemRoleKey } from '@financas/shared'
+
+type NewSystemRole = {
+  workspaceId: string
+  name: string
+  systemKey: SystemRoleKey
+}
+
+export async function insertSystemRole(tx: WorkspaceTransaction, role: NewSystemRole) {
+  const [inserted] = await tx.insert(roles).values(role).returning({ id: roles.id })
+  if (!inserted) {
+    throw new Error(`Role ${role.systemKey} was not inserted`)
+  }
+  return inserted.id
+}
+
+export async function insertRolePermissions(
+  tx: WorkspaceTransaction,
+  workspaceId: string,
+  roleId: string,
+  permissions: readonly Permission[],
+) {
+  if (permissions.length === 0) {
+    return
+  }
+  await tx
+    .insert(rolePermissions)
+    .values(permissions.map(({ module, action }) => ({ workspaceId, roleId, module, action })))
+}
