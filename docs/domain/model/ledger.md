@@ -1,5 +1,5 @@
 ---
-summary: The double-entry ledger — account kinds, cards and invoices, journal entries and postings, sign convention, DB-enforced invariants, and worked examples (card purchase, installments with third parties, invoice payment, refund, transfer, reversal).
+summary: The double-entry ledger — account kinds, cards and invoices, journal entries and postings, sign convention, DB-enforced invariants, correction policy (soft delete / replace), and worked examples.
 read_when: Anything that records, edits, reverses or reports money movements, cards or invoices.
 updated: 2026-09-22
 ---
@@ -92,7 +92,8 @@ The amount due and "paid" are **derived** (`invoice_totals` view) from postings 
 | `spent_by_user_id` | FK users null | Who actually spent (vs who recorded it) |
 | `source` | enum `entry_source`: `web`, `whatsapp`, `job`, `import` | |
 | `created_by_user_id` | FK users | |
-| `reversal_of_entry_id` | FK self null | Set on the entry that reverses another. A reversed entry can't be reversed again. |
+| `replaces_entry_id` | FK self null | Set when an entry is edited: the old one is soft-deleted and this one replaces it |
+| `deleted_at`, `deleted_by_user_id`, `delete_reason` | | Soft delete: the entry and all its postings leave every balance and report |
 | `external_ref` | text null | Import dedupe. `unique (workspace_id, external_ref)` |
 | `notes` | text null | |
 
@@ -118,9 +119,15 @@ The amount due and "paid" are **derived** (`invoice_totals` view) from postings 
 | 4 | `receivable`/`payable` posting ⇔ `contact_id` set | CHECK on `account_kind` |
 | 5 | Nobody posts into an archived account or into a `closed` invoice (except `adjustment`/`invoice_payment`/`refund` entries) | Trigger |
 | 6 | All rows share one `workspace_id` | Composite FKs |
-| 7 | Posted entries are immutable: no UPDATE of amounts/accounts, no DELETE | Trigger. Corrections happen by reversal |
+| 7 | Postings are immutable (no UPDATE of amount/account/invoice, no hard DELETE). Only the entry's descriptive fields (description, notes, tags) can be updated in place | Trigger |
+| 8 | An entry with postings on a `closed` invoice can't be soft-deleted. Fix it with a `refund`/`adjustment` entry on the open invoice | Trigger |
 
-**Correction policy:** fix by creating a **reversal** (same postings with opposite signs, `reversal_of_entry_id` set) and a new corrected entry. "Undo" in the agent does exactly this. History is never lost, and the audit trail is free.
+**Correction policy** (ADR 0016):
+- **Delete:** soft delete (`deleted_at`). The whole entry leaves all sums together, so the ledger stays balanced. It can be restored from the trash.
+- **Edit amounts, accounts, dates or splits:** the service soft-deletes the old entry and creates a new one with `replaces_entry_id`. The user sees an "edit"; history keeps both versions.
+- **Edit description/notes/tags:** updated in place (audit logged).
+- **After the invoice closed:** no delete. The correction is a new `refund`/`adjustment` on the open invoice, mirroring what the bank does.
+- "Desfazer" in the agent = soft delete of the last entry the user created.
 
 ## Worked examples
 Placeholders only: Card X, Member A, Contact J, Contact M.
@@ -181,7 +188,7 @@ It's a transfer: no expense is counted twice.
 | Checking | −100000 |
 
 ### 7. Refund of R$ 50,00 on the card (`refund`)
-Credit on the **open** invoice, `reversal_of_entry_id` not used (it's a new economic event), linked through `notes`/memo to the original.
+Credit on the **open** invoice. It's a new economic event, linked to the original through the memo.
 | Account | Amount | invoice |
 |---|---|---|
 | Card X | +5000 | open invoice |

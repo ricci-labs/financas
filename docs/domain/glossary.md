@@ -20,7 +20,12 @@ updated: 2026-09-22
 | estorno | `entry_type = refund` | Credit back for an earlier purchase. |
 | transferência | `entry_type = transfer` | Between the workspace's own accounts. Never spending. |
 | pagamento de fatura | `entry_type = invoice_payment` | A transfer from an account to a card invoice. **Never an expense.** |
-| desfazer, corrigir | reversal (`reversal_of_entry_id`) | Posted entries are never edited; they are reversed. |
+| apagar, excluir | soft delete (`deleted_at`) | Goes to the trash; restorable. |
+| lixeira | trash | Soft-deleted rows, visible with `delete` permission. |
+| arquivar | `archived_at` | Hidden from pickers but still counts in history. |
+| editar lançamento | replace (`replaces_entry_id`) | Old entry soft-deleted, new one replaces it. |
+| papel, perfil de acesso | `role` | A set of module × action permissions. |
+| permissão | `role_permission` | `(module, action)`: view, create, update, delete. |
 | salário | income category with `income_nature = fixed` | |
 | comissão | income category with `income_nature = variable` | |
 | renda fixa / variável | `income_nature` | Budgets are sized from `fixed` income by default. |

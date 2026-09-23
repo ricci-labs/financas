@@ -9,6 +9,7 @@ updated: 2026-09-22
 - **Status:** Accepted
 - **Date:** 2026-09-22
 - **Supersedes:** the single-table `transaction` + `installment` draft.
+- **Amended by:** 0016 (corrections by soft delete/replace instead of reversal entries).
 
 ## Context
 The requirements span bank accounts, cash, credit cards with installments, third parties who owe parts of card purchases (several per purchase, across installments), transfers such as paying an invoice or moving income to savings, refunds and projections. A flat "transactions" table needs a special case for each of these and easily double-counts (paying an invoice counted as an expense).

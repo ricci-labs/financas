@@ -9,7 +9,7 @@ updated: 2026-09-22
 ## Concepts
 - **User:** a person who logs in. Global, not owned by a workspace.
 - **Workspace:** an isolated space with its own accounts, entries and settings (e.g. "Casa", "Pessoal"). Anyone can create several. Workspaces never share data. A grouped view across workspaces is a future feature, built as a read-only aggregation, never as shared rows.
-- **Membership:** links a user to a workspace with a role. **Every member sees everything in the workspace**; there is no per-account privacy inside a workspace.
+- **Membership:** links a user to a workspace with a role. The role grants module × action permissions (`access-control.md`). There's no per-record privacy inside a workspace.
 
 ## Global tables
 ### `users`
@@ -48,18 +48,12 @@ Web sessions: `id`, `user_id`, `token_hash`, `expires_at`, `last_seen_at`, `user
 ### `memberships`
 | Column | Type | Notes |
 |---|---|---|
-| `workspace_id`, `user_id` | FKs | `unique (workspace_id, user_id)` |
-| `role` | enum `membership_role`: `owner`, `admin`, `member`, `viewer` | At least one `owner` per workspace (trigger) |
-
-| Role | Can |
-|---|---|
-| `owner` | Everything, including deleting the workspace and managing owners |
-| `admin` | Settings, accounts, categories, members (except owners) |
-| `member` | Record and edit entries, contacts, charges |
-| `viewer` | Read only |
+| `workspace_id`, `user_id` | FKs | `unique (workspace_id, user_id)` among non-deleted |
+| `role_id` | composite FK to `roles` | Permissions come from the role (`access-control.md`) |
+| `deleted_at`, `deleted_by_user_id` | | Removing a member is a soft delete. At least one active owner per workspace (trigger). |
 
 ### `invitations`
-`workspace_id`, `email` or `phone_e164`, `role`, `token_hash`, `invited_by_user_id`, `expires_at`, `accepted_at`.
+`workspace_id`, `email` or `phone_e164`, `role_id`, `token_hash`, `invited_by_user_id`, `expires_at`, `accepted_at`.
 
 ## Settings (typed 1:1 tables)
 ### `workspace_settings` (PK = `workspace_id`)

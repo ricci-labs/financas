@@ -9,12 +9,15 @@ updated: 2026-09-22
 Status: **proposed**, under review with the user. The Drizzle schema becomes the source of truth
 once written. These docs then keep the *why*, the invariants and the examples.
 
-Decisions: `../../decisions/0012-multi-tenancy.md`, `../../decisions/0013-double-entry-ledger.md`, `../../decisions/0014-enums-vs-config-tables.md`.
+Decisions: `../../decisions/0012-multi-tenancy.md`, `../../decisions/0013-double-entry-ledger.md`, `../../decisions/0014-enums-vs-config-tables.md`, `../../decisions/0015-module-permissions.md`, `../../decisions/0016-soft-delete.md`.
+
+Diagrams (Mermaid, rendered by GitHub): `diagrams.md`.
 
 ## Areas
 | Doc | Tables |
 |---|---|
 | `tenancy.md` | `users`, `channel_identities`, `sessions`, `workspaces`, `memberships`, `invitations`, `workspace_settings`, `user_preferences`, `membership_preferences` |
+| `access-control.md` | `roles`, `role_permissions`, `module_actions` |
 | `ledger.md` | `ledger_accounts`, `card_details`, `card_invoices`, `journal_entries`, `postings`, `institutions` |
 | `planning.md` | `recurrence_rules`, `planned_occurrences`, `budget_lines`, `goals`, `holidays` |
 | `third-parties.md` | `contacts`, `charges`, `charge_items`, `charge_payments` |
@@ -47,8 +50,27 @@ PLAN  │ recurrence_rules ──< planned_occurrences ──(matched_entry)─�
 | Row Level Security | Enabled and **forced** on every tenant table: `workspace_id = current_setting('app.workspace_id')::uuid`. The app sets it with `SET LOCAL` per transaction. Cross-workspace jobs use a separate role with `BYPASSRLS`, used only in `jobs/`. |
 | Timestamps | `created_at timestamptz default now()`, `updated_at` (trigger). Calendar dates are `date`. |
 | Money | `bigint` cents. In postings the amount is signed (sign convention in `ledger.md`). Everywhere else it's `> 0` and the meaning comes from context. |
-| Deletion | Config entities: `archived_at` (never hard-deleted while referenced). Ledger: never deleted, reversed instead (`ledger.md`). Whole workspace: hard delete cascade (LGPD erasure). |
+| Deletion | **Soft delete everywhere** (below). Hard delete only for LGPD erasure of a whole workspace and for purging trashed files. |
 | Naming | snake_case tables in the plural; FK columns `<entity>_id`. |
+
+## Archive vs soft delete
+Two different things, both reversible:
+
+| | `archived_at` | `deleted_at` (+ `deleted_by_user_id`, `delete_reason`) |
+|---|---|---|
+| Meaning | "Not used anymore" (a closed account, an old category) | "This was a mistake / remove it" |
+| History | **Still counts** in balances and reports | **Excluded** from balances, reports and pickers |
+| Pickers | Hidden | Hidden |
+| Where visible | Settings, with a "show archived" toggle | The **trash** (lixeira), for users with `delete` on the module |
+| Restore | Unarchive (`update`) | Restore (`delete` permission) |
+
+Rules:
+- Every user-facing table has `deleted_at`, `deleted_by_user_id`, `delete_reason`. Config tables also have `archived_at`.
+- Unique constraints are **partial** (`where deleted_at is null`), so a deleted name can be reused.
+- Repositories filter `deleted_at is null` by default (`notDeleted()` helper). Only trash/audit queries opt out.
+- You can't soft-delete a row that active rows depend on (an account with postings, a contact with an open balance). Archive it instead. Enforced by triggers.
+- Every delete and restore writes to `audit_log`.
+- Trashed rows are kept indefinitely (financial history), except **files**: a job purges trashed files from storage after 30 days.
 
 ## Enums vs configuration tables
 Rule (ADR 0014): **a Postgres enum** when code branches on the value and users can't add values.
@@ -56,7 +78,7 @@ Rule (ADR 0014): **a Postgres enum** when code branches on the value and users c
 
 | Postgres enums | Configuration tables |
 |---|---|
-| `membership_role`, `account_kind`, `entry_type`, `payment_method`, `entry_source`, `invoice_status`, `occurrence_status`, `charge_status`, `recurrence_frequency`, `period_anchor`, `notification_channel`, `notification_status`, `income_nature` | categories (as `ledger_accounts`), `tags`, `contacts`, `institutions`, `holidays`, `recurrence_rules`, `budget_lines`, `goals`, all `*_settings` / `*_preferences` |
+| `app_module`, `permission_action`, `account_kind`, `entry_type`, `payment_method`, `entry_source`, `invoice_status`, `occurrence_status`, `charge_status`, `recurrence_frequency`, `period_anchor`, `notification_channel`, `notification_status`, `income_nature` | categories (as `ledger_accounts`), `tags`, `contacts`, `institutions`, `holidays`, `recurrence_rules`, `budget_lines`, `goals`, all `*_settings` / `*_preferences` |
 
 Settings are **typed columns** in 1:1 tables (`workspace_settings`, `user_preferences`,
 `membership_preferences`), not key-value rows, so every setting has a type, a default and constraints.

@@ -16,6 +16,8 @@ updated: 2026-09-22
 | `domain/glossary.md` | Naming anything, or turning a Portuguese term from the user into code |
 | `domain/model/README.md` | Creating or changing tables: conventions, map, enums vs config tables |
 | `domain/model/tenancy.md` | Users, workspaces, memberships, settings/preferences |
+| `domain/model/access-control.md` | Roles, module × action permissions, where they're enforced |
+| `domain/model/diagrams.md` | Visual ER diagrams of every area |
 | `domain/model/ledger.md` | Recording money: accounts, entries, postings, cards, invoices (with examples) |
 | `domain/model/planning.md` | Forecasts, recurring bills, financial period, budgets, goals |
 | `domain/model/third-parties.md` | Contacts, shared purchases, charges, settlements |

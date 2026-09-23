@@ -20,8 +20,10 @@ updated: 2026-09-22
 | 0010 | [Build in Actions → GHCR → Dokploy](0010-deploy-ghcr-dokploy.md) | Accepted |
 | 0011 | [OpenTelemetry-ready observability on existing tools](0011-observability-otel-ready.md) | Accepted |
 | 0012 | [Multi-tenant from day one (workspaces)](0012-multi-tenancy.md) | Accepted |
-| 0013 | [Double-entry ledger](0013-double-entry-ledger.md) | Accepted |
+| 0013 | [Double-entry ledger](0013-double-entry-ledger.md) | Accepted (correction policy amended by 0016) |
 | 0014 | [Enums vs configuration tables; typed settings](0014-enums-vs-config-tables.md) | Accepted |
+| 0015 | [Module × action permissions with custom roles](0015-module-permissions.md) | Accepted |
+| 0016 | [Soft delete everywhere; entry edits by replacement](0016-soft-delete.md) | Accepted |
 
 ## Rules
 - ADRs are append-only. To change a decision, write a new ADR that supersedes the old one and set the old one to `Superseded by NNNN`.

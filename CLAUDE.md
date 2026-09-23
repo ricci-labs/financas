@@ -18,7 +18,9 @@ Self-hosted on a small headless Debian homelab, deployed with Dokploy.
 ## Hard rules
 - **This repo is public.** Never commit real household data: amounts, incomes, bank or card names, people's names, phone numbers, addresses, screenshots with real data, `.env` values. Docs and tests use generic placeholders ("Member A", "Card X", round amounts). Real data lives only in the production database, or in gitignored files under `.private/`.
 - **Multi-tenant:** every tenant query runs through `core/db/tx.ts` with the workspace set (RLS). Tenant tables use composite FKs on `(workspace_id, id)` (`docs/domain/model/README.md`).
-- **Double-entry ledger:** money moves only as balanced journal entries. Posted entries are never edited, only reversed (`docs/domain/model/ledger.md`).
+- **Double-entry ledger:** money moves only as balanced journal entries. Postings are immutable; edits replace the entry, and deletes are soft (`docs/domain/model/ledger.md`).
+- **Soft delete everywhere** (`deleted_at`); repositories filter it by default. Hard delete only for LGPD workspace erasure.
+- **Every route and agent tool declares its `(module, action)` permission** (`docs/domain/model/access-control.md`).
 - Money is an **integer number of cents** (`amountCents`). Never floats, never `numeric` → JS number.
 - Business rules live in pure functions (`packages/shared/src/domain`) and module services. Routes, the WhatsApp channel, the agent and jobs call services and hold no business logic.
 - **The LLM never touches the database.** It only calls tools, and each tool calls one service. Every write goes through a confirmation step (`docs/integrations/ai-agent.md`).

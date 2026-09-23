@@ -38,9 +38,9 @@ A worker claims rows with `FOR UPDATE SKIP LOCKED`, sends through the channel qu
 
 ## `audit_log`
 `workspace_id`, `id`, `at`, `actor_user_id` (null for jobs), `source`, `trace_id`, `action`
-(`create`/`update`/`archive`/`reverse`), `table_name`, `row_id`, `before` jsonb, `after` jsonb.
-Written by services (not DB triggers) so it carries the actor and trace. Ledger entries don't need
-before/after, since reversals are self-documenting.
+(`create`/`update`/`archive`/`unarchive`/`delete`/`restore`), `table_name`, `row_id`, `before` jsonb, `after` jsonb.
+Written by services (not DB triggers) so it carries the actor and trace. Entry edits are self-documenting too
+(`replaces_entry_id`), but they are still logged for a single timeline.
 
 ## Agent
 - `agent_runs`: one row per agent turn (fields in `../../operations/observability.md` → Agent run records) + `workspace_id`, `user_id`.

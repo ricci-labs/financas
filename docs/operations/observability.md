@@ -58,7 +58,8 @@ Output: one JSON object per line to stdout. Docker keeps it (with rotation, see 
 | `agent.run.started` / `.completed` / `.failed` | info / info / error |
 | `agent.tool.called` / `.failed` | info / warn |
 | `agent.pending_action.created` / `.confirmed` / `.cancelled` / `.expired` | info |
-| `entry.created` / `.reversed` | info |
+| `entry.created` / `.replaced` / `.deleted` / `.restored` | info |
+| `authz.denied` | warn |
 | `charge.created` / `.sent` / `.paid` | info |
 | `notification.sent` / `.failed` | info / warn |
 | `job.run.started` / `.completed` / `.failed` | info / info / error |
