@@ -102,8 +102,9 @@ src/
 │   └── clock.ts              # injectable "now"
 ├── modules/                  # one folder per domain (see "Module anatomy")
 │   ├── identity/             # users, sessions, channel identities (WhatsApp numbers)
-│   ├── workspaces/           # workspaces, memberships, invitations, all settings tables
+│   ├── workspaces/           # workspaces, creation flow, settings tables
 │   ├── access/               # module actions, roles, role permissions, authorization
+│   ├── members/              # memberships (owner invariant), invitations
 │   ├── ledger/               # ledger accounts (incl. categories), journal entries, postings
 │   ├── cards/                # card details, invoices
 │   ├── contacts/             # contacts, charges, settlements
@@ -125,7 +126,8 @@ src/
 │   ├── memory.ts             # recent conversation per member
 │   └── pending-actions.ts    # proposed writes awaiting confirmation
 └── jobs/                     # croner schedules; each job calls services
-src/testing/                  # integration-test helpers (test DB connections, seeds)
+src/testing/                  # test helpers: database.ts (connections, Postgres error codes),
+│                             #   fixtures.ts (users/workspaces through the real services)
 scripts/ops/                  # ops:* scripts: Claude's stable debugging interface (runbook.md)
 ```
 
