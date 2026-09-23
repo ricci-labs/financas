@@ -62,6 +62,7 @@ includes 2,000 Action minutes a month for private repos, far more than needed.
 - `npm` ecosystem weekly, updates **grouped** (one PR for minor/patch dev deps, one for minor/patch prod deps). Majors come as separate PRs.
 - **`baileys` is ignored** (pinned; upgraded by hand, see `../integrations/whatsapp.md`).
 - `github-actions` ecosystem monthly.
+- Titles use `build(deps)` / `build(deps-dev)` for packages and `ci` for actions. commitlint accepts Dependabot's capitalized "Bump".
 - Docker base image weekly.
 
 ## Secrets (GitHub → Settings → Secrets)

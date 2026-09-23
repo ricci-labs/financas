@@ -1,7 +1,7 @@
 ---
 summary: Commit message format, branch naming, PR rules, squash-merge policy and the git hooks that enforce them.
 read_when: Committing, branching, opening or merging a PR, or configuring git hooks.
-updated: 2026-09-22
+updated: 2026-09-23
 ---
 
 # Git workflow
@@ -11,7 +11,7 @@ Decision: `../decisions/0009-trunk-based-squash-merge.md`.
 ## Branches
 - `main` is always deployable. Every merge to `main` deploys (`ci-cd.md`).
 - Branches are short-lived (hours to a few days): `<type>/<short-kebab-description>`, e.g. `feat/card-invoices`, `fix/whatsapp-reconnect`, `docs/observability`.
-- Nobody commits directly to `main`. Exception: bootstrap commits made before CI exists.
+- Nobody commits directly to `main`, and the ruleset makes it impossible.
 
 ## Commit messages (Conventional Commits)
 ```
@@ -53,7 +53,12 @@ Rules:
 - **PR title = the squash commit message**, so it follows the commit format above.
 - The PR body follows `.github/pull_request_template.md`.
 - **Squash merge only.** `main` gets one commit per PR, a linear history, and a readable changelog. Delete the branch after merge.
-- Merge requires green CI. Branch protection enforces it if the GitHub plan allows it on private repos; otherwise it's a rule we follow.
+- Merge requires green CI, enforced by the **"Protect main" ruleset** (Settings → Rules):
+  - changes reach `main` only through a PR (direct pushes are rejected, admins included);
+  - required checks: 🧹 Code quality, 🧪 Tests, 📦 Build, 🔐 Secret scan, 📝 PR title;
+  - squash is the only merge method; linear history; no force pushes; `main` can't be deleted;
+  - review threads must be resolved; 0 approvals required (solo project).
+- Dependabot titles ("build(deps): Bump …") are exempt from the subject-case rule in `commitlint.config.ts`.
 - Keep PRs small, around 400 changed lines excluding generated files and lockfiles. Split bigger work into stacked PRs.
 
 ## Git hooks (lefthook)
