@@ -24,7 +24,7 @@
     "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^21.2.3",
     "@swc/core": "^1.16.2",
-    "@types/node": "^24.13.6",
+    "@types/node": "^26.6.2",
     "dependency-cruiser": "^18.4.0",
     "lefthook": "^2.1.14",
     "oxc-parser": "^0.151.0",
