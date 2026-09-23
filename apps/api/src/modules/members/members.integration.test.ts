@@ -1,6 +1,7 @@
 import { withWorkspace } from '@api/core/db/tx'
+import { hashToken } from '@api/core/security/tokens'
 import { roles } from '@api/modules/access/access.table'
-import { addMember } from '@api/modules/members'
+import { acceptInvitation, addMember, createInvitation } from '@api/modules/members'
 import { invitations, membershipPreferences, memberships } from '@api/modules/members/members.table'
 import { workspaces } from '@api/modules/workspaces/workspaces.table'
 import { connectTestDatabases, POSTGRES_ERRORS, postgresErrorCodeOf } from '@api/testing/database'
@@ -297,5 +298,103 @@ describe('invitations', () => {
       tx.select({ workspaceId: invitations.workspaceId }).from(invitations),
     )
     expect(seenFromA.every((row) => row.workspaceId === workspaceA)).toBe(true)
+  })
+})
+
+describe('invitation flow', () => {
+  const EIGHT_DAYS_MS = 8 * 24 * 60 * 60 * 1000
+
+  async function inviteToA(email: string) {
+    const roleId = await systemRoleId(workspaceA, 'member')
+    return createInvitation(databases.app, {
+      workspaceId: workspaceA,
+      roleId,
+      invitedByUserId: creatorId,
+      email,
+    })
+  }
+
+  it('stores only the hash of the token', async () => {
+    const { invitationId, token } = await inviteToA(`hash-${fixtures.runId}@example.test`)
+    const [stored] = await withWorkspace(databases.app, workspaceA, (tx) =>
+      tx.select().from(invitations).where(eq(invitations.id, invitationId)),
+    )
+    expect(stored?.tokenHash).toBe(hashToken(token))
+    expect(stored?.tokenHash).not.toContain(token)
+  })
+
+  it('lets the invited user join with the invited role', async () => {
+    const guest = await fixtures.createUser('guest')
+    const { invitationId, token } = await inviteToA(`guest-${fixtures.runId}@example.test`)
+
+    const accepted = await acceptInvitation(databases.app, { token, userId: guest })
+
+    const joined = await withWorkspace(databases.app, workspaceA, async (tx) => ({
+      membership: await tx
+        .select()
+        .from(memberships)
+        .where(eq(memberships.id, accepted.membershipId)),
+      invitation: await tx.select().from(invitations).where(eq(invitations.id, invitationId)),
+      preferences: await tx
+        .select()
+        .from(membershipPreferences)
+        .where(eq(membershipPreferences.userId, guest)),
+    }))
+    expect(accepted.workspaceId).toBe(workspaceA)
+    expect(joined.membership).toMatchObject([
+      { userId: guest, roleId: await systemRoleId(workspaceA, 'member') },
+    ])
+    expect(joined.invitation).toMatchObject([{ acceptedByUserId: guest }])
+    expect(joined.preferences).toHaveLength(1)
+  })
+
+  it('does not expose invitations to a user without a workspace', async () => {
+    await inviteToA(`hidden-${fixtures.runId}@example.test`)
+    const visible = await databases.app.select().from(invitations)
+    expect(visible).toEqual([])
+  })
+
+  it('refuses an unknown token', async () => {
+    const guest = await fixtures.createUser('unknown-token')
+    await expect(
+      acceptInvitation(databases.app, { token: 'not-a-real-token', userId: guest }),
+    ).rejects.toMatchObject({ code: 'INVITATION_NOT_FOUND' })
+  })
+
+  it('refuses an expired invitation', async () => {
+    const guest = await fixtures.createUser('late-guest')
+    const { token } = await inviteToA(`late-${fixtures.runId}@example.test`)
+    const eightDaysLater = { now: () => new Date(Date.now() + EIGHT_DAYS_MS) }
+    await expect(
+      acceptInvitation(databases.app, { token, userId: guest }, eightDaysLater),
+    ).rejects.toMatchObject({ code: 'INVITATION_EXPIRED' })
+  })
+
+  it('refuses an invitation that was already accepted', async () => {
+    const first = await fixtures.createUser('first-guest')
+    const second = await fixtures.createUser('second-guest')
+    const { token } = await inviteToA(`once-${fixtures.runId}@example.test`)
+    await acceptInvitation(databases.app, { token, userId: first })
+    await expect(acceptInvitation(databases.app, { token, userId: second })).rejects.toMatchObject({
+      code: 'INVITATION_ALREADY_ACCEPTED',
+    })
+  })
+
+  it('refuses a revoked invitation', async () => {
+    const guest = await fixtures.createUser('revoked-guest')
+    const { invitationId, token } = await inviteToA(`revoked-${fixtures.runId}@example.test`)
+    await withWorkspace(databases.app, workspaceA, (tx) =>
+      tx.update(invitations).set({ deletedAt: new Date() }).where(eq(invitations.id, invitationId)),
+    )
+    await expect(acceptInvitation(databases.app, { token, userId: guest })).rejects.toMatchObject({
+      code: 'INVITATION_REVOKED',
+    })
+  })
+
+  it('refuses a user who is already a member', async () => {
+    const { token } = await inviteToA(`member-${fixtures.runId}@example.test`)
+    await expect(
+      acceptInvitation(databases.app, { token, userId: creatorId }),
+    ).rejects.toMatchObject({ code: 'ALREADY_MEMBER' })
   })
 })
