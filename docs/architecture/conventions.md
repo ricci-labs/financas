@@ -62,7 +62,7 @@ without comments.
 - "Today" is computed in `America/Sao_Paulo` through `core/clock.ts`. Pure domain functions take it as a parameter.
 
 ## IDs
-- UUID v7 (time-ordered), generated in the app.
+- UUID v7 (time-ordered), default `uuidv7()` in Postgres 18. The app may pass its own id when it needs it before the insert.
 
 ## Validation and errors
 - Validate at every boundary with Zod: HTTP (`zValidator`), agent tool inputs, env, WhatsApp payloads.
@@ -72,11 +72,15 @@ without comments.
 ## Tests
 - Vitest, colocated `*.test.ts`.
 - Priority: `packages/shared` (every example in `../domain/billing-and-installments.md` is a test) → services → routes.
-- Service tests use a real Postgres (a throwaway database), not mocks of the repository.
+- Tests that need the database are `*.integration.test.ts` and run with `pnpm test:integration` (after `pnpm db:up`). They connect as the app role (RLS applies) and seed or clean up with the owner connection. They clean up everything they create.
+- `pnpm test` never needs a database.
 - The agent gets an eval set of real anonymized messages later (see `../integrations/ai-agent.md`).
 
 ## Migrations
-- Change `*.table.ts`, run `drizzle-kit generate`, read the SQL, commit it. Never edit an applied migration.
+- Change `*.table.ts`, run `pnpm db:generate --name=<what_changed>`, **read the SQL**, commit it. Never edit an applied migration.
+- SQL that Drizzle can't express (functions, triggers) goes in a custom migration: `pnpm db:generate --custom --name=<what>`, then write the SQL in the generated file.
+- CI fails if a table definition changed without its migration.
+- Shared column helpers (`core/db/columns.ts`): `primaryId()`, `timestamps()`, `softDelete(() => users.id)`. Use them in every table.
 - A destructive change (drop/rename) needs an explicit mention to the user before it runs anywhere with real data.
 
 ## Logging

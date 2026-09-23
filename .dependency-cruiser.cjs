@@ -1,3 +1,5 @@
+const TEST_CODE = ['\\.test\\.ts$', '^apps/api/src/testing/']
+
 module.exports = {
   forbidden: [
     {
@@ -32,15 +34,35 @@ module.exports = {
       name: 'core-knows-no-domain',
       severity: 'error',
       comment: 'core/ imports nothing from modules, agent, channels or jobs (rule 1).',
-      from: { path: '^apps/api/src/core' },
+      from: { path: '^apps/api/src/core', pathNot: TEST_CODE },
       to: { path: '^apps/api/src/(modules|agent|channels|jobs)' },
     },
     {
       name: 'module-public-surface',
       severity: 'error',
       comment: 'Outside a module, import only its index.ts (rule 2).',
-      from: { path: '^apps/api/src/(?!modules/([^/]+)/)' },
+      from: { path: '^apps/api/src/(?!modules/([^/]+)/)', pathNot: TEST_CODE },
       to: { path: '^apps/api/src/modules/[^/]+/(?!index\\.ts$)' },
+    },
+    {
+      name: 'cross-module-internals',
+      severity: 'error',
+      comment: 'A module imports another module only through its index.ts (rule 2).',
+      from: { path: '^apps/api/src/modules/([^/]+)/', pathNot: TEST_CODE },
+      to: {
+        path: '^apps/api/src/modules/[^/]+/',
+        pathNot: ['^apps/api/src/modules/$1/', '/index\\.ts$', '\\.table\\.ts$'],
+      },
+    },
+    {
+      name: 'tables-reference-tables',
+      severity: 'error',
+      comment: 'Only table files may import another module table, for foreign keys (rule 2a).',
+      from: { path: '^apps/api/src/modules/([^/]+)/', pathNot: ['\\.table\\.ts$', ...TEST_CODE] },
+      to: {
+        path: '^apps/api/src/modules/[^/]+/.+\\.table\\.ts$',
+        pathNot: '^apps/api/src/modules/$1/',
+      },
     },
     {
       name: 'repository-owned-by-service',

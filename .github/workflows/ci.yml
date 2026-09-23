@@ -51,6 +51,37 @@ jobs:
       - name: Run tests
         run: pnpm test
 
+  integration:
+    name: 🐘 Integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+
+      - name: Set up workspace
+        uses: ./.github/actions/setup
+
+      - name: Start Postgres
+        run: pnpm db:up
+
+      - name: Configure environment
+        run: cp .env.example .env
+
+      - name: Apply migrations
+        run: pnpm db:migrate
+
+      - name: Migrations match the schema
+        run: |
+          pnpm db:generate
+          test -z "$(git status --porcelain apps/api/drizzle)" || {
+            echo "::error::Table definitions changed without a migration. Run pnpm db:generate and commit it."
+            git status --porcelain apps/api/drizzle
+            exit 1
+          }
+
+      - name: Run integration tests
+        run: pnpm test:integration
+
   build:
     name: 📦 Build
     runs-on: ubuntu-latest

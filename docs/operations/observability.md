@@ -52,6 +52,7 @@ Output: one JSON object per line to stdout. Docker keeps it (with rotation, see 
 | Event | Level |
 |---|---|
 | `app.started`, `app.stopping` | info |
+| `db.connection.lost` | warn |
 | `http.request.failed` | error/warn |
 | `whatsapp.connection.opened` / `.closed` / `.logged_out` | info / warn / error |
 | `whatsapp.message.received` / `.ignored` / `.sent` / `.send_failed` | info / debug / info / error |

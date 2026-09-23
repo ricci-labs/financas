@@ -12,12 +12,13 @@ Pipeline: `../engineering/ci-cd.md`. Decision: `../decisions/0010-deploy-ghcr-do
 | Service | Image | Notes |
 |---|---|---|
 | `financas-api` | `ghcr.io/ricci-labs/financas:<sha>` | Node process: HTTP + SPA + WhatsApp + agent + jobs |
-| `financas-db` | `postgres:16` (or the current major at setup time) | Own volume. Separate from Dokploy's internal Postgres |
+| `financas-db` | `postgres:18-alpine` | Own volume. Separate from Dokploy's internal Postgres. Never published on the host network |
 
 ## Runtime config (Dokploy environment; validated by `core/config/env.ts`)
 | Var | Purpose |
 |---|---|
-| `DATABASE_URL` | App Postgres |
+| `DATABASE_URL` | App connection as `financas_app` (RLS applies) |
+| `DATABASE_MIGRATION_URL` | Owner connection as `financas_owner`, used only to run migrations |
 | `ANTHROPIC_API_KEY` | Agent |
 | `SESSION_SECRET` | Web auth cookies |
 | `PUBLIC_URL` | Base URL of the dashboard |
@@ -44,7 +45,9 @@ The couple needs to reach the dashboard from their phones outside home, and GitH
 ## First deploy checklist
 - [ ] Remote access decided and configured
 - [ ] GHCR pull credentials added in Dokploy (a PAT with `read:packages`)
-- [ ] `financas-db` created with a volume; `DATABASE_URL` set
+- [ ] `financas-db` created with a volume
+- [ ] Roles created once: run `docker/postgres/init/01-roles.sh` with real `OWNER_DB_PASSWORD` / `APP_DB_PASSWORD` (ADR 0018)
+- [ ] `DATABASE_URL` (app role) and `DATABASE_MIGRATION_URL` (owner) set
 - [ ] Env vars set; the app boots and `/api/health/ready` is 200
 - [ ] Migrations applied (on boot, or as a one-off command; decide at scaffold)
 - [ ] WhatsApp paired from the bot phone

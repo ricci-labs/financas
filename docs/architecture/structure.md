@@ -23,7 +23,7 @@ financas/
 ├── docs/                    # these docs
 ├── .github/                 # workflows (ci, deploy), PR template, dependabot
 ├── .claude/                 # project skills and Claude Code hooks (engineering/claude-workflow.md)
-├── compose.dev.yml          # local Postgres for development
+├── compose.dev.yml          # local Postgres 18 (dev and CI), roles from docker/postgres/init
 ├── scripts/                 # repo checks: no-comments, docs frontmatter/links
 ├── lefthook.yml             # git hooks
 ├── commitlint.config.ts
@@ -77,14 +77,19 @@ same function the API uses to save.
 drizzle/                      # generated SQL migrations (committed)
 drizzle.config.ts
 tsdown.config.ts              # production bundle (resolves @ aliases, inlines @financas/shared)
-vitest.config.ts
+vitest.config.ts              # unit tests (no database)
+vitest.integration.config.ts  # *.integration.test.ts against Postgres
 src/
 ├── main.ts                   # boot: env, db, HTTP, WhatsApp, jobs, graceful shutdown
 ├── app.ts                    # Hono composition: global middleware, app.route() per module,
 │                             #   static SPA; exports AppType for the RPC client
 ├── core/                     # cross-cutting infrastructure; knows no domain
 │   ├── config/env.ts         # Zod-validated env, fails at boot
-│   ├── db/{client,schema,tx}.ts  # tx.ts sets app.workspace_id (RLS) per transaction
+│   ├── db/
+│   │   ├── client.ts         # pg pool + Drizzle, readiness check
+│   │   ├── columns.ts        # primaryId, timestamps, softDelete helpers
+│   │   ├── tenancy.ts        # app role + current workspace for RLS policies
+│   │   └── tx.ts             # withWorkspace(): sets app.workspace_id per transaction
 │   ├── http/middleware/      # auth, request id, error handler
 │   ├── http/errors.ts        # AppError hierarchy → HTTP status
 │   ├── observability/        # OTel register, pino logger, metrics registry, spans, errors
@@ -114,6 +119,7 @@ src/
 │   ├── memory.ts             # recent conversation per member
 │   └── pending-actions.ts    # proposed writes awaiting confirmation
 └── jobs/                     # croner schedules; each job calls services
+src/testing/                  # integration-test helpers (test DB connections, seeds)
 scripts/ops/                  # ops:* scripts: Claude's stable debugging interface (runbook.md)
 ```
 
