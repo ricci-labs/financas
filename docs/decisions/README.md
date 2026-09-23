@@ -1,0 +1,52 @@
+---
+summary: Index of Architecture Decision Records (ADRs) and the template for new ones.
+read_when: Checking why something was chosen, before proposing to change a past choice, or when recording a new decision.
+updated: 2026-09-22
+---
+
+# Decisions (ADRs)
+
+| # | Decision | Status |
+|---|---|---|
+| 0001 | [pnpm workspaces monorepo, no Turborepo yet](0001-monorepo-pnpm.md) | Accepted |
+| 0002 | [Hono as the HTTP framework](0002-hono.md) | Accepted |
+| 0003 | [Baileys directly for WhatsApp](0003-baileys-direct.md) | Accepted |
+| 0004 | [Anthropic SDK directly, no agent framework](0004-anthropic-sdk-direct.md) | Accepted |
+| 0005 | [Vite + React SPA with Tailwind v4 and shadcn/ui](0005-spa-vite-react.md) | Accepted |
+| 0006 | [Modular monolith with light clean architecture](0006-modular-monolith.md) | Accepted |
+| 0007 | [Money as integer cents](0007-money-integer-cents.md) | Accepted |
+| 0008 | [English for code and docs, pt-BR for UI](0008-language.md) | Accepted |
+| 0009 | [Trunk-based development, PRs, squash merge](0009-trunk-based-squash-merge.md) | Accepted |
+| 0010 | [Build in Actions → GHCR → Dokploy](0010-deploy-ghcr-dokploy.md) | Accepted |
+| 0011 | [OpenTelemetry-ready observability on existing tools](0011-observability-otel-ready.md) | Accepted |
+
+## Rules
+- ADRs are append-only. To change a decision, write a new ADR that supersedes the old one and set the old one to `Superseded by NNNN`.
+- Keep them short. The "Consequences" section matters most.
+
+## Template
+
+```markdown
+---
+summary: <one line>
+read_when: <trigger>
+updated: YYYY-MM-DD
+---
+
+# NNNN. <Title>
+
+- **Status:** Proposed | Accepted | Superseded by NNNN
+- **Date:** YYYY-MM-DD
+
+## Context
+<the forces at play, constraints>
+
+## Decision
+<what we do>
+
+## Alternatives considered
+- <option>: <why not>
+
+## Consequences
+- <what gets easier, what gets harder, what we must now do>
+```
