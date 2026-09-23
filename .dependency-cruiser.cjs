@@ -43,6 +43,26 @@ module.exports = {
       to: { path: '^apps/api/src/modules/[^/]+/(?!index\\.ts$)' },
     },
     {
+      name: 'cross-module-internals',
+      severity: 'error',
+      comment: 'A module imports another module only through its index.ts (rule 2).',
+      from: { path: '^apps/api/src/modules/([^/]+)/' },
+      to: {
+        path: '^apps/api/src/modules/[^/]+/',
+        pathNot: ['^apps/api/src/modules/$1/', '/index\\.ts$', '\\.table\\.ts$'],
+      },
+    },
+    {
+      name: 'tables-reference-tables',
+      severity: 'error',
+      comment: 'Only table files may import another module table, for foreign keys (rule 2a).',
+      from: { path: '^apps/api/src/modules/([^/]+)/', pathNot: '\\.table\\.ts$' },
+      to: {
+        path: '^apps/api/src/modules/[^/]+/.+\\.table\\.ts$',
+        pathNot: '^apps/api/src/modules/$1/',
+      },
+    },
+    {
       name: 'repository-owned-by-service',
       severity: 'error',
       comment: 'Only the owning service imports a repository (rule 3).',
