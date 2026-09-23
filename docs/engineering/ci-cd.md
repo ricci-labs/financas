@@ -62,6 +62,10 @@ includes 2,000 Action minutes a month for private repos, far more than needed.
 - `npm` ecosystem weekly, updates **grouped** (one PR for minor/patch dev deps, one for minor/patch prod deps). Majors come as separate PRs.
 - **`baileys` is ignored** (pinned; upgraded by hand, see `../integrations/whatsapp.md`).
 - `github-actions` ecosystem monthly.
+- **Merge policy** (agreed with the user, 2026-09-23):
+  - patch and minor updates with all checks green: Claude merges them;
+  - major updates and anything touching `baileys`: the user decides;
+  - `@types/node` follows the Node runtime major (24), so its newer majors are ignored.
 - Titles use `build(deps)` / `build(deps-dev)` for packages and `ci` for actions. commitlint accepts Dependabot's capitalized "Bump".
 - Docker base image weekly.
 

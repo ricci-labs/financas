@@ -44,6 +44,9 @@ Rules for skills:
 - Read anything in the repo, run tests, lint, typecheck and build locally.
 - Read logs and metrics (`../operations/observability.md`).
 
+## What Claude does on its own
+- Merge Dependabot patch/minor PRs once all checks are green (`ci-cd.md` → Dependabot).
+
 ## What Claude asks first
 - Commits, pushes, opening or merging PRs.
 - Destructive migrations, anything touching production data.
