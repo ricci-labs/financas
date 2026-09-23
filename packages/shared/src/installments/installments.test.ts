@@ -1,4 +1,4 @@
-import { allocateAcrossInstallments, splitInstallments } from '@shared/domain/installments'
+import { allocateAcrossInstallments, splitInstallments } from '@shared/installments/installments'
 import { describe, expect, it } from 'vitest'
 
 describe('splitInstallments', () => {

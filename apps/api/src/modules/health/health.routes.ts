@@ -1,10 +1,5 @@
+import type { HealthDeps } from '@api/modules/health/health.types'
 import { Hono } from 'hono'
-
-export type HealthDeps = {
-  version: string
-  startedAt: number
-  now?: () => number
-}
 
 const MILLISECONDS_PER_SECOND = 1000
 

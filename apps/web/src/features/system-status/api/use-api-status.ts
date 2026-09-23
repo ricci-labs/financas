@@ -1,10 +1,6 @@
+import type { ApiStatus } from '@web/features/system-status/system-status.types'
 import { apiClient } from '@web/lib/api-client'
 import { useEffect, useState } from 'react'
-
-export type ApiStatus =
-  | { state: 'checking' }
-  | { state: 'online'; version: string }
-  | { state: 'offline' }
 
 export function useApiStatus(): ApiStatus {
   const [status, setStatus] = useState<ApiStatus>({ state: 'checking' })

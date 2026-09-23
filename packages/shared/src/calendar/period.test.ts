@@ -1,4 +1,4 @@
-import { periodOf, periodStartingIn } from '@shared/domain/period'
+import { periodOf, periodStartingIn } from '@shared/calendar/period'
 import { describe, expect, it } from 'vitest'
 
 const october = { year: 2026, month: 10 }

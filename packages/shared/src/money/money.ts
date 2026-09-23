@@ -1,4 +1,4 @@
-export type Cents = number
+import type { Cents } from '@shared/money/money.types'
 
 const CURRENCY_PREFIX = /^R\$\s*/i
 const WHITESPACE = /\s/g

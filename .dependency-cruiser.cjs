@@ -18,7 +18,7 @@ module.exports = {
       name: 'shared-domain-no-io',
       severity: 'error',
       comment: 'Pure domain: no Node I/O, no DB, no HTTP (rule 8).',
-      from: { path: '^packages/shared/src/domain' },
+      from: { path: '^packages/shared/src' },
       to: { dependencyTypes: ['core'], path: '^(fs|net|http|https|child_process|node:)' },
     },
     {

@@ -14,7 +14,7 @@ Three entry points (HTTP, WhatsApp agent, jobs) must share the same business rul
 
 ## Decision
 - Organize by domain module (`modules/<domain>/`) in the API and by feature (`features/<name>/`) in the web, not by technical layer.
-- Keep the core idea of clean architecture: dependencies point inward, services don't know about frameworks, and domain rules are pure functions in `packages/shared/src/domain`.
+- Keep the core idea of clean architecture: dependencies point inward, services don't know about frameworks, and domain rules are pure functions in `packages/shared`.
 - Skip the ceremony: no repository interfaces, no DI container, no entity classes. Services import their concrete repository.
 - Services that grow split into vertical slices (`use-cases/`).
 

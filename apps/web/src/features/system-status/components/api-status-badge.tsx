@@ -1,4 +1,5 @@
-import { type ApiStatus, useApiStatus } from '@web/features/system-status/api/use-api-status'
+import { useApiStatus } from '@web/features/system-status/api/use-api-status'
+import type { ApiStatus } from '@web/features/system-status/system-status.types'
 
 const BADGE_STYLES: Record<ApiStatus['state'], string> = {
   checking: 'bg-slate-100 text-slate-600',

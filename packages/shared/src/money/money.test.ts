@@ -1,4 +1,4 @@
-import { formatBrl, parseBrl, sumCents } from '@shared/domain/money'
+import { formatBrl, parseBrl, sumCents } from '@shared/money/money'
 import { describe, expect, it } from 'vitest'
 
 describe('parseBrl', () => {

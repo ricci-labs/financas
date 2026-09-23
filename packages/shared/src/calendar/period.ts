@@ -1,24 +1,12 @@
+import type { IsoDate, Period, PeriodSettings, YearMonth } from '@shared/calendar/calendar.types'
 import {
   addDays,
   addMonths,
   clampedDate,
-  type IsoDate,
   nthBusinessDay,
   parseIsoDate,
   toYearMonthLabel,
-  type YearMonth,
-} from '@shared/domain/dates'
-
-export type PeriodSettings =
-  | { anchor: 'calendar_month' }
-  | { anchor: 'day_of_month'; day: number }
-  | { anchor: 'nth_business_day'; position: number }
-
-export type Period = {
-  label: string
-  start: IsoDate
-  end: IsoDate
-}
+} from '@shared/calendar/dates'
 
 const NO_HOLIDAYS: ReadonlySet<IsoDate> = new Set()
 

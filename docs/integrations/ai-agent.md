@@ -20,7 +20,7 @@ Before writing SDK code, load the `claude-api` skill. SDK APIs change, so don't 
 **Claude never computes a total and never writes to the DB.** If a reply needs a number, a tool returns it.
 
 ## Tools
-One file per tool in `agent/tools/`. Each tool has a Zod input schema from `packages/shared/src/schemas`, declares the `(module, action)` it needs, and calls **exactly one service**. Each turn, Claude is offered only the tools the user's role allows (`../domain/model/access-control.md`).
+One file per tool in `agent/tools/`. Each tool has a Zod input schema from `packages/shared` (`<concept>.schemas.ts`), declares the `(module, action)` it needs, and calls **exactly one service**. Each turn, Claude is offered only the tools the user's role allows (`../domain/model/access-control.md`).
 
 | Tool | Kind | Calls |
 |---|---|---|

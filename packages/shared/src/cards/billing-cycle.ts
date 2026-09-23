@@ -1,23 +1,6 @@
-import {
-  addMonths,
-  clampedDate,
-  type IsoDate,
-  parseIsoDate,
-  toYearMonthLabel,
-  type YearMonth,
-} from '@shared/domain/dates'
-
-export type CardCycle = {
-  closingDay: number
-  dueDay: number
-  purchaseOnClosingDayGoesNext: boolean
-}
-
-export type InvoiceRef = {
-  closingOn: IsoDate
-  dueOn: IsoDate
-  referenceMonth: string
-}
+import type { IsoDate, YearMonth } from '@shared/calendar/calendar.types'
+import { addMonths, clampedDate, parseIsoDate, toYearMonthLabel } from '@shared/calendar/dates'
+import type { CardCycle, InvoiceRef } from '@shared/cards/cards.types'
 
 export function invoiceForPurchase(purchaseDate: IsoDate, card: CardCycle): InvoiceRef {
   assertDayOfMonth(card.closingDay, 'closingDay')

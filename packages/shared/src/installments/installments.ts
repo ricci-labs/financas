@@ -1,4 +1,5 @@
-import { assertPositiveCents, type Cents, sumCents } from '@shared/domain/money'
+import { assertPositiveCents, sumCents } from '@shared/money/money'
+import type { Cents } from '@shared/money/money.types'
 
 type ProportionalShare = {
   party: number

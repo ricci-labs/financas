@@ -1,9 +1,4 @@
-export type IsoDate = string
-
-export type YearMonth = {
-  year: number
-  month: number
-}
+import type { IsoDate, YearMonth } from '@shared/calendar/calendar.types'
 
 type DateParts = YearMonth & {
   day: number

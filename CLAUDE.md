@@ -23,7 +23,7 @@ Self-hosted on a small headless Debian homelab, deployed with Dokploy.
 - **Every route and agent tool declares its `(module, action)` permission** (`docs/domain/model/access-control.md`).
 - **No comments in code; it must read like prose.** Clear names, small functions, guard clauses, named constants, `@api/` `@web/` `@shared/` imports (`docs/architecture/conventions.md` → Code style, ADR 0017).
 - Money is an **integer number of cents** (`amountCents`). Never floats, never `numeric` → JS number.
-- Business rules live in pure functions (`packages/shared/src/domain`) and module services. Routes, the WhatsApp channel, the agent and jobs call services and hold no business logic.
+- Business rules live in pure functions (`packages/shared`, one folder per concept) and module services. Routes, the WhatsApp channel, the agent and jobs call services and hold no business logic.
 - **The LLM never touches the database.** It only calls tools, and each tool calls one service. Every write goes through a confirmation step (`docs/integrations/ai-agent.md`).
 - Modules talk to each other only through their `index.ts`. Only the owning service imports a repository. Full list: `docs/architecture/dependency-rules.md`.
 - Dates follow `America/Sao_Paulo`. Take "now" from `core/clock.ts`, never `new Date()` inside business logic.

@@ -26,6 +26,13 @@ without comments.
 - **Named exports only** (default exports only where a tool requires them, e.g. config files).
 - **Formatting is not a discussion:** Biome formats everything (2 spaces, single quotes, no semicolons, 100 columns).
 
+## File organization
+- **One folder per concept** (a domain concept in `shared`, a module in the API, a feature in the web).
+- **Exported types live in `<concept>.types.ts`** in that folder. A type used only inside one file may stay in it, unexported. Types derived from a value (`z.infer<typeof schema>`, `ReturnType<typeof fn>`) stay next to that value.
+- **Tests sit next to the code** they test: `money.ts` + `money.test.ts`. No separate test trees.
+- Zod schemas go in `<concept>.schemas.ts`. Tables in `<module>.table.ts`.
+- Each folder exposes its public surface through the package or module `index.ts`.
+
 ## Imports
 - Cross-folder imports use the package alias: `@api/...`, `@web/...`, `@shared/...` (declared in `tsconfig.base.json`).
 - Other workspace packages are imported by their name (`@financas/shared`), never through their alias from another package's runtime code.
@@ -45,9 +52,9 @@ without comments.
 
 ## Money
 - Store and compute in integer cents (`integer`/`bigint` columns, `number` in TS; the household's values stay far below 2^53).
-- Parse user input like `"87,50"`, `"R$ 1.234,56"` or `"1234.5"` only through `money.ts`.
-- Format for display with `Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })` via `money.ts`.
-- Split amounts only with `installments.ts`. Never with ad-hoc division.
+- Parse user input like `"87,50"`, `"R$ 1.234,56"` or `"1234.5"` only through `@shared/money/money`.
+- Format for display with `Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })` via `@shared/money/money`.
+- Split amounts only with `@shared/installments/installments`. Never with ad-hoc division.
 
 ## Dates
 - Calendar dates (`occurredOn`, `closingDate`, `dueDate`) are `date` columns and `YYYY-MM-DD` strings in TS. They are not `Date` objects, which avoids timezone shifts.
@@ -64,7 +71,7 @@ without comments.
 
 ## Tests
 - Vitest, colocated `*.test.ts`.
-- Priority: `packages/shared/src/domain` (every example in `../domain/billing-and-installments.md` is a test) → services → routes.
+- Priority: `packages/shared` (every example in `../domain/billing-and-installments.md` is a test) → services → routes.
 - Service tests use a real Postgres (a throwaway database), not mocks of the repository.
 - The agent gets an eval set of real anonymized messages later (see `../integrations/ai-agent.md`).
 

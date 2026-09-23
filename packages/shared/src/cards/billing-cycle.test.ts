@@ -1,8 +1,5 @@
-import {
-  type CardCycle,
-  invoiceForPurchase,
-  invoicesForInstallments,
-} from '@shared/domain/billing-cycle'
+import { invoiceForPurchase, invoicesForInstallments } from '@shared/cards/billing-cycle'
+import type { CardCycle } from '@shared/cards/cards.types'
 import { describe, expect, it } from 'vitest'
 
 const cardX: CardCycle = { closingDay: 3, dueDay: 10, purchaseOnClosingDayGoesNext: true }
