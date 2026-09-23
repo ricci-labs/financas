@@ -40,7 +40,7 @@ Added when the matching code exists, each as its own named check:
 
 ### `deploy.yml`: on push to `main`, after `ci.yml` passes
 1. Build the Docker image (`docker/Dockerfile`, multi-stage) with Buildx and layer cache (`type=gha`).
-2. Push to GHCR: `ghcr.io/viniciussricci/financas:<git-sha>` and `:main`.
+2. Push to GHCR: `ghcr.io/ricci-labs/financas:<git-sha>` and `:main`.
 3. Trigger Dokploy to redeploy the application with the new image (webhook or API call; secret in `DOKPLOY_DEPLOY_WEBHOOK`).
 4. Wait and check `GET /api/health/ready` on the deployed app. If it fails, the workflow fails.
 
