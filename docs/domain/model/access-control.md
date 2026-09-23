@@ -1,7 +1,7 @@
 ---
 summary: Access control inside a workspace — roles (system templates + custom), a module × action permission matrix (view/create/update/delete), owner rules, and where permissions are enforced (routes, agent tools, UI).
 read_when: Adding a route, agent tool or screen; working on roles, members or invitations; any "who can do what" question.
-updated: 2026-09-22
+updated: 2026-09-23
 ---
 
 # Access control

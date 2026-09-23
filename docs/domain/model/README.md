@@ -1,7 +1,7 @@
 ---
 summary: Data model overview — areas, conventions (IDs, tenancy keys, RLS, sign convention, enums vs config tables) and the map of all tables.
 read_when: Before creating or changing any table, or to find which model doc covers an entity.
-updated: 2026-09-22
+updated: 2026-09-23
 ---
 
 # Data model

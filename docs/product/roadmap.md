@@ -1,7 +1,7 @@
 ---
 summary: Phases, MVP scope, current focus and the list of open questions.
 read_when: Deciding what to build next, checking whether something is in scope, or resuming work in a new session.
-updated: 2026-09-22
+updated: 2026-09-23
 ---
 
 # Roadmap

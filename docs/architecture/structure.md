@@ -1,7 +1,7 @@
 ---
 summary: The intended folder tree for the whole monorepo, with the role of every folder and file type.
 read_when: Creating files or folders, or deciding where a piece of code belongs.
-updated: 2026-09-22
+updated: 2026-09-23
 ---
 
 # Project structure
