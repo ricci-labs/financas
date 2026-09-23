@@ -11,6 +11,7 @@ const scopes = [
   'obs',
   'identity',
   'workspaces',
+  'access',
   'ledger',
   'cards',
   'contacts',

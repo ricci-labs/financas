@@ -103,6 +103,7 @@ src/
 ├── modules/                  # one folder per domain (see "Module anatomy")
 │   ├── identity/             # users, sessions, channel identities (WhatsApp numbers)
 │   ├── workspaces/           # workspaces, memberships, invitations, all settings tables
+│   ├── access/               # module actions, roles, role permissions, authorization
 │   ├── ledger/               # ledger accounts (incl. categories), journal entries, postings
 │   ├── cards/                # card details, invoices
 │   ├── contacts/             # contacts, charges, settlements
@@ -144,7 +145,19 @@ modules/ledger/
 - Handlers stay inline in the routes file. Separate "controller" files break Hono's type inference and the RPC types.
 - When a service passes ~300 lines, split it into `use-cases/<verb-noun>.ts` (one use case per file) and keep `*.service.ts` as a thin facade.
 - `reports/` is read-only: it has aggregate queries and no tables of its own.
-- A module with several tables may split them into `<entity>.table.ts` files (e.g. `workspaces/roles.table.ts`, `workspaces/access.table.ts`); drizzle-kit picks up every `*.table.ts`.
+- **Every module has the same fixed file set**, created only when needed and always with these names:
+
+  | File | Holds |
+  |---|---|
+  | `<module>.table.ts` | All tables, enums and policies of the module (one file) |
+  | `<module>.types.ts` | Exported types |
+  | `<module>.repository.ts` | Drizzle queries |
+  | `<module>.service.ts` | Use cases |
+  | `<module>.routes.ts` | Hono sub-app |
+  | `<module>.test.ts` / `<module>.integration.test.ts` | Unit / database tests, one `describe` per table or use case |
+  | `index.ts` | Public surface |
+
+- If a module holds two concepts that feel separate, it is two modules (that's how `access` split from `workspaces`), not extra files inside one.
 
 ## apps/web
 

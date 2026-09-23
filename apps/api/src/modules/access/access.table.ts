@@ -1,9 +1,8 @@
 import { primaryId, softDelete, timestamps } from '@api/core/db/columns'
 import { tenantIsolation } from '@api/core/db/tenancy'
 import { users } from '@api/modules/identity/identity.table'
-import { appModule, moduleActions, permissionAction } from '@api/modules/workspaces/access.table'
 import { workspaces } from '@api/modules/workspaces/workspaces.table'
-import { SYSTEM_ROLE_KEYS } from '@financas/shared'
+import { APP_MODULES, PERMISSION_ACTIONS, SYSTEM_ROLE_KEYS } from '@financas/shared'
 import { sql } from 'drizzle-orm'
 import {
   foreignKey,
@@ -16,7 +15,20 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core'
 
+export const appModule = pgEnum('app_module', APP_MODULES)
+
+export const permissionAction = pgEnum('permission_action', PERMISSION_ACTIONS)
+
 export const systemRoleKey = pgEnum('system_role_key', SYSTEM_ROLE_KEYS)
+
+export const moduleActions = pgTable(
+  'module_actions',
+  {
+    module: appModule().notNull(),
+    action: permissionAction().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.module, table.action] })],
+)
 
 export const roles = pgTable(
   'roles',

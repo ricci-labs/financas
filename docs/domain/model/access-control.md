@@ -8,7 +8,7 @@ updated: 2026-09-23
 
 Decision: `../../decisions/0015-module-permissions.md`.
 
-Status: tables implemented (`module_actions`, `roles`, `role_permissions`). The matrix lives in
+Status: tables implemented in the `access` module (`module_actions`, `roles`, `role_permissions`). The matrix lives in
 `packages/shared/src/access` (single source for API, web and the DB seed). Membership, route
 middleware and agent tool gating come in the next PRs.
 
@@ -88,7 +88,7 @@ Owner-only, outside the matrix: delete the workspace, transfer ownership, manage
 ## Enforcement
 | Where | How |
 |---|---|
-| HTTP routes | `authorize(module, action)` middleware on every route (from `modules/workspaces`). A route without it fails a test that lists all routes. |
+| HTTP routes | `authorize(module, action)` middleware on every route (from `modules/access`). A route without it fails a test that lists all routes. |
 | Agent tools | Each tool declares its `(module, action)`. Only tools the user is allowed to use are offered to Claude in that turn, and the tool re-checks on execution. |
 | Services | Receive an `actor` (user + workspace + permission set) and check again for operations reachable from several entry points (defense in depth). |
 | Web | Menus and buttons are hidden without permission. The API remains the authority. |

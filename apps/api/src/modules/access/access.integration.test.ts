@@ -1,8 +1,9 @@
 import { withWorkspace } from '@api/core/db/tx'
+import { moduleActions, rolePermissions, roles } from '@api/modules/access/access.table'
 import { users } from '@api/modules/identity/identity.table'
-import { rolePermissions, roles } from '@api/modules/workspaces/roles.table'
 import { workspaces } from '@api/modules/workspaces/workspaces.table'
 import { connectTestDatabases, POSTGRES_ERRORS, postgresErrorCodeOf } from '@api/testing/database'
+import { MODULE_ACTIONS } from '@financas/shared'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
@@ -55,6 +56,24 @@ afterAll(async () => {
   await databases.owner.delete(workspaces).where(eq(workspaces.createdByUserId, userId))
   await databases.owner.delete(users).where(eq(users.id, userId))
   await databases.closeAll()
+})
+
+function asKeys(pairs: readonly { module: string; action: string }[]): string[] {
+  return pairs.map(({ module, action }) => `${module}:${action}`).sort()
+}
+
+describe('module_actions', () => {
+  it('matches the access matrix in @financas/shared exactly', async () => {
+    const stored = await databases.app.select().from(moduleActions)
+    expect(asKeys(stored)).toEqual(asKeys(MODULE_ACTIONS))
+  })
+
+  it('is read-only for the app role', async () => {
+    const insertAsApp = databases.app
+      .insert(moduleActions)
+      .values({ module: 'reports', action: 'delete' })
+    expect(await postgresErrorCodeOf(insertAsApp)).toBe(POSTGRES_ERRORS.insufficientPrivilege)
+  })
 })
 
 describe('roles', () => {
