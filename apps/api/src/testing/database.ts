@@ -27,3 +27,34 @@ export function connectTestDatabases() {
     closeAll: () => Promise.all([app.close(), owner.close()]),
   }
 }
+
+export const POSTGRES_ERRORS = {
+  foreignKeyViolation: '23503',
+  uniqueViolation: '23505',
+  checkViolation: '23514',
+  insufficientPrivilege: '42501',
+  rowLevelSecurityViolation: '42501',
+} as const
+
+function findPostgresCode(error: unknown): string | undefined {
+  let current: unknown = error
+  while (current instanceof Error) {
+    const code = (current as Error & { code?: unknown }).code
+    if (typeof code === 'string') {
+      return code
+    }
+    current = current.cause
+  }
+  return undefined
+}
+
+export async function postgresErrorCodeOf(
+  operation: Promise<unknown>,
+): Promise<string | undefined> {
+  try {
+    await operation
+    return undefined
+  } catch (error) {
+    return findPostgresCode(error)
+  }
+}

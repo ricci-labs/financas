@@ -1,5 +1,5 @@
 import { moduleActions } from '@api/modules/workspaces/access.table'
-import { connectTestDatabases } from '@api/testing/database'
+import { connectTestDatabases, POSTGRES_ERRORS, postgresErrorCodeOf } from '@api/testing/database'
 import { MODULE_ACTIONS } from '@financas/shared'
 import { afterAll, describe, expect, it } from 'vitest'
 
@@ -21,6 +21,6 @@ describe('module_actions', () => {
     const insertAsApp = databases.app
       .insert(moduleActions)
       .values({ module: 'reports', action: 'delete' })
-    await expect(insertAsApp).rejects.toThrow()
+    expect(await postgresErrorCodeOf(insertAsApp)).toBe(POSTGRES_ERRORS.insufficientPrivilege)
   })
 })

@@ -1,7 +1,7 @@
 import { withWorkspace } from '@api/core/db/tx'
 import { users } from '@api/modules/identity/identity.table'
 import { workspaces } from '@api/modules/workspaces/workspaces.table'
-import { connectTestDatabases } from '@api/testing/database'
+import { connectTestDatabases, POSTGRES_ERRORS, postgresErrorCodeOf } from '@api/testing/database'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
@@ -77,7 +77,9 @@ describe('workspace isolation (RLS)', () => {
     const insertIntoOtherWorkspace = withWorkspace(databases.app, workspaceA, (tx) =>
       tx.insert(workspaces).values({ name: 'intruder', createdByUserId: ownerUserId }),
     )
-    await expect(insertIntoOtherWorkspace).rejects.toThrow()
+    expect(await postgresErrorCodeOf(insertIntoOtherWorkspace)).toBe(
+      POSTGRES_ERRORS.rowLevelSecurityViolation,
+    )
   })
 
   it('does not leak the workspace setting after the transaction ends', async () => {
