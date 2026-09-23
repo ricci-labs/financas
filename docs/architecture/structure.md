@@ -24,6 +24,7 @@ financas/
 ├── .github/                 # workflows (ci, deploy), PR template, dependabot
 ├── .claude/                 # project skills and Claude Code hooks (engineering/claude-workflow.md)
 ├── compose.dev.yml          # local Postgres for development
+├── scripts/                 # repo checks: no-comments, docs frontmatter/links
 ├── lefthook.yml             # git hooks
 ├── commitlint.config.ts
 ├── pnpm-workspace.yaml
@@ -59,6 +60,8 @@ expense form previews the invoice and installments with the same function the AP
 ```
 drizzle/                      # generated SQL migrations (committed)
 drizzle.config.ts
+tsdown.config.ts              # production bundle (resolves @ aliases, inlines @financas/shared)
+vitest.config.ts
 src/
 ├── main.ts                   # boot: env, db, HTTP, WhatsApp, jobs, graceful shutdown
 ├── app.ts                    # Hono composition: global middleware, app.route() per module,

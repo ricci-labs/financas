@@ -16,13 +16,15 @@ Jobs run in parallel where possible, with the pnpm store cached (`actions/setup-
 | Step | Command | Fails on |
 |---|---|---|
 | Install | `pnpm install --frozen-lockfile` | Lockfile out of sync |
-| Lint/format | `pnpm biome ci` | Any lint or format issue |
-| Types | `pnpm typecheck` (`tsc -b` across the workspace) | Type errors |
-| Architecture | `pnpm depcruise` | A violation of `../architecture/dependency-rules.md` |
+| Lint/format | `pnpm lint` (Biome) | Any lint or format issue |
+| No comments | `pnpm lint:comments` | A comment in source code (ADR 0017) |
+| Types | `pnpm typecheck` (`tsc -p` per package, TypeScript 7) | Type errors |
+| Architecture | `pnpm depcruise` (parsed with SWC) | A violation of `../architecture/dependency-rules.md` |
 | Tests | `pnpm test` with a `postgres:16` service container | Failing tests |
 | Build | `pnpm build` (web + api) | Build errors |
 | Docs | `pnpm docs:check` | Missing frontmatter (`summary`, `read_when`, `updated`) or broken relative links |
-| Secrets | `gitleaks` | Committed secrets |
+| Secrets | `gitleaks` (separate job) | Committed secrets |
+| PR title | `commitlint` (separate job) | A PR title that isn't a valid Conventional Commit (it becomes the squash commit) |
 
 ### `deploy.yml`: on push to `main`, after `ci.yml` passes
 1. Build the Docker image (`docker/Dockerfile`, multi-stage) with Buildx and layer cache (`type=gha`).

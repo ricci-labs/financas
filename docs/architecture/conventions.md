@@ -1,7 +1,7 @@
 ---
 summary: Coding conventions — naming, money, dates, IDs, errors, validation, tests, migrations, commits.
 read_when: Writing or reviewing any code.
-updated: 2026-09-22
+updated: 2026-09-23
 ---
 
 # Conventions
@@ -11,11 +11,32 @@ updated: 2026-09-22
 - User-facing text (UI, agent replies) is in pt-BR.
 - Domain terms come from `../domain/glossary.md`.
 
+## Code style (ADR 0017)
+The code must read like well-written prose: a person should understand it top to bottom
+without comments.
+
+- **No comments.** Only tool directives (`biome-ignore`, `@ts-expect-error`) with their reason. The "why" goes in docs/ADRs. Checked by `pnpm lint:comments`.
+- **Names carry intent.** Full words, no abbreviations (`installment`, not `inst`). Booleans read as questions (`isOnClosingDay`, `goesToNextInvoice`). Functions are verbs (`splitInstallments`); values are nouns.
+- **Name intermediate results.** Prefer `const isAfterClosing = ...` over a long inline condition.
+- **Small functions, one level of abstraction.** Extract helpers with descriptive names instead of explaining a block.
+- **Early returns and guard clauses**, not deep nesting. Always use braces.
+- **No magic numbers or strings.** Use named constants (`CENTS_PER_REAL`, `SHUTDOWN_TIMEOUT_MS`).
+- **No clever code.** No nested ternaries, no comma operators, no bit tricks, no single-letter names except `c` in Hono handlers and index-free callbacks.
+- **Public functions first**, private helpers below them, in the order they're called.
+- **Named exports only** (default exports only where a tool requires them, e.g. config files).
+- **Formatting is not a discussion:** Biome formats everything (2 spaces, single quotes, no semicolons, 100 columns).
+
+## Imports
+- Cross-folder imports use the package alias: `@api/...`, `@web/...`, `@shared/...` (declared in `tsconfig.base.json`).
+- Other workspace packages are imported by their name (`@financas/shared`), never through their alias from another package's runtime code.
+- No relative `../` imports and no file extensions in import paths.
+- Type-only imports use `import type`.
+
 ## Naming
 | Thing | Convention | Example |
 |---|---|---|
-| Files | kebab-case, role suffix in API modules | `transactions.service.ts`, `billing-cycle.ts` |
-| React components | PascalCase files and exports | `ExpenseForm.tsx` |
+| Files | kebab-case, role suffix in API modules (enforced by Biome) | `ledger.service.ts`, `billing-cycle.ts`, `expense-form.tsx` |
+| React components | PascalCase exports, kebab-case files | `export function ExpenseForm` in `expense-form.tsx` |
 | Zod schemas | camelCase + `Schema` | `createExpenseSchema` |
 | Inferred types | PascalCase, same stem | `type CreateExpense = z.infer<typeof createExpenseSchema>` |
 | DB tables/columns | snake_case in SQL, camelCase in TS (Drizzle `casing: 'snake_case'`) | `amount_cents` ↔ `amountCents` |

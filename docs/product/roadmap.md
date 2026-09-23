@@ -12,8 +12,12 @@ updated: 2026-09-22
 - [x] Engineering process (git, PRs, CI/CD, skills) and observability designed
 - [x] Problem deep-dive with the user; data model proposed (`../domain/model/`)
 - [ ] **User reviews the data model** (next step)
-- [ ] Scaffold the monorepo (pnpm workspaces, `apps/api`, `apps/web`, `packages/shared`)
-- [ ] Schema + migrations + RLS; domain functions with tests
+- [x] Scaffold the monorepo (pnpm workspaces, `apps/api`, `apps/web`, `packages/shared`), CI, quality gates
+- [x] Domain functions with tests: money, installments + multi-party allocation, billing cycle, financial period
+- [ ] Postgres + Drizzle schema + migrations + RLS (next PR)
+- [ ] Observability core (OTel register, metrics, error refs), Dockerfile, deploy workflow
+- [ ] Web foundation: TanStack Router/Query, shadcn/ui, layout
+- [ ] Remaining project skills (`new-module`, `db-migration`, `domain-rule`, `pr`) and Claude Code hooks
 
 ## Phase 1: MVP
 Goal: the couple records everything through WhatsApp and the web, and always knows how much is still free to spend.
