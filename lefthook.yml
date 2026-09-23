@@ -12,7 +12,7 @@ pre-commit:
       glob: '*.{js,mjs,cjs,ts,tsx}'
       run: node scripts/check-no-comments.mjs {staged_files}
     - name: gitleaks
-      run: command -v gitleaks >/dev/null && gitleaks git --staged --no-banner --redact || echo "gitleaks not installed locally, CI still checks"
+      run: command -v gitleaks >/dev/null && gitleaks git --pre-commit --staged --redact --no-banner . || echo "gitleaks not installed locally, CI still checks"
 
 commit-msg:
   jobs:
