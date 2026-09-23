@@ -57,6 +57,13 @@
       "when": 1790138446811,
       "tag": "0007_memberships",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790138620961,
+      "tag": "0008_workspaces_keep_an_owner",
+      "breakpoints": true
     }
   ]
 }

@@ -1,66 +1,45 @@
 import { withWorkspace } from '@api/core/db/tx'
 import { moduleActions, rolePermissions, roles } from '@api/modules/access/access.table'
-import { users } from '@api/modules/identity/identity.table'
-import { workspaces } from '@api/modules/workspaces/workspaces.table'
 import { connectTestDatabases, POSTGRES_ERRORS, postgresErrorCodeOf } from '@api/testing/database'
+import { createFixtures } from '@api/testing/fixtures'
 import { MODULE_ACTIONS } from '@financas/shared'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const databases = connectTestDatabases()
-const runId = crypto.randomUUID()
+const fixtures = createFixtures(databases.owner, databases.app)
 
-let userId: string
 let workspaceA: string
 let workspaceB: string
 let roleA: string
 let roleB: string
 
-async function createRole(workspaceId: string, name: string): Promise<string> {
+async function createCustomRole(workspaceId: string): Promise<string> {
   const [role] = await withWorkspace(databases.app, workspaceId, (tx) =>
-    tx.insert(roles).values({ workspaceId, name }).returning({ id: roles.id }),
+    tx.insert(roles).values({ workspaceId, name: 'Lançador' }).returning({ id: roles.id }),
   )
   if (!role) {
-    throw new Error(`Could not create role ${name}`)
+    throw new Error('Could not create the custom role')
   }
   return role.id
 }
 
-beforeAll(async () => {
-  const [user] = await databases.owner
-    .insert(users)
-    .values({ email: `roles-${runId}@example.test`, displayName: 'Roles test' })
-    .returning({ id: users.id })
-  if (!user) {
-    throw new Error('Could not create the test user')
-  }
-  userId = user.id
-
-  const [first, second] = await databases.owner
-    .insert(workspaces)
-    .values([
-      { name: `A ${runId}`, createdByUserId: userId },
-      { name: `B ${runId}`, createdByUserId: userId },
-    ])
-    .returning({ id: workspaces.id })
-  if (!first || !second) {
-    throw new Error('Could not create the test workspaces')
-  }
-  workspaceA = first.id
-  workspaceB = second.id
-  roleA = await createRole(workspaceA, 'Lançador')
-  roleB = await createRole(workspaceB, 'Lançador')
-})
-
-afterAll(async () => {
-  await databases.owner.delete(workspaces).where(eq(workspaces.createdByUserId, userId))
-  await databases.owner.delete(users).where(eq(users.id, userId))
-  await databases.closeAll()
-})
-
 function asKeys(pairs: readonly { module: string; action: string }[]): string[] {
   return pairs.map(({ module, action }) => `${module}:${action}`).sort()
 }
+
+beforeAll(async () => {
+  const ownerUserId = await fixtures.createUser('access')
+  workspaceA = (await fixtures.createWorkspaceOwnedBy(ownerUserId, 'A')).workspaceId
+  workspaceB = (await fixtures.createWorkspaceOwnedBy(ownerUserId, 'B')).workspaceId
+  roleA = await createCustomRole(workspaceA)
+  roleB = await createCustomRole(workspaceB)
+})
+
+afterAll(async () => {
+  await fixtures.removeEverything()
+  await databases.closeAll()
+})
 
 describe('module_actions', () => {
   it('matches the access matrix in @financas/shared exactly', async () => {
@@ -79,19 +58,18 @@ describe('module_actions', () => {
 describe('roles', () => {
   it('are isolated per workspace', async () => {
     const visible = await withWorkspace(databases.app, workspaceA, (tx) =>
-      tx.select({ id: roles.id }).from(roles),
+      tx.select({ id: roles.id, workspaceId: roles.workspaceId }).from(roles),
     )
-    expect(visible).toEqual([{ id: roleA }])
+    expect(visible.every((role) => role.workspaceId === workspaceA)).toBe(true)
+    expect(visible.map((role) => role.id)).toContain(roleA)
+    expect(visible.map((role) => role.id)).not.toContain(roleB)
   })
 
   it('allow only one role per system key in a workspace', async () => {
-    const twoOwners = withWorkspace(databases.app, workspaceA, (tx) =>
-      tx.insert(roles).values([
-        { workspaceId: workspaceA, name: 'Dono', systemKey: 'owner' },
-        { workspaceId: workspaceA, name: 'Outro dono', systemKey: 'owner' },
-      ]),
+    const secondOwner = withWorkspace(databases.app, workspaceA, (tx) =>
+      tx.insert(roles).values({ workspaceId: workspaceA, name: 'Outro dono', systemKey: 'owner' }),
     )
-    expect(await postgresErrorCodeOf(twoOwners)).toBe(POSTGRES_ERRORS.uniqueViolation)
+    expect(await postgresErrorCodeOf(secondOwner)).toBe(POSTGRES_ERRORS.uniqueViolation)
   })
 })
 
@@ -116,14 +94,18 @@ describe('role permissions', () => {
     expect(await postgresErrorCodeOf(createWithoutView)).toBe(POSTGRES_ERRORS.checkViolation)
   })
 
-  it('reject removing view while other actions remain', async () => {
-    const removeView = withWorkspace(databases.app, workspaceA, (tx) =>
+  it('reject removing view while other actions remain, but allow removing them all', async () => {
+    const removeOnlyView = withWorkspace(databases.app, workspaceA, (tx) =>
       tx
         .delete(rolePermissions)
-        .where(eq(rolePermissions.action, 'view'))
-        .returning({ module: rolePermissions.module }),
+        .where(and(eq(rolePermissions.roleId, roleA), eq(rolePermissions.action, 'view'))),
     )
-    expect(await postgresErrorCodeOf(removeView)).toBe(POSTGRES_ERRORS.checkViolation)
+    expect(await postgresErrorCodeOf(removeOnlyView)).toBe(POSTGRES_ERRORS.checkViolation)
+
+    const removeEverything = withWorkspace(databases.app, workspaceA, (tx) =>
+      tx.delete(rolePermissions).where(eq(rolePermissions.roleId, roleA)),
+    )
+    expect(await postgresErrorCodeOf(removeEverything)).toBeUndefined()
   })
 
   it('reject a module-action pair that does not exist', async () => {
