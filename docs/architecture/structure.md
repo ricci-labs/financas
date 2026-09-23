@@ -61,6 +61,11 @@ src/
 ├── installments/
 │   ├── installments.ts       # split + multi-party allocation
 │   └── installments.test.ts
+├── access/
+│   ├── access.constants.ts   # modules, actions, system role keys (+ derived types)
+│   ├── access.types.ts       # Permission, RoleTemplate
+│   ├── access.ts             # valid pairs, role templates, can()
+│   └── access.test.ts
 ├── ledger/                   # planned: postings builders per entry type, schemas
 ├── pix/                      # planned: Pix copia-e-cola payload
 └── index.ts                  # public surface of the package
@@ -139,6 +144,7 @@ modules/ledger/
 - Handlers stay inline in the routes file. Separate "controller" files break Hono's type inference and the RPC types.
 - When a service passes ~300 lines, split it into `use-cases/<verb-noun>.ts` (one use case per file) and keep `*.service.ts` as a thin facade.
 - `reports/` is read-only: it has aggregate queries and no tables of its own.
+- A module with several tables may split them into `<entity>.table.ts` files (e.g. `workspaces/roles.table.ts`, `workspaces/access.table.ts`); drizzle-kit picks up every `*.table.ts`.
 
 ## apps/web
 

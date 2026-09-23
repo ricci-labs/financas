@@ -8,6 +8,10 @@ updated: 2026-09-22
 
 Decision: `../../decisions/0015-module-permissions.md`.
 
+Status: tables implemented (`module_actions`, `roles`, `role_permissions`). The matrix lives in
+`packages/shared/src/access` (single source for API, web and the DB seed). Membership, route
+middleware and agent tool gating come in the next PRs.
+
 ## Model
 - **Tenant isolation** (which workspace you can see at all) is handled by membership + RLS (`tenancy.md`).
 - **Inside a workspace**, access is **module × action**. A membership has one **role**, and a role is a set of `(module, action)` permissions.
@@ -34,8 +38,10 @@ Decision: `../../decisions/0015-module-permissions.md`.
 
 ## Tables
 ### `module_actions` (global, seeded by migration)
-The valid `(module, action)` pairs, e.g. `reports` only has `view`. PK `(module, action)`.
-`role_permissions` has an FK to it, so the DB rejects meaningless permissions.
+The 36 valid `(module, action)` pairs, e.g. `reports` only has `view`. PK `(module, action)`.
+`role_permissions` has an FK to it, so the DB rejects meaningless permissions. Seeded from
+`MODULE_ACTIONS` in `@financas/shared`; an integration test fails if the two drift. **Read-only for
+the app role** (writes revoked).
 
 ### `roles`
 | Column | Notes |
@@ -50,7 +56,11 @@ System roles are created with each workspace. `owner` can't be edited. The other
 
 ### `role_permissions`
 `workspace_id`, `role_id`, `module`, `action`. PK `(role_id, module, action)`. FK `(module, action)` → `module_actions`.
-Rule: any action other than `view` on a module requires `view` on that module (trigger).
+Rule: any action other than `view` on a module requires `view` on that module. Enforced by a
+**deferred constraint trigger** (checked at commit, so a full matrix can be written in any order).
+The role must belong to the same workspace (composite FK). Keeping the `owner` role unchanged is
+enforced by the service (next PR), not the DB, because the owner permissions are written when the
+workspace is created.
 
 ### `memberships` (updated)
 `role_id` (composite FK to `roles`) replaces the old role enum. The workspace creator gets the `owner` role.

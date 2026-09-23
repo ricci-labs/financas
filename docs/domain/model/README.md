@@ -6,7 +6,7 @@ updated: 2026-09-22
 
 # Data model
 
-Status: **being implemented** in small PRs. Implemented so far: `users`, `workspaces` (with RLS).
+Status: **being implemented** in small PRs. Implemented so far: `users`, `workspaces`, `module_actions`, `roles`, `role_permissions`.
 The Drizzle schema (`apps/api/src/modules/*/*.table.ts`) is the source of truth for what exists;
 these docs keep the *why*, the invariants and the examples.
 
@@ -53,6 +53,8 @@ PLAN  │ recurrence_rules ──< planned_occurrences ──(matched_entry)─�
 | Money | `bigint` cents. In postings the amount is signed (sign convention in `ledger.md`). Everywhere else it's `> 0` and the meaning comes from context. |
 | Deletion | **Soft delete everywhere** (below). Hard delete only for LGPD erasure of a whole workspace and for purging trashed files. |
 | Naming | snake_case tables in the plural; FK columns `<entity>_id`. |
+| Global reference tables | Tables without `workspace_id` that hold fixed data (e.g. `module_actions`) are **read-only for the app role**: the migration revokes INSERT/UPDATE/DELETE/TRUNCATE from `financas_app`. |
+| Tenant policy | Every tenant table uses the `tenantIsolation(tableName, workspaceColumn)` helper (`core/db/tenancy.ts`). |
 
 ## Archive vs soft delete
 Two different things, both reversible:
