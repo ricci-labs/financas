@@ -1,7 +1,7 @@
 ---
 summary: Phases, MVP scope, current focus and the list of open questions.
 read_when: Deciding what to build next, checking whether something is in scope, or resuming work in a new session.
-updated: 2026-09-22
+updated: 2026-09-23
 ---
 
 # Roadmap
@@ -15,7 +15,10 @@ updated: 2026-09-22
 - [x] Scaffold the monorepo (pnpm workspaces, `apps/api`, `apps/web`, `packages/shared`), CI, quality gates
 - [x] Domain functions with tests: money, installments + multi-party allocation, billing cycle, financial period
 - [x] DB foundation: Postgres 18, owner/app roles, Drizzle migrations, `users` + `workspaces` with RLS, isolation tests in CI
-- [ ] DB: roles/permissions, memberships, invitations, settings (next PR)
+- [x] DB: access control (`module_actions`, `roles`, `role_permissions`)
+- [ ] DB: memberships + workspace creation service (next PR)
+- [ ] DB: settings and preferences
+- [ ] DB: invitations
 - [ ] DB: ledger (accounts, entries, postings, cards, invoices)
 - [ ] DB: contacts/charges, planning, support tables
 - [ ] Observability core (OTel register, metrics, error refs), Dockerfile, deploy workflow

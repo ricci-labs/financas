@@ -73,6 +73,8 @@ without comments.
 - Vitest, colocated `*.test.ts`.
 - Priority: `packages/shared` (every example in `../domain/billing-and-installments.md` is a test) → services → routes.
 - Tests that need the database are `*.integration.test.ts` and run with `pnpm test:integration` (after `pnpm db:up`). They connect as the app role (RLS applies) and seed or clean up with the owner connection. They clean up everything they create.
+- Assert the **exact Postgres error** with `postgresErrorCodeOf()` and `POSTGRES_ERRORS` (`src/testing/database.ts`), never a bare `rejects.toThrow()`, so a test can't pass for the wrong reason.
+- For a DB rule (trigger, policy, constraint), prove the test can fail: disable the rule locally, see the test go red, re-enable.
 - `pnpm test` never needs a database.
 - The agent gets an eval set of real anonymized messages later (see `../integrations/ai-agent.md`).
 

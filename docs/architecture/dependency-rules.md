@@ -61,6 +61,7 @@ routes / agent tools / jobs / channels
 | `planning` | `notifications` | Bill and invoice reminders |
 | `reports` | `ledger`, `planning`, `cards`, `contacts` | Read-only aggregates |
 | every module | `workspaces` | Current workspace settings |
+| `workspaces` | `access` | Creating a workspace creates its system roles and the owner membership |
 
 Contact validity on postings is enforced by the composite FK, so `ledger` never calls `contacts` (that would create a cycle with `contacts → ledger`).
 

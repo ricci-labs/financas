@@ -1,12 +1,12 @@
 ---
 summary: Data model overview — areas, conventions (IDs, tenancy keys, RLS, sign convention, enums vs config tables) and the map of all tables.
 read_when: Before creating or changing any table, or to find which model doc covers an entity.
-updated: 2026-09-22
+updated: 2026-09-23
 ---
 
 # Data model
 
-Status: **being implemented** in small PRs. Implemented so far: `users`, `workspaces` (with RLS).
+Status: **being implemented** in small PRs. Implemented so far: `users`, `workspaces`, `module_actions`, `roles`, `role_permissions`.
 The Drizzle schema (`apps/api/src/modules/*/*.table.ts`) is the source of truth for what exists;
 these docs keep the *why*, the invariants and the examples.
 
@@ -18,7 +18,7 @@ Diagrams (Mermaid, rendered by GitHub): `diagrams.md`.
 | Doc | Tables |
 |---|---|
 | `tenancy.md` | `users`, `channel_identities`, `sessions`, `workspaces`, `memberships`, `invitations`, `workspace_settings`, `user_preferences`, `membership_preferences` |
-| `access-control.md` | `roles`, `role_permissions`, `module_actions` |
+| `access-control.md` | `roles`, `role_permissions`, `module_actions` (module `access`) |
 | `ledger.md` | `ledger_accounts`, `card_details`, `card_invoices`, `journal_entries`, `postings`, `institutions` |
 | `planning.md` | `recurrence_rules`, `planned_occurrences`, `budget_lines`, `goals`, `holidays` |
 | `third-parties.md` | `contacts`, `charges`, `charge_items`, `charge_payments` |
@@ -53,6 +53,8 @@ PLAN  │ recurrence_rules ──< planned_occurrences ──(matched_entry)─�
 | Money | `bigint` cents. In postings the amount is signed (sign convention in `ledger.md`). Everywhere else it's `> 0` and the meaning comes from context. |
 | Deletion | **Soft delete everywhere** (below). Hard delete only for LGPD erasure of a whole workspace and for purging trashed files. |
 | Naming | snake_case tables in the plural; FK columns `<entity>_id`. |
+| Global reference tables | Tables without `workspace_id` that hold fixed data (e.g. `module_actions`) are **read-only for the app role**: the migration revokes INSERT/UPDATE/DELETE/TRUNCATE from `financas_app`. |
+| Tenant policy | Every tenant table uses the `tenantIsolation(tableName, workspaceColumn)` helper (`core/db/tenancy.ts`). |
 
 ## Archive vs soft delete
 Two different things, both reversible:

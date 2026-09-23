@@ -1,12 +1,16 @@
 ---
 summary: Access control inside a workspace — roles (system templates + custom), a module × action permission matrix (view/create/update/delete), owner rules, and where permissions are enforced (routes, agent tools, UI).
 read_when: Adding a route, agent tool or screen; working on roles, members or invitations; any "who can do what" question.
-updated: 2026-09-22
+updated: 2026-09-23
 ---
 
 # Access control
 
 Decision: `../../decisions/0015-module-permissions.md`.
+
+Status: tables implemented in the `access` module (`module_actions`, `roles`, `role_permissions`). The matrix lives in
+`packages/shared/src/access` (single source for API, web and the DB seed). Membership, route
+middleware and agent tool gating come in the next PRs.
 
 ## Model
 - **Tenant isolation** (which workspace you can see at all) is handled by membership + RLS (`tenancy.md`).
@@ -34,8 +38,10 @@ Decision: `../../decisions/0015-module-permissions.md`.
 
 ## Tables
 ### `module_actions` (global, seeded by migration)
-The valid `(module, action)` pairs, e.g. `reports` only has `view`. PK `(module, action)`.
-`role_permissions` has an FK to it, so the DB rejects meaningless permissions.
+The 36 valid `(module, action)` pairs, e.g. `reports` only has `view`. PK `(module, action)`.
+`role_permissions` has an FK to it, so the DB rejects meaningless permissions. Seeded from
+`MODULE_ACTIONS` in `@financas/shared`; an integration test fails if the two drift. **Read-only for
+the app role** (writes revoked).
 
 ### `roles`
 | Column | Notes |
@@ -50,7 +56,11 @@ System roles are created with each workspace. `owner` can't be edited. The other
 
 ### `role_permissions`
 `workspace_id`, `role_id`, `module`, `action`. PK `(role_id, module, action)`. FK `(module, action)` → `module_actions`.
-Rule: any action other than `view` on a module requires `view` on that module (trigger).
+Rule: any action other than `view` on a module requires `view` on that module. Enforced by a
+**deferred constraint trigger** (checked at commit, so a full matrix can be written in any order).
+The role must belong to the same workspace (composite FK). Keeping the `owner` role unchanged is
+enforced by the service (next PR), not the DB, because the owner permissions are written when the
+workspace is created.
 
 ### `memberships` (updated)
 `role_id` (composite FK to `roles`) replaces the old role enum. The workspace creator gets the `owner` role.
@@ -78,7 +88,7 @@ Owner-only, outside the matrix: delete the workspace, transfer ownership, manage
 ## Enforcement
 | Where | How |
 |---|---|
-| HTTP routes | `authorize(module, action)` middleware on every route (from `modules/workspaces`). A route without it fails a test that lists all routes. |
+| HTTP routes | `authorize(module, action)` middleware on every route (from `modules/access`). A route without it fails a test that lists all routes. |
 | Agent tools | Each tool declares its `(module, action)`. Only tools the user is allowed to use are offered to Claude in that turn, and the tool re-checks on execution. |
 | Services | Receive an `actor` (user + workspace + permission set) and check again for operations reachable from several entry points (defense in depth). |
 | Web | Menus and buttons are hidden without permission. The API remains the authority. |

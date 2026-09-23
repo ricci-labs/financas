@@ -35,8 +35,8 @@ Decision: `../decisions/0009-trunk-based-squash-merge.md`.
 | `chore` | Maintenance that fits nothing else |
 
 **Scopes** (enforced by commitlint; extend the list in `commitlint.config.ts` when a module is added):
-`api`, `web`, `shared`, `db`, `agent`, `whatsapp`, `jobs`, `obs`, `household`, `accounts`, `cards`,
-`transactions`, `incomes`, `categories`, `budgets`, `recurring`, `reports`, `docs`, `ci`, `deps`, `claude`.
+`api`, `web`, `shared`, `db`, `agent`, `whatsapp`, `jobs`, `obs`, `identity`, `workspaces`, `access`, `ledger`, `cards`,
+`contacts`, `planning`, `attachments`, `notifications`, `reports`, `docs`, `adr`, `ci`, `deps`, `claude`.
 
 Examples:
 - `feat(cards): assign purchases to invoice by closing day`

@@ -15,6 +15,41 @@
       "when": 1790136808937,
       "tag": "0001_users_and_workspaces",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790137485586,
+      "tag": "0002_access_enums_and_module_actions",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790137494407,
+      "tag": "0003_seed_module_actions",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790137519624,
+      "tag": "0004_module_actions_read_only",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790137563145,
+      "tag": "0005_roles_and_role_permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790137581135,
+      "tag": "0006_role_permissions_require_view",
+      "breakpoints": true
     }
   ]
 }
