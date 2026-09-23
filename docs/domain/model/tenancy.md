@@ -64,7 +64,9 @@ with the default matrix, and the creator's owner membership.
 `workspace_id`, `email` or `phone_e164`, `role_id`, `token_hash`, `invited_by_user_id`, `expires_at`, `accepted_at`.
 
 ## Settings (typed 1:1 tables)
-### `workspace_settings` (PK = `workspace_id`)
+### `workspace_settings` (PK = `workspace_id`, module `workspaces`)
+Created with defaults by `createWorkspace()`. Every rule below is a CHECK constraint.
+
 | Column | Type | Default | Meaning |
 |---|---|---|---|
 | `currency` | char(3) | `BRL` | Default currency for new accounts |
@@ -73,8 +75,8 @@ with the default matrix, and the creator's owner membership.
 | `period_anchor` | enum `period_anchor`: `calendar_month`, `day_of_month`, `nth_business_day` | `calendar_month` | How the **financial month** starts |
 | `period_anchor_value` | smallint null | null | Day (1–31) or N (1–10), depending on the anchor |
 | `installment_budget_view` | enum: `purchase_month`, `per_installment` | `per_installment` | How installment purchases count in budgets (reports only, see `ledger.md`) |
-| `budget_base` | enum `income_nature`: `fixed`, `all` | `fixed` | The budget is sized from fixed income only (the household policy) |
-| `variable_income_target_account_id` | FK ledger_accounts null | null | Where the "guardar o variável" suggestion moves money (e.g. the reserve) |
+| `budget_base` | enum `budget_base`: `fixed_income`, `all_income` | `fixed_income` | The budget is sized from fixed income only (the household policy) |
+| `variable_income_target_account_id` | FK ledger_accounts null | null | Where the "guardar o variável" suggestion moves money (e.g. the reserve). **Added with the ledger PR** (needs `ledger_accounts`) |
 | `week_starts_on` | smallint | 0 (Sunday) | |
 | `pix_receiving_key` | text null | null | Key put in charge messages (Pix copia-e-cola) |
 | `pix_receiver_name`, `pix_receiver_city` | text null | null | Required by the Pix payload format |
@@ -89,10 +91,17 @@ with the default matrix, and the creator's owner membership.
 | `day_of_month` | 31 | 2026-10-31 → 2026-11-29 (a day missing in a month → last day of that month) |
 | `nth_business_day` | 5 | 5th business day of October → the day before the 5th business day of November (uses `holidays`) |
 
-### `user_preferences` (PK = `user_id`)
-`default_workspace_id`, `language`, `quiet_hours_start`, `quiet_hours_end` (no notifications in that window).
+### `user_preferences` (PK = `user_id`, module `identity`, global)
+`language` (tag like `pt-BR`), `quiet_hours_start` / `quiet_hours_end` (set as a pair; no
+notifications in that window). Removed with the user.
 
-### `membership_preferences` (PK = `workspace_id, user_id`)
+**Deferred:** `default_workspace_id` (which workspace the WhatsApp agent uses). It would make
+`identity` and `workspaces` depend on each other, so it's decided in the WhatsApp PR (options: a
+small table in `members`, or an FK declared only in SQL).
+
+### `membership_preferences` (PK = `workspace_id, user_id`, module `members`)
+Created with defaults by `addMember()`. Kept when a member leaves and comes back.
+
 | Column | Default | Meaning |
 |---|---|---|
 | `notify_bills_days_before` | 3 | Reminder lead time for bills and invoices |

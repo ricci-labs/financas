@@ -6,7 +6,8 @@ updated: 2026-09-23
 
 # Data model
 
-Status: **being implemented** in small PRs. Implemented so far: `users`, `workspaces`, `module_actions`, `roles`, `role_permissions`, `memberships`.
+Status: **being implemented** in small PRs. Implemented so far: `users`, `user_preferences`, `workspaces`, `workspace_settings`,
+`module_actions`, `roles`, `role_permissions`, `memberships`, `membership_preferences`.
 The Drizzle schema (`apps/api/src/modules/*/*.table.ts`) is the source of truth for what exists;
 these docs keep the *why*, the invariants and the examples.
 

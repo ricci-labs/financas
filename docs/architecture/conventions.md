@@ -84,6 +84,8 @@ without comments.
 - Change `*.table.ts`, run `pnpm db:generate --name=<what_changed>`, **read the SQL**, commit it. Never edit an applied migration.
 - SQL that Drizzle can't express (functions, triggers) goes in a custom migration: `pnpm db:generate --custom --name=<what>`, then write the SQL in the generated file.
 - CI fails if a table definition changed without its migration.
+- **CHECK constraints must handle NULL explicitly.** A CHECK passes when its expression is NULL, so `value between 1 and 31` accepts a NULL `value`. Write `value is not null and value between 1 and 31`, or compare nullness directly (`(a is null) = (b is null)`). Add a test with the NULL case.
+- A migration that exists only on your machine (not merged) may be regenerated. Delete its SQL, snapshot and journal entry, then `pnpm db:reset` and migrate. Once merged, never edit it.
 - Shared column helpers (`core/db/columns.ts`): `primaryId()`, `timestamps()`, `softDelete(() => users.id)`. Use them in every table.
 - A destructive change (drop/rename) needs an explicit mention to the user before it runs anywhere with real data.
 
