@@ -1,6 +1,6 @@
 import type { Database } from '@api/core/db/client'
 import type { WorkspaceTransaction } from '@api/core/db/tx'
-import { workspaces } from '@api/modules/workspaces/workspaces.table'
+import { workspaceSettings, workspaces } from '@api/modules/workspaces/workspaces.table'
 import { sql } from 'drizzle-orm'
 
 type NewWorkspace = {
@@ -20,4 +20,8 @@ export async function reserveWorkspaceId(db: Database): Promise<string> {
 
 export async function insertWorkspace(tx: WorkspaceTransaction, workspace: NewWorkspace) {
   await tx.insert(workspaces).values(workspace)
+}
+
+export async function insertDefaultSettings(tx: WorkspaceTransaction, workspaceId: string) {
+  await tx.insert(workspaceSettings).values({ workspaceId })
 }

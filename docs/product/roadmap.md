@@ -17,7 +17,7 @@ updated: 2026-09-23
 - [x] DB foundation: Postgres 18, owner/app roles, Drizzle migrations, `users` + `workspaces` with RLS, isolation tests in CI
 - [x] DB: access control (`module_actions`, `roles`, `role_permissions`)
 - [x] DB: memberships (owner invariant) + workspace creation service
-- [ ] DB: settings and preferences
+- [x] DB: settings and preferences (`workspace_settings`, `user_preferences`, `membership_preferences`)
 - [ ] DB: invitations
 - [ ] DB: ledger (accounts, entries, postings, cards, invoices)
 - [ ] DB: contacts/charges, planning, support tables

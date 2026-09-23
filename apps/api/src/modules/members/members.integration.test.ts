@@ -1,6 +1,7 @@
 import { withWorkspace } from '@api/core/db/tx'
 import { roles } from '@api/modules/access/access.table'
-import { memberships } from '@api/modules/members/members.table'
+import { addMember } from '@api/modules/members'
+import { membershipPreferences, memberships } from '@api/modules/members/members.table'
 import { workspaces } from '@api/modules/workspaces/workspaces.table'
 import { connectTestDatabases, POSTGRES_ERRORS, postgresErrorCodeOf } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
@@ -25,7 +26,7 @@ async function systemRoleId(workspaceId: string, key: SystemRoleKey): Promise<st
   return role.id
 }
 
-async function addMember(workspaceId: string, userId: string, key: SystemRoleKey) {
+async function insertMembershipWithRole(workspaceId: string, userId: string, key: SystemRoleKey) {
   const roleId = await systemRoleId(workspaceId, key)
   const [membership] = await withWorkspace(databases.app, workspaceId, (tx) =>
     tx
@@ -57,7 +58,7 @@ afterAll(async () => {
 describe('memberships', () => {
   it('are isolated per workspace', async () => {
     const newcomer = await fixtures.createUser('newcomer')
-    await addMember(workspaceB, newcomer, 'member')
+    await insertMembershipWithRole(workspaceB, newcomer, 'member')
     const visibleInA = await withWorkspace(databases.app, workspaceA, (tx) =>
       tx.select({ userId: memberships.userId }).from(memberships),
     )
@@ -66,21 +67,21 @@ describe('memberships', () => {
 
   it('allow one active membership per user and workspace', async () => {
     const newcomer = await fixtures.createUser('newcomer')
-    await addMember(workspaceA, newcomer, 'member')
-    const secondTime = addMember(workspaceA, newcomer, 'viewer')
+    await insertMembershipWithRole(workspaceA, newcomer, 'member')
+    const secondTime = insertMembershipWithRole(workspaceA, newcomer, 'viewer')
     expect(await postgresErrorCodeOf(secondTime)).toBe(POSTGRES_ERRORS.uniqueViolation)
   })
 
   it('allow a user back after the old membership was soft deleted', async () => {
     const returning = await fixtures.createUser('returning')
-    const firstMembership = await addMember(workspaceA, returning, 'member')
+    const firstMembership = await insertMembershipWithRole(workspaceA, returning, 'member')
     await withWorkspace(databases.app, workspaceA, (tx) =>
       tx
         .update(memberships)
         .set({ deletedAt: new Date() })
         .where(eq(memberships.id, firstMembership)),
     )
-    const comeback = addMember(workspaceA, returning, 'viewer')
+    const comeback = insertMembershipWithRole(workspaceA, returning, 'viewer')
     expect(await postgresErrorCodeOf(comeback)).toBeUndefined()
   })
 
@@ -136,7 +137,7 @@ describe('owner invariant', () => {
 
   it('allows an owner to leave when another owner remains', async () => {
     const coOwner = await fixtures.createUser('co-owner')
-    await addMember(workspaceB, coOwner, 'owner')
+    await insertMembershipWithRole(workspaceB, coOwner, 'owner')
     const creatorLeaves = withWorkspace(databases.app, workspaceB, (tx) =>
       tx
         .update(memberships)
@@ -151,5 +152,70 @@ describe('owner invariant', () => {
     const { workspaceId } = await fixtures.createWorkspaceOwnedBy(eraser, 'Erase')
     const erase = databases.owner.delete(workspaces).where(eq(workspaces.id, workspaceId))
     expect(await postgresErrorCodeOf(erase)).toBeUndefined()
+  })
+})
+
+describe('membership preferences', () => {
+  function preferencesOf(workspaceId: string, userId: string) {
+    return withWorkspace(databases.app, workspaceId, (tx) =>
+      tx.select().from(membershipPreferences).where(eq(membershipPreferences.userId, userId)),
+    )
+  }
+
+  it('are created with defaults for the workspace creator', async () => {
+    const [preferences] = await preferencesOf(workspaceA, creatorId)
+    expect(preferences).toMatchObject({
+      notifyBillsDaysBefore: 3,
+      notifyChannel: 'whatsapp',
+      notifyDailyDigest: false,
+      notifyBudgetThresholdPct: 80,
+      notifyVariableIncome: true,
+    })
+  })
+
+  it('survive a member leaving and coming back', async () => {
+    const returning = await fixtures.createUser('returning-prefs')
+    const memberRole = await systemRoleId(workspaceA, 'member')
+    const firstMembership = await withWorkspace(databases.app, workspaceA, (tx) =>
+      addMember(tx, { workspaceId: workspaceA, userId: returning, roleId: memberRole }),
+    )
+    await withWorkspace(databases.app, workspaceA, async (tx) => {
+      await tx
+        .update(membershipPreferences)
+        .set({ notifyDailyDigest: true })
+        .where(eq(membershipPreferences.userId, returning))
+      await tx
+        .update(memberships)
+        .set({ deletedAt: new Date() })
+        .where(eq(memberships.id, firstMembership))
+    })
+
+    await withWorkspace(databases.app, workspaceA, (tx) =>
+      addMember(tx, { workspaceId: workspaceA, userId: returning, roleId: memberRole }),
+    )
+
+    const [preferences] = await preferencesOf(workspaceA, returning)
+    expect(preferences?.notifyDailyDigest).toBe(true)
+  })
+
+  it('are isolated per workspace', async () => {
+    const seenFromA = await withWorkspace(databases.app, workspaceA, (tx) =>
+      tx.select({ workspaceId: membershipPreferences.workspaceId }).from(membershipPreferences),
+    )
+    expect(seenFromA.every((row) => row.workspaceId === workspaceA)).toBe(true)
+  })
+
+  it.each([
+    ['reminders 31 days before', { notifyBillsDaysBefore: 31 }],
+    ['a 0% budget alert', { notifyBudgetThresholdPct: 0 }],
+    ['a 101% budget alert', { notifyBudgetThresholdPct: 101 }],
+  ])('reject %s', async (_label, change) => {
+    const update = withWorkspace(databases.app, workspaceA, (tx) =>
+      tx
+        .update(membershipPreferences)
+        .set(change)
+        .where(eq(membershipPreferences.userId, creatorId)),
+    )
+    expect(await postgresErrorCodeOf(update)).toBe(POSTGRES_ERRORS.checkViolation)
   })
 })
