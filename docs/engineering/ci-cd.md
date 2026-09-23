@@ -1,7 +1,7 @@
 ---
 summary: GitHub Actions pipelines (PR checks, main build and deploy), image registry, Dokploy trigger, Dependabot policy.
 read_when: Editing .github/workflows, changing the Dockerfile or deploy, or when CI fails.
-updated: 2026-09-22
+updated: 2026-09-23
 ---
 
 # CI/CD
@@ -11,20 +11,32 @@ Decision: `../decisions/0010-deploy-ghcr-dokploy.md`.
 ## Pipelines
 
 ### `ci.yml`: on every PR and on push to `main`
-Jobs run in parallel where possible, with the pnpm store cached (`actions/setup-node` + `pnpm/action-setup`).
+Every job shows up as its own named check on the PR, so a red check says what broke without
+opening logs. Setup (pnpm, Node from `.node-version`, cached install) lives in the composite
+action `.github/actions/setup`.
 
-| Step | Command | Fails on |
+| Check | Steps | Fails on |
 |---|---|---|
-| Install | `pnpm install --frozen-lockfile` | Lockfile out of sync |
-| Lint/format | `pnpm lint` (Biome) | Any lint or format issue |
-| No comments | `pnpm lint:comments` | A comment in source code (ADR 0017) |
-| Types | `pnpm typecheck` (`tsc -p` per package, TypeScript 7) | Type errors |
-| Architecture | `pnpm depcruise` (parsed with SWC) | A violation of `../architecture/dependency-rules.md` |
-| Tests | `pnpm test` with a `postgres:16` service container | Failing tests |
-| Build | `pnpm build` (web + api) | Build errors |
-| Docs | `pnpm docs:check` | Missing frontmatter (`summary`, `read_when`, `updated`) or broken relative links |
-| Secrets | `gitleaks` (separate job) | Committed secrets |
-| PR title | `commitlint` (separate job) | A PR title that isn't a valid Conventional Commit (it becomes the squash commit) |
+| 🧹 Code quality | Biome lint/format · no comments · type check · architecture rules · docs | Style, a comment in source (ADR 0017), type errors, a dependency-rule violation, bad frontmatter or broken doc links |
+| 🧪 Tests | Vitest in every package | A failing test. Failures are **annotated on the PR diff** (file and line) by the `github-actions` reporter |
+| 📦 Build | Web build + API bundle | Build errors |
+| 📝 PR title | commitlint on the title | A title that isn't a Conventional Commit (it becomes the squash commit) |
+| 🔐 Secret scan | gitleaks over the full history | Committed secrets |
+
+Rules for workflow changes:
+- Every job and step has a human name (what it checks, not the command).
+- Repeated setup goes into a composite action, not copy-paste.
+- Validate workflows locally with `actionlint` before pushing.
+
+### Planned expansion
+Added when the matching code exists, each as its own named check:
+| Check | When |
+|---|---|
+| 🐘 Integration tests: services and RLS against a real Postgres (service container) | Schema PR |
+| 📊 Coverage summary in the job summary and a PR comment | Once services exist |
+| 🎭 E2E: Playwright on the main web flows | Web foundation |
+| 🤖 Agent evals on prompt/tool changes (path-filtered, needs an API key secret) | Agent PR |
+| 🐳 Docker image build (PRs) + push to GHCR and deploy (`main`) | Deploy PR |
 
 ### `deploy.yml`: on push to `main`, after `ci.yml` passes
 1. Build the Docker image (`docker/Dockerfile`, multi-stage) with Buildx and layer cache (`type=gha`).

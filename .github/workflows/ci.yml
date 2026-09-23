@@ -1,4 +1,4 @@
-name: ci
+name: CI
 
 on:
   pull_request:
@@ -13,45 +13,83 @@ permissions:
   contents: read
 
 jobs:
-  check:
+  quality:
+    name: 🧹 Code quality
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v5
-        with:
-          node-version-file: .node-version
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm lint
-      - run: pnpm lint:comments
-      - run: pnpm typecheck
-      - run: pnpm depcruise
-      - run: pnpm test
-      - run: pnpm build
-      - run: pnpm docs:check
+      - name: Check out code
+        uses: actions/checkout@v5
+
+      - name: Set up workspace
+        uses: ./.github/actions/setup
+
+      - name: Lint and format (Biome)
+        run: pnpm lint
+
+      - name: No comments in source code
+        run: pnpm lint:comments
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Architecture rules
+        run: pnpm depcruise
+
+      - name: Docs frontmatter and links
+        run: pnpm docs:check
+
+  tests:
+    name: 🧪 Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v5
+
+      - name: Set up workspace
+        uses: ./.github/actions/setup
+
+      - name: Run tests
+        run: pnpm test
+
+  build:
+    name: 📦 Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v5
+
+      - name: Set up workspace
+        uses: ./.github/actions/setup
+
+      - name: Build web and API
+        run: pnpm build
 
   pr-title:
+    name: 📝 PR title
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v5
-        with:
-          node-version-file: .node-version
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - env:
+      - name: Check out code
+        uses: actions/checkout@v5
+
+      - name: Set up workspace
+        uses: ./.github/actions/setup
+
+      - name: Title follows Conventional Commits
+        env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: echo "$PR_TITLE" | pnpm commitlint
 
   secrets:
+    name: 🔐 Secret scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - name: Check out code
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
+
+      - name: Scan history with gitleaks
+        uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
