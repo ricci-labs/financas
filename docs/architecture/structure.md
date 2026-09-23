@@ -99,7 +99,8 @@ src/
 │   ├── http/errors.ts        # AppError hierarchy → HTTP status
 │   ├── observability/        # OTel register, pino logger, metrics registry, spans, errors
 │   │                         #   (see docs/operations/observability.md)
-│   └── clock.ts              # injectable "now"
+│   ├── security/tokens.ts    # random tokens and their SHA-256 hashes
+│   └── clock.ts              # injectable "now" (Clock, systemClock)
 ├── modules/                  # one folder per domain (see "Module anatomy")
 │   ├── identity/             # users, sessions, channel identities (WhatsApp numbers)
 │   ├── workspaces/           # workspaces, creation flow, settings tables

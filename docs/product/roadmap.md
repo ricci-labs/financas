@@ -18,7 +18,8 @@ updated: 2026-09-23
 - [x] DB: access control (`module_actions`, `roles`, `role_permissions`)
 - [x] DB: memberships (owner invariant) + workspace creation service
 - [x] DB: settings and preferences (`workspace_settings`, `user_preferences`, `membership_preferences`)
-- [ ] DB: invitations
+- [x] DB: invitations (create + accept flow)
+- [ ] Next session with the user: review the tenancy/access base, then the ledger PRs
 - [ ] DB: ledger (accounts, entries, postings, cards, invoices)
 - [ ] DB: contacts/charges, planning, support tables
 - [ ] Observability core (OTel register, metrics, error refs), Dockerfile, deploy workflow
