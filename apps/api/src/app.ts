@@ -4,6 +4,7 @@ import { Hono } from 'hono'
 export type AppDeps = {
   version: string
   startedAt: number
+  isDatabaseReachable: () => Promise<boolean>
 }
 
 export function createApp(deps: AppDeps) {
