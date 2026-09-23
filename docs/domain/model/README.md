@@ -7,7 +7,7 @@ updated: 2026-09-23
 # Data model
 
 Status: **being implemented** in small PRs. Implemented so far: `users`, `user_preferences`, `workspaces`, `workspace_settings`,
-`module_actions`, `roles`, `role_permissions`, `memberships`, `membership_preferences`.
+`module_actions`, `roles`, `role_permissions`, `memberships`, `membership_preferences`, `invitations`.
 The Drizzle schema (`apps/api/src/modules/*/*.table.ts`) is the source of truth for what exists;
 these docs keep the *why*, the invariants and the examples.
 
@@ -55,6 +55,7 @@ PLAN  │ recurrence_rules ──< planned_occurrences ──(matched_entry)─�
 | Deletion | **Soft delete everywhere** (below). Hard delete only for LGPD erasure of a whole workspace and for purging trashed files. |
 | Naming | snake_case tables in the plural; FK columns `<entity>_id`. |
 | Global reference tables | Tables without `workspace_id` that hold fixed data (e.g. `module_actions`) are **read-only for the app role**: the migration revokes INSERT/UPDATE/DELETE/TRUNCATE from `financas_app`. |
+| Pre-workspace lookups | A narrow `SECURITY DEFINER` function that returns only a workspace id (ADR 0019). `SET search_path`, `REVOKE ... FROM PUBLIC`, `GRANT EXECUTE` to the app role only. |
 | Tenant policy | Every tenant table uses the `tenantIsolation(tableName, workspaceColumn)` helper (`core/db/tenancy.ts`). |
 
 ## Archive vs soft delete

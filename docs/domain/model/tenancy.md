@@ -60,8 +60,28 @@ membership, the last active owner can't be removed or demoted, and the owner rol
 `uuidv7()`, then in one workspace-scoped transaction insert the workspace, the four system roles
 with the default matrix, and the creator's owner membership.
 
-### `invitations`
-`workspace_id`, `email` or `phone_e164`, `role_id`, `token_hash`, `invited_by_user_id`, `expires_at`, `accepted_at`.
+### `invitations` (module `members`)
+| Column | Notes |
+|---|---|
+| `workspace_id`, `id` | |
+| `email` / `phone_e164` | Exactly one (`num_nonnulls = 1`), format-checked (E.164 `+` and 8–15 digits) |
+| `role_id` | Composite FK: a role of the same workspace |
+| `token_hash` | SHA-256 of a random 32-byte base64url token. Globally unique. The raw token exists only in the invite link |
+| `invited_by_user_id` | |
+| `expires_at` | 7 days after creation (after `created_at`, CHECK) |
+| `accepted_at` + `accepted_by_user_id` | Set together (CHECK) |
+| `deleted_at` | Revoking = soft delete |
+
+One pending invitation per contact and workspace (partial unique indexes). RLS isolated.
+
+**Flow** (`members` service):
+- `createInvitation()` generates the token, stores its hash, and returns the raw token for the link.
+- `acceptInvitation(token, userId)` hashes the token, finds the workspace with the SECURITY DEFINER
+  function `invitation_workspace_id()` (ADR 0019), then inside that workspace refuses revoked,
+  accepted or expired invitations and existing members (`ConflictError` codes), adds the member with
+  the invited role, and marks the invitation accepted.
+- **Open question:** acceptance is token-based (whoever holds the link). Requiring the accepting
+  user's verified email/phone to match can be added when auth exists.
 
 ## Settings (typed 1:1 tables)
 ### `workspace_settings` (PK = `workspace_id`, module `workspaces`)

@@ -59,7 +59,7 @@ without comments.
 ## Dates
 - Calendar dates (`occurredOn`, `closingDate`, `dueDate`) are `date` columns and `YYYY-MM-DD` strings in TS. They are not `Date` objects, which avoids timezone shifts.
 - Timestamps (`createdAt`) are `timestamptz`.
-- "Today" is computed in `America/Sao_Paulo` through `core/clock.ts`. Pure domain functions take it as a parameter.
+- "Today" is computed in `America/Sao_Paulo` through `core/clock.ts`. Pure domain functions take it as a parameter. Services take an optional `clock: Clock = systemClock` argument so tests can move time (e.g. an expired invitation).
 
 ## IDs
 - UUID v7 (time-ordered), default `uuidv7()` in Postgres 18. The app may pass its own id when it needs it before the insert.
