@@ -4,6 +4,10 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    commit-message:
+      prefix: build
+      prefix-development: build
+      include: scope
     ignore:
       - dependency-name: baileys
     groups:
@@ -18,3 +22,5 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    commit-message:
+      prefix: ci
