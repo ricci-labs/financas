@@ -1,0 +1,24 @@
+name: financas-dev
+
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: financas
+      OWNER_DB_PASSWORD: owner_dev_password
+      APP_DB_PASSWORD: app_dev_password
+    ports:
+      - 127.0.0.1:5433:5432
+    volumes:
+      - db-data:/var/lib/postgresql
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U postgres -d financas]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  db-data:
