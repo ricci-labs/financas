@@ -10,9 +10,9 @@ Status: the `ops:*` scripts are planned for the scaffold (`apps/api/scripts/ops/
 exist, use the raw commands shown.
 
 ## Access
-- The app runs on the same server as Claude Code. The user `vinicius` can run `docker` without sudo.
+- The app runs on the same server as Claude Code, which can read container logs with `docker`.
 - Container names come from Dokploy. Find them with `docker ps --filter name=financas`.
-- Metrics: `curl -s localhost:9464/metrics` from inside the container network. Netdata's API is on `localhost:19999`.
+- Metrics: `curl -s <api-container>:9464/metrics` from inside the container network. Netdata also exposes a local API.
 
 ## Ops scripts (stable interface)
 | Script | Does | Raw equivalent |

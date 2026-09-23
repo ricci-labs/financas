@@ -14,7 +14,12 @@ updated: 2026-09-22
 | `product/household-finances.md` | Touching incomes, commissions, budgets or anything about how the couple manages money |
 | `product/roadmap.md` | Choosing what to build next, checking MVP scope, or looking up open questions |
 | `domain/glossary.md` | Naming anything, or turning a Portuguese term from the user into code |
-| `domain/model.md` | Creating or changing tables, entities or relationships |
+| `domain/model/README.md` | Creating or changing tables: conventions, map, enums vs config tables |
+| `domain/model/tenancy.md` | Users, workspaces, memberships, settings/preferences |
+| `domain/model/ledger.md` | Recording money: accounts, entries, postings, cards, invoices (with examples) |
+| `domain/model/planning.md` | Forecasts, recurring bills, financial period, budgets, goals |
+| `domain/model/third-parties.md` | Contacts, shared purchases, charges, settlements |
+| `domain/model/support.md` | Tags, attachments, notifications, audit, agent tables |
 | `domain/billing-and-installments.md` | Anything with card invoices, installments, competence month or cash month |
 | `architecture/overview.md` | You need the big picture: stack, runtime topology, request flows |
 | `architecture/structure.md` | Creating files or folders, or deciding where code goes |
@@ -41,4 +46,5 @@ These docs are written mainly for Claude, so they are built to be cheap to route
 - **Use concrete numeric examples** for domain rules. They double as test cases.
 - **Mark uncertainty** with **Open question:** or **Assumption:**. Never state a guess as fact.
 - **Don't duplicate code.** Link the path (`apps/api/src/...`) and describe intent.
+- **Public repo: no real data.** Use placeholders (Member A/B, Card X, round amounts). Real household facts go to the production DB or `.private/` (gitignored).
 - **Glossary terms are canonical.** Use the English code name and add the Portuguese term the first time it appears if that helps.

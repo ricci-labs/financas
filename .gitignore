@@ -8,6 +8,7 @@ build/
 .vite/
 
 # env & secrets
+.private/
 .env
 .env.*
 !.env.example
