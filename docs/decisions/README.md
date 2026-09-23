@@ -25,6 +25,7 @@ updated: 2026-09-22
 | 0015 | [Module × action permissions with custom roles](0015-module-permissions.md) | Accepted |
 | 0016 | [Soft delete everywhere; entry edits by replacement](0016-soft-delete.md) | Accepted |
 | 0017 | [Self-documenting code, no comments, @ aliases](0017-self-documenting-code.md) | Accepted |
+| 0018 | [Database roles and RLS enforcement](0018-database-roles-and-rls.md) | Accepted |
 
 ## Rules
 - ADRs are append-only. To change a decision, write a new ADR that supersedes the old one and set the old one to `Superseded by NNNN`.

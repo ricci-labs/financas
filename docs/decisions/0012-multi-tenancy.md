@@ -9,6 +9,7 @@ updated: 2026-09-22
 - **Status:** Accepted
 - **Date:** 2026-09-22
 - **Changes:** the "single household" assumption in the first draft of `../product/vision.md`.
+- **Refined by:** 0018 (the app role is not the owner, so RLS applies without forcing).
 
 ## Context
 It starts with one couple, but the user wants the app ready for friends and possibly third parties later: many people, each in private, isolated spaces. A user may create several spaces (e.g. "Casa" and "Pessoal"). Adding tenancy later would mean touching every table and query.

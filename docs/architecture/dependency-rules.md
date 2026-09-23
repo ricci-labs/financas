@@ -31,7 +31,9 @@ routes / agent tools / jobs / channels
 | # | Rule | Why |
 |---|---|---|
 | 1 | `core/` imports nothing from `modules/`, `agent/`, `channels/`, `jobs/` | Infrastructure stays reusable and free of cycles |
-| 2 | Code outside a module imports only its `index.ts` | Each module keeps a small public surface |
+| 2 | Code outside a module, and other modules, import a module only through its `index.ts` | Each module keeps a small public surface |
+| 2a | Exception: a `*.table.ts` may import another module's `*.table.ts` (foreign keys). Nothing else may import another module's table | The schema is one graph; data access still goes through services |
+| 2b | Test code (`*.test.ts`, `src/testing/`) may import tables and internals directly to seed data | Fixtures shouldn't need services; production code keeps every rule |
 | 3 | Only the module's own service imports its `*.repository.ts` | Every DB access goes through business rules |
 | 4 | `agent/`, `channels/`, `jobs/` call services, never repositories or `core/db` | One path to the data for every entry point |
 | 5 | Routes contain no business logic: validate, call a service, map the result | Logic can't drift between web and WhatsApp |

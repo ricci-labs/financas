@@ -17,7 +17,7 @@ Self-hosted on a small headless Debian homelab, deployed with Dokploy.
 
 ## Hard rules
 - **This repo is public.** Never commit real household data: amounts, incomes, bank or card names, people's names, phone numbers, addresses, screenshots with real data, `.env` values. Docs and tests use generic placeholders ("Member A", "Card X", round amounts). Real data lives only in the production database, or in gitignored files under `.private/`.
-- **Multi-tenant:** every tenant query runs through `core/db/tx.ts` with the workspace set (RLS). Tenant tables use composite FKs on `(workspace_id, id)` (`docs/domain/model/README.md`).
+- **Multi-tenant:** every tenant query runs inside `withWorkspace()` (`core/db/tx.ts`), connected as the app role (RLS, ADR 0018). Tenant tables use composite FKs on `(workspace_id, id)` (`docs/domain/model/README.md`).
 - **Double-entry ledger:** money moves only as balanced journal entries. Postings are immutable; edits replace the entry, and deletes are soft (`docs/domain/model/ledger.md`).
 - **Soft delete everywhere** (`deleted_at`); repositories filter it by default. Hard delete only for LGPD workspace erasure.
 - **Every route and agent tool declares its `(module, action)` permission** (`docs/domain/model/access-control.md`).
@@ -47,7 +47,10 @@ Node and pnpm live in `~/.local/share/pnpm/bin` (add it to `PATH` in non-login s
 |---|---|
 | `pnpm install` | Install everything and set up git hooks |
 | `pnpm dev` | API (tsx watch, :3100) + web (Vite, proxies `/api`) |
-| `pnpm check` | Everything CI runs: lint, no-comments, typecheck, depcruise, tests, docs |
+| `pnpm check` | Lint, no-comments, typecheck, depcruise, unit tests, docs (no DB needed) |
+| `pnpm db:up` / `db:down` / `db:reset` | Local Postgres 18 on 127.0.0.1:5433 (copy `.env.example` to `.env` once) |
+| `pnpm db:generate --name=x` / `pnpm db:migrate` | Generate a migration from `*.table.ts` changes (read the SQL!) / apply migrations |
+| `pnpm test:integration` | DB tests (`*.integration.test.ts`), needs `pnpm db:up` + migrations |
 | `pnpm test` | Vitest in every package |
 | `pnpm --filter @financas/shared test:watch` | Watch the domain tests |
 | `pnpm build` | Web build + API bundle |

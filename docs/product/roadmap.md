@@ -14,7 +14,10 @@ updated: 2026-09-22
 - [ ] **User reviews the data model** (next step)
 - [x] Scaffold the monorepo (pnpm workspaces, `apps/api`, `apps/web`, `packages/shared`), CI, quality gates
 - [x] Domain functions with tests: money, installments + multi-party allocation, billing cycle, financial period
-- [ ] Postgres + Drizzle schema + migrations + RLS (next PR)
+- [x] DB foundation: Postgres 18, owner/app roles, Drizzle migrations, `users` + `workspaces` with RLS, isolation tests in CI
+- [ ] DB: roles/permissions, memberships, invitations, settings (next PR)
+- [ ] DB: ledger (accounts, entries, postings, cards, invoices)
+- [ ] DB: contacts/charges, planning, support tables
 - [ ] Observability core (OTel register, metrics, error refs), Dockerfile, deploy workflow
 - [ ] Web foundation: TanStack Router/Query, shadcn/ui, layout
 - [ ] Remaining project skills (`new-module`, `db-migration`, `domain-rule`, `pr`) and Claude Code hooks

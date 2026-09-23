@@ -19,6 +19,7 @@ action `.github/actions/setup`.
 |---|---|---|
 | 🧹 Code quality | Biome lint/format · no comments · type check · architecture rules · docs | Style, a comment in source (ADR 0017), type errors, a dependency-rule violation, bad frontmatter or broken doc links |
 | 🧪 Tests | Vitest in every package | A failing test. Failures are **annotated on the PR diff** (file and line) by the `github-actions` reporter |
+| 🐘 Integration tests | Start Postgres · apply migrations · migrations match the schema · integration tests | A failing migration, a table changed without a migration, or a failing DB test (e.g. RLS isolation) |
 | 📦 Build | Web build + API bundle | Build errors |
 | 📝 PR title | commitlint on the title | A title that isn't a Conventional Commit (it becomes the squash commit) |
 | 🔐 Secret scan | gitleaks over the full history | Committed secrets |
@@ -32,7 +33,6 @@ Rules for workflow changes:
 Added when the matching code exists, each as its own named check:
 | Check | When |
 |---|---|
-| 🐘 Integration tests: services and RLS against a real Postgres (service container) | Schema PR |
 | 📊 Coverage summary in the job summary and a PR comment | Once services exist |
 | 🎭 E2E: Playwright on the main web flows | Web foundation |
 | 🤖 Agent evals on prompt/tool changes (path-filtered, needs an API key secret) | Agent PR |
