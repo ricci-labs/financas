@@ -16,7 +16,7 @@ updated: 2026-09-23
 - [x] Domain functions with tests: money, installments + multi-party allocation, billing cycle, financial period
 - [x] DB foundation: Postgres 18, owner/app roles, Drizzle migrations, `users` + `workspaces` with RLS, isolation tests in CI
 - [x] DB: access control (`module_actions`, `roles`, `role_permissions`)
-- [ ] DB: memberships + workspace creation service (next PR)
+- [x] DB: memberships (owner invariant) + workspace creation service
 - [ ] DB: settings and preferences
 - [ ] DB: invitations
 - [ ] DB: ledger (accounts, entries, postings, cards, invoices)

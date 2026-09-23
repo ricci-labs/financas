@@ -35,7 +35,7 @@ Decision: `../decisions/0009-trunk-based-squash-merge.md`.
 | `chore` | Maintenance that fits nothing else |
 
 **Scopes** (enforced by commitlint; extend the list in `commitlint.config.ts` when a module is added):
-`api`, `web`, `shared`, `db`, `agent`, `whatsapp`, `jobs`, `obs`, `identity`, `workspaces`, `access`, `ledger`, `cards`,
+`api`, `web`, `shared`, `db`, `agent`, `whatsapp`, `jobs`, `obs`, `identity`, `workspaces`, `access`, `members`, `ledger`, `cards`,
 `contacts`, `planning`, `attachments`, `notifications`, `reports`, `docs`, `adr`, `ci`, `deps`, `claude`.
 
 Examples:

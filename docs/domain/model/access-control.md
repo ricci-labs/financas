@@ -9,8 +9,8 @@ updated: 2026-09-23
 Decision: `../../decisions/0015-module-permissions.md`.
 
 Status: tables implemented in the `access` module (`module_actions`, `roles`, `role_permissions`). The matrix lives in
-`packages/shared/src/access` (single source for API, web and the DB seed). Membership, route
-middleware and agent tool gating come in the next PRs.
+`packages/shared/src/access` (single source for API, web and the DB seed). Memberships and
+the owner invariant are implemented in `members`. Route middleware and agent tool gating come later.
 
 ## Model
 - **Tenant isolation** (which workspace you can see at all) is handled by membership + RLS (`tenancy.md`).
@@ -62,9 +62,9 @@ The role must belong to the same workspace (composite FK). Keeping the `owner` r
 enforced by the service (next PR), not the DB, because the owner permissions are written when the
 workspace is created.
 
-### `memberships` (updated)
-`role_id` (composite FK to `roles`) replaces the old role enum. The workspace creator gets the `owner` role.
-At least one active owner per workspace (trigger).
+### `memberships` (module `members`, see `tenancy.md`)
+`role_id` (composite FK to `roles`) replaces the old role enum. The workspace creator gets the
+`owner` role. At least one active owner per workspace, enforced by triggers.
 
 ## Default matrix (system templates)
 `V` view · `C` create · `U` update · `D` delete

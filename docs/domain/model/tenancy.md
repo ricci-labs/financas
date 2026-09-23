@@ -1,7 +1,7 @@
 ---
 summary: Identity and multi-tenancy tables — users, WhatsApp identities, workspaces, memberships, invitations — and all settings/preferences tables (financial period, installment view, notifications).
 read_when: Working on auth, workspaces, memberships, invitations, settings screens, or anything scoped by tenant.
-updated: 2026-09-22
+updated: 2026-09-23
 ---
 
 # Tenancy, identity and settings
@@ -45,12 +45,20 @@ Web sessions: `id`, `user_id`, `token_hash`, `expires_at`, `last_seen_at`, `user
 | `created_by_user_id` | FK users | |
 | `archived_at` | timestamptz null | |
 
-### `memberships`
+### `memberships` (module `members`)
 | Column | Type | Notes |
 |---|---|---|
 | `workspace_id`, `user_id` | FKs | `unique (workspace_id, user_id)` among non-deleted |
 | `role_id` | composite FK to `roles` | Permissions come from the role (`access-control.md`) |
-| `deleted_at`, `deleted_by_user_id` | | Removing a member is a soft delete. At least one active owner per workspace (trigger). |
+| `deleted_at`, `deleted_by_user_id` | | Removing a member is a soft delete; a removed user can be added again. |
+
+**Owner invariant** (deferred constraint triggers): a workspace can't be created without an owner
+membership, the last active owner can't be removed or demoted, and the owner role can't lose its
+`owner` key. Erasing the whole workspace is still allowed.
+
+**Creating a workspace** (`createWorkspace()` in `modules/workspaces`): reserve the id with
+`uuidv7()`, then in one workspace-scoped transaction insert the workspace, the four system roles
+with the default matrix, and the creator's owner membership.
 
 ### `invitations`
 `workspace_id`, `email` or `phone_e164`, `role_id`, `token_hash`, `invited_by_user_id`, `expires_at`, `accepted_at`.
