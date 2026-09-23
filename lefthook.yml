@@ -1,0 +1,22 @@
+pre-commit:
+  parallel: true
+  jobs:
+    - name: biome
+      glob: '*.{js,mjs,cjs,ts,tsx,json,jsonc,css}'
+      run: pnpm biome check --write --no-errors-on-unmatched {staged_files}
+      stage_fixed: true
+    - name: no-comments
+      glob: '*.{js,mjs,cjs,ts,tsx}'
+      run: node scripts/check-no-comments.mjs {staged_files}
+    - name: gitleaks
+      run: command -v gitleaks >/dev/null && gitleaks git --staged --no-banner --redact || echo "gitleaks not installed locally, CI still checks"
+
+commit-msg:
+  jobs:
+    - name: commitlint
+      run: pnpm commitlint --edit {1}
+
+pre-push:
+  jobs:
+    - name: typecheck
+      run: pnpm typecheck

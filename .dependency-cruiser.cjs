@@ -1,0 +1,78 @@
+module.exports = {
+  forbidden: [
+    {
+      name: 'no-circular',
+      severity: 'error',
+      comment: 'Circular dependencies make modules impossible to reason about (rule 7).',
+      from: {},
+      to: { circular: true },
+    },
+    {
+      name: 'shared-is-pure',
+      severity: 'error',
+      comment: 'packages/shared never imports app code (packages table).',
+      from: { path: '^packages/shared' },
+      to: { path: '^apps/' },
+    },
+    {
+      name: 'shared-domain-no-io',
+      severity: 'error',
+      comment: 'Pure domain: no Node I/O, no DB, no HTTP (rule 8).',
+      from: { path: '^packages/shared/src/domain' },
+      to: { dependencyTypes: ['core'], path: '^(fs|net|http|https|child_process|node:)' },
+    },
+    {
+      name: 'web-no-api-runtime',
+      severity: 'error',
+      comment: 'The web may import only types from the API (packages table).',
+      from: { path: '^apps/web' },
+      to: { path: '^apps/api', dependencyTypesNot: ['type-only'] },
+    },
+    {
+      name: 'core-knows-no-domain',
+      severity: 'error',
+      comment: 'core/ imports nothing from modules, agent, channels or jobs (rule 1).',
+      from: { path: '^apps/api/src/core' },
+      to: { path: '^apps/api/src/(modules|agent|channels|jobs)' },
+    },
+    {
+      name: 'module-public-surface',
+      severity: 'error',
+      comment: 'Outside a module, import only its index.ts (rule 2).',
+      from: { path: '^apps/api/src/(?!modules/([^/]+)/)' },
+      to: { path: '^apps/api/src/modules/[^/]+/(?!index\\.ts$)' },
+    },
+    {
+      name: 'repository-owned-by-service',
+      severity: 'error',
+      comment: 'Only the owning service imports a repository (rule 3).',
+      from: { path: '^apps/api/src/', pathNot: '\\.service\\.ts$|/use-cases/' },
+      to: { path: '\\.repository\\.ts$' },
+    },
+    {
+      name: 'entry-points-use-services',
+      severity: 'error',
+      comment: 'agent, channels and jobs never touch the DB directly (rule 4).',
+      from: { path: '^apps/api/src/(agent|channels|jobs)' },
+      to: { path: '^apps/api/src/core/db' },
+    },
+    {
+      name: 'web-features-isolated',
+      severity: 'error',
+      comment: 'A web feature never imports another feature (web rule 2).',
+      from: { path: '^apps/web/src/features/([^/]+)/' },
+      to: { path: '^apps/web/src/features/', pathNot: '^apps/web/src/features/$1/' },
+    },
+  ],
+  options: {
+    doNotFollow: { path: 'node_modules' },
+    parser: 'swc',
+    tsPreCompilationDeps: true,
+    tsConfig: { fileName: 'tsconfig.base.json' },
+    exclude: { path: '(^|/)(dist|node_modules)/' },
+    enhancedResolveOptions: {
+      exportsFields: ['exports'],
+      conditionNames: ['import', 'require', 'node', 'default', 'types'],
+    },
+  },
+}
