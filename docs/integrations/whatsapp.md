@@ -10,6 +10,7 @@ Decision and alternatives: `../decisions/0003-baileys-direct.md`.
 
 ## Setup
 - A **dedicated SIM/number** for the bot, never a personal number. Baileys is unofficial, so a ban is possible and must not hit anyone's personal account.
+- One bot number serves all workspaces. A channel interface (`channels/whatsapp` behind `MessagingChannel`) allows moving to the official Cloud API if the product grows.
 - The Baileys version is **pinned exactly** in `package.json`. Upgrades are deliberate: read the changelog, then test pairing and send/receive.
 - Pairing: on first boot (or after logout) the QR code/pairing code is printed to the logs (Dokploy log view). Scan it from the bot's phone.
 
@@ -19,8 +20,8 @@ Decision and alternatives: `../decisions/0003-baileys-direct.md`.
 
 ## Inbound
 1. Ignore groups, broadcasts, status updates and messages sent by the bot itself.
-2. **Allowlist:** process only messages whose sender JID matches a `member.whatsappJid`. Drop everything else silently.
-3. Normalize to an internal type `{ memberId, messageId, text?, audio?, image?, quotedMessageId?, receivedAt }`.
+2. **Allowlist:** process only messages from a verified `channel_identities` address (→ user → workspace). A contact replying to a charge is handled separately: "parar"/"sair" sets `contacts.opted_out_at`; anything else gets a short fixed reply. Drop everything else silently.
+3. Normalize to an internal type `{ userId, workspaceId, messageId, text?, audio?, image?, quotedMessageId?, receivedAt }`.
 4. Deduplicate by `messageId`, because Baileys can deliver the same message twice on reconnect.
 5. Hand off to the agent without blocking the socket event loop.
 
@@ -41,5 +42,6 @@ Decision and alternatives: `../decisions/0003-baileys-direct.md`.
 
 ## Ban-risk mitigations
 - Low volume: two users and a handful of messages a day.
-- Never message numbers outside the allowlist, never bulk-send, never join groups.
+- Charges are sent **directly to contacts** (user decision, 2026-09-22; the user accepts the risk and will define anti-ban practices later). Built-in guards: outbox queue with spacing, `contact_messages_daily_cap`, opt-out, sender identified in the message.
+- Never bulk-send, never join groups.
 - Keep the pinned Baileys version reasonably current. Very old protocol versions get flagged.

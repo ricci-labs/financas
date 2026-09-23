@@ -1,5 +1,5 @@
 ---
-summary: Rules for card invoices (closing/due), installment splitting, refunds, and competence vs cash month — with worked examples that double as test cases.
+summary: Rules for card invoices (closing/due), installment splitting, multi-party allocation, refunds, and competence vs cash views — with worked examples that double as test cases.
 read_when: Any code or question involving card invoices, installments, refunds, competence month or cash month.
 updated: 2026-09-22
 ---
@@ -11,11 +11,11 @@ Implemented as pure functions in `packages/shared/src/domain/` (`billing-cycle.t
 
 ## Invoice assignment
 
-Each card has `closingDay` and `dueDay`.
+Each card has `closing_day` and `due_day` (`model/ledger.md` → `card_details`).
 
 Rules:
 1. A purchase made **before** the closing date goes to the invoice that closes on that date.
-2. **Assumption:** a purchase made **on** the closing date goes to the next invoice. Most Brazilian issuers work this way, but it must be checked per bank. If they differ, add a per-card flag.
+2. A purchase made **on** the closing date goes to the next invoice when `card_details.purchase_on_closing_day_goes_next` is true (the default, matching most Brazilian issuers). Otherwise it goes to the invoice that closes that day.
 3. If `closingDay` doesn't exist in a month (e.g. 31 in September), the closing date is the last day of that month. The same applies to `dueDay`.
 4. The due date is the first `dueDay` after the closing date. If `dueDay > closingDay`, it's in the same month; otherwise it's in the next month.
 5. `invoice.referenceMonth` is the **month of the due date** ("fatura de outubro" = due in October).
@@ -69,19 +69,49 @@ Card X, purchase 2026-09-15, R$ 1.000,00 in 3×:
 | 2 | 33333 | 2026-11-10 |
 | 3 | 33333 | 2026-12-10 |
 
+## Multi-party allocation
+When an installment purchase is shared (the household's own share plus one or more contacts), the
+amounts form a grid. **Rows** are the installments, fixed by the issuer (split rule above).
+**Columns** are the parties, with totals fixed by the user. Algorithm (`installments.ts`):
+
+1. For each installment `i < n`: each party gets `floor(c_i × s_p / T)`. Leftover cents in the row go one by one to the parties with the largest fractional part (ties: own share first, then contacts in input order).
+2. Last installment: each party gets `s_p − Σ(previous cells)`. The row then sums to `c_n` automatically.
+3. Cells equal to 0 produce no posting line.
+
+Where `c_i` = installment amount, `s_p` = party total, `T` = purchase total.
+
+### Examples
+TV R$ 1.200,00 in 3×, Contact J owes R$ 300,00 (the clean case; ledger example 2):
+
+| # | Card | Own | J |
+|---|---|---|---|
+| 1 | 40000 | 30000 | 10000 |
+| 2 | 40000 | 30000 | 10000 |
+| 3 | 40000 | 30000 | 10000 |
+
+R$ 1.000,00 in 3×, Contact J owes R$ 500,00 (rounding case):
+
+| # | Card | Own | J | Note |
+|---|---|---|---|---|
+| 1 | 33334 | 16667 | 16667 | exact |
+| 2 | 33333 | 16667 | 16666 | 1 leftover cent, tie → own first |
+| 3 | 33333 | 16666 | 16667 | last row absorbs the residuals |
+| Σ | 100000 | 50000 | 50000 | |
+
 ## Refunds
-- A refund (`kind = 'refund'`) is a credit on the **current open invoice** of the same card, linked with `refundOfId`.
-- **Open question:** a refund of an installment purchase. Banks either credit everything at once or cancel the future installments. MVP proposal: credit the full amount on the open invoice and leave future installments alone. Revisit when the couple hits a real case.
+- A refund is a `refund` entry crediting the card on the **current open invoice** and reducing the same expense category (`model/ledger.md`, example 7).
+- If the original purchase had contact shares, the refund reduces them proportionally (reverse receivable lines), using the same allocation rule.
+- **Open question:** a refund of an installment purchase. Banks either credit everything at once or cancel the future installments. MVP proposal: credit the full amount on the open invoice and leave future installments alone. Revisit when a real case shows up.
 
 ## Competence month vs cash month
+Every posting stores `effective_on`. For card installments it falls in the installment's invoice month.
 
-| Concept | Definition | Used for |
+| View | Groups by | Used for |
 |---|---|---|
-| `competenceMonth` | The month of `occurredOn` (when the purchase happened) | Budget vs spent per category |
-| `cashMonth` | Card: `referenceMonth` of the installment's invoice. Otherwise: the month of `occurredOn` | "Does the money close this month?", forecasts |
+| Competence (`purchase_month`) | `journal_entries.occurred_on` | "What did we buy this month?" |
+| Per installment (`per_installment`) | `postings.effective_on` | Monthly burden; the default budget view |
+| Cash | Card postings: `invoice.due_on`; others: `effective_on` | "Does the money close this month?", forecasts |
 
-**Open question (blocking):** how installments count in the **budget**.
-- Option A: all of it in the purchase month (`competenceMonth` of the transaction). A 10× TV blows up one month's budget.
-- Option B: each installment counts in its own invoice month. The budget reflects the monthly burden, but a big purchase looks small.
-
-Proposal: **B for budgets**, and show future installment commitments as a separate dashboard block so big purchases stay visible. This needs the couple's confirmation before it is implemented.
+The budget view is a **workspace setting** (`installment_budget_view`, default `per_installment`).
+Both views read the same stored data, so switching restates nothing. Future installment
+commitments are always shown in their own dashboard block, so big purchases stay visible.

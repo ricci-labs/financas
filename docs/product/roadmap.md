@@ -10,45 +10,48 @@ updated: 2026-09-22
 - [x] Stack and architecture defined (see `../decisions/`)
 - [x] Docs skeleton written
 - [x] Engineering process (git, PRs, CI/CD, skills) and observability designed
-- [ ] User gives more context on the problem → business rules and DB model (**next conversation topic**)
-- [ ] Answer the blocking open questions below (need the couple's input)
+- [x] Problem deep-dive with the user; data model proposed (`../domain/model/`)
+- [ ] **User reviews the data model** (next step)
 - [ ] Scaffold the monorepo (pnpm workspaces, `apps/api`, `apps/web`, `packages/shared`)
-- [ ] Domain model and first migrations
+- [ ] Schema + migrations + RLS; domain functions with tests
 
 ## Phase 1: MVP
-Goal: both partners record expenses through WhatsApp and see the month on the dashboard.
+Goal: the couple records everything through WhatsApp and the web, and always knows how much is still free to spend.
 
-- Household setup: members, WhatsApp numbers, cards (closing/due day), accounts, categories
-- Pure domain functions with tests: money, billing cycle, installments, competence
-- Transactions: expense, income, refund; card installments
-- Incomes: fixed salaries and commissions, with the budgeting policy
-- Monthly budget per category
-- WhatsApp agent (text only): record expense/income, query budget, invoice summary, undo last. Every write is confirmed.
-- Dashboard: month overview, budget vs spent, open invoices, future installment commitments
-- Deploy on Dokploy, with daily Postgres backup
+- Auth, workspaces, memberships, invitations, settings (financial period, budget view, reminders)
+- Ledger: accounts, cash, cards, categories, opening balances; entries with reversal
+- Cards: invoices, installments, invoice payment
+- Contacts: shared purchases (several contacts, installments), charges sent over WhatsApp, settlements
+- Planning: recurring bills and incomes, planned occurrences with matching, budgets, reserve goal
+- Reminders: bills, invoices, charges (outbox)
+- Attachments on entries (web upload + WhatsApp photo)
+- WhatsApp agent (text): expenses, incomes, transfers, settlements, charges, overview, undo; always confirmed
+- Dashboard: period overview (fixed income, spent, committed, free to spend), invoices (own vs others), contacts, upcoming bills
+- Deploy on Dokploy with backups and Level 0 observability
 
 ## Phase 2
 - Audio messages (transcription step; see `../integrations/ai-agent.md`)
 - Receipt photos (Claude vision)
-- Recurring bills generated automatically
+- Auto-recorded recurring entries (`auto_record`)
 - Daily/weekly WhatsApp digest
 - Commission waterfall automation
+- NFC-e QR code reading (itemized receipts)
+- Anti-ban practices for contact messaging
 
 ## Phase 3
 - Statement and invoice import (OFX/CSV/PDF) with reconciliation against recorded transactions
 - Goals and emergency reserve tracking
 - Reports: month over month, category trends
+- Cross-workspace grouped view
+- Opening to friends: onboarding, invitations at scale, LGPD export/erasure flows
 
 ## Open questions
-Blocking for the domain model:
-1. Installments and budget: does a 10× purchase count fully in the purchase month, or one installment per invoice month? (`../domain/billing-and-installments.md`)
-2. Cards: list, holders, closing and due days; how each bank handles a purchase made on the closing day.
-3. Pay days for salaries; timing of commissions.
-
-Non-blocking:
-4. Category list: existing or new?
-5. Transcription for audio: local whisper.cpp vs external API.
-6. Model for the agent: default `claude-opus-5`; whether to test cheaper models once real message samples exist.
-7. Alert channel (ntfy, Telegram, email). Must not be WhatsApp.
-8. Remote access to the dashboard and deploy trigger (Tailscale vs Cloudflare Tunnel), see `../operations/deploy.md`.
-9. Offsite backup destination.
+1. Real data for the couple's setup (accounts, cards, closing/due days, pay days): collected at onboarding, stored only in the DB, never in the repo.
+2. Refund of installment purchases (`../domain/billing-and-installments.md`).
+3. Web auth method (password vs magic link vs WhatsApp code).
+4. Transcription for audio: local whisper.cpp vs external API.
+5. Model for the agent: default `claude-opus-5`; test cheaper models once real message samples exist.
+6. Alert channel (ntfy, Telegram, email). Must not be WhatsApp.
+7. Remote access to the dashboard and deploy trigger (Tailscale vs Cloudflare Tunnel), see `../operations/deploy.md`.
+8. Offsite backup destination.
+9. Anti-ban practices for charges sent to contacts.

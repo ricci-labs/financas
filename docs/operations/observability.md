@@ -35,10 +35,10 @@ Output: one JSON object per line to stdout. Docker keeps it (with rotation, see 
 | `time`, `level`, `msg` | | pino defaults (`level` numeric: 30 info, 40 warn, 50 error, 60 fatal) |
 | `service`, `version`, `env` | `financas-api`, `3f9c2a1`, `production` | `version` = git SHA baked into the image |
 | `trace_id`, `span_id` | | Injected automatically |
-| `event` | `transaction.created` | **Stable name from the catalog below.** Filter on it, not on `msg`. |
-| `module` | `transactions` | From the child logger |
+| `event` | `entry.created` | **Stable name from the catalog below.** Filter on it, not on `msg`. |
+| `module` | `ledger` | From the child logger |
 | `channel` | `web` \| `whatsapp` \| `job` | Entry point of the unit of work |
-| `memberId` | UUID | Never a phone number or JID |
+| `workspaceId`, `userId` | UUID | Never a phone number or JID |
 | `err` | `{ type, code, message, stack, cause }` | Serialized with the full `cause` chain |
 | `durationMs` | | On completion events |
 
@@ -58,7 +58,9 @@ Output: one JSON object per line to stdout. Docker keeps it (with rotation, see 
 | `agent.run.started` / `.completed` / `.failed` | info / info / error |
 | `agent.tool.called` / `.failed` | info / warn |
 | `agent.pending_action.created` / `.confirmed` / `.cancelled` / `.expired` | info |
-| `transaction.created` / `.deleted` | info |
+| `entry.created` / `.reversed` | info |
+| `charge.created` / `.sent` / `.paid` | info |
+| `notification.sent` / `.failed` | info / warn |
 | `job.run.started` / `.completed` / `.failed` | info / info / error |
 
 ### Redaction and privacy
@@ -102,8 +104,8 @@ Netdata already monitors the host, Docker containers, and (once configured) the 
 
 ## Agent run records (`agent_run` table)
 The main tool for "the AI recorded it wrong". One row per agent turn:
-`id, trace_id, member_id, inbound_message_id, model, stop_reason, latency_ms, input_tokens, output_tokens, cache_read_tokens, cache_write_tokens, cost_usd, tool_calls (jsonb: name, input, outcome, error, duration_ms), reply_text, error`.
-Retention: 180 days (a job prunes older rows). Read with `pnpm ops:agent-run <id|last|--member X>`.
+`id, trace_id, workspace_id, user_id, inbound_message_id, model, stop_reason, latency_ms, input_tokens, output_tokens, cache_read_tokens, cache_write_tokens, cost_usd, tool_calls (jsonb: name, input, outcome, error, duration_ms), reply_text, error`.
+Retention: 180 days (a job prunes older rows). Read with `pnpm ops:agent-run <id|last|--user X>`.
 
 ## Alerts (channel not chosen yet)
 Alerting lives in **Uptime Kuma and Netdata notification settings**. Both support ntfy, Telegram, email and more, so choosing a channel later is a configuration change only. The app has no alert code. **Rule: the channel can't be WhatsApp**, because the bot is one of the things being monitored.

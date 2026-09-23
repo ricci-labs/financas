@@ -44,8 +44,10 @@ src/
 ├── domain/           # pure business rules: no I/O, no Date.now(), no framework
 │   ├── money.ts
 │   ├── billing-cycle.ts
-│   ├── installments.ts
-│   └── competence.ts
+│   ├── installments.ts       # split + multi-party allocation
+│   ├── period.ts             # financial period (configurable anchor)
+│   ├── postings.ts           # builds balanced posting sets for each entry type
+│   └── pix.ts                # Pix copia-e-cola payload
 └── index.ts
 ```
 
@@ -63,15 +65,22 @@ src/
 │                             #   static SPA; exports AppType for the RPC client
 ├── core/                     # cross-cutting infrastructure; knows no domain
 │   ├── config/env.ts         # Zod-validated env, fails at boot
-│   ├── db/{client,schema,tx}.ts
+│   ├── db/{client,schema,tx}.ts  # tx.ts sets app.workspace_id (RLS) per transaction
 │   ├── http/middleware/      # auth, request id, error handler
 │   ├── http/errors.ts        # AppError hierarchy → HTTP status
 │   ├── observability/        # OTel register, pino logger, metrics registry, spans, errors
 │   │                         #   (see docs/operations/observability.md)
 │   └── clock.ts              # injectable "now"
 ├── modules/                  # one folder per domain (see "Module anatomy")
-│   ├── household/  accounts/  cards/  transactions/  incomes/
-│   ├── categories/  budgets/  recurring/  reports/
+│   ├── identity/             # users, sessions, channel identities (WhatsApp numbers)
+│   ├── workspaces/           # workspaces, memberships, invitations, all settings tables
+│   ├── ledger/               # ledger accounts (incl. categories), journal entries, postings
+│   ├── cards/                # card details, invoices
+│   ├── contacts/             # contacts, charges, settlements
+│   ├── planning/             # recurrence rules, occurrences, periods, budgets, goals, holidays
+│   ├── attachments/          # files + link tables, FileStorage interface
+│   ├── notifications/        # outbox, reminder scheduling, templates
+│   └── reports/              # read-only views: overview, balances, invoice totals
 ├── channels/whatsapp/        # non-HTTP entry point
 │   ├── connection.ts         # socket, reconnect with backoff
 │   ├── auth-state.ts         # Baileys auth state stored in Postgres
@@ -92,12 +101,12 @@ scripts/ops/                  # ops:* scripts: Claude's stable debugging interfa
 ### Module anatomy
 
 ```
-modules/transactions/
-├── transactions.routes.ts       # Hono sub-app; inline, thin handlers; zValidator
-├── transactions.service.ts      # use cases; the only place with application logic
-├── transactions.repository.ts   # Drizzle queries; the only file that touches the DB
-├── transactions.table.ts        # Drizzle table definitions
-├── transactions.service.test.ts
+modules/ledger/
+├── ledger.routes.ts             # Hono sub-app; inline, thin handlers; zValidator
+├── ledger.service.ts            # use cases; the only place with application logic
+├── ledger.repository.ts         # Drizzle queries; the only file that touches the DB
+├── ledger.table.ts              # Drizzle table definitions
+├── ledger.service.test.ts
 └── index.ts                     # public surface: service + routes (nothing else)
 ```
 

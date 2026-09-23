@@ -38,6 +38,7 @@ routes / agent tools / jobs / channels
 | 6 | Services never import Hono, Baileys or the Anthropic SDK | Services stay testable and don't depend on the channel |
 | 7 | No circular dependencies between modules | If A needs B and B needs A, extract the shared part or merge them |
 | 8 | `packages/shared/src/domain` never reads the clock or env | Pure and deterministic: "now" is passed in as a parameter |
+| 9 | Every DB access runs through `core/db/tx.ts` with a workspace set, except global tables (`users`...) and the `BYPASSRLS` job role | Tenant isolation (ADR 0012) |
 
 ## Web
 | # | Rule |
@@ -50,8 +51,15 @@ routes / agent tools / jobs / channels
 ## Allowed cross-module calls (keep this list current)
 | Caller | Callee | Reason |
 |---|---|---|
-| `transactions` | `cards` | Resolve/create the invoice for each installment |
-| `transactions` | `categories` | Validate the category |
-| `budgets` | `reports` | Spent-vs-limit aggregates |
+| `ledger` | `cards` | Resolve/create the invoice for each card posting |
+| `ledger` | `workspaces` | Settings (currency, timezone) |
+| `planning` | `ledger` | Match real entries to planned occurrences |
+| `contacts` | `ledger` | Open receivable items for charges; record settlements |
+| `contacts` | `notifications` | Send charges and charge reminders |
+| `planning` | `notifications` | Bill and invoice reminders |
+| `reports` | `ledger`, `planning`, `cards`, `contacts` | Read-only aggregates |
+| every module | `workspaces` | Current workspace settings |
+
+Contact validity on postings is enforced by the composite FK, so `ledger` never calls `contacts` (that would create a cycle with `contacts → ledger`).
 
 Adding a row here is a design decision. Mention it to the user.

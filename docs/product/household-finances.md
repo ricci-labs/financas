@@ -39,13 +39,16 @@ The goal is that a weak commission month never breaks the budget.
 Why: planning on variable income leads to spending on money that may not come. Planning on fixed income and allocating extras on purpose is a common, robust household practice.
 
 ## Forecast ("how much can we still spend?")
-Proposed formula for the current month:
+Computed per financial period by the `period_overview` view (`../domain/model/planning.md`):
+`free_to_spend = fixed income − spent − committed`. The financial period start is configurable
+(calendar month, day N, or N-th business day).
 
-```
-free = fixed income of the month
-     − fixed bills (recurring)
-     − card invoices due this month
-     − non-card spending already made this month
-```
-
-**Open question:** whether "free" should come from cash (invoices due this month) or from competence (purchases made this month). This depends on the installment question in `../domain/billing-and-installments.md`.
+## Needs raised by the user (2026-09-22)
+- Today there is no control, only a rough idea from looking at the card invoice and the account statement.
+- Spend only the fixed income and save the variable part (commission) into a savings account.
+- Know during the month what was already spent, plus projections.
+- Forecast of fixed items: bills and recurring card charges; installments.
+- Reminders before due dates, to avoid late fees.
+- Cards lent to other people: several people per purchase, also in installments; their part must not pollute own spending; charge them over WhatsApp; record when they pay; attach receipts.
+- Accounts, cash, cards, inflows and outflows all in one place.
+- Later: metrics, alerts, and other automations built on this data.

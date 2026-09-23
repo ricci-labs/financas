@@ -20,3 +20,4 @@ English for code, file names, URLs, docs and commits. pt-BR for all user-facing 
 
 ## Consequences
 - Brazilian concepts with no exact English equivalent (fatura, competência, melhor dia de compra) get an English code name plus a glossary entry.
+- Exception (2026-09-22): the root `README.md` is the product's public face for Brazilian users and is written in pt-BR.

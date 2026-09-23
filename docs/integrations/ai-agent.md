@@ -24,14 +24,19 @@ One file per tool in `agent/tools/`. Each tool has a Zod input schema from `pack
 
 | Tool | Kind | Calls |
 |---|---|---|
-| `register_expense` | write → pending | `transactions.previewExpense` |
-| `register_income` | write → pending | `transactions.previewIncome` |
+| `register_expense` | write → pending | `ledger.previewExpense` (supports installments and contact shares) |
+| `register_income` | write → pending | `ledger.previewIncome` |
+| `register_transfer` | write → pending | `ledger.previewTransfer` (e.g. "guardar a comissão na reserva") |
+| `register_settlement` | write → pending | `contacts.previewSettlement` ("o J me pagou 100") |
+| `send_charge` | write → pending | `contacts.previewCharge` ("cobra o J") |
 | `confirm_pending` / `cancel_pending` | write | `agent.pendingActions` → the target service |
-| `undo_last` | write → pending | `transactions.previewUndo` |
-| `query_budget` | read | `budgets.getMonthSummary` |
-| `invoice_summary` | read | `cards.getInvoiceSummary` |
-| `list_recent_transactions` | read | `transactions.listRecent` |
-| `list_cards_and_categories` | read | `cards`/`categories` (used when names are ambiguous) |
+| `undo_last` | write → pending | `ledger.previewReversal` |
+| `period_overview` | read | `reports.getPeriodOverview` ("quanto ainda posso gastar?") |
+| `invoice_summary` | read | `reports.getInvoiceSummary` (own vs fronted for others) |
+| `contact_balance` | read | `reports.getContactBalances` |
+| `upcoming_bills` | read | `planning.listUpcoming` |
+| `list_recent_entries` | read | `ledger.listRecent` |
+| `lookup_names` | read | accounts, cards, categories, contacts (used when names are ambiguous) |
 
 Tool rules:
 - Tool descriptions say *when* to use the tool, not only what it does.
@@ -42,14 +47,14 @@ Tool rules:
 1. A write tool validates and builds a **preview**, e.g. "Mercado · R$ 87,50 · Nubank (fatura de outubro) · categoria Mercado · 1×". It stores a `pendingAction` (expires in 15 min) and returns the preview.
 2. Claude shows the preview and asks "Confirma?".
 3. The user replies "sim"/"ok"/👍 and Claude calls `confirm_pending`. Any correction ("foi no inter") produces a new preview that replaces the pending one.
-4. Only one pending action per member at a time.
+4. Only one pending action per user per workspace at a time.
 
 MVP: always confirm. Later we may auto-confirm high-confidence simple expenses, with "desfazer" still available.
 
 ## Context and prompt caching
 - **System prompt** (`prompts/system.ts`) is stable: role, tone, rules, pt-BR style. It has no dates, names or IDs, so it stays cacheable.
 - Tool definitions are deterministic (fixed order), also cacheable.
-- **Per-turn context** is injected after the cached prefix: today's date in `America/Sao_Paulo`, the sender's name, and the household's card/category names.
+- **Per-turn context** is injected after the cached prefix: today's date in `America/Sao_Paulo`, the sender's name, and the workspace's account/card/category/contact names.
 - Memory: the last ~20 messages per member (`agentMessage`), trimmed by age (e.g. 24h). Summarize older history only if it's ever needed.
 
 ## Model
@@ -63,8 +68,8 @@ MVP: always confirm. Later we may auto-confirm high-confidence simple expenses, 
 - Log every tool call with its input and result status (never secrets).
 
 ## Safety
-- Only allowlisted members reach the agent (`../integrations/whatsapp.md`).
-- Tools can't delete permanently, can't change cards/budgets/settings, and can't message anyone. Settings belong to the web dashboard.
+- Only verified `channel_identities` reach the agent, scoped to one workspace per turn (`whatsapp.md`).
+- Tools can't delete permanently and can't change cards, budgets or settings. Settings belong to the web dashboard. The only outbound messages a tool can trigger are charges to the workspace's own contacts, always after confirmation.
 - Treat message content as data. A message cannot widen what the tools allow.
 
 ## Evals (phase 1.5)
