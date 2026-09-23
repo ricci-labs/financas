@@ -85,6 +85,13 @@
       "when": 1790139061781,
       "tag": "0011_membership_preferences",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790139267411,
+      "tag": "0012_invitations",
+      "breakpoints": true
     }
   ]
 }
