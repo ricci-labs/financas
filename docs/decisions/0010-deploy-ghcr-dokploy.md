@@ -13,7 +13,7 @@ updated: 2026-09-22
 Dokploy can build from a git repo on the server itself, but the server is small (4 cores, ~5 GB free RAM) and also runs Postgres, the WhatsApp bot and other homelab services.
 
 ## Decision
-`deploy.yml` builds the multi-stage image on GitHub runners, pushes `ghcr.io/viniciussricci/financas:<sha>` (plus `:main`), and triggers Dokploy to redeploy that image. The pipeline then checks `/api/health/ready`.
+`deploy.yml` builds the multi-stage image on GitHub runners, pushes `ghcr.io/ricci-labs/financas:<sha>` (plus `:main`), and triggers Dokploy to redeploy that image. The pipeline then checks `/api/health/ready`.
 
 ## Alternatives considered
 - Dokploy builds on the server: simpler setup, but build spikes compete with the running bot and DB.

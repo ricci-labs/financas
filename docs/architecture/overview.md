@@ -10,7 +10,7 @@ updated: 2026-09-22
 | Concern | Choice | ADR |
 |---|---|---|
 | Repo | pnpm workspaces monorepo (`apps/api`, `apps/web`, `packages/shared`) | 0001 |
-| Runtime | Node.js LTS + TypeScript (strict) | — |
+| Runtime | Node.js 24 LTS + TypeScript 7 (strict). API: `tsx` in dev, bundled with `tsdown` | 0017 |
 | HTTP | Hono (with `@hono/node-server`), RPC client `hc` for the web | 0002 |
 | WhatsApp | Baileys (WhiskeySockets), used directly, version pinned | 0003 |
 | AI | `@anthropic-ai/sdk` with the Tool Runner; no agent framework | 0004 |
@@ -19,7 +19,7 @@ updated: 2026-09-22
 | Web | Vite + React 19 SPA, Tailwind CSS v4, shadcn/ui, TanStack Router/Query/Table, Recharts, PWA | 0005 |
 | Architecture | Modular monolith with light clean architecture | 0006 |
 | Money | Integer cents | 0007 |
-| Lint/format | Biome; dependency-cruiser for architecture rules | — |
+| Lint/format | Biome; no-comments check; dependency-cruiser for architecture rules | 0017 |
 | Tests | Vitest | — |
 | Jobs | croner, running in the API process | — |
 | Git/PRs | Conventional Commits, squash merge, lefthook + commitlint | 0009 |

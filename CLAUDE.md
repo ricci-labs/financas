@@ -4,7 +4,7 @@ Multi-tenant personal finance app, starting with a couple who pool their income.
 a web dashboard and a WhatsApp agent (Claude) that records expenses, charges third parties and answers questions.
 Self-hosted on a small headless Debian homelab, deployed with Dokploy.
 
-**Status:** pre-scaffold. Only `docs/` exists. See `docs/product/roadmap.md` → "Current focus".
+**Status:** monorepo scaffolded (`apps/api`, `apps/web`, `packages/shared`). See `docs/product/roadmap.md` → "Current focus".
 
 ## Talking to the user
 - Reply in Brazilian Portuguese. Code, identifiers, commits and docs are in English.
@@ -21,8 +21,9 @@ Self-hosted on a small headless Debian homelab, deployed with Dokploy.
 - **Double-entry ledger:** money moves only as balanced journal entries. Postings are immutable; edits replace the entry, and deletes are soft (`docs/domain/model/ledger.md`).
 - **Soft delete everywhere** (`deleted_at`); repositories filter it by default. Hard delete only for LGPD workspace erasure.
 - **Every route and agent tool declares its `(module, action)` permission** (`docs/domain/model/access-control.md`).
+- **No comments in code; it must read like prose.** Clear names, small functions, guard clauses, named constants, `@api/` `@web/` `@shared/` imports (`docs/architecture/conventions.md` → Code style, ADR 0017).
 - Money is an **integer number of cents** (`amountCents`). Never floats, never `numeric` → JS number.
-- Business rules live in pure functions (`packages/shared/src/domain`) and module services. Routes, the WhatsApp channel, the agent and jobs call services and hold no business logic.
+- Business rules live in pure functions (`packages/shared`, one folder per concept) and module services. Routes, the WhatsApp channel, the agent and jobs call services and hold no business logic.
 - **The LLM never touches the database.** It only calls tools, and each tool calls one service. Every write goes through a confirmation step (`docs/integrations/ai-agent.md`).
 - Modules talk to each other only through their `index.ts`. Only the owning service imports a repository. Full list: `docs/architecture/dependency-rules.md`.
 - Dates follow `America/Sao_Paulo`. Take "now" from `core/clock.ts`, never `new Date()` inside business logic.
@@ -40,4 +41,14 @@ Self-hosted on a small headless Debian homelab, deployed with Dokploy.
 - Docs hold intent, rules and the "why". Code is the source of truth for everything else, so don't paste large code into docs.
 
 ## Commands
-_To be defined when the monorepo is scaffolded (pnpm workspaces)._
+Node and pnpm live in `~/.local/share/pnpm/bin` (add it to `PATH` in non-login shells).
+
+| Command | Does |
+|---|---|
+| `pnpm install` | Install everything and set up git hooks |
+| `pnpm dev` | API (tsx watch, :3100) + web (Vite, proxies `/api`) |
+| `pnpm check` | Everything CI runs: lint, no-comments, typecheck, depcruise, tests, docs |
+| `pnpm test` | Vitest in every package |
+| `pnpm --filter @financas/shared test:watch` | Watch the domain tests |
+| `pnpm build` | Web build + API bundle |
+| `pnpm format` | Biome write |

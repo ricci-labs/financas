@@ -1,7 +1,7 @@
 ---
 summary: Coding conventions — naming, money, dates, IDs, errors, validation, tests, migrations, commits.
 read_when: Writing or reviewing any code.
-updated: 2026-09-22
+updated: 2026-09-23
 ---
 
 # Conventions
@@ -11,11 +11,39 @@ updated: 2026-09-22
 - User-facing text (UI, agent replies) is in pt-BR.
 - Domain terms come from `../domain/glossary.md`.
 
+## Code style (ADR 0017)
+The code must read like well-written prose: a person should understand it top to bottom
+without comments.
+
+- **No comments.** Only tool directives (`biome-ignore`, `@ts-expect-error`) with their reason. The "why" goes in docs/ADRs. Checked by `pnpm lint:comments`.
+- **Names carry intent.** Full words, no abbreviations (`installment`, not `inst`). Booleans read as questions (`isOnClosingDay`, `goesToNextInvoice`). Functions are verbs (`splitInstallments`); values are nouns.
+- **Name intermediate results.** Prefer `const isAfterClosing = ...` over a long inline condition.
+- **Small functions, one level of abstraction.** Extract helpers with descriptive names instead of explaining a block.
+- **Early returns and guard clauses**, not deep nesting. Always use braces.
+- **No magic numbers or strings.** Use named constants (`CENTS_PER_REAL`, `SHUTDOWN_TIMEOUT_MS`).
+- **No clever code.** No nested ternaries, no comma operators, no bit tricks, no single-letter names except `c` in Hono handlers and index-free callbacks.
+- **Public functions first**, private helpers below them, in the order they're called.
+- **Named exports only** (default exports only where a tool requires them, e.g. config files).
+- **Formatting is not a discussion:** Biome formats everything (2 spaces, single quotes, no semicolons, 100 columns).
+
+## File organization
+- **One folder per concept** (a domain concept in `shared`, a module in the API, a feature in the web).
+- **Exported types live in `<concept>.types.ts`** in that folder. A type used only inside one file may stay in it, unexported. Types derived from a value (`z.infer<typeof schema>`, `ReturnType<typeof fn>`) stay next to that value.
+- **Tests sit next to the code** they test: `money.ts` + `money.test.ts`. No separate test trees.
+- Zod schemas go in `<concept>.schemas.ts`. Tables in `<module>.table.ts`.
+- Each folder exposes its public surface through the package or module `index.ts`.
+
+## Imports
+- Cross-folder imports use the package alias: `@api/...`, `@web/...`, `@shared/...` (declared in `tsconfig.base.json`).
+- Other workspace packages are imported by their name (`@financas/shared`), never through their alias from another package's runtime code.
+- No relative `../` imports and no file extensions in import paths.
+- Type-only imports use `import type`.
+
 ## Naming
 | Thing | Convention | Example |
 |---|---|---|
-| Files | kebab-case, role suffix in API modules | `transactions.service.ts`, `billing-cycle.ts` |
-| React components | PascalCase files and exports | `ExpenseForm.tsx` |
+| Files | kebab-case, role suffix in API modules (enforced by Biome) | `ledger.service.ts`, `billing-cycle.ts`, `expense-form.tsx` |
+| React components | PascalCase exports, kebab-case files | `export function ExpenseForm` in `expense-form.tsx` |
 | Zod schemas | camelCase + `Schema` | `createExpenseSchema` |
 | Inferred types | PascalCase, same stem | `type CreateExpense = z.infer<typeof createExpenseSchema>` |
 | DB tables/columns | snake_case in SQL, camelCase in TS (Drizzle `casing: 'snake_case'`) | `amount_cents` ↔ `amountCents` |
@@ -24,9 +52,9 @@ updated: 2026-09-22
 
 ## Money
 - Store and compute in integer cents (`integer`/`bigint` columns, `number` in TS; the household's values stay far below 2^53).
-- Parse user input like `"87,50"`, `"R$ 1.234,56"` or `"1234.5"` only through `money.ts`.
-- Format for display with `Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })` via `money.ts`.
-- Split amounts only with `installments.ts`. Never with ad-hoc division.
+- Parse user input like `"87,50"`, `"R$ 1.234,56"` or `"1234.5"` only through `@shared/money/money`.
+- Format for display with `Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })` via `@shared/money/money`.
+- Split amounts only with `@shared/installments/installments`. Never with ad-hoc division.
 
 ## Dates
 - Calendar dates (`occurredOn`, `closingDate`, `dueDate`) are `date` columns and `YYYY-MM-DD` strings in TS. They are not `Date` objects, which avoids timezone shifts.
@@ -43,7 +71,7 @@ updated: 2026-09-22
 
 ## Tests
 - Vitest, colocated `*.test.ts`.
-- Priority: `packages/shared/src/domain` (every example in `../domain/billing-and-installments.md` is a test) → services → routes.
+- Priority: `packages/shared` (every example in `../domain/billing-and-installments.md` is a test) → services → routes.
 - Service tests use a real Postgres (a throwaway database), not mocks of the repository.
 - The agent gets an eval set of real anonymized messages later (see `../integrations/ai-agent.md`).
 

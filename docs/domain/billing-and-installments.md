@@ -6,8 +6,8 @@ updated: 2026-09-22
 
 # Billing cycle and installments
 
-Implemented as pure functions in `packages/shared/src/domain/` (`billing-cycle.ts`,
-`installments.ts`, `competence.ts`). Every example below must exist as a unit test.
+Implemented as pure functions in `packages/shared/src/cards/billing-cycle.ts` and
+`packages/shared/src/installments/installments.ts`. Every example below exists as a unit test next to them.
 
 ## Invoice assignment
 

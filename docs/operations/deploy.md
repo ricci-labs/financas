@@ -11,7 +11,7 @@ Pipeline: `../engineering/ci-cd.md`. Decision: `../decisions/0010-deploy-ghcr-do
 ## Containers (Dokploy project `financas`)
 | Service | Image | Notes |
 |---|---|---|
-| `financas-api` | `ghcr.io/viniciussricci/financas:<sha>` | Node process: HTTP + SPA + WhatsApp + agent + jobs |
+| `financas-api` | `ghcr.io/ricci-labs/financas:<sha>` | Node process: HTTP + SPA + WhatsApp + agent + jobs |
 | `financas-db` | `postgres:16` (or the current major at setup time) | Own volume. Separate from Dokploy's internal Postgres |
 
 ## Runtime config (Dokploy environment; validated by `core/config/env.ts`)

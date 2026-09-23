@@ -1,0 +1,33 @@
+{
+  "name": "financas",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.5.1",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter \"./apps/*\" dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "depcruise": "depcruise apps packages --config .dependency-cruiser.cjs",
+    "docs:check": "node scripts/docs-check.mjs",
+    "check": "pnpm lint && pnpm lint:comments && pnpm typecheck && pnpm depcruise && pnpm test && pnpm docs:check",
+    "prepare": "lefthook install || true",
+    "lint:comments": "node scripts/check-no-comments.mjs"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.14",
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
+    "@swc/core": "^1.16.2",
+    "@types/node": "^24.13.6",
+    "dependency-cruiser": "^18.4.0",
+    "lefthook": "^2.1.14",
+    "oxc-parser": "^0.151.0",
+    "typescript": "^7.0.2"
+  }
+}

@@ -48,7 +48,7 @@ pending occurrences are regenerated, matched and skipped ones stay.
 
 ## Financial period
 Driven by `workspace_settings.period_anchor` (`tenancy.md`). Pure function in
-`packages/shared/src/domain/period.ts`:
+`packages/shared/src/calendar/period.ts`:
 
 ```
 periodOf(date, settings, holidays) → { label: 'YYYY-MM', start: date, end: date }

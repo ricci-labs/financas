@@ -24,6 +24,7 @@ financas/
 ├── .github/                 # workflows (ci, deploy), PR template, dependabot
 ├── .claude/                 # project skills and Claude Code hooks (engineering/claude-workflow.md)
 ├── compose.dev.yml          # local Postgres for development
+├── scripts/                 # repo checks: no-comments, docs frontmatter/links
 ├── lefthook.yml             # git hooks
 ├── commitlint.config.ts
 ├── pnpm-workspace.yaml
@@ -38,27 +39,45 @@ Claude Code loads them only when it works inside those folders.
 
 ## packages/shared
 
+One folder per domain concept. Each folder holds its code, its exported types
+(`<concept>.types.ts`) and its tests, side by side.
+
 ```
 src/
-├── schemas/          # Zod contracts: API inputs/outputs, agent tool inputs
-├── domain/           # pure business rules: no I/O, no Date.now(), no framework
-│   ├── money.ts
-│   ├── billing-cycle.ts
-│   ├── installments.ts       # split + multi-party allocation
+├── money/
+│   ├── money.types.ts        # Cents
+│   ├── money.ts              # parse, format, sum, assertions
+│   └── money.test.ts
+├── calendar/
+│   ├── calendar.types.ts     # IsoDate, YearMonth, PeriodSettings, Period
+│   ├── dates.ts              # calendar-date math, business days
+│   ├── dates.test.ts
 │   ├── period.ts             # financial period (configurable anchor)
-│   ├── postings.ts           # builds balanced posting sets for each entry type
-│   └── pix.ts                # Pix copia-e-cola payload
-└── index.ts
+│   └── period.test.ts
+├── cards/
+│   ├── cards.types.ts        # CardCycle, InvoiceRef
+│   ├── billing-cycle.ts      # which invoice a purchase / installment falls into
+│   └── billing-cycle.test.ts
+├── installments/
+│   ├── installments.ts       # split + multi-party allocation
+│   └── installments.test.ts
+├── ledger/                   # planned: postings builders per entry type, schemas
+├── pix/                      # planned: Pix copia-e-cola payload
+└── index.ts                  # public surface of the package
 ```
 
-The domain rules live here, not in the API, because the web needs them too. For example, the
-expense form previews the invoice and installments with the same function the API uses to save.
+Rules: no I/O, no clock, no env (all pure). Zod schemas for a concept go in
+`<concept>.schemas.ts` in the same folder. The domain rules live here, not in the API, because the
+web needs them too. For example, the expense form previews the invoice and installments with the
+same function the API uses to save.
 
 ## apps/api
 
 ```
 drizzle/                      # generated SQL migrations (committed)
 drizzle.config.ts
+tsdown.config.ts              # production bundle (resolves @ aliases, inlines @financas/shared)
+vitest.config.ts
 src/
 ├── main.ts                   # boot: env, db, HTTP, WhatsApp, jobs, graceful shutdown
 ├── app.ts                    # Hono composition: global middleware, app.route() per module,
@@ -106,6 +125,7 @@ modules/ledger/
 ├── ledger.service.ts            # use cases; the only place with application logic
 ├── ledger.repository.ts         # Drizzle queries; the only file that touches the DB
 ├── ledger.table.ts              # Drizzle table definitions
+├── ledger.types.ts              # exported types of the module
 ├── ledger.service.test.ts
 └── index.ts                     # public surface: service + routes (nothing else)
 ```
@@ -134,6 +154,7 @@ src/
 │   ├── api/                 # TanStack Query hooks over the hc client; the only backend access
 │   ├── components/
 │   ├── hooks/
+│   ├── <feature>.types.ts   # exported types of the feature
 │   └── index.ts             # what routes may import
 ├── components/
 │   ├── ui/                  # shadcn generated; edit only with a reason

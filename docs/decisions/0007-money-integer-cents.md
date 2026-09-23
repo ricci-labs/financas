@@ -20,6 +20,6 @@ Every amount is an integer number of cents (`amountCents`) in the DB, the API, t
 - Floats: wrong.
 
 ## Consequences
-- Parse and format only through `packages/shared/src/domain/money.ts`.
+- Parse and format only through `packages/shared/src/money/money.ts`.
 - The UI converts at the edges (input masks, display).
 - Multi-currency would need a new ADR.
