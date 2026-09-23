@@ -3,7 +3,11 @@ import { withWorkspace } from '@api/core/db/tx'
 import { ValidationError } from '@api/core/http/errors'
 import { createSystemRoles } from '@api/modules/access'
 import { addMember } from '@api/modules/members'
-import { insertWorkspace, reserveWorkspaceId } from '@api/modules/workspaces/workspaces.repository'
+import {
+  insertDefaultSettings,
+  insertWorkspace,
+  reserveWorkspaceId,
+} from '@api/modules/workspaces/workspaces.repository'
 import type {
   CreatedWorkspace,
   CreateWorkspaceInput,
@@ -19,6 +23,7 @@ export async function createWorkspace(
 
   return withWorkspace(db, workspaceId, async (tx) => {
     await insertWorkspace(tx, { id: workspaceId, name, createdByUserId: input.ownerUserId })
+    await insertDefaultSettings(tx, workspaceId)
     const systemRoles = await createSystemRoles(tx, workspaceId)
     const ownerMembershipId = await addMember(tx, {
       workspaceId,

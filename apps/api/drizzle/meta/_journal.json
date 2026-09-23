@@ -64,6 +64,13 @@
       "when": 1790138620961,
       "tag": "0008_workspaces_keep_an_owner",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790138944503,
+      "tag": "0009_workspace_settings",
+      "breakpoints": true
     }
   ]
 }
