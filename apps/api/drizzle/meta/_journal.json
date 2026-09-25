@@ -211,6 +211,13 @@
       "when": 1790346029303,
       "tag": "0029_closed_invoice_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1790346398121,
+      "tag": "0030_defer_tenant_foreign_keys",
+      "breakpoints": true
     }
   ]
 }
