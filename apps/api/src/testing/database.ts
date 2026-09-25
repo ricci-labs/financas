@@ -1,4 +1,5 @@
 import { createDatabase, type Database } from '@api/core/db/client'
+import { postgresErrorCode } from '@api/core/db/errors'
 import type { WorkspaceTransaction } from '@api/core/db/tx'
 import { sql } from 'drizzle-orm'
 
@@ -42,18 +43,6 @@ export async function switchWorkspaceMidTransaction(tx: WorkspaceTransaction, wo
   await tx.execute(sql`select set_config('app.workspace_id', ${workspaceId}, true)`)
 }
 
-function findPostgresCode(error: unknown): string | undefined {
-  let current: unknown = error
-  while (current instanceof Error) {
-    const code = (current as Error & { code?: unknown }).code
-    if (typeof code === 'string') {
-      return code
-    }
-    current = current.cause
-  }
-  return undefined
-}
-
 export async function postgresErrorCodeOf(
   operation: Promise<unknown>,
 ): Promise<string | undefined> {
@@ -61,7 +50,7 @@ export async function postgresErrorCodeOf(
     await operation
     return undefined
   } catch (error) {
-    return findPostgresCode(error)
+    return postgresErrorCode(error)
   }
 }
 

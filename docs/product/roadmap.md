@@ -23,7 +23,7 @@ updated: 2026-09-25
 - [x] `onboarding` module for flows spanning modules (#18)
 - [x] DB: ledger accounts (tree, system accounts)
 - [x] DB: journal entries + postings (balanced, immutable, soft delete)
-- [ ] Ledger services: postings builders + record / delete / restore / replace entry
+- [x] Ledger services: postings planner + record / change / delete / restore / replace entry
 - [ ] DB: cards and invoices
 - [ ] DB: balance views (`account_balances`, `invoice_totals`)
 - [ ] DB: contacts/charges, planning, support tables

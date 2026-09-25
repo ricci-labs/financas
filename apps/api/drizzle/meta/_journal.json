@@ -176,6 +176,20 @@
       "when": 1790343923595,
       "tag": "0024_ledger_integrity",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1790344546300,
+      "tag": "0025_one_active_replacement",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1790344547739,
+      "tag": "0026_replacement_never_both_active",
+      "breakpoints": true
     }
   ]
 }

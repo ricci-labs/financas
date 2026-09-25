@@ -153,6 +153,9 @@ export const journalEntries = pgTable(
       columns: [table.workspaceId, table.replacesEntryId],
       foreignColumns: [table.workspaceId, table.id],
     }),
+    uniqueIndex('journal_entries_one_active_replacement')
+      .on(table.workspaceId, table.replacesEntryId)
+      .where(sql`${table.replacesEntryId} is not null and ${table.deletedAt} is null`),
     uniqueIndex('journal_entries_external_ref_unique')
       .on(table.workspaceId, table.externalRef)
       .where(sql`${table.externalRef} is not null`),

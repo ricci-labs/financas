@@ -128,9 +128,28 @@ Status: rows marked ✅ are implemented (`drizzle/0021`–`0024`); the others co
 | 7 ✅ | Postings are immutable: no UPDATE, no DELETE, and no new posting on an entry recorded in an earlier transaction. An entry can change only `description` and `notes` in place (plus soft delete / restore); anything else is a replacement. No hard DELETE of entries | Triggers `postings_are_immutable`, `postings_guard_insert`, `journal_entries_guard_changes`. Hard deletes pass only while the whole workspace is being erased |
 | 8 | An entry with postings on a `closed` invoice can't be soft-deleted. Fix it with a `refund`/`adjustment` entry on the open invoice | Trigger |
 | 9 ✅ | An account used by active entries can't be soft-deleted (archive it), and an entry using a deleted account can't be restored | Triggers `ledger_accounts_refuse_deleting_used`, `journal_entries_guard_changes` |
+| 10 ✅ | An entry and the entry it replaces are never both active, and an entry has at most one active replacement | Deferred trigger `journal_entries_replacement_not_both_active` + partial unique index |
 
 "Recorded in an earlier transaction" compares the entry's `created_at` (always stamped with the
 transaction's `now()` on insert) with the current `now()`.
+
+## Services (`modules/ledger`)
+| Service | Does |
+|---|---|
+| `recordEntry(db, context, input)` | Validates with `entryInputSchema`, loads the accounts (same workspace, not archived, not deleted), plans the postings with `planPostings()` (`packages/shared/src/ledger/postings.ts`) and writes the entry with its postings |
+| `changeEntryDetails(db, ref, change)` | Description and notes in place |
+| `deleteEntry(db, input, clock)` | Soft delete with who, when and why |
+| `restoreEntry(db, ref)` | Back from the trash. A database refusal becomes `ENTRY_CANNOT_BE_RESTORED` |
+| `replaceEntry(db, context, entryId, input, clock)` | Locks the entry, soft-deletes it and records the new one with `replaces_entry_id`, in one transaction |
+
+Entry types supported so far: `expense` (paid from a money account: checking, savings, cash
+wallet, investment), `income`, `transfer` between two money accounts, `opening_balance` (signed:
+negative = overdraft, against the system account). Card purchases, invoice payments, refunds and
+settlements come with cards and contacts. Errors are `ValidationError` codes: `ENTRY_INVALID`,
+`ACCOUNT_NOT_AVAILABLE` or the planner rule (`NOT_AN_EXPENSE_CATEGORY`, `SAME_ACCOUNT`...).
+
+**Open question:** should `spent_by_user_id` be limited to members of the workspace? Today it is
+only an FK to `users`.
 
 **Correction policy** (ADR 0016):
 - **Delete:** soft delete (`deleted_at`). The whole entry leaves all sums together, so the ledger stays balanced. It can be restored from the trash.

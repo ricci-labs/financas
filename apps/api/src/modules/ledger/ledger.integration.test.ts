@@ -1,4 +1,12 @@
 import { withWorkspace } from '@api/core/db/tx'
+import {
+  changeEntryDetails,
+  deleteEntry,
+  type EntryContext,
+  recordEntry,
+  replaceEntry,
+  restoreEntry,
+} from '@api/modules/ledger'
 import { journalEntries, ledgerAccounts, postings } from '@api/modules/ledger/ledger.table'
 import { workspaces } from '@api/modules/workspaces/workspaces.table'
 import {
@@ -14,7 +22,7 @@ import {
   type AccountKind,
   type SystemAccountKind,
 } from '@financas/shared'
-import { eq, inArray } from 'drizzle-orm'
+import { asc, eq, inArray } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const databases = connectTestDatabases()
@@ -617,5 +625,376 @@ describe('ledger invariants', () => {
     expect(await changeEntry(entryId, { deletedAt: new Date() })).toBeUndefined()
     expect(await updateOutcome(wallet, { deletedAt: new Date() })).toBeUndefined()
     expect(await changeEntry(entryId, { deletedAt: null })).toBe(POSTGRES_ERRORS.checkViolation)
+  })
+})
+
+describe('entry replacement', () => {
+  let checking: string
+  let groceries: string
+
+  beforeAll(async () => {
+    checking = await insertAccount({ kind: 'checking' })
+    groceries = await insertAccount({ kind: 'expense_category' })
+  })
+
+  function replaceRaw(oldEntryId: string, { deleteOld = true } = {}) {
+    return withWorkspace(databases.app, workspaceA, async (tx) => {
+      if (deleteOld) {
+        await tx
+          .update(journalEntries)
+          .set({ deletedAt: new Date() })
+          .where(eq(journalEntries.id, oldEntryId))
+      }
+      const [replacement] = await tx
+        .insert(journalEntries)
+        .values({
+          workspaceId: workspaceA,
+          occurredOn: ENTRY_DATE,
+          description: 'Mercado (corrigido)',
+          entryType: 'expense',
+          source: 'web',
+          createdByUserId: ownerUserId,
+          replacesEntryId: oldEntryId,
+        })
+        .returning({ id: journalEntries.id })
+      if (!replacement) {
+        throw new Error('Could not insert the replacement')
+      }
+      await tx.insert(postings).values(
+        spend(1200, checking, groceries).map((line, index) => ({
+          workspaceId: workspaceA,
+          entryId: replacement.id,
+          lineNo: index + 1,
+          accountId: line.accountId,
+          accountKind: line.kind,
+          amountCents: line.amountCents,
+          effectiveOn: ENTRY_DATE,
+        })),
+      )
+      return replacement.id
+    })
+  }
+
+  function setDeleted(entryId: string, deleted: boolean) {
+    return postgresErrorCodeOf(
+      withWorkspace(databases.app, workspaceA, (tx) =>
+        tx
+          .update(journalEntries)
+          .set({ deletedAt: deleted ? new Date() : null })
+          .where(eq(journalEntries.id, entryId)),
+      ),
+    )
+  }
+
+  it('accepts deleting the old entry and adding its replacement together', async () => {
+    const original = await recordRaw(spend(1000, checking, groceries))
+    expect(await postgresErrorCodeOf(replaceRaw(original))).toBeUndefined()
+  })
+
+  it('refuses a replacement while the old entry stays active', async () => {
+    const original = await recordRaw(spend(1000, checking, groceries))
+    expect(await postgresErrorCodeOf(replaceRaw(original, { deleteOld: false }))).toBe(
+      POSTGRES_ERRORS.checkViolation,
+    )
+  })
+
+  it('refuses restoring a replaced entry while its replacement is active', async () => {
+    const original = await recordRaw(spend(1000, checking, groceries))
+    await replaceRaw(original)
+    expect(await setDeleted(original, false)).toBe(POSTGRES_ERRORS.checkViolation)
+  })
+
+  it('refuses restoring a replacement once the original came back', async () => {
+    const original = await recordRaw(spend(1000, checking, groceries))
+    const replacement = await replaceRaw(original)
+    expect(await setDeleted(replacement, true)).toBeUndefined()
+    expect(await setDeleted(original, false)).toBeUndefined()
+    expect(await setDeleted(replacement, false)).toBe(POSTGRES_ERRORS.checkViolation)
+  })
+
+  it('allows only one active replacement per entry', async () => {
+    const original = await recordRaw(spend(1000, checking, groceries))
+    await replaceRaw(original)
+    expect(await postgresErrorCodeOf(replaceRaw(original, { deleteOld: false }))).toBe(
+      POSTGRES_ERRORS.uniqueViolation,
+    )
+  })
+})
+
+async function postingsOf(entryId: string, workspaceId = workspaceA) {
+  const lines = await withWorkspace(databases.app, workspaceId, (tx) =>
+    tx
+      .select({ accountId: postings.accountId, amountCents: postings.amountCents })
+      .from(postings)
+      .where(eq(postings.entryId, entryId))
+      .orderBy(asc(postings.lineNo)),
+  )
+  return lines.map((line) => [line.accountId, line.amountCents])
+}
+
+async function entryRow(entryId: string, workspaceId = workspaceA) {
+  const [entry] = await withWorkspace(databases.app, workspaceId, (tx) =>
+    tx.select().from(journalEntries).where(eq(journalEntries.id, entryId)),
+  )
+  return entry
+}
+
+describe('recordEntry', () => {
+  let context: EntryContext
+  let checking: string
+  let savings: string
+  let groceries: string
+  let salary: string
+
+  beforeAll(async () => {
+    context = { workspaceId: workspaceA, userId: ownerUserId, source: 'whatsapp' }
+    checking = await insertAccount({ kind: 'checking' })
+    savings = await insertAccount({ kind: 'savings' })
+    groceries = await insertAccount({ kind: 'expense_category' })
+    salary = await insertAccount({ kind: 'income_category' })
+  })
+
+  const details = { occurredOn: '2026-10-05', description: '  Mercado  ' }
+
+  it('records an expense with its postings and details', async () => {
+    const { entryId } = await recordEntry(databases.app, context, {
+      ...details,
+      entryType: 'expense',
+      amountCents: 8750,
+      paymentMethod: 'pix',
+      paidFromAccountId: checking,
+      categoryId: groceries,
+    })
+
+    expect(await postingsOf(entryId)).toEqual([
+      [groceries, 8750],
+      [checking, -8750],
+    ])
+    expect(await entryRow(entryId)).toMatchObject({
+      entryType: 'expense',
+      description: 'Mercado',
+      occurredOn: '2026-10-05',
+      paymentMethod: 'pix',
+      source: 'whatsapp',
+      createdByUserId: ownerUserId,
+      replacesEntryId: null,
+    })
+  })
+
+  it('records income and a transfer', async () => {
+    const income = await recordEntry(databases.app, context, {
+      ...details,
+      entryType: 'income',
+      amountCents: 500000,
+      receivedInAccountId: checking,
+      categoryId: salary,
+    })
+    const transfer = await recordEntry(databases.app, context, {
+      ...details,
+      entryType: 'transfer',
+      amountCents: 100000,
+      fromAccountId: checking,
+      toAccountId: savings,
+    })
+    expect(await postingsOf(income.entryId)).toEqual([
+      [checking, 500000],
+      [salary, -500000],
+    ])
+    expect(await postingsOf(transfer.entryId)).toEqual([
+      [savings, 100000],
+      [checking, -100000],
+    ])
+  })
+
+  it('records an opening balance against the system account', async () => {
+    const openingBalance = await systemAccountOf(workspaceA, 'opening_balance')
+    const { entryId } = await recordEntry(databases.app, context, {
+      ...details,
+      entryType: 'opening_balance',
+      balanceCents: 200000,
+      accountId: savings,
+    })
+    expect(await postingsOf(entryId)).toEqual([
+      [savings, 200000],
+      [openingBalance, -200000],
+    ])
+  })
+
+  it('refuses input that does not match the schema', async () => {
+    const recorded = recordEntry(databases.app, context, {
+      ...details,
+      entryType: 'expense',
+      amountCents: 87.5,
+      paidFromAccountId: checking,
+      categoryId: groceries,
+    })
+    await expect(recorded).rejects.toMatchObject({ code: 'ENTRY_INVALID' })
+  })
+
+  it('refuses a category of the wrong kind', async () => {
+    const recorded = recordEntry(databases.app, context, {
+      ...details,
+      entryType: 'expense',
+      amountCents: 100,
+      paidFromAccountId: checking,
+      categoryId: salary,
+    })
+    await expect(recorded).rejects.toMatchObject({ code: 'NOT_AN_EXPENSE_CATEGORY' })
+  })
+
+  it('refuses an account from another workspace, archived or deleted', async () => {
+    const elsewhere = await insertAccount({ kind: 'checking' }, workspaceB)
+    const archived = await insertAccount({ kind: 'checking', archivedAt: new Date() })
+    const deleted = await insertAccount({ kind: 'checking', deletedAt: new Date() })
+    for (const unavailable of [elsewhere, archived, deleted]) {
+      const recorded = recordEntry(databases.app, context, {
+        ...details,
+        entryType: 'expense',
+        amountCents: 100,
+        paidFromAccountId: unavailable,
+        categoryId: groceries,
+      })
+      await expect(recorded).rejects.toMatchObject({ code: 'ACCOUNT_NOT_AVAILABLE' })
+    }
+  })
+})
+
+describe('changing, deleting, restoring and replacing entries', () => {
+  let context: EntryContext
+  let checking: string
+  let groceries: string
+
+  beforeAll(async () => {
+    context = { workspaceId: workspaceA, userId: ownerUserId, source: 'web' }
+    checking = await insertAccount({ kind: 'checking' })
+    groceries = await insertAccount({ kind: 'expense_category' })
+  })
+
+  function expenseOf(amountCents: number) {
+    return {
+      entryType: 'expense',
+      occurredOn: '2026-10-06',
+      description: 'Padaria',
+      amountCents,
+      paidFromAccountId: checking,
+      categoryId: groceries,
+    }
+  }
+
+  async function recordExpense(amountCents = 1500): Promise<string> {
+    return (await recordEntry(databases.app, context, expenseOf(amountCents))).entryId
+  }
+
+  const refOf = (entryId: string) => ({ workspaceId: workspaceA, entryId })
+
+  it('changes the description and notes in place', async () => {
+    const entryId = await recordExpense()
+    await changeEntryDetails(databases.app, refOf(entryId), {
+      description: 'Padaria do bairro',
+      notes: 'pão e leite',
+    })
+    expect(await entryRow(entryId)).toMatchObject({
+      description: 'Padaria do bairro',
+      notes: 'pão e leite',
+    })
+  })
+
+  it('refuses an empty change and a change to a deleted entry', async () => {
+    const entryId = await recordExpense()
+    await expect(changeEntryDetails(databases.app, refOf(entryId), {})).rejects.toMatchObject({
+      code: 'ENTRY_INVALID',
+    })
+    await deleteEntry(databases.app, { ...refOf(entryId), userId: ownerUserId })
+    await expect(
+      changeEntryDetails(databases.app, refOf(entryId), { description: 'x' }),
+    ).rejects.toMatchObject({ code: 'ENTRY_ALREADY_DELETED' })
+  })
+
+  it('soft deletes an entry, recording who, when and why', async () => {
+    const entryId = await recordExpense()
+    const deletedAt = new Date('2026-10-07T12:00:00Z')
+    await deleteEntry(
+      databases.app,
+      { ...refOf(entryId), userId: ownerUserId, reason: 'duplicado' },
+      { now: () => deletedAt },
+    )
+    expect(await entryRow(entryId)).toMatchObject({
+      deletedAt,
+      deletedByUserId: ownerUserId,
+      deleteReason: 'duplicado',
+    })
+    await expect(
+      deleteEntry(databases.app, { ...refOf(entryId), userId: ownerUserId }),
+    ).rejects.toMatchObject({ code: 'ENTRY_ALREADY_DELETED' })
+  })
+
+  it('does not find an entry of another workspace', async () => {
+    const entryId = await recordExpense()
+    await expect(
+      deleteEntry(databases.app, { workspaceId: workspaceB, entryId, userId: ownerUserId }),
+    ).rejects.toMatchObject({ code: 'ENTRY_NOT_FOUND' })
+    expect((await entryRow(entryId))?.deletedAt).toBeNull()
+  })
+
+  it('restores a deleted entry', async () => {
+    const entryId = await recordExpense()
+    await deleteEntry(databases.app, { ...refOf(entryId), userId: ownerUserId, reason: 'x' })
+    await restoreEntry(databases.app, refOf(entryId))
+    expect(await entryRow(entryId)).toMatchObject({
+      deletedAt: null,
+      deletedByUserId: null,
+      deleteReason: null,
+    })
+    await expect(restoreEntry(databases.app, refOf(entryId))).rejects.toMatchObject({
+      code: 'ENTRY_NOT_DELETED',
+    })
+  })
+
+  it('replaces an entry: the old one is deleted and the new one points to it', async () => {
+    const original = await recordExpense(1500)
+    const { entryId: replacement } = await replaceEntry(
+      databases.app,
+      context,
+      original,
+      expenseOf(1800),
+    )
+
+    expect((await entryRow(original))?.deletedAt).not.toBeNull()
+    expect(await entryRow(replacement)).toMatchObject({
+      replacesEntryId: original,
+      deletedAt: null,
+    })
+    expect(await postingsOf(replacement)).toEqual([
+      [groceries, 1800],
+      [checking, -1800],
+    ])
+  })
+
+  it('refuses restoring an entry that was replaced', async () => {
+    const original = await recordExpense()
+    await replaceEntry(databases.app, context, original, expenseOf(2000))
+    await expect(restoreEntry(databases.app, refOf(original))).rejects.toMatchObject({
+      code: 'ENTRY_CANNOT_BE_RESTORED',
+    })
+  })
+
+  it('keeps the original untouched when the replacement is invalid', async () => {
+    const original = await recordExpense()
+    await expect(
+      replaceEntry(databases.app, context, original, expenseOf(0)),
+    ).rejects.toMatchObject({ code: 'ENTRY_INVALID' })
+    const brokenRule = { ...expenseOf(100), categoryId: checking }
+    await expect(replaceEntry(databases.app, context, original, brokenRule)).rejects.toMatchObject({
+      code: 'NOT_AN_EXPENSE_CATEGORY',
+    })
+    expect((await entryRow(original))?.deletedAt).toBeNull()
+  })
+
+  it('refuses replacing an entry that is already deleted', async () => {
+    const original = await recordExpense()
+    await replaceEntry(databases.app, context, original, expenseOf(1600))
+    await expect(
+      replaceEntry(databases.app, context, original, expenseOf(1700)),
+    ).rejects.toMatchObject({ code: 'ENTRY_ALREADY_DELETED' })
   })
 })

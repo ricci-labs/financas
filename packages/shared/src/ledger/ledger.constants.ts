@@ -56,3 +56,7 @@ export type PaymentMethod = (typeof PAYMENT_METHODS)[number]
 export const ENTRY_SOURCES = ['web', 'whatsapp', 'job', 'import'] as const
 
 export type EntrySource = (typeof ENTRY_SOURCES)[number]
+
+export const MONEY_ACCOUNT_KINDS = ['checking', 'savings', 'cash_wallet', 'investment'] as const
+
+export type MoneyAccountKind = (typeof MONEY_ACCOUNT_KINDS)[number]

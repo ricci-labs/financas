@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "journal_entries_one_active_replacement" ON "journal_entries" USING btree ("workspace_id","replaces_entry_id") WHERE "journal_entries"."replaces_entry_id" is not null and "journal_entries"."deleted_at" is null;

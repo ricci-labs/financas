@@ -67,9 +67,12 @@ src/
 │   ├── access.ts             # valid pairs, role templates, can()
 │   └── access.test.ts
 ├── ledger/
-│   ├── ledger.constants.ts   # account kinds, classes, income natures, system kinds
+│   ├── ledger.constants.ts   # account kinds, classes, entry types, payment methods, sources
 │   ├── ledger.ts             # kind → class, system account names
-│   └── ledger.test.ts        # (planned: postings builders per entry type, schemas)
+│   ├── ledger.schemas.ts     # entryInputSchema, entryDetailsChangeSchema
+│   ├── postings.types.ts     # EntryPlan, PostingDraft, PostingsViolation
+│   ├── postings.ts           # planPostings(): entry plan → balanced posting drafts
+│   └── *.test.ts
 ├── pix/                      # planned: Pix copia-e-cola payload
 └── index.ts                  # public surface of the package
 ```
@@ -96,6 +99,7 @@ src/
 │   ├── db/
 │   │   ├── client.ts         # pg pool + Drizzle, readiness check
 │   │   ├── columns.ts        # primaryId, timestamps, softDelete helpers
+│   │   ├── errors.ts         # postgresErrorCode(): read the SQLSTATE of a failed query
 │   │   ├── tenancy.ts        # app role + current workspace for RLS policies
 │   │   └── tx.ts             # withWorkspace(): sets app.workspace_id per transaction
 │   ├── http/middleware/      # auth, request id, error handler
