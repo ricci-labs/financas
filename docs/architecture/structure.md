@@ -154,7 +154,7 @@ modules/ledger/
 ```
 
 - Handlers stay inline in the routes file. Separate "controller" files break Hono's type inference and the RPC types.
-- When a service passes ~300 lines, split it into `use-cases/<verb-noun>.ts` (one use case per file) and keep `*.service.ts` as a thin facade.
+- When a service passes ~300 lines, split it into `use-cases/<concept>.ts` (the use cases of one concept, e.g. `accounts.ts`, `entries.ts`; shared helpers in `use-cases/rules.ts`) and keep `*.service.ts` as a thin facade of re-exports. `modules/ledger` is the first example.
 - `reports/` is read-only: it has aggregate queries and no tables of its own.
 - **Every module has the same fixed file set**, created only when needed and always with these names:
 
