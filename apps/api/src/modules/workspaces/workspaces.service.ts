@@ -5,13 +5,16 @@ import {
   insertDefaultSettings,
   insertWorkspace,
 } from '@api/modules/workspaces/workspaces.repository'
-import type { NewWorkspace } from '@api/modules/workspaces/workspaces.types'
+import type { NewWorkspace, WorkspaceDefaults } from '@api/modules/workspaces/workspaces.types'
 
 export function reserveWorkspaceId(db: Database): Promise<string> {
   return generateWorkspaceId(db)
 }
 
-export async function addWorkspace(tx: WorkspaceTransaction, workspace: NewWorkspace) {
+export async function addWorkspace(
+  tx: WorkspaceTransaction,
+  workspace: NewWorkspace,
+): Promise<WorkspaceDefaults> {
   await insertWorkspace(tx, workspace)
-  await insertDefaultSettings(tx, workspace.id)
+  return insertDefaultSettings(tx, workspace.id)
 }

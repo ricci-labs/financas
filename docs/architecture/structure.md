@@ -66,7 +66,10 @@ src/
 │   ├── access.types.ts       # Permission, RoleTemplate
 │   ├── access.ts             # valid pairs, role templates, can()
 │   └── access.test.ts
-├── ledger/                   # planned: postings builders per entry type, schemas
+├── ledger/
+│   ├── ledger.constants.ts   # account kinds, classes, income natures, system kinds
+│   ├── ledger.ts             # kind → class, system account names
+│   └── ledger.test.ts        # (planned: postings builders per entry type, schemas)
 ├── pix/                      # planned: Pix copia-e-cola payload
 └── index.ts                  # public surface of the package
 ```

@@ -1,0 +1,1719 @@
+{
+  "id": "6f77ba5b-c729-4f4f-a88f-bdb9bfe09565",
+  "prevId": "c503db09-3a14-4b38-93bf-1d5363dff16d",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.module_actions": {
+      "name": "module_actions",
+      "schema": "",
+      "columns": {
+        "module": {
+          "name": "module",
+          "type": "app_module",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action": {
+          "name": "action",
+          "type": "permission_action",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "module_actions_module_action_pk": {
+          "name": "module_actions_module_action_pk",
+          "columns": [
+            "module",
+            "action"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.role_permissions": {
+      "name": "role_permissions",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role_id": {
+          "name": "role_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "module": {
+          "name": "module",
+          "type": "app_module",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action": {
+          "name": "action",
+          "type": "permission_action",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "role_permissions_role_fk": {
+          "name": "role_permissions_role_fk",
+          "tableFrom": "role_permissions",
+          "columnsFrom": [
+            "workspace_id",
+            "role_id"
+          ],
+          "tableTo": "roles",
+          "columnsTo": [
+            "workspace_id",
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "role_permissions_module_action_fk": {
+          "name": "role_permissions_module_action_fk",
+          "tableFrom": "role_permissions",
+          "columnsFrom": [
+            "module",
+            "action"
+          ],
+          "tableTo": "module_actions",
+          "columnsTo": [
+            "module",
+            "action"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "role_permissions_role_id_module_action_pk": {
+          "name": "role_permissions_role_id_module_action_pk",
+          "columns": [
+            "role_id",
+            "module",
+            "action"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "role_permissions_tenant_isolation": {
+          "name": "role_permissions_tenant_isolation",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "financas_app"
+          ],
+          "using": "\"role_permissions\".\"workspace_id\" = app_current_workspace_id()",
+          "withCheck": "\"role_permissions\".\"workspace_id\" = app_current_workspace_id()"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.roles": {
+      "name": "roles",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuidv7()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "system_key": {
+          "name": "system_key",
+          "type": "system_role_key",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deleted_by_user_id": {
+          "name": "deleted_by_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "delete_reason": {
+          "name": "delete_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "roles_name_unique": {
+          "name": "roles_name_unique",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "lower(\"name\")",
+              "isExpression": true,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "where": "\"roles\".\"deleted_at\" is null",
+          "concurrently": false
+        },
+        "roles_system_key_unique": {
+          "name": "roles_system_key_unique",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "system_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "where": "\"roles\".\"system_key\" is not null and \"roles\".\"deleted_at\" is null",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "roles_workspace_id_workspaces_id_fk": {
+          "name": "roles_workspace_id_workspaces_id_fk",
+          "tableFrom": "roles",
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "tableTo": "workspaces",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "roles_deleted_by_user_id_users_id_fk": {
+          "name": "roles_deleted_by_user_id_users_id_fk",
+          "tableFrom": "roles",
+          "columnsFrom": [
+            "deleted_by_user_id"
+          ],
+          "tableTo": "users",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "roles_workspace_id_id_unique": {
+          "name": "roles_workspace_id_id_unique",
+          "columns": [
+            "workspace_id",
+            "id"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {
+        "roles_tenant_isolation": {
+          "name": "roles_tenant_isolation",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "financas_app"
+          ],
+          "using": "\"roles\".\"workspace_id\" = app_current_workspace_id()",
+          "withCheck": "\"roles\".\"workspace_id\" = app_current_workspace_id()"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.user_preferences": {
+      "name": "user_preferences",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "language": {
+          "name": "language",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pt-BR'"
+        },
+        "quiet_hours_start": {
+          "name": "quiet_hours_start",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quiet_hours_end": {
+          "name": "quiet_hours_end",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_preferences_user_id_users_id_fk": {
+          "name": "user_preferences_user_id_users_id_fk",
+          "tableFrom": "user_preferences",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "tableTo": "users",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "user_preferences_language": {
+          "name": "user_preferences_language",
+          "value": "\"user_preferences\".\"language\" ~ '^[a-z]{2}(-[A-Z]{2})?$'"
+        },
+        "user_preferences_quiet_hours_pair": {
+          "name": "user_preferences_quiet_hours_pair",
+          "value": "(\"user_preferences\".\"quiet_hours_start\" is null) = (\"user_preferences\".\"quiet_hours_end\" is null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuidv7()"
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email_verified_at": {
+          "name": "email_verified_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "disabled_at": {
+          "name": "disabled_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "users_email_unique": {
+          "name": "users_email_unique",
+          "columns": [
+            {
+              "expression": "lower(\"email\")",
+              "isExpression": true,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ledger_accounts": {
+      "name": "ledger_accounts",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuidv7()"
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kind": {
+          "name": "kind",
+          "type": "account_kind",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "class": {
+          "name": "class",
+          "type": "account_class",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "generated": {
+            "type": "stored",
+            "as": "case kind when 'checking' then 'asset'::account_class when 'savings' then 'asset'::account_class when 'cash_wallet' then 'asset'::account_class when 'investment' then 'asset'::account_class when 'receivable' then 'asset'::account_class when 'credit_card' then 'liability'::account_class when 'loan' then 'liability'::account_class when 'payable' then 'liability'::account_class when 'income_category' then 'income'::account_class when 'expense_category' then 'expense'::account_class when 'opening_balance' then 'equity'::account_class end"
+          }
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "currency": {
+          "name": "currency",
+          "type": "char(3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "income_nature": {
+          "name": "income_nature",
+          "type": "income_nature",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "owner_user_id": {
+          "name": "owner_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_system": {
+          "name": "is_system",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "generated": {
+            "type": "stored",
+            "as": "kind in ('receivable', 'payable', 'opening_balance')"
+          }
+        },
+        "sort_order": {
+          "name": "sort_order",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "color": {
+          "name": "color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "icon": {
+          "name": "icon",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deleted_by_user_id": {
+          "name": "deleted_by_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "delete_reason": {
+          "name": "delete_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ledger_accounts_sibling_name_unique": {
+          "name": "ledger_accounts_sibling_name_unique",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "class",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "coalesce(\"parent_id\", '00000000-0000-0000-0000-000000000000'::uuid)",
+              "isExpression": true,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "lower(\"name\")",
+              "isExpression": true,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "where": "\"ledger_accounts\".\"deleted_at\" is null",
+          "concurrently": false
+        },
+        "ledger_accounts_one_system_account_per_kind": {
+          "name": "ledger_accounts_one_system_account_per_kind",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "kind",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "where": "\"ledger_accounts\".\"is_system\" and \"ledger_accounts\".\"deleted_at\" is null",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "ledger_accounts_workspace_id_workspaces_id_fk": {
+          "name": "ledger_accounts_workspace_id_workspaces_id_fk",
+          "tableFrom": "ledger_accounts",
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "tableTo": "workspaces",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "ledger_accounts_owner_user_id_users_id_fk": {
+          "name": "ledger_accounts_owner_user_id_users_id_fk",
+          "tableFrom": "ledger_accounts",
+          "columnsFrom": [
+            "owner_user_id"
+          ],
+          "tableTo": "users",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "ledger_accounts_deleted_by_user_id_users_id_fk": {
+          "name": "ledger_accounts_deleted_by_user_id_users_id_fk",
+          "tableFrom": "ledger_accounts",
+          "columnsFrom": [
+            "deleted_by_user_id"
+          ],
+          "tableTo": "users",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "ledger_accounts_parent_same_class_fk": {
+          "name": "ledger_accounts_parent_same_class_fk",
+          "tableFrom": "ledger_accounts",
+          "columnsFrom": [
+            "workspace_id",
+            "parent_id",
+            "class"
+          ],
+          "tableTo": "ledger_accounts",
+          "columnsTo": [
+            "workspace_id",
+            "id",
+            "class"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "ledger_accounts_workspace_id_id_unique": {
+          "name": "ledger_accounts_workspace_id_id_unique",
+          "columns": [
+            "workspace_id",
+            "id"
+          ],
+          "nullsNotDistinct": false
+        },
+        "ledger_accounts_workspace_id_id_class_unique": {
+          "name": "ledger_accounts_workspace_id_id_class_unique",
+          "columns": [
+            "workspace_id",
+            "id",
+            "class"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {
+        "ledger_accounts_tenant_isolation": {
+          "name": "ledger_accounts_tenant_isolation",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "financas_app"
+          ],
+          "using": "\"ledger_accounts\".\"workspace_id\" = app_current_workspace_id()",
+          "withCheck": "\"ledger_accounts\".\"workspace_id\" = app_current_workspace_id()"
+        }
+      },
+      "checkConstraints": {
+        "ledger_accounts_not_own_parent": {
+          "name": "ledger_accounts_not_own_parent",
+          "value": "\"ledger_accounts\".\"parent_id\" <> \"ledger_accounts\".\"id\""
+        },
+        "ledger_accounts_currency_iso": {
+          "name": "ledger_accounts_currency_iso",
+          "value": "\"ledger_accounts\".\"currency\" ~ '^[A-Z]{3}$'"
+        },
+        "ledger_accounts_income_nature": {
+          "name": "ledger_accounts_income_nature",
+          "value": "(\"ledger_accounts\".\"kind\" = 'income_category') = (\"ledger_accounts\".\"income_nature\" is not null)"
+        },
+        "ledger_accounts_system_at_root": {
+          "name": "ledger_accounts_system_at_root",
+          "value": "not \"ledger_accounts\".\"is_system\" or \"ledger_accounts\".\"parent_id\" is null"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.invitations": {
+      "name": "invitations",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuidv7()"
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phone_e164": {
+          "name": "phone_e164",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "role_id": {
+          "name": "role_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token_hash": {
+          "name": "token_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "invited_by_user_id": {
+          "name": "invited_by_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "accepted_at": {
+          "name": "accepted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "accepted_by_user_id": {
+          "name": "accepted_by_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deleted_by_user_id": {
+          "name": "deleted_by_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "delete_reason": {
+          "name": "delete_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "invitations_pending_email_unique": {
+          "name": "invitations_pending_email_unique",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "lower(\"email\")",
+              "isExpression": true,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "where": "\"invitations\".\"email\" is not null and \"invitations\".\"accepted_at\" is null and \"invitations\".\"deleted_at\" is null",
+          "concurrently": false
+        },
+        "invitations_pending_phone_unique": {
+          "name": "invitations_pending_phone_unique",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "phone_e164",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "where": "\"invitations\".\"phone_e164\" is not null and \"invitations\".\"accepted_at\" is null and \"invitations\".\"deleted_at\" is null",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "invitations_workspace_id_workspaces_id_fk": {
+          "name": "invitations_workspace_id_workspaces_id_fk",
+          "tableFrom": "invitations",
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "tableTo": "workspaces",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "invitations_invited_by_user_id_users_id_fk": {
+          "name": "invitations_invited_by_user_id_users_id_fk",
+          "tableFrom": "invitations",
+          "columnsFrom": [
+            "invited_by_user_id"
+          ],
+          "tableTo": "users",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "invitations_accepted_by_user_id_users_id_fk": {
+          "name": "invitations_accepted_by_user_id_users_id_fk",
+          "tableFrom": "invitations",
+          "columnsFrom": [
+            "accepted_by_user_id"
+          ],
+          "tableTo": "users",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "invitations_deleted_by_user_id_users_id_fk": {
+          "name": "invitations_deleted_by_user_id_users_id_fk",
+          "tableFrom": "invitations",
+          "columnsFrom": [
+            "deleted_by_user_id"
+          ],
+          "tableTo": "users",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "invitations_role_fk": {
+          "name": "invitations_role_fk",
+          "tableFrom": "invitations",
+          "columnsFrom": [
+            "workspace_id",
+            "role_id"
+          ],
+          "tableTo": "roles",
+          "columnsTo": [
+            "workspace_id",
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "invitations_token_hash_unique": {
+          "name": "invitations_token_hash_unique",
+          "columns": [
+            "token_hash"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {
+        "invitations_tenant_isolation": {
+          "name": "invitations_tenant_isolation",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "financas_app"
+          ],
+          "using": "\"invitations\".\"workspace_id\" = app_current_workspace_id()",
+          "withCheck": "\"invitations\".\"workspace_id\" = app_current_workspace_id()"
+        }
+      },
+      "checkConstraints": {
+        "invitations_one_contact": {
+          "name": "invitations_one_contact",
+          "value": "num_nonnulls(\"invitations\".\"email\", \"invitations\".\"phone_e164\") = 1"
+        },
+        "invitations_email_format": {
+          "name": "invitations_email_format",
+          "value": "\"invitations\".\"email\" is null or \"invitations\".\"email\" ~ '^[^@[:space:]]+@[^@[:space:]]+$'"
+        },
+        "invitations_phone_format": {
+          "name": "invitations_phone_format",
+          "value": "\"invitations\".\"phone_e164\" is null or \"invitations\".\"phone_e164\" ~ '^[+][1-9][0-9]{7,14}$'"
+        },
+        "invitations_acceptance_pair": {
+          "name": "invitations_acceptance_pair",
+          "value": "(\"invitations\".\"accepted_at\" is null) = (\"invitations\".\"accepted_by_user_id\" is null)"
+        },
+        "invitations_expiry_after_creation": {
+          "name": "invitations_expiry_after_creation",
+          "value": "\"invitations\".\"expires_at\" > \"invitations\".\"created_at\""
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.membership_preferences": {
+      "name": "membership_preferences",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "notify_bills_days_before": {
+          "name": "notify_bills_days_before",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 3
+        },
+        "notify_channel": {
+          "name": "notify_channel",
+          "type": "notification_channel",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'whatsapp'"
+        },
+        "notify_daily_digest": {
+          "name": "notify_daily_digest",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "notify_budget_threshold_pct": {
+          "name": "notify_budget_threshold_pct",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 80
+        },
+        "notify_variable_income": {
+          "name": "notify_variable_income",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "membership_preferences_workspace_id_workspaces_id_fk": {
+          "name": "membership_preferences_workspace_id_workspaces_id_fk",
+          "tableFrom": "membership_preferences",
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "tableTo": "workspaces",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "membership_preferences_user_id_users_id_fk": {
+          "name": "membership_preferences_user_id_users_id_fk",
+          "tableFrom": "membership_preferences",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "tableTo": "users",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "membership_preferences_workspace_id_user_id_pk": {
+          "name": "membership_preferences_workspace_id_user_id_pk",
+          "columns": [
+            "workspace_id",
+            "user_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "membership_preferences_tenant_isolation": {
+          "name": "membership_preferences_tenant_isolation",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "financas_app"
+          ],
+          "using": "\"membership_preferences\".\"workspace_id\" = app_current_workspace_id()",
+          "withCheck": "\"membership_preferences\".\"workspace_id\" = app_current_workspace_id()"
+        }
+      },
+      "checkConstraints": {
+        "membership_preferences_bills_days": {
+          "name": "membership_preferences_bills_days",
+          "value": "\"membership_preferences\".\"notify_bills_days_before\" between 0 and 30"
+        },
+        "membership_preferences_budget_threshold": {
+          "name": "membership_preferences_budget_threshold",
+          "value": "\"membership_preferences\".\"notify_budget_threshold_pct\" between 1 and 100"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.memberships": {
+      "name": "memberships",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuidv7()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role_id": {
+          "name": "role_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deleted_by_user_id": {
+          "name": "deleted_by_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "delete_reason": {
+          "name": "delete_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "memberships_active_user_unique": {
+          "name": "memberships_active_user_unique",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "where": "\"memberships\".\"deleted_at\" is null",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "memberships_workspace_id_workspaces_id_fk": {
+          "name": "memberships_workspace_id_workspaces_id_fk",
+          "tableFrom": "memberships",
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "tableTo": "workspaces",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "memberships_user_id_users_id_fk": {
+          "name": "memberships_user_id_users_id_fk",
+          "tableFrom": "memberships",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "tableTo": "users",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "memberships_deleted_by_user_id_users_id_fk": {
+          "name": "memberships_deleted_by_user_id_users_id_fk",
+          "tableFrom": "memberships",
+          "columnsFrom": [
+            "deleted_by_user_id"
+          ],
+          "tableTo": "users",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "memberships_role_fk": {
+          "name": "memberships_role_fk",
+          "tableFrom": "memberships",
+          "columnsFrom": [
+            "workspace_id",
+            "role_id"
+          ],
+          "tableTo": "roles",
+          "columnsTo": [
+            "workspace_id",
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "memberships_workspace_id_id_unique": {
+          "name": "memberships_workspace_id_id_unique",
+          "columns": [
+            "workspace_id",
+            "id"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {
+        "memberships_tenant_isolation": {
+          "name": "memberships_tenant_isolation",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "financas_app"
+          ],
+          "using": "\"memberships\".\"workspace_id\" = app_current_workspace_id()",
+          "withCheck": "\"memberships\".\"workspace_id\" = app_current_workspace_id()"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.workspace_settings": {
+      "name": "workspace_settings",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "currency": {
+          "name": "currency",
+          "type": "char(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'BRL'"
+        },
+        "timezone": {
+          "name": "timezone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'America/Sao_Paulo'"
+        },
+        "locale": {
+          "name": "locale",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pt-BR'"
+        },
+        "period_anchor": {
+          "name": "period_anchor",
+          "type": "period_anchor",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'calendar_month'"
+        },
+        "period_anchor_value": {
+          "name": "period_anchor_value",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "installment_budget_view": {
+          "name": "installment_budget_view",
+          "type": "installment_budget_view",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'per_installment'"
+        },
+        "budget_base": {
+          "name": "budget_base",
+          "type": "budget_base",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'fixed_income'"
+        },
+        "week_starts_on": {
+          "name": "week_starts_on",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "pix_receiving_key": {
+          "name": "pix_receiving_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pix_receiver_name": {
+          "name": "pix_receiver_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pix_receiver_city": {
+          "name": "pix_receiver_city",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contact_messages_daily_cap": {
+          "name": "contact_messages_daily_cap",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 20
+        },
+        "charge_reminder_every_days": {
+          "name": "charge_reminder_every_days",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 3
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "workspace_settings_workspace_id_workspaces_id_fk": {
+          "name": "workspace_settings_workspace_id_workspaces_id_fk",
+          "tableFrom": "workspace_settings",
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "tableTo": "workspaces",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "workspace_settings_tenant_isolation": {
+          "name": "workspace_settings_tenant_isolation",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "financas_app"
+          ],
+          "using": "\"workspace_settings\".\"workspace_id\" = app_current_workspace_id()",
+          "withCheck": "\"workspace_settings\".\"workspace_id\" = app_current_workspace_id()"
+        }
+      },
+      "checkConstraints": {
+        "workspace_settings_currency_iso": {
+          "name": "workspace_settings_currency_iso",
+          "value": "\"workspace_settings\".\"currency\" ~ '^[A-Z]{3}$'"
+        },
+        "workspace_settings_period_anchor_value": {
+          "name": "workspace_settings_period_anchor_value",
+          "value": "(\"workspace_settings\".\"period_anchor\" = 'calendar_month' and \"workspace_settings\".\"period_anchor_value\" is null)\n        or (\"workspace_settings\".\"period_anchor\" = 'day_of_month'\n          and \"workspace_settings\".\"period_anchor_value\" is not null\n          and \"workspace_settings\".\"period_anchor_value\" between 1 and 31)\n        or (\"workspace_settings\".\"period_anchor\" = 'nth_business_day'\n          and \"workspace_settings\".\"period_anchor_value\" is not null\n          and \"workspace_settings\".\"period_anchor_value\" between 1 and 10)"
+        },
+        "workspace_settings_week_start": {
+          "name": "workspace_settings_week_start",
+          "value": "\"workspace_settings\".\"week_starts_on\" between 0 and 6"
+        },
+        "workspace_settings_pix_complete": {
+          "name": "workspace_settings_pix_complete",
+          "value": "\"workspace_settings\".\"pix_receiving_key\" is null\n        or (\"workspace_settings\".\"pix_receiver_name\" is not null and \"workspace_settings\".\"pix_receiver_city\" is not null)"
+        },
+        "workspace_settings_pix_lengths": {
+          "name": "workspace_settings_pix_lengths",
+          "value": "coalesce(length(\"workspace_settings\".\"pix_receiver_name\"), 0) <= 25\n        and coalesce(length(\"workspace_settings\".\"pix_receiver_city\"), 0) <= 15"
+        },
+        "workspace_settings_daily_cap": {
+          "name": "workspace_settings_daily_cap",
+          "value": "\"workspace_settings\".\"contact_messages_daily_cap\" >= 0"
+        },
+        "workspace_settings_reminder_interval": {
+          "name": "workspace_settings_reminder_interval",
+          "value": "\"workspace_settings\".\"charge_reminder_every_days\" is null or \"workspace_settings\".\"charge_reminder_every_days\" >= 1"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.workspaces": {
+      "name": "workspaces",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuidv7()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by_user_id": {
+          "name": "created_by_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deleted_by_user_id": {
+          "name": "deleted_by_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "delete_reason": {
+          "name": "delete_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "workspaces_created_by_user_id_users_id_fk": {
+          "name": "workspaces_created_by_user_id_users_id_fk",
+          "tableFrom": "workspaces",
+          "columnsFrom": [
+            "created_by_user_id"
+          ],
+          "tableTo": "users",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "workspaces_deleted_by_user_id_users_id_fk": {
+          "name": "workspaces_deleted_by_user_id_users_id_fk",
+          "tableFrom": "workspaces",
+          "columnsFrom": [
+            "deleted_by_user_id"
+          ],
+          "tableTo": "users",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "workspaces_tenant_isolation": {
+          "name": "workspaces_tenant_isolation",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "financas_app"
+          ],
+          "using": "\"workspaces\".\"id\" = app_current_workspace_id()",
+          "withCheck": "\"workspaces\".\"id\" = app_current_workspace_id()"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    }
+  },
+  "enums": {
+    "public.app_module": {
+      "name": "app_module",
+      "schema": "public",
+      "values": [
+        "entries",
+        "accounts",
+        "cards",
+        "contacts",
+        "planning",
+        "budgets",
+        "reports",
+        "attachments",
+        "settings",
+        "members",
+        "audit"
+      ]
+    },
+    "public.permission_action": {
+      "name": "permission_action",
+      "schema": "public",
+      "values": [
+        "view",
+        "create",
+        "update",
+        "delete"
+      ]
+    },
+    "public.system_role_key": {
+      "name": "system_role_key",
+      "schema": "public",
+      "values": [
+        "owner",
+        "admin",
+        "member",
+        "viewer"
+      ]
+    },
+    "public.notification_channel": {
+      "name": "notification_channel",
+      "schema": "public",
+      "values": [
+        "whatsapp",
+        "email"
+      ]
+    },
+    "public.account_class": {
+      "name": "account_class",
+      "schema": "public",
+      "values": [
+        "asset",
+        "liability",
+        "income",
+        "expense",
+        "equity"
+      ]
+    },
+    "public.account_kind": {
+      "name": "account_kind",
+      "schema": "public",
+      "values": [
+        "checking",
+        "savings",
+        "cash_wallet",
+        "investment",
+        "receivable",
+        "credit_card",
+        "loan",
+        "payable",
+        "income_category",
+        "expense_category",
+        "opening_balance"
+      ]
+    },
+    "public.income_nature": {
+      "name": "income_nature",
+      "schema": "public",
+      "values": [
+        "fixed",
+        "variable"
+      ]
+    },
+    "public.budget_base": {
+      "name": "budget_base",
+      "schema": "public",
+      "values": [
+        "fixed_income",
+        "all_income"
+      ]
+    },
+    "public.installment_budget_view": {
+      "name": "installment_budget_view",
+      "schema": "public",
+      "values": [
+        "purchase_month",
+        "per_installment"
+      ]
+    },
+    "public.period_anchor": {
+      "name": "period_anchor",
+      "schema": "public",
+      "values": [
+        "calendar_month",
+        "day_of_month",
+        "nth_business_day"
+      ]
+    }
+  },
+  "schemas": {},
+  "views": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

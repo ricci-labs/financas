@@ -57,8 +57,9 @@ membership, the last active owner can't be removed or demoted, and the owner rol
 `owner` key. Erasing the whole workspace is still allowed.
 
 **Creating a workspace** (`createWorkspace()` in `modules/onboarding`): reserve the id with
-`uuidv7()`, then in one workspace-scoped transaction insert the workspace and its settings, the four
-system roles with the default matrix, and the creator's owner membership.
+`uuidv7()`, then in one workspace-scoped transaction insert the workspace and its settings, the system ledger
+accounts (`ledger.md`), the four system roles with the default matrix, and the creator's owner
+membership.
 
 ### `invitations` (module `members`)
 | Column | Notes |

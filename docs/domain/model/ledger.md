@@ -1,7 +1,7 @@
 ---
 summary: The double-entry ledger — account kinds, cards and invoices, journal entries and postings, sign convention, DB-enforced invariants, correction policy (soft delete / replace), and worked examples.
 read_when: Anything that records, edits, reverses or reports money movements, cards or invoices.
-updated: 2026-09-22
+updated: 2026-09-25
 ---
 
 # Ledger (double-entry)
@@ -32,18 +32,22 @@ The UI shows everything in natural terms (an expense of R$ 50 appears as R$ 50).
 
 ## `ledger_accounts`
 One table for everything money can sit in or be classified as, including **categories**.
+
+**Implemented** (module `ledger`). Not yet: `institution_id` (comes with the `institutions` table)
+and "kind immutable after the first posting" (comes with `postings`).
+Kinds, classes and system account names live in `packages/shared/src/ledger`.
 | Column | Type | Notes |
 |---|---|---|
 | `workspace_id`, `id` | | |
-| `parent_id` | FK self null | Tree: "Alimentação › Mercado". A parent must have the same `class`. |
+| `parent_id` | FK self null | Tree: "Alimentação › Mercado". A parent must have the same `class` (composite FK on `(workspace_id, id, class)`). No cycles, no child under a deleted parent, no soft delete while children are active (triggers). |
 | `kind` | enum `account_kind` | See below. Immutable after the first posting. |
 | `class` | enum, **generated** from `kind` | `asset` / `liability` / `income` / `expense` / `equity` |
-| `name` | text | Unique among siblings |
+| `name` | text | Unique among siblings of the same class, case-insensitive, among non-deleted |
 | `currency` | char(3) | Default from `workspace_settings` |
 | `institution_id` | FK institutions null | Bank/issuer (global seeded list plus custom) |
 | `income_nature` | enum `fixed` \| `variable` null | Required when `kind = income_category`, null otherwise (CHECK) |
 | `owner_user_id` | FK users null | Informational ("conta do Member A"), not a permission |
-| `is_system` | bool | System accounts (receivables, payables, opening balance) can't be renamed or archived |
+| `is_system` | bool, **generated** from `kind` | System accounts (receivable, payable, opening balance): one per workspace, at the root, created by `createWorkspace()` in the workspace currency. They can't be renamed, re-kinded, moved, archived or deleted; only personalized (color, icon, order) |
 | `sort_order`, `color`, `icon` | | Personalization |
 | `archived_at` | | |
 

@@ -61,7 +61,7 @@ routes / agent tools / jobs / channels
 | `planning` | `notifications` | Bill and invoice reminders |
 | `reports` | `ledger`, `planning`, `cards`, `contacts` | Read-only aggregates |
 | every module | `workspaces` | Current workspace settings |
-| `onboarding` | `workspaces`, `access`, `members` | Creating a workspace: the workspace and its settings, the system roles, the creator as owner |
+| `onboarding` | `workspaces`, `ledger`, `access`, `members` | Creating a workspace: the workspace and its settings, the system accounts, the system roles, the creator as owner |
 
 `onboarding` only orchestrates flows that span modules (creating a workspace) and nothing depends on it, so every module can depend on `workspaces` without a cycle.
 

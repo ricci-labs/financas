@@ -3,3 +3,7 @@ export type NewWorkspace = {
   name: string
   createdByUserId: string
 }
+
+export type WorkspaceDefaults = {
+  currency: string
+}
