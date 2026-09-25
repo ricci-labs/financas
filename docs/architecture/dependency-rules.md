@@ -53,17 +53,18 @@ routes / agent tools / jobs / channels
 ## Allowed cross-module calls (keep this list current)
 | Caller | Callee | Reason |
 |---|---|---|
-| `ledger` | `cards` | Resolve/create the invoice for each card posting |
 | `ledger` | `workspaces` | Settings (currency, timezone) |
 | `planning` | `ledger` | Match real entries to planned occurrences |
 | `contacts` | `ledger` | Open receivable items for charges; record settlements |
 | `contacts` | `notifications` | Send charges and charge reminders |
 | `planning` | `notifications` | Bill and invoice reminders |
-| `reports` | `ledger`, `planning`, `cards`, `contacts` | Read-only aggregates |
+| `reports` | `ledger`, `planning`, `contacts` | Read-only aggregates |
 | every module | `workspaces` | Current workspace settings |
 | `onboarding` | `workspaces`, `ledger`, `access`, `members` | Creating a workspace: the workspace and its settings, the system accounts, the system roles, the creator as owner |
 
 `onboarding` only orchestrates flows that span modules (creating a workspace) and nothing depends on it, so every module can depend on `workspaces` without a cycle.
+
+Cards and invoices live in `ledger`: postings reference invoices and invoices reference card accounts, so a separate `cards` module would be a cycle (rule 7).
 
 Contact validity on postings is enforced by the composite FK, so `ledger` never calls `contacts` (that would create a cycle with `contacts → ledger`).
 

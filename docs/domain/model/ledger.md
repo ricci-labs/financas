@@ -64,9 +64,12 @@ Kinds, classes and system account names live in `packages/shared/src/ledger`.
 | `opening_balance` | equity | One system account, used to set initial balances |
 
 ## `card_details` (1:1 with a `credit_card` account)
+**Implemented.** Created with the account by `createCard()`, changed by `changeCard()`. The payment
+account must be an active money account (checked by the service).
+
 | Column | Notes |
 |---|---|
-| `account_id` | PK, FK to `ledger_accounts` (CHECK kind = credit_card via a composite FK on `(id, kind)`) |
+| `account_id` | PK, FK to `ledger_accounts` (kind = credit_card via a composite FK on `(workspace_id, id, kind)` and a CHECK on `account_kind`) |
 | `closing_day`, `due_day` | smallint 1–31 |
 | `purchase_on_closing_day_goes_next` | bool, default true (per issuer) |
 | `limit_cents` | bigint null |
@@ -74,11 +77,13 @@ Kinds, classes and system account names live in `packages/shared/src/ledger`.
 | `payment_account_id` | FK ledger_accounts null (default account used to pay the invoice) |
 
 ## `card_invoices`
+**Implemented** (table and rules). Invoices are created by the card purchase flow (next PR).
+
 | Column | Notes |
 |---|---|
 | `card_account_id` | FK |
-| `reference_month` | `date` (first day of the due month). `unique (card_account_id, reference_month)` |
-| `closing_on`, `due_on` | Real dates, copied from the rule at creation. Editable if the issuer moves them. |
+| `reference_month` | `date` (first day of the due month, CHECK). `unique (workspace_id, card_account_id, reference_month)` |
+| `closing_on`, `due_on` | Real dates, copied from the rule at creation. Editable if the issuer moves them. `due_on > closing_on` |
 | `status` | enum `invoice_status`: `future`, `open`, `closed` |
 
 Invoices are created on demand, `future` ones included, when an installment lands on them.
@@ -109,24 +114,24 @@ The amount due and "paid" are **derived** (`invoice_totals` view) from postings 
 | `account_id` + `account_kind` | | **Composite FK `(account_id, account_kind)` → `ledger_accounts(id, kind)`**, so the CHECKs below can use the kind |
 | `amount_cents` | bigint `<> 0` | Signed (debit +, credit −) |
 | `effective_on` | date | The date this line counts in reports. Default `occurred_on`. For installments, a date in the installment's invoice month. |
-| `invoice_id` | FK card_invoices null | |
+| `invoice_id` | FK card_invoices null | Set exactly on `credit_card` postings; composite FK `(workspace_id, invoice_id, account_id)` → the invoice of that same card |
 | `contact_id` | FK contacts null | |
 | `installment_no` | smallint null | 1..N |
 | `memo` | text null | |
 
 ### Invariants enforced by the database
-Status: rows marked ✅ are implemented (`drizzle/0021`–`0024`); the others come with cards and contacts.
+Status: rows marked ✅ are implemented; row 4 comes with contacts.
 
 | # | Rule | How |
 |---|---|---|
 | 1 ✅ | Postings of an entry sum to 0 | `DEFERRABLE INITIALLY DEFERRED` constraint triggers at commit, on `journal_entries` and `postings` insert, running as the owner (ADR 0020) |
 | 2 ✅ | An entry has ≥ 2 postings | Same trigger (an entry with no postings fails too) |
-| 3 | `credit_card` posting ⇔ `invoice_id` set, and the invoice belongs to the same card | CHECK on `account_kind` + trigger for the card match. **Until then, postings on `credit_card` are refused** (CHECK `postings_kinds_waiting_for_their_columns`) |
+| 3 ✅ | `credit_card` posting ⇔ `invoice_id` set, and the invoice belongs to the same card | CHECK `postings_invoice_exactly_on_cards` + composite FK `postings_invoice_of_the_card_fk` |
 | 4 | `receivable`/`payable` posting ⇔ `contact_id` set | CHECK on `account_kind`. **Until then, postings on `receivable`/`payable` are refused** (same CHECK) |
-| 5 | Nobody posts into an archived or deleted account (✅), or into a `closed` invoice (except `adjustment`/`invoice_payment`/`refund` entries) | Trigger `postings_guard_insert` |
+| 5 ✅ | Nobody posts into an archived or deleted account, or into a `closed` invoice (except `adjustment`/`invoice_payment`/`refund` entries) | Trigger `postings_guard_insert` |
 | 6 ✅ | All rows share one `workspace_id` | Composite FKs. The posting → account FK also carries `account_kind`, so an account's kind can't change once it has postings. It is deferred, so erasing a workspace can remove accounts and postings in one statement |
 | 7 ✅ | Postings are immutable: no UPDATE, no DELETE, and no new posting on an entry recorded in an earlier transaction. An entry can change only `description` and `notes` in place (plus soft delete / restore); anything else is a replacement. No hard DELETE of entries | Triggers `postings_are_immutable`, `postings_guard_insert`, `journal_entries_guard_changes`. Hard deletes pass only while the whole workspace is being erased |
-| 8 | An entry with postings on a `closed` invoice can't be soft-deleted. Fix it with a `refund`/`adjustment` entry on the open invoice | Trigger |
+| 8 ✅ | An entry with postings on a `closed` invoice can't be soft-deleted or restored. Fix it with a `refund`/`adjustment` entry on the open invoice | Trigger `journal_entries_guard_changes` (`entry_touches_closed_invoice()`) |
 | 9 ✅ | An account used by active entries can't be soft-deleted (archive it), and an entry using a deleted account can't be restored | Triggers `ledger_accounts_refuse_deleting_used`, `journal_entries_guard_changes` |
 | 10 ✅ | An entry and the entry it replaces are never both active, and an entry has at most one active replacement | Deferred trigger `journal_entries_replacement_not_both_active` + partial unique index |
 
@@ -134,12 +139,13 @@ Status: rows marked ✅ are implemented (`drizzle/0021`–`0024`); the others co
 transaction's `now()` on insert) with the current `now()`.
 
 ## Services (`modules/ledger`)
-Use cases live in `modules/ledger/use-cases/` (`accounts.ts`, `entries.ts`); `ledger.service.ts` re-exports them.
+Use cases live in `modules/ledger/use-cases/` (`accounts.ts`, `cards.ts`, `entries.ts`); `ledger.service.ts` re-exports them.
 
 | Service | Does |
 |---|---|
 | `createAccount(db, context, input)` | Validates with `newAccountSchema` (user kinds only: no system accounts, cards come with `card_details`), checks the parent (same class, not deleted) and takes the currency from `workspace_settings` |
 | `changeAccount(db, ref, change)` | Rename, move (never under a descendant), owner, color, icon, order. System accounts accept only color, icon and order |
+| `createCard(db, context, input)` / `changeCard(db, card, change)` | A `credit_card` account plus its `card_details` (`newCardSchema` / `cardChangeSchema`). Errors: `CARD_INVALID`, `CARD_NOT_FOUND`, `PAYMENT_ACCOUNT_NOT_AVAILABLE`, `ACCOUNT_NAME_TAKEN` |
 | `archiveAccount` / `unarchiveAccount` | Archive keeps history; archived accounts leave the pickers and take no new postings |
 | `deleteAccount(db, input, clock)` / `restoreAccount` | Soft delete (refused for system accounts, accounts with active children or used by active entries) and restore (refused under a deleted parent or when the name was taken meanwhile) |
 | `recordEntry(db, context, input)` | Validates with `entryInputSchema`, loads the accounts (same workspace, not archived, not deleted), plans the postings with `planPostings()` (`packages/shared/src/ledger/postings.ts`) and writes the entry with its postings |

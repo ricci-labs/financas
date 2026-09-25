@@ -25,7 +25,7 @@ updated: 2026-09-25
 - [x] DB: journal entries + postings (balanced, immutable, soft delete)
 - [x] Ledger services: postings planner + record / change / delete / restore / replace entry
 - [x] Ledger account services: create / change / archive / delete / restore
-- [ ] DB: cards and invoices (tables, card creation, invoice rules)
+- [x] DB: cards and invoices (tables, card creation, invoice rules)
 - [ ] Card purchases in installments, invoice payment
 - [ ] DB: balance views (`account_balances`, `invoice_totals`)
 - [ ] DB: contacts/charges, planning, support tables
