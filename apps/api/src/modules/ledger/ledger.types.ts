@@ -26,3 +26,22 @@ export type DeleteEntryInput = EntryRef & {
   userId: string
   reason?: string
 }
+
+export type LedgerContext = {
+  workspaceId: string
+  userId: string
+}
+
+export type WorkspaceAccount = {
+  workspaceId: string
+  accountId: string
+}
+
+export type DeleteAccountInput = WorkspaceAccount & {
+  userId: string
+  reason?: string
+}
+
+export type CreatedAccount = {
+  accountId: string
+}

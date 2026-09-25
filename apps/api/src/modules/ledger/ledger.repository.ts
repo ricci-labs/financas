@@ -82,3 +82,64 @@ export async function updateEntryDetails(
 ) {
   await tx.update(journalEntries).set(details).where(eq(journalEntries.id, entryId))
 }
+
+type NewAccount = typeof ledgerAccounts.$inferInsert
+
+type AccountUpdate = Partial<
+  Pick<NewAccount, 'name' | 'parentId' | 'ownerUserId' | 'color' | 'icon' | 'sortOrder'>
+>
+
+export async function insertAccount(tx: WorkspaceTransaction, account: NewAccount) {
+  const [inserted] = await tx
+    .insert(ledgerAccounts)
+    .values(account)
+    .returning({ id: ledgerAccounts.id })
+  if (!inserted) {
+    throw new Error('Account was not inserted')
+  }
+  return inserted.id
+}
+
+export async function findAccountClass(tx: WorkspaceTransaction, accountId: string) {
+  const [account] = await tx
+    .select({ class: ledgerAccounts.class, deletedAt: ledgerAccounts.deletedAt })
+    .from(ledgerAccounts)
+    .where(eq(ledgerAccounts.id, accountId))
+  return account
+}
+
+export async function lockAccount(tx: WorkspaceTransaction, accountId: string) {
+  const [account] = await tx
+    .select({
+      id: ledgerAccounts.id,
+      class: ledgerAccounts.class,
+      deletedAt: ledgerAccounts.deletedAt,
+    })
+    .from(ledgerAccounts)
+    .where(eq(ledgerAccounts.id, accountId))
+    .for('update')
+  return account
+}
+
+export async function updateAccount(
+  tx: WorkspaceTransaction,
+  accountId: string,
+  changes: AccountUpdate & { archivedAt?: Date | null },
+) {
+  await tx.update(ledgerAccounts).set(changes).where(eq(ledgerAccounts.id, accountId))
+}
+
+export async function markAccountDeleted(
+  tx: WorkspaceTransaction,
+  accountId: string,
+  deletion: { deletedAt: Date; deletedByUserId: string; deleteReason: string | null },
+) {
+  await tx.update(ledgerAccounts).set(deletion).where(eq(ledgerAccounts.id, accountId))
+}
+
+export async function markAccountRestored(tx: WorkspaceTransaction, accountId: string) {
+  await tx
+    .update(ledgerAccounts)
+    .set({ deletedAt: null, deletedByUserId: null, deleteReason: null })
+    .where(eq(ledgerAccounts.id, accountId))
+}

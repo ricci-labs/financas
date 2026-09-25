@@ -60,3 +60,15 @@ export type EntrySource = (typeof ENTRY_SOURCES)[number]
 export const MONEY_ACCOUNT_KINDS = ['checking', 'savings', 'cash_wallet', 'investment'] as const
 
 export type MoneyAccountKind = (typeof MONEY_ACCOUNT_KINDS)[number]
+
+export const USER_ACCOUNT_KINDS = [
+  'checking',
+  'savings',
+  'cash_wallet',
+  'investment',
+  'loan',
+  'income_category',
+  'expense_category',
+] as const
+
+export type UserAccountKind = (typeof USER_ACCOUNT_KINDS)[number]

@@ -1,15 +1,25 @@
 export {
+  archiveAccount,
+  changeAccount,
   changeEntryDetails,
+  createAccount,
   createSystemAccounts,
+  deleteAccount,
   deleteEntry,
   recordEntry,
   replaceEntry,
+  restoreAccount,
   restoreEntry,
+  unarchiveAccount,
 } from '@api/modules/ledger/ledger.service'
 export type {
+  CreatedAccount,
+  DeleteAccountInput,
   DeleteEntryInput,
   EntryContext,
   EntryRef,
+  LedgerContext,
   NewLedgerAccount,
   RecordedEntry,
+  WorkspaceAccount,
 } from '@api/modules/ledger/ledger.types'

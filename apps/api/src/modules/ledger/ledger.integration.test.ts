@@ -1,11 +1,17 @@
 import { withWorkspace } from '@api/core/db/tx'
 import {
+  archiveAccount,
+  changeAccount,
   changeEntryDetails,
+  createAccount,
+  deleteAccount,
   deleteEntry,
   type EntryContext,
   recordEntry,
   replaceEntry,
+  restoreAccount,
   restoreEntry,
+  unarchiveAccount,
 } from '@api/modules/ledger'
 import { journalEntries, ledgerAccounts, postings } from '@api/modules/ledger/ledger.table'
 import { workspaces } from '@api/modules/workspaces/workspaces.table'
@@ -1021,5 +1027,143 @@ describe('changing, deleting, restoring and replacing entries', () => {
     await expect(
       replaceEntry(databases.app, context, original, expenseOf(1700)),
     ).rejects.toMatchObject({ code: 'ENTRY_ALREADY_DELETED' })
+  })
+})
+
+async function accountRow(accountId: string, workspaceId = workspaceA) {
+  const [account] = await withWorkspace(databases.app, workspaceId, (tx) =>
+    tx.select().from(ledgerAccounts).where(eq(ledgerAccounts.id, accountId)),
+  )
+  return account
+}
+
+describe('account services', () => {
+  const context = () => ({ workspaceId: workspaceA, userId: ownerUserId })
+  const refOf = (accountId: string) => ({ workspaceId: workspaceA, accountId })
+
+  async function create(input: Record<string, unknown>): Promise<string> {
+    return (await createAccount(databases.app, context(), input)).accountId
+  }
+
+  async function category(name = uniqueName('Categoria'), parentId?: string) {
+    return create({ kind: 'expense_category', name, parentId })
+  }
+
+  it('creates an account in the workspace currency, trimming the name', async () => {
+    const name = uniqueName('Conta')
+    const accountId = await create({ kind: 'checking', name: `  ${name} `, color: '#112233' })
+    expect(await accountRow(accountId)).toMatchObject({
+      kind: 'checking',
+      name,
+      currency: 'BRL',
+      color: '#112233',
+      parentId: null,
+    })
+  })
+
+  it('nests a category under a parent of the same class only', async () => {
+    const parent = await category()
+    const child = await category(uniqueName('Mercado'), parent)
+    expect((await accountRow(child))?.parentId).toBe(parent)
+
+    await expect(
+      create({ kind: 'income_category', name: 'X', incomeNature: 'fixed', parentId: parent }),
+    ).rejects.toMatchObject({ code: 'PARENT_OF_ANOTHER_CLASS' })
+
+    const parentElsewhere = await insertAccount({ kind: 'expense_category' }, workspaceB)
+    await expect(category('Y', parentElsewhere)).rejects.toMatchObject({
+      code: 'PARENT_NOT_AVAILABLE',
+    })
+  })
+
+  it('refuses a name already used by a sibling, and invalid input', async () => {
+    const name = uniqueName('Lazer')
+    await category(name)
+    await expect(category(name.toUpperCase())).rejects.toMatchObject({
+      code: 'ACCOUNT_NAME_TAKEN',
+    })
+    await expect(create({ kind: 'credit_card', name: 'Cartão' })).rejects.toMatchObject({
+      code: 'ACCOUNT_INVALID',
+    })
+  })
+
+  it('renames and moves an account, but never under its own descendant', async () => {
+    const top = await category()
+    const middle = await category(uniqueName('Meio'), top)
+    const other = await category()
+    const newName = uniqueName('Renomeada')
+
+    await changeAccount(databases.app, refOf(middle), { name: newName, parentId: other })
+    expect(await accountRow(middle)).toMatchObject({ name: newName, parentId: other })
+
+    await expect(
+      changeAccount(databases.app, refOf(other), { parentId: middle }),
+    ).rejects.toMatchObject({ code: 'ACCOUNT_CHANGE_REFUSED' })
+  })
+
+  it('lets system accounts be personalized but not renamed or archived', async () => {
+    const receivable = await systemAccountOf(workspaceA, 'receivable')
+    await changeAccount(databases.app, refOf(receivable), { color: '#abcdef' })
+    expect((await accountRow(receivable))?.color).toBe('#abcdef')
+
+    await expect(
+      changeAccount(databases.app, refOf(receivable), { name: 'Outro nome' }),
+    ).rejects.toMatchObject({ code: 'ACCOUNT_CHANGE_REFUSED' })
+    await expect(archiveAccount(databases.app, refOf(receivable))).rejects.toMatchObject({
+      code: 'ACCOUNT_CHANGE_REFUSED',
+    })
+  })
+
+  it('archives and unarchives an account', async () => {
+    const accountId = await create({ kind: 'savings', name: uniqueName('Poupança') })
+    await archiveAccount(databases.app, refOf(accountId), { now: () => new Date('2026-10-01') })
+    expect((await accountRow(accountId))?.archivedAt).toEqual(new Date('2026-10-01'))
+    await unarchiveAccount(databases.app, refOf(accountId))
+    expect((await accountRow(accountId))?.archivedAt).toBeNull()
+  })
+
+  it('deletes an unused account, refuses one used by entries or a system one', async () => {
+    const unused = await create({ kind: 'cash_wallet', name: uniqueName('Carteira') })
+    await deleteAccount(databases.app, { ...refOf(unused), userId: ownerUserId, reason: 'fechada' })
+    expect(await accountRow(unused)).toMatchObject({
+      deletedByUserId: ownerUserId,
+      deleteReason: 'fechada',
+    })
+
+    const used = await create({ kind: 'checking', name: uniqueName('Usada') })
+    const food = await category()
+    await recordRaw(spend(1000, used, food))
+    await expect(
+      deleteAccount(databases.app, { ...refOf(used), userId: ownerUserId }),
+    ).rejects.toMatchObject({ code: 'ACCOUNT_CANNOT_BE_DELETED' })
+
+    const openingBalance = await systemAccountOf(workspaceA, 'opening_balance')
+    await expect(
+      deleteAccount(databases.app, { ...refOf(openingBalance), userId: ownerUserId }),
+    ).rejects.toMatchObject({ code: 'ACCOUNT_CANNOT_BE_DELETED' })
+  })
+
+  it('restores a deleted account unless its name was taken meanwhile', async () => {
+    const name = uniqueName('Volta')
+    const accountId = await category(name)
+    await deleteAccount(databases.app, { ...refOf(accountId), userId: ownerUserId })
+    await restoreAccount(databases.app, refOf(accountId))
+    expect((await accountRow(accountId))?.deletedAt).toBeNull()
+    await expect(restoreAccount(databases.app, refOf(accountId))).rejects.toMatchObject({
+      code: 'ACCOUNT_NOT_DELETED',
+    })
+
+    await deleteAccount(databases.app, { ...refOf(accountId), userId: ownerUserId })
+    await category(name)
+    await expect(restoreAccount(databases.app, refOf(accountId))).rejects.toMatchObject({
+      code: 'ACCOUNT_NAME_TAKEN',
+    })
+  })
+
+  it('does not find an account of another workspace', async () => {
+    const elsewhere = await insertAccount({ kind: 'checking' }, workspaceB)
+    await expect(
+      changeAccount(databases.app, refOf(elsewhere), { name: 'x' }),
+    ).rejects.toMatchObject({ code: 'ACCOUNT_NOT_FOUND' })
   })
 })
