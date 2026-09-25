@@ -16,3 +16,13 @@ export type EntryContext = {
 export type RecordedEntry = {
   entryId: string
 }
+
+export type EntryRef = {
+  workspaceId: string
+  entryId: string
+}
+
+export type DeleteEntryInput = EntryRef & {
+  userId: string
+  reason?: string
+}

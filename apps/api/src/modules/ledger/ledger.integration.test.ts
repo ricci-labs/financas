@@ -1,5 +1,12 @@
 import { withWorkspace } from '@api/core/db/tx'
-import { type EntryContext, recordEntry } from '@api/modules/ledger'
+import {
+  changeEntryDetails,
+  deleteEntry,
+  type EntryContext,
+  recordEntry,
+  replaceEntry,
+  restoreEntry,
+} from '@api/modules/ledger'
 import { journalEntries, ledgerAccounts, postings } from '@api/modules/ledger/ledger.table'
 import { workspaces } from '@api/modules/workspaces/workspaces.table'
 import {
@@ -849,5 +856,145 @@ describe('recordEntry', () => {
       })
       await expect(recorded).rejects.toMatchObject({ code: 'ACCOUNT_NOT_AVAILABLE' })
     }
+  })
+})
+
+describe('changing, deleting, restoring and replacing entries', () => {
+  let context: EntryContext
+  let checking: string
+  let groceries: string
+
+  beforeAll(async () => {
+    context = { workspaceId: workspaceA, userId: ownerUserId, source: 'web' }
+    checking = await insertAccount({ kind: 'checking' })
+    groceries = await insertAccount({ kind: 'expense_category' })
+  })
+
+  function expenseOf(amountCents: number) {
+    return {
+      entryType: 'expense',
+      occurredOn: '2026-10-06',
+      description: 'Padaria',
+      amountCents,
+      paidFromAccountId: checking,
+      categoryId: groceries,
+    }
+  }
+
+  async function recordExpense(amountCents = 1500): Promise<string> {
+    return (await recordEntry(databases.app, context, expenseOf(amountCents))).entryId
+  }
+
+  const refOf = (entryId: string) => ({ workspaceId: workspaceA, entryId })
+
+  it('changes the description and notes in place', async () => {
+    const entryId = await recordExpense()
+    await changeEntryDetails(databases.app, refOf(entryId), {
+      description: 'Padaria do bairro',
+      notes: 'pão e leite',
+    })
+    expect(await entryRow(entryId)).toMatchObject({
+      description: 'Padaria do bairro',
+      notes: 'pão e leite',
+    })
+  })
+
+  it('refuses an empty change and a change to a deleted entry', async () => {
+    const entryId = await recordExpense()
+    await expect(changeEntryDetails(databases.app, refOf(entryId), {})).rejects.toMatchObject({
+      code: 'ENTRY_INVALID',
+    })
+    await deleteEntry(databases.app, { ...refOf(entryId), userId: ownerUserId })
+    await expect(
+      changeEntryDetails(databases.app, refOf(entryId), { description: 'x' }),
+    ).rejects.toMatchObject({ code: 'ENTRY_ALREADY_DELETED' })
+  })
+
+  it('soft deletes an entry, recording who, when and why', async () => {
+    const entryId = await recordExpense()
+    const deletedAt = new Date('2026-10-07T12:00:00Z')
+    await deleteEntry(
+      databases.app,
+      { ...refOf(entryId), userId: ownerUserId, reason: 'duplicado' },
+      { now: () => deletedAt },
+    )
+    expect(await entryRow(entryId)).toMatchObject({
+      deletedAt,
+      deletedByUserId: ownerUserId,
+      deleteReason: 'duplicado',
+    })
+    await expect(
+      deleteEntry(databases.app, { ...refOf(entryId), userId: ownerUserId }),
+    ).rejects.toMatchObject({ code: 'ENTRY_ALREADY_DELETED' })
+  })
+
+  it('does not find an entry of another workspace', async () => {
+    const entryId = await recordExpense()
+    await expect(
+      deleteEntry(databases.app, { workspaceId: workspaceB, entryId, userId: ownerUserId }),
+    ).rejects.toMatchObject({ code: 'ENTRY_NOT_FOUND' })
+    expect((await entryRow(entryId))?.deletedAt).toBeNull()
+  })
+
+  it('restores a deleted entry', async () => {
+    const entryId = await recordExpense()
+    await deleteEntry(databases.app, { ...refOf(entryId), userId: ownerUserId, reason: 'x' })
+    await restoreEntry(databases.app, refOf(entryId))
+    expect(await entryRow(entryId)).toMatchObject({
+      deletedAt: null,
+      deletedByUserId: null,
+      deleteReason: null,
+    })
+    await expect(restoreEntry(databases.app, refOf(entryId))).rejects.toMatchObject({
+      code: 'ENTRY_NOT_DELETED',
+    })
+  })
+
+  it('replaces an entry: the old one is deleted and the new one points to it', async () => {
+    const original = await recordExpense(1500)
+    const { entryId: replacement } = await replaceEntry(
+      databases.app,
+      context,
+      original,
+      expenseOf(1800),
+    )
+
+    expect((await entryRow(original))?.deletedAt).not.toBeNull()
+    expect(await entryRow(replacement)).toMatchObject({
+      replacesEntryId: original,
+      deletedAt: null,
+    })
+    expect(await postingsOf(replacement)).toEqual([
+      [groceries, 1800],
+      [checking, -1800],
+    ])
+  })
+
+  it('refuses restoring an entry that was replaced', async () => {
+    const original = await recordExpense()
+    await replaceEntry(databases.app, context, original, expenseOf(2000))
+    await expect(restoreEntry(databases.app, refOf(original))).rejects.toMatchObject({
+      code: 'ENTRY_CANNOT_BE_RESTORED',
+    })
+  })
+
+  it('keeps the original untouched when the replacement is invalid', async () => {
+    const original = await recordExpense()
+    await expect(
+      replaceEntry(databases.app, context, original, expenseOf(0)),
+    ).rejects.toMatchObject({ code: 'ENTRY_INVALID' })
+    const brokenRule = { ...expenseOf(100), categoryId: checking }
+    await expect(replaceEntry(databases.app, context, original, brokenRule)).rejects.toMatchObject({
+      code: 'NOT_AN_EXPENSE_CATEGORY',
+    })
+    expect((await entryRow(original))?.deletedAt).toBeNull()
+  })
+
+  it('refuses replacing an entry that is already deleted', async () => {
+    const original = await recordExpense()
+    await replaceEntry(databases.app, context, original, expenseOf(1600))
+    await expect(
+      replaceEntry(databases.app, context, original, expenseOf(1700)),
+    ).rejects.toMatchObject({ code: 'ENTRY_ALREADY_DELETED' })
   })
 })

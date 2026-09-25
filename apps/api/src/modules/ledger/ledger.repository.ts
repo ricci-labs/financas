@@ -50,3 +50,35 @@ export async function insertEntry(tx: WorkspaceTransaction, entry: NewEntry) {
 export async function insertPostings(tx: WorkspaceTransaction, lines: NewPosting[]) {
   await tx.insert(postings).values(lines)
 }
+
+export async function lockEntry(tx: WorkspaceTransaction, entryId: string) {
+  const [entry] = await tx
+    .select({ id: journalEntries.id, deletedAt: journalEntries.deletedAt })
+    .from(journalEntries)
+    .where(eq(journalEntries.id, entryId))
+    .for('update')
+  return entry
+}
+
+export async function markEntryDeleted(
+  tx: WorkspaceTransaction,
+  entryId: string,
+  deletion: { deletedAt: Date; deletedByUserId: string; deleteReason: string | null },
+) {
+  await tx.update(journalEntries).set(deletion).where(eq(journalEntries.id, entryId))
+}
+
+export async function markEntryRestored(tx: WorkspaceTransaction, entryId: string) {
+  await tx
+    .update(journalEntries)
+    .set({ deletedAt: null, deletedByUserId: null, deleteReason: null })
+    .where(eq(journalEntries.id, entryId))
+}
+
+export async function updateEntryDetails(
+  tx: WorkspaceTransaction,
+  entryId: string,
+  details: { description?: string; notes?: string | null },
+) {
+  await tx.update(journalEntries).set(details).where(eq(journalEntries.id, entryId))
+}

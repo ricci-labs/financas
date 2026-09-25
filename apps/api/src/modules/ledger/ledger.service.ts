@@ -1,23 +1,36 @@
+import { type Clock, systemClock } from '@api/core/clock'
 import type { Database } from '@api/core/db/client'
+import { POSTGRES_CHECK_VIOLATION, postgresErrorCode } from '@api/core/db/errors'
 import { type WorkspaceTransaction, withWorkspace } from '@api/core/db/tx'
-import { ValidationError } from '@api/core/http/errors'
+import { ConflictError, NotFoundError, ValidationError } from '@api/core/http/errors'
 import {
   findSystemAccount,
   findUsableAccounts,
   insertAccounts,
   insertEntry,
   insertPostings,
+  lockEntry,
+  markEntryDeleted,
+  markEntryRestored,
+  updateEntryDetails,
 } from '@api/modules/ledger/ledger.repository'
-import type { EntryContext, RecordedEntry } from '@api/modules/ledger/ledger.types'
+import type {
+  DeleteEntryInput,
+  EntryContext,
+  EntryRef,
+  RecordedEntry,
+} from '@api/modules/ledger/ledger.types'
 import {
   type AccountRef,
   type EntryInput,
   type EntryPlan,
+  entryDetailsChangeSchema,
   entryInputSchema,
   planPostings,
   SYSTEM_ACCOUNT_KINDS,
   SYSTEM_ACCOUNT_NAMES,
 } from '@financas/shared'
+import type { z } from 'zod'
 
 type AccountsById = ReadonlyMap<string, AccountRef>
 
@@ -79,8 +92,98 @@ async function recordParsedEntry(
   return entryId
 }
 
+export async function changeEntryDetails(
+  db: Database,
+  { workspaceId, entryId }: EntryRef,
+  rawChange: unknown,
+): Promise<void> {
+  const change = parseOrThrow(entryDetailsChangeSchema, rawChange)
+  await withWorkspace(db, workspaceId, async (tx) => {
+    await lockActiveEntry(tx, entryId)
+    await updateEntryDetails(tx, entryId, change)
+  })
+}
+
+export async function deleteEntry(
+  db: Database,
+  { workspaceId, entryId, userId, reason }: DeleteEntryInput,
+  clock: Clock = systemClock,
+): Promise<void> {
+  await withWorkspace(db, workspaceId, async (tx) => {
+    await lockActiveEntry(tx, entryId)
+    await markEntryDeleted(tx, entryId, {
+      deletedAt: clock.now(),
+      deletedByUserId: userId,
+      deleteReason: reason ?? null,
+    })
+  })
+}
+
+export async function restoreEntry(db: Database, { workspaceId, entryId }: EntryRef) {
+  await refusingBrokenRules('ENTRY_CANNOT_BE_RESTORED', () =>
+    withWorkspace(db, workspaceId, async (tx) => {
+      const entry = await lockEntry(tx, entryId)
+      if (!entry) {
+        throw entryNotFound(entryId)
+      }
+      if (!entry.deletedAt) {
+        throw new ConflictError('ENTRY_NOT_DELETED', `Entry ${entryId} is not deleted`)
+      }
+      await markEntryRestored(tx, entryId)
+    }),
+  )
+}
+
+export async function replaceEntry(
+  db: Database,
+  context: EntryContext,
+  entryId: string,
+  rawInput: unknown,
+  clock: Clock = systemClock,
+): Promise<RecordedEntry> {
+  const input = parseEntryInput(rawInput)
+  return withWorkspace(db, context.workspaceId, async (tx) => {
+    await lockActiveEntry(tx, entryId)
+    await markEntryDeleted(tx, entryId, {
+      deletedAt: clock.now(),
+      deletedByUserId: context.userId,
+      deleteReason: null,
+    })
+    return { entryId: await recordParsedEntry(tx, context, input, entryId) }
+  })
+}
+
+async function lockActiveEntry(tx: WorkspaceTransaction, entryId: string): Promise<void> {
+  const entry = await lockEntry(tx, entryId)
+  if (!entry) {
+    throw entryNotFound(entryId)
+  }
+  if (entry.deletedAt) {
+    throw new ConflictError('ENTRY_ALREADY_DELETED', `Entry ${entryId} is deleted`)
+  }
+}
+
+function entryNotFound(entryId: string): NotFoundError {
+  return new NotFoundError('ENTRY_NOT_FOUND', `Entry ${entryId} not found`)
+}
+
+async function refusingBrokenRules<T>(code: string, work: () => Promise<T>): Promise<T> {
+  try {
+    return await work()
+  } catch (error) {
+    if (postgresErrorCode(error) === POSTGRES_CHECK_VIOLATION) {
+      throw new ConflictError(code, 'The ledger rules refuse this change', { cause: error })
+    }
+    throw error
+  }
+}
+
 function parseEntryInput(rawInput: unknown): EntryInput {
-  const parsed = entryInputSchema.safeParse(rawInput)
+  return parseOrThrow(entryInputSchema, rawInput)
+}
+
+function parseOrThrow<T>(schema: z.ZodType<T>, rawInput: unknown): T {
+  const parsed = schema.safeParse(rawInput)
   if (!parsed.success) {
     const [issue] = parsed.error.issues
     const field = issue?.path.join('.') || 'entry'
