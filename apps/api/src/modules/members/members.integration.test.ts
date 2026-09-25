@@ -174,6 +174,88 @@ describe('owner invariant', () => {
   })
 })
 
+describe('role soft delete', () => {
+  async function createCustomRole(name: string): Promise<string> {
+    const [role] = await withWorkspace(databases.app, workspaceA, (tx) =>
+      tx
+        .insert(roles)
+        .values({ workspaceId: workspaceA, name: `${name} ${crypto.randomUUID()}` })
+        .returning({ id: roles.id }),
+    )
+    if (!role) {
+      throw new Error('Could not create the custom role')
+    }
+    return role.id
+  }
+
+  function softDeleteRole(roleId: string) {
+    return withWorkspace(databases.app, workspaceA, (tx) =>
+      tx.update(roles).set({ deletedAt: new Date() }).where(eq(roles.id, roleId)),
+    )
+  }
+
+  async function inviteWithRole(roleId: string) {
+    return withWorkspace(databases.app, workspaceA, (tx) =>
+      tx.insert(invitations).values({
+        workspaceId: workspaceA,
+        roleId,
+        email: `role-${crypto.randomUUID()}@example.test`,
+        tokenHash: crypto.randomUUID(),
+        invitedByUserId: creatorId,
+        expiresAt: new Date(Date.now() + 60_000),
+      }),
+    )
+  }
+
+  it('refuses deleting a system role', async () => {
+    const viewerRole = await systemRoleId(workspaceA, 'viewer')
+    expect(await postgresErrorCodeOf(softDeleteRole(viewerRole))).toBe(
+      POSTGRES_ERRORS.checkViolation,
+    )
+  })
+
+  it('refuses deleting a role assigned to an active member', async () => {
+    const roleId = await createCustomRole('Assigned')
+    const member = await fixtures.createUser('assigned')
+    await withWorkspace(databases.app, workspaceA, (tx) =>
+      tx.insert(memberships).values({ workspaceId: workspaceA, userId: member, roleId }),
+    )
+    expect(await postgresErrorCodeOf(softDeleteRole(roleId))).toBe(POSTGRES_ERRORS.checkViolation)
+  })
+
+  it('refuses deleting a role that a pending invitation uses', async () => {
+    const roleId = await createCustomRole('Invited')
+    await inviteWithRole(roleId)
+    expect(await postgresErrorCodeOf(softDeleteRole(roleId))).toBe(POSTGRES_ERRORS.checkViolation)
+  })
+
+  it('allows deleting a custom role once nobody uses it', async () => {
+    const roleId = await createCustomRole('Unused')
+    const member = await fixtures.createUser('leaving')
+    await withWorkspace(databases.app, workspaceA, (tx) =>
+      tx.insert(memberships).values({ workspaceId: workspaceA, userId: member, roleId }),
+    )
+    await withWorkspace(databases.app, workspaceA, (tx) =>
+      tx
+        .update(memberships)
+        .set({ deletedAt: new Date() })
+        .where(and(eq(memberships.roleId, roleId), eq(memberships.userId, member))),
+    )
+    expect(await postgresErrorCodeOf(softDeleteRole(roleId))).toBeUndefined()
+  })
+
+  it('refuses giving a deleted role to a member or an invitation', async () => {
+    const roleId = await createCustomRole('Deleted')
+    await softDeleteRole(roleId)
+    const member = await fixtures.createUser('late')
+    const assignDeletedRole = withWorkspace(databases.app, workspaceA, (tx) =>
+      tx.insert(memberships).values({ workspaceId: workspaceA, userId: member, roleId }),
+    )
+    expect(await postgresErrorCodeOf(assignDeletedRole)).toBe(POSTGRES_ERRORS.checkViolation)
+    expect(await postgresErrorCodeOf(inviteWithRole(roleId))).toBe(POSTGRES_ERRORS.checkViolation)
+  })
+})
+
 describe('membership preferences', () => {
   function preferencesOf(workspaceId: string, userId: string) {
     return withWorkspace(databases.app, workspaceId, (tx) =>
