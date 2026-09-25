@@ -1,14 +1,16 @@
 import type { WorkspaceTransaction } from '@api/core/db/tx'
 import {
+  accountBalances,
   cardDetails,
   cardInvoices,
+  invoiceTotals,
   journalEntries,
   ledgerAccounts,
   postings,
 } from '@api/modules/ledger/ledger.table'
 import type { NewLedgerAccount } from '@api/modules/ledger/ledger.types'
 import type { InvoiceStatus, SystemAccountKind } from '@financas/shared'
-import { and, eq, inArray, isNull, ne } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNull, ne } from 'drizzle-orm'
 
 type NewEntry = typeof journalEntries.$inferInsert
 
@@ -258,4 +260,33 @@ export async function findInvoiceOfCard(
     .from(cardInvoices)
     .where(and(eq(cardInvoices.id, invoiceId), eq(cardInvoices.cardAccountId, cardAccountId)))
   return invoice
+}
+
+export function selectAccountBalances(tx: WorkspaceTransaction) {
+  return tx
+    .select({
+      accountId: accountBalances.accountId,
+      kind: accountBalances.kind,
+      class: accountBalances.class,
+      balanceCents: accountBalances.balanceCents,
+      naturalBalanceCents: accountBalances.naturalBalanceCents,
+    })
+    .from(accountBalances)
+}
+
+export function selectInvoiceTotals(tx: WorkspaceTransaction, cardAccountId: string) {
+  return tx
+    .select({
+      invoiceId: invoiceTotals.invoiceId,
+      referenceMonth: invoiceTotals.referenceMonth,
+      closingOn: invoiceTotals.closingOn,
+      dueOn: invoiceTotals.dueOn,
+      status: invoiceTotals.status,
+      totalCents: invoiceTotals.totalCents,
+      paidCents: invoiceTotals.paidCents,
+      dueCents: invoiceTotals.dueCents,
+    })
+    .from(invoiceTotals)
+    .where(eq(invoiceTotals.cardAccountId, cardAccountId))
+    .orderBy(asc(invoiceTotals.referenceMonth))
 }

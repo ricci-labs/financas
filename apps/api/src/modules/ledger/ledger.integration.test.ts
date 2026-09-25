@@ -9,6 +9,8 @@ import {
   deleteAccount,
   deleteEntry,
   type EntryContext,
+  listAccountBalances,
+  listInvoiceTotals,
   recordEntry,
   replaceEntry,
   restoreAccount,
@@ -16,6 +18,7 @@ import {
   unarchiveAccount,
 } from '@api/modules/ledger'
 import {
+  accountBalances,
   cardDetails,
   cardInvoices,
   journalEntries,
@@ -1779,5 +1782,142 @@ describe('purchases already in progress', () => {
     await expect(
       recordEntry(databases.app, context, { ...tvIn10x(11) }, midSeptember),
     ).rejects.toMatchObject({ code: 'FIRST_INSTALLMENT_OUT_OF_RANGE' })
+  })
+})
+
+describe('balances and invoice totals', () => {
+  let workspaceId: string
+  let context: EntryContext
+  const accounts = { checking: '', savings: '', groceries: '', salary: '', card: '' }
+  const midSeptember = { now: () => new Date('2026-09-15T15:00:00Z') }
+  const octoberTenth = { now: () => new Date('2026-10-10T15:00:00Z') }
+
+  beforeAll(async () => {
+    workspaceId = (await fixtures.createWorkspaceOwnedBy(ownerUserId, 'Balances')).workspaceId
+    context = { workspaceId, userId: ownerUserId, source: 'web' }
+    const ledgerContext = { workspaceId, userId: ownerUserId }
+    const create = async (input: Record<string, unknown>) =>
+      (await createAccount(databases.app, ledgerContext, input)).accountId
+    accounts.checking = await create({ kind: 'checking', name: 'Conta' })
+    accounts.savings = await create({ kind: 'savings', name: 'Reserva' })
+    accounts.groceries = await create({ kind: 'expense_category', name: 'Mercado' })
+    accounts.salary = await create({
+      kind: 'income_category',
+      name: 'Salário',
+      incomeNature: 'fixed',
+    })
+    accounts.card = (
+      await createCard(databases.app, ledgerContext, {
+        name: 'Cartão X',
+        closingDay: 3,
+        dueDay: 10,
+        paymentAccountId: accounts.checking,
+      })
+    ).accountId
+
+    const day = { occurredOn: '2026-09-15', description: 'x' }
+    const record = (input: Record<string, unknown>, clock = midSeptember) =>
+      recordEntry(databases.app, context, { ...day, ...input }, clock)
+
+    await record({
+      entryType: 'opening_balance',
+      balanceCents: 200000,
+      accountId: accounts.checking,
+    })
+    await record({
+      entryType: 'income',
+      amountCents: 500000,
+      receivedInAccountId: accounts.checking,
+      categoryId: accounts.salary,
+    })
+    await record({
+      entryType: 'expense',
+      amountCents: 8750,
+      paidFromAccountId: accounts.checking,
+      categoryId: accounts.groceries,
+    })
+    await record({
+      entryType: 'transfer',
+      amountCents: 100000,
+      fromAccountId: accounts.checking,
+      toAccountId: accounts.savings,
+    })
+    const mistake = await record({
+      entryType: 'expense',
+      amountCents: 1000,
+      paidFromAccountId: accounts.checking,
+      categoryId: accounts.groceries,
+    })
+    await deleteEntry(databases.app, { workspaceId, entryId: mistake.entryId, userId: ownerUserId })
+    await record({
+      entryType: 'card_purchase',
+      amountCents: 100000,
+      installmentCount: 3,
+      cardAccountId: accounts.card,
+      categoryId: accounts.groceries,
+    })
+
+    const [october] = await listInvoiceTotals(databases.app, {
+      workspaceId,
+      cardAccountId: accounts.card,
+    })
+    await record(
+      {
+        entryType: 'invoice_payment',
+        occurredOn: '2026-10-10',
+        amountCents: 20000,
+        cardAccountId: accounts.card,
+        invoiceId: october?.invoiceId,
+      },
+      octoberTenth,
+    )
+  })
+
+  it('gives every account its balance in natural terms, leaving deleted entries out', async () => {
+    const balances = await listAccountBalances(databases.app, workspaceId)
+    const natural = (accountId: string | undefined) =>
+      balances.find((balance) => balance.accountId === accountId)?.naturalBalanceCents
+    const byKind = (kind: string) =>
+      balances.find((balance) => balance.kind === kind)?.naturalBalanceCents
+
+    expect(natural(accounts.checking)).toBe(200000 + 500000 - 8750 - 100000 - 20000)
+    expect(natural(accounts.savings)).toBe(100000)
+    expect(natural(accounts.groceries)).toBe(8750 + 100000)
+    expect(natural(accounts.salary)).toBe(500000)
+    expect(natural(accounts.card)).toBe(100000 - 20000)
+    expect(byKind('opening_balance')).toBe(200000)
+    expect(byKind('receivable')).toBe(0)
+  })
+
+  it('always sums to zero across all accounts (double entry)', async () => {
+    const balances = await listAccountBalances(databases.app, workspaceId)
+    expect(balances.reduce((sum, balance) => sum + balance.balanceCents, 0)).toBe(0)
+  })
+
+  it('totals each invoice: spent, paid and still due', async () => {
+    const totals = await listInvoiceTotals(databases.app, {
+      workspaceId,
+      cardAccountId: accounts.card,
+    })
+    expect(
+      totals.map(({ referenceMonth, status, totalCents, paidCents, dueCents }) => [
+        referenceMonth,
+        status,
+        totalCents,
+        paidCents,
+        dueCents,
+      ]),
+    ).toEqual([
+      ['2026-10-01', 'closed', 33334, 20000, 13334],
+      ['2026-11-01', 'open', 33333, 0, 33333],
+      ['2026-12-01', 'future', 33333, 0, 33333],
+    ])
+  })
+
+  it('shows only the balances of the current workspace', async () => {
+    const seenFromA = await listAccountBalances(databases.app, workspaceA)
+    expect(seenFromA.some((balance) => balance.accountId === accounts.checking)).toBe(false)
+    const withoutWorkspace = await databases.app.select().from(accountBalances)
+    expect(withoutWorkspace).toEqual([])
   })
 })

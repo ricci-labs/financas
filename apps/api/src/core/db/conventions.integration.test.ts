@@ -83,4 +83,16 @@ describe('table conventions', () => {
     )
     expect(result.rows.map((row) => row.constraint_name)).toEqual([])
   })
+
+  it('run every view with the permissions of the caller, so RLS applies', async () => {
+    const result = await databases.owner.execute<{ view_name: string }>(
+      sql`select relname as view_name
+          from pg_class
+          where relkind = 'v'
+            and relnamespace = 'public'::regnamespace
+            and not coalesce('security_invoker=true' = any(reloptions), false)
+          order by view_name`,
+    )
+    expect(result.rows.map((row) => row.view_name)).toEqual([])
+  })
 })

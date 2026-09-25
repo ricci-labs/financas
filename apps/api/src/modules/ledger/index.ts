@@ -8,6 +8,8 @@ export {
   createSystemAccounts,
   deleteAccount,
   deleteEntry,
+  listAccountBalances,
+  listInvoiceTotals,
   recordEntry,
   replaceEntry,
   restoreAccount,
@@ -15,11 +17,13 @@ export {
   unarchiveAccount,
 } from '@api/modules/ledger/ledger.service'
 export type {
+  AccountBalance,
   CreatedAccount,
   DeleteAccountInput,
   DeleteEntryInput,
   EntryContext,
   EntryRef,
+  InvoiceTotal,
   LedgerContext,
   NewLedgerAccount,
   RecordedEntry,
