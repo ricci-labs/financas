@@ -1,7 +1,7 @@
 ---
 summary: GitHub Actions pipelines (PR checks, main build and deploy), image registry, Dokploy trigger, Dependabot policy.
 read_when: Editing .github/workflows, changing the Dockerfile or deploy, or when CI fails.
-updated: 2026-09-23
+updated: 2026-09-24
 ---
 
 # CI/CD
@@ -65,7 +65,7 @@ includes 2,000 Action minutes a month for private repos, far more than needed.
 - **Merge policy** (agreed with the user, 2026-09-23):
   - patch and minor updates with all checks green: Claude merges them;
   - major updates and anything touching `baileys`: the user decides;
-  - `@types/node` follows the Node runtime major (24), so its newer majors are ignored.
+  - `@types/node` follows the Node runtime major (24): `dependabot.yml` ignores its major updates. Bump it by hand together with the runtime.
 - Titles use `build(deps)` / `build(deps-dev)` for packages and `ci` for actions. commitlint accepts Dependabot's capitalized "Bump".
 - Docker base image weekly.
 
