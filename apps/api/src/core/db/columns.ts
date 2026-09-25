@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { type AnyPgColumn, timestamp, uuid } from 'drizzle-orm/pg-core'
+import { type AnyPgColumn, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 
 export const primaryId = () => uuid().primaryKey().default(sql`uuidv7()`)
 
@@ -14,4 +14,5 @@ export const timestamps = () => ({
 export const softDelete = (userIdColumn: () => AnyPgColumn) => ({
   deletedAt: timestamp({ withTimezone: true }),
   deletedByUserId: uuid().references(userIdColumn),
+  deleteReason: text(),
 })
