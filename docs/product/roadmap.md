@@ -22,7 +22,8 @@ updated: 2026-09-25
 - [x] Review of the tenancy/access base (3 bugs fixed: #13, #14, #15; model alignment: #16, #17)
 - [x] `onboarding` module for flows spanning modules (#18)
 - [x] DB: ledger accounts (tree, system accounts)
-- [ ] DB: journal entries + postings (balanced, immutable, soft delete / replace)
+- [x] DB: journal entries + postings (balanced, immutable, soft delete)
+- [ ] Ledger services: postings builders + record / delete / restore / replace entry
 - [ ] DB: cards and invoices
 - [ ] DB: balance views (`account_balances`, `invoice_totals`)
 - [ ] DB: contacts/charges, planning, support tables

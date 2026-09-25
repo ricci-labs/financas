@@ -148,6 +148,34 @@
       "when": 1790342883096,
       "tag": "0020_ledger_account_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790343702094,
+      "tag": "0021_journal_entries_and_postings",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1790343738085,
+      "tag": "0022_journal_entries_updated_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790343801483,
+      "tag": "0023_postings_account_fk_deferred",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1790343923595,
+      "tag": "0024_ledger_integrity",
+      "breakpoints": true
     }
   ]
 }

@@ -115,16 +115,22 @@ The amount due and "paid" are **derived** (`invoice_totals` view) from postings 
 | `memo` | text null | |
 
 ### Invariants enforced by the database
+Status: rows marked ✅ are implemented (`drizzle/0021`–`0024`); the others come with cards and contacts.
+
 | # | Rule | How |
 |---|---|---|
-| 1 | Postings of an entry sum to 0 | `DEFERRABLE INITIALLY DEFERRED` constraint trigger at commit |
-| 2 | An entry has ≥ 2 postings | Same trigger |
-| 3 | `credit_card` posting ⇔ `invoice_id` set, and the invoice belongs to the same card | CHECK on `account_kind` + trigger for the card match |
-| 4 | `receivable`/`payable` posting ⇔ `contact_id` set | CHECK on `account_kind` |
-| 5 | Nobody posts into an archived account or into a `closed` invoice (except `adjustment`/`invoice_payment`/`refund` entries) | Trigger |
-| 6 | All rows share one `workspace_id` | Composite FKs |
-| 7 | Postings are immutable (no UPDATE of amount/account/invoice, no hard DELETE). Only the entry's descriptive fields (description, notes, tags) can be updated in place | Trigger |
+| 1 ✅ | Postings of an entry sum to 0 | `DEFERRABLE INITIALLY DEFERRED` constraint triggers at commit, on `journal_entries` and `postings` insert, running as the owner (ADR 0020) |
+| 2 ✅ | An entry has ≥ 2 postings | Same trigger (an entry with no postings fails too) |
+| 3 | `credit_card` posting ⇔ `invoice_id` set, and the invoice belongs to the same card | CHECK on `account_kind` + trigger for the card match. **Until then, postings on `credit_card` are refused** (CHECK `postings_kinds_waiting_for_their_columns`) |
+| 4 | `receivable`/`payable` posting ⇔ `contact_id` set | CHECK on `account_kind`. **Until then, postings on `receivable`/`payable` are refused** (same CHECK) |
+| 5 | Nobody posts into an archived or deleted account (✅), or into a `closed` invoice (except `adjustment`/`invoice_payment`/`refund` entries) | Trigger `postings_guard_insert` |
+| 6 ✅ | All rows share one `workspace_id` | Composite FKs. The posting → account FK also carries `account_kind`, so an account's kind can't change once it has postings. It is deferred, so erasing a workspace can remove accounts and postings in one statement |
+| 7 ✅ | Postings are immutable: no UPDATE, no DELETE, and no new posting on an entry recorded in an earlier transaction. An entry can change only `description` and `notes` in place (plus soft delete / restore); anything else is a replacement. No hard DELETE of entries | Triggers `postings_are_immutable`, `postings_guard_insert`, `journal_entries_guard_changes`. Hard deletes pass only while the whole workspace is being erased |
 | 8 | An entry with postings on a `closed` invoice can't be soft-deleted. Fix it with a `refund`/`adjustment` entry on the open invoice | Trigger |
+| 9 ✅ | An account used by active entries can't be soft-deleted (archive it), and an entry using a deleted account can't be restored | Triggers `ledger_accounts_refuse_deleting_used`, `journal_entries_guard_changes` |
+
+"Recorded in an earlier transaction" compares the entry's `created_at` (always stamped with the
+transaction's `now()` on insert) with the current `now()`.
 
 **Correction policy** (ADR 0016):
 - **Delete:** soft delete (`deleted_at`). The whole entry leaves all sums together, so the ledger stays balanced. It can be restored from the trash.

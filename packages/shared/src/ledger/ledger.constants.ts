@@ -25,3 +25,34 @@ export type IncomeNature = (typeof INCOME_NATURES)[number]
 export const SYSTEM_ACCOUNT_KINDS = ['receivable', 'payable', 'opening_balance'] as const
 
 export type SystemAccountKind = (typeof SYSTEM_ACCOUNT_KINDS)[number]
+
+export const ENTRY_TYPES = [
+  'expense',
+  'income',
+  'card_purchase',
+  'transfer',
+  'invoice_payment',
+  'refund',
+  'settlement',
+  'adjustment',
+  'opening_balance',
+] as const
+
+export type EntryType = (typeof ENTRY_TYPES)[number]
+
+export const PAYMENT_METHODS = [
+  'pix',
+  'debit',
+  'credit',
+  'cash',
+  'boleto',
+  'bank_transfer',
+  'auto_debit',
+  'other',
+] as const
+
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number]
+
+export const ENTRY_SOURCES = ['web', 'whatsapp', 'job', 'import'] as const
+
+export type EntrySource = (typeof ENTRY_SOURCES)[number]
