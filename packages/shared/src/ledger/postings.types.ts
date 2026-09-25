@@ -35,6 +35,8 @@ export type EntryPlan =
       amountCents: Cents
       card: AccountRef
       category: AccountRef
+      installmentCount: number
+      firstInstallment: number
       installments: InstallmentTarget[]
     }
   | {
@@ -75,6 +77,8 @@ export type PostingsViolation =
   | 'NOT_A_CARD'
   | 'NO_INSTALLMENTS'
   | 'TOO_MANY_INSTALLMENTS'
+  | 'FIRST_INSTALLMENT_OUT_OF_RANGE'
+  | 'INSTALLMENTS_DO_NOT_MATCH'
   | 'NOT_AN_EXPENSE_CATEGORY'
   | 'NOT_AN_INCOME_CATEGORY'
   | 'NOT_THE_OPENING_BALANCE_ACCOUNT'

@@ -36,7 +36,7 @@ import {
   type AccountKind,
   type SystemAccountKind,
 } from '@financas/shared'
-import { asc, eq, inArray } from 'drizzle-orm'
+import { and, asc, eq, inArray } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const databases = connectTestDatabases()
@@ -1711,5 +1711,73 @@ describe('card purchases and invoice payments', () => {
         midSeptember,
       ),
     ).rejects.toMatchObject({ code: 'NOT_A_CARD' })
+  })
+})
+
+describe('purchases already in progress', () => {
+  const midSeptember = { now: () => new Date('2026-09-15T15:00:00Z') }
+  let context: EntryContext
+  let card: string
+  let electronics: string
+
+  beforeAll(async () => {
+    context = { workspaceId: workspaceA, userId: ownerUserId, source: 'web' }
+    electronics = await insertAccount({ kind: 'expense_category' })
+    card = (
+      await createCard(
+        databases.app,
+        { workspaceId: workspaceA, userId: ownerUserId },
+        { name: uniqueName('Cartão Z'), closingDay: 3, dueDay: 10 },
+      )
+    ).accountId
+  })
+
+  function tvIn10x(firstInstallment: number) {
+    return {
+      entryType: 'card_purchase',
+      occurredOn: '2026-04-15',
+      description: 'TV',
+      amountCents: 120000,
+      installmentCount: 10,
+      firstInstallment,
+      cardAccountId: card,
+      categoryId: electronics,
+    }
+  }
+
+  it('records only the remaining installments, on the invoices they were always going to', async () => {
+    const { entryId } = await recordEntry(databases.app, context, tvIn10x(6), midSeptember)
+
+    const lines = await withWorkspace(databases.app, workspaceA, (tx) =>
+      tx
+        .select({
+          amountCents: postings.amountCents,
+          installmentNo: postings.installmentNo,
+          effectiveOn: postings.effectiveOn,
+        })
+        .from(postings)
+        .where(and(eq(postings.entryId, entryId), eq(postings.accountId, card)))
+        .orderBy(asc(postings.lineNo)),
+    )
+    expect(lines).toEqual([
+      { amountCents: -12000, installmentNo: 6, effectiveOn: '2026-10-10' },
+      { amountCents: -12000, installmentNo: 7, effectiveOn: '2026-11-10' },
+      { amountCents: -12000, installmentNo: 8, effectiveOn: '2026-12-10' },
+      { amountCents: -12000, installmentNo: 9, effectiveOn: '2027-01-10' },
+      { amountCents: -12000, installmentNo: 10, effectiveOn: '2027-02-10' },
+    ])
+    expect(await entryRow(entryId)).toMatchObject({ installmentCount: 10 })
+  })
+
+  it('points to the first open installment when the chosen one is on a closed invoice', async () => {
+    const recorded = recordEntry(databases.app, context, tvIn10x(5), midSeptember)
+    await expect(recorded).rejects.toMatchObject({ code: 'INVOICE_CLOSED' })
+    await expect(recorded).rejects.toThrow(/installment 6/)
+  })
+
+  it('refuses a first installment after the last one', async () => {
+    await expect(
+      recordEntry(databases.app, context, { ...tvIn10x(11) }, midSeptember),
+    ).rejects.toMatchObject({ code: 'FIRST_INSTALLMENT_OUT_OF_RANGE' })
   })
 })

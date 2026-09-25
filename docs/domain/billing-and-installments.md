@@ -74,6 +74,20 @@ Statuses are refreshed whenever an entry touches the card (a daily job comes lat
 4. The installment amount is fixed at purchase time. The MVP doesn't model interest ("parcelado com juros"); the total entered is the total charged.
 5. Each installment's postings are effective on its invoice's **due date** (`effective_on`), so the per-installment view counts it in the month it is paid.
 6. At most 48 installments (`MAX_INSTALLMENTS`), and never more installments than cents.
+7. A purchase already in progress is recorded from installment k (`firstInstallment`): only
+   installments k..n are posted, with the amounts and invoices they have in the full split.
+
+Card X, TV R$ 1.200,00 in 10× bought 2026-04-15, recorded on 2026-09-15 from installment 6:
+
+| # | Amount | Invoice due |
+|---|---|---|
+| 6 | 12000 | 2026-10-10 |
+| 7 | 12000 | 2026-11-10 |
+| 8 | 12000 | 2026-12-10 |
+| 9 | 12000 | 2027-01-10 |
+| 10 | 12000 | 2027-02-10 |
+
+Installment 5 would land on the September invoice, closed since 2026-09-03.
 
 ### Examples
 

@@ -9,7 +9,6 @@ import {
 import type {
   AccountRef,
   EntryPlan,
-  InstallmentTarget,
   PostingDraft,
   PostingsPlan,
   PostingsViolation,
@@ -85,7 +84,7 @@ function cardPurchaseViolation(plan: PlanOf<'card_purchase'>): PostingsViolation
     positiveAmountViolation(plan.amountCents) ??
     kindViolation(plan.card, 'credit_card', 'NOT_A_CARD') ??
     kindViolation(plan.category, 'expense_category', 'NOT_AN_EXPENSE_CATEGORY') ??
-    installmentsViolation(plan.amountCents, plan.installments)
+    installmentsViolation(plan)
   )
 }
 
@@ -114,7 +113,7 @@ function linesOf(plan: EntryPlan): Line[] {
     case 'transfer':
       return moneyMoves(plan.amountCents, plan.from, plan.to)
     case 'card_purchase':
-      return cardPurchaseLines(plan.amountCents, plan.card, plan.category, plan.installments)
+      return cardPurchaseLines(plan)
     case 'invoice_payment':
       return [
         { account: plan.card, amountCents: plan.amountCents, invoiceId: plan.invoiceId },
@@ -125,28 +124,22 @@ function linesOf(plan: EntryPlan): Line[] {
   }
 }
 
-function cardPurchaseLines(
-  amountCents: Cents,
-  card: AccountRef,
-  category: AccountRef,
-  installments: InstallmentTarget[],
-): Line[] {
-  const amounts = splitInstallments(amountCents, installments.length)
-  const perInstallment = installments.map((target, index) => ({
-    target,
-    installmentNo: index + 1,
-    amountCents: amounts[index] ?? 0,
-  }))
-  const cardLines = perInstallment.map(({ target, installmentNo, amountCents: amount }) => ({
-    account: card,
-    amountCents: -amount,
+function cardPurchaseLines(plan: PlanOf<'card_purchase'>): Line[] {
+  const amounts = splitInstallments(plan.amountCents, plan.installmentCount)
+  const perInstallment = plan.installments.map((target, index) => {
+    const installmentNo = plan.firstInstallment + index
+    return { target, installmentNo, amountCents: amounts[installmentNo - 1] ?? 0 }
+  })
+  const cardLines = perInstallment.map(({ target, installmentNo, amountCents }) => ({
+    account: plan.card,
+    amountCents: -amountCents,
     effectiveOn: target.effectiveOn,
     invoiceId: target.invoiceId,
     installmentNo,
   }))
-  const categoryLines = perInstallment.map(({ target, installmentNo, amountCents: amount }) => ({
-    account: category,
-    amountCents: amount,
+  const categoryLines = perInstallment.map(({ target, installmentNo, amountCents }) => ({
+    account: plan.category,
+    amountCents,
     effectiveOn: target.effectiveOn,
     installmentNo,
   }))
@@ -172,15 +165,23 @@ function toDrafts(lines: Line[], occurredOn: IsoDate): PostingDraft[] {
   }))
 }
 
-function installmentsViolation(
-  amountCents: Cents,
-  installments: InstallmentTarget[],
-): PostingsViolation | undefined {
+function installmentsViolation(plan: PlanOf<'card_purchase'>): PostingsViolation | undefined {
+  const { amountCents, installmentCount, firstInstallment, installments } = plan
+  if (installmentCount > MAX_INSTALLMENTS || installmentCount > amountCents) {
+    return 'TOO_MANY_INSTALLMENTS'
+  }
+  if (!isInstallmentOf(firstInstallment, installmentCount)) {
+    return 'FIRST_INSTALLMENT_OUT_OF_RANGE'
+  }
   if (installments.length === 0) {
     return 'NO_INSTALLMENTS'
   }
-  const tooMany = installments.length > MAX_INSTALLMENTS || installments.length > amountCents
-  return tooMany ? 'TOO_MANY_INSTALLMENTS' : undefined
+  const remaining = installmentCount - firstInstallment + 1
+  return installments.length === remaining ? undefined : 'INSTALLMENTS_DO_NOT_MATCH'
+}
+
+function isInstallmentOf(installmentNo: number, installmentCount: number): boolean {
+  return Number.isInteger(installmentNo) && installmentNo >= 1 && installmentNo <= installmentCount
 }
 
 function isNonZeroCents(value: number): boolean {

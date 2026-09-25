@@ -221,6 +221,9 @@ export async function setInvoiceStatus(
 }
 
 export async function insertInvoicesIfMissing(tx: WorkspaceTransaction, invoices: NewInvoice[]) {
+  if (invoices.length === 0) {
+    return
+  }
   await tx.insert(cardInvoices).values(invoices).onConflictDoNothing()
 }
 
