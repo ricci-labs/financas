@@ -2,6 +2,7 @@ import type { Database } from '@api/core/db/client'
 import { withWorkspace } from '@api/core/db/tx'
 import { ValidationError } from '@api/core/http/errors'
 import { createSystemRoles } from '@api/modules/access'
+import { createSystemAccounts } from '@api/modules/ledger'
 import { addMember } from '@api/modules/members'
 import type {
   CreatedWorkspace,
@@ -18,7 +19,12 @@ export async function createWorkspace(
   const workspaceId = await reserveWorkspaceId(db)
 
   return withWorkspace(db, workspaceId, async (tx) => {
-    await addWorkspace(tx, { id: workspaceId, name, createdByUserId: input.ownerUserId })
+    const { currency } = await addWorkspace(tx, {
+      id: workspaceId,
+      name,
+      createdByUserId: input.ownerUserId,
+    })
+    await createSystemAccounts(tx, workspaceId, currency)
     const systemRoles = await createSystemRoles(tx, workspaceId)
     const ownerMembershipId = await addMember(tx, {
       workspaceId,

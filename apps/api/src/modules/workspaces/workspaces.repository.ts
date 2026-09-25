@@ -18,5 +18,12 @@ export async function insertWorkspace(tx: WorkspaceTransaction, workspace: NewWo
 }
 
 export async function insertDefaultSettings(tx: WorkspaceTransaction, workspaceId: string) {
-  await tx.insert(workspaceSettings).values({ workspaceId })
+  const [settings] = await tx
+    .insert(workspaceSettings)
+    .values({ workspaceId })
+    .returning({ currency: workspaceSettings.currency })
+  if (!settings) {
+    throw new Error(`Settings of workspace ${workspaceId} were not inserted`)
+  }
+  return settings
 }

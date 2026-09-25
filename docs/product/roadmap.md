@@ -1,7 +1,7 @@
 ---
 summary: Phases, MVP scope, current focus and the list of open questions.
 read_when: Deciding what to build next, checking whether something is in scope, or resuming work in a new session.
-updated: 2026-09-23
+updated: 2026-09-25
 ---
 
 # Roadmap
@@ -19,8 +19,12 @@ updated: 2026-09-23
 - [x] DB: memberships (owner invariant) + workspace creation service
 - [x] DB: settings and preferences (`workspace_settings`, `user_preferences`, `membership_preferences`)
 - [x] DB: invitations (create + accept flow)
-- [ ] Next session with the user: review the tenancy/access base, then the ledger PRs
-- [ ] DB: ledger (accounts, entries, postings, cards, invoices)
+- [x] Review of the tenancy/access base (3 bugs fixed: #13, #14, #15; model alignment: #16, #17)
+- [x] `onboarding` module for flows spanning modules (#18)
+- [x] DB: ledger accounts (tree, system accounts)
+- [ ] DB: journal entries + postings (balanced, immutable, soft delete / replace)
+- [ ] DB: cards and invoices
+- [ ] DB: balance views (`account_balances`, `invoice_totals`)
 - [ ] DB: contacts/charges, planning, support tables
 - [ ] Observability core (OTel register, metrics, error refs), Dockerfile, deploy workflow
 - [ ] Web foundation: TanStack Router/Query, shadcn/ui, layout

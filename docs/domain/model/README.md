@@ -1,13 +1,14 @@
 ---
 summary: Data model overview — areas, conventions (IDs, tenancy keys, RLS, sign convention, enums vs config tables) and the map of all tables.
 read_when: Before creating or changing any table, or to find which model doc covers an entity.
-updated: 2026-09-24
+updated: 2026-09-25
 ---
 
 # Data model
 
 Status: **being implemented** in small PRs. Implemented so far: `users`, `user_preferences`, `workspaces`, `workspace_settings`,
-`module_actions`, `roles`, `role_permissions`, `memberships`, `membership_preferences`, `invitations`.
+`module_actions`, `roles`, `role_permissions`, `memberships`, `membership_preferences`, `invitations`,
+`ledger_accounts`.
 The Drizzle schema (`apps/api/src/modules/*/*.table.ts`) is the source of truth for what exists;
 these docs keep the *why*, the invariants and the examples.
 
