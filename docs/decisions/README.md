@@ -1,7 +1,7 @@
 ---
 summary: Index of Architecture Decision Records (ADRs) and the template for new ones.
 read_when: Checking why something was chosen, before proposing to change a past choice, or when recording a new decision.
-updated: 2026-09-23
+updated: 2026-09-24
 ---
 
 # Decisions (ADRs)
@@ -27,6 +27,7 @@ updated: 2026-09-23
 | 0017 | [Self-documenting code, no comments, @ aliases](0017-self-documenting-code.md) | Accepted |
 | 0018 | [Database roles and RLS enforcement](0018-database-roles-and-rls.md) | Accepted |
 | 0019 | [Narrow SECURITY DEFINER lookups for pre-workspace flows](0019-narrow-security-definer-lookups.md) | Accepted |
+| 0020 | [Invariant triggers run as the owner](0020-invariant-triggers-run-as-owner.md) | Accepted |
 
 ## Rules
 - ADRs are append-only. To change a decision, write a new ADR that supersedes the old one and set the old one to `Superseded by NNNN`.

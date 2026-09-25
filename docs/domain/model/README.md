@@ -1,7 +1,7 @@
 ---
 summary: Data model overview — areas, conventions (IDs, tenancy keys, RLS, sign convention, enums vs config tables) and the map of all tables.
 read_when: Before creating or changing any table, or to find which model doc covers an entity.
-updated: 2026-09-23
+updated: 2026-09-24
 ---
 
 # Data model
@@ -56,6 +56,7 @@ PLAN  │ recurrence_rules ──< planned_occurrences ──(matched_entry)─�
 | Naming | snake_case tables in the plural; FK columns `<entity>_id`. |
 | Global reference tables | Tables without `workspace_id` that hold fixed data (e.g. `module_actions`) are **read-only for the app role**: the migration revokes INSERT/UPDATE/DELETE/TRUNCATE from `financas_app`. |
 | Pre-workspace lookups | A narrow `SECURITY DEFINER` function that returns only a workspace id (ADR 0019). `SET search_path`, `REVOKE ... FROM PUBLIC`, `GRANT EXECUTE` to the app role only. |
+| Invariant triggers | Trigger functions that check a rule across rows are `SECURITY DEFINER` (run as owner, so RLS can't hide rows from the check), with `SET search_path` (ADR 0020). |
 | Tenant policy | Every tenant table uses the `tenantIsolation(tableName, workspaceColumn)` helper (`core/db/tenancy.ts`). |
 
 ## Archive vs soft delete

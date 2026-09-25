@@ -1,6 +1,11 @@
 import { withWorkspace } from '@api/core/db/tx'
 import { moduleActions, rolePermissions, roles } from '@api/modules/access/access.table'
-import { connectTestDatabases, POSTGRES_ERRORS, postgresErrorCodeOf } from '@api/testing/database'
+import {
+  connectTestDatabases,
+  POSTGRES_ERRORS,
+  postgresErrorCodeOf,
+  switchWorkspaceMidTransaction,
+} from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
 import { MODULE_ACTIONS } from '@financas/shared'
 import { and, eq } from 'drizzle-orm'
@@ -92,6 +97,18 @@ describe('role permissions', () => {
         .values({ workspaceId: workspaceA, roleId: roleA, module: 'cards', action: 'create' }),
     )
     expect(await postgresErrorCodeOf(createWithoutView)).toBe(POSTGRES_ERRORS.checkViolation)
+  })
+
+  it('reject an action without view even if the transaction switches workspace', async () => {
+    const createWithoutViewThenSwitch = withWorkspace(databases.app, workspaceA, async (tx) => {
+      await tx
+        .insert(rolePermissions)
+        .values({ workspaceId: workspaceA, roleId: roleA, module: 'budgets', action: 'create' })
+      await switchWorkspaceMidTransaction(tx, workspaceB)
+    })
+    expect(await postgresErrorCodeOf(createWithoutViewThenSwitch)).toBe(
+      POSTGRES_ERRORS.checkViolation,
+    )
   })
 
   it('reject removing view while other actions remain, but allow removing them all', async () => {
