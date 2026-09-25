@@ -1,4 +1,5 @@
 import { withWorkspace } from '@api/core/db/tx'
+import { type EntryContext, recordEntry } from '@api/modules/ledger'
 import { journalEntries, ledgerAccounts, postings } from '@api/modules/ledger/ledger.table'
 import { workspaces } from '@api/modules/workspaces/workspaces.table'
 import {
@@ -14,7 +15,7 @@ import {
   type AccountKind,
   type SystemAccountKind,
 } from '@financas/shared'
-import { eq, inArray } from 'drizzle-orm'
+import { asc, eq, inArray } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const databases = connectTestDatabases()
@@ -710,5 +711,143 @@ describe('entry replacement', () => {
     expect(await postgresErrorCodeOf(replaceRaw(original, { deleteOld: false }))).toBe(
       POSTGRES_ERRORS.uniqueViolation,
     )
+  })
+})
+
+async function postingsOf(entryId: string, workspaceId = workspaceA) {
+  const lines = await withWorkspace(databases.app, workspaceId, (tx) =>
+    tx
+      .select({ accountId: postings.accountId, amountCents: postings.amountCents })
+      .from(postings)
+      .where(eq(postings.entryId, entryId))
+      .orderBy(asc(postings.lineNo)),
+  )
+  return lines.map((line) => [line.accountId, line.amountCents])
+}
+
+async function entryRow(entryId: string, workspaceId = workspaceA) {
+  const [entry] = await withWorkspace(databases.app, workspaceId, (tx) =>
+    tx.select().from(journalEntries).where(eq(journalEntries.id, entryId)),
+  )
+  return entry
+}
+
+describe('recordEntry', () => {
+  let context: EntryContext
+  let checking: string
+  let savings: string
+  let groceries: string
+  let salary: string
+
+  beforeAll(async () => {
+    context = { workspaceId: workspaceA, userId: ownerUserId, source: 'whatsapp' }
+    checking = await insertAccount({ kind: 'checking' })
+    savings = await insertAccount({ kind: 'savings' })
+    groceries = await insertAccount({ kind: 'expense_category' })
+    salary = await insertAccount({ kind: 'income_category' })
+  })
+
+  const details = { occurredOn: '2026-10-05', description: '  Mercado  ' }
+
+  it('records an expense with its postings and details', async () => {
+    const { entryId } = await recordEntry(databases.app, context, {
+      ...details,
+      entryType: 'expense',
+      amountCents: 8750,
+      paymentMethod: 'pix',
+      paidFromAccountId: checking,
+      categoryId: groceries,
+    })
+
+    expect(await postingsOf(entryId)).toEqual([
+      [groceries, 8750],
+      [checking, -8750],
+    ])
+    expect(await entryRow(entryId)).toMatchObject({
+      entryType: 'expense',
+      description: 'Mercado',
+      occurredOn: '2026-10-05',
+      paymentMethod: 'pix',
+      source: 'whatsapp',
+      createdByUserId: ownerUserId,
+      replacesEntryId: null,
+    })
+  })
+
+  it('records income and a transfer', async () => {
+    const income = await recordEntry(databases.app, context, {
+      ...details,
+      entryType: 'income',
+      amountCents: 500000,
+      receivedInAccountId: checking,
+      categoryId: salary,
+    })
+    const transfer = await recordEntry(databases.app, context, {
+      ...details,
+      entryType: 'transfer',
+      amountCents: 100000,
+      fromAccountId: checking,
+      toAccountId: savings,
+    })
+    expect(await postingsOf(income.entryId)).toEqual([
+      [checking, 500000],
+      [salary, -500000],
+    ])
+    expect(await postingsOf(transfer.entryId)).toEqual([
+      [savings, 100000],
+      [checking, -100000],
+    ])
+  })
+
+  it('records an opening balance against the system account', async () => {
+    const openingBalance = await systemAccountOf(workspaceA, 'opening_balance')
+    const { entryId } = await recordEntry(databases.app, context, {
+      ...details,
+      entryType: 'opening_balance',
+      balanceCents: 200000,
+      accountId: savings,
+    })
+    expect(await postingsOf(entryId)).toEqual([
+      [savings, 200000],
+      [openingBalance, -200000],
+    ])
+  })
+
+  it('refuses input that does not match the schema', async () => {
+    const recorded = recordEntry(databases.app, context, {
+      ...details,
+      entryType: 'expense',
+      amountCents: 87.5,
+      paidFromAccountId: checking,
+      categoryId: groceries,
+    })
+    await expect(recorded).rejects.toMatchObject({ code: 'ENTRY_INVALID' })
+  })
+
+  it('refuses a category of the wrong kind', async () => {
+    const recorded = recordEntry(databases.app, context, {
+      ...details,
+      entryType: 'expense',
+      amountCents: 100,
+      paidFromAccountId: checking,
+      categoryId: salary,
+    })
+    await expect(recorded).rejects.toMatchObject({ code: 'NOT_AN_EXPENSE_CATEGORY' })
+  })
+
+  it('refuses an account from another workspace, archived or deleted', async () => {
+    const elsewhere = await insertAccount({ kind: 'checking' }, workspaceB)
+    const archived = await insertAccount({ kind: 'checking', archivedAt: new Date() })
+    const deleted = await insertAccount({ kind: 'checking', deletedAt: new Date() })
+    for (const unavailable of [elsewhere, archived, deleted]) {
+      const recorded = recordEntry(databases.app, context, {
+        ...details,
+        entryType: 'expense',
+        amountCents: 100,
+        paidFromAccountId: unavailable,
+        categoryId: groceries,
+      })
+      await expect(recorded).rejects.toMatchObject({ code: 'ACCOUNT_NOT_AVAILABLE' })
+    }
   })
 })
