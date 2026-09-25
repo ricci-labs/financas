@@ -170,11 +170,12 @@ adjustments and settlements come later.
 Card errors: `NOT_A_CARD`, `CARD_NOT_SET_UP`, `INVOICE_CLOSED`, `INVOICE_NOT_FOUND`,
 `PAYMENT_ACCOUNT_REQUIRED`, `TOO_MANY_INSTALLMENTS`.
 
-**Open question:** recording an installment purchase whose first installments fall on invoices
-that already closed. It happens when onboarding purchases already in progress (a TV bought five
-months ago in 10×) or when recording a purchase late. Today it is refused (`INVOICE_CLOSED`).
-Options: record only the remaining installments ("starting at installment k"), or allow
-`adjustment` entries for onboarding. Errors are `ValidationError` codes: `ENTRY_INVALID`,
+**Purchases already in progress** (decided with the user on 2026-09-25): a card purchase takes
+`firstInstallment` (default 1) and records only installments `firstInstallment..installmentCount`.
+The amount is still the purchase total; the installment amounts come from splitting that total, and
+each installment goes to the invoice it would always have landed on. If the first recorded
+installment is still on a closed invoice, `INVOICE_CLOSED` says which installment is the first open
+one. Use it to onboard purchases made before the app, or a purchase recorded late. Errors are `ValidationError` codes: `ENTRY_INVALID`,
 `ACCOUNT_NOT_AVAILABLE` or the planner rule (`NOT_AN_EXPENSE_CATEGORY`, `SAME_ACCOUNT`...).
 
 `spent_by_user_id` must be an active member of the workspace when the entry is recorded (trigger

@@ -63,6 +63,7 @@ export const entryInputSchema = z.discriminatedUnion('entryType', [
     entryType: z.literal('card_purchase'),
     amountCents: positiveCentsSchema,
     installmentCount: z.number().int().min(1).max(MAX_INSTALLMENTS).default(1),
+    firstInstallment: z.number().int().min(1).max(MAX_INSTALLMENTS).default(1),
     cardAccountId: accountIdSchema,
     categoryId: accountIdSchema,
   }),

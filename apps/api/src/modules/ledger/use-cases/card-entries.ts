@@ -48,6 +48,8 @@ export async function planCardPurchase(
     amountCents: input.amountCents,
     card,
     category: pick(accounts, input.categoryId),
+    installmentCount: input.installmentCount,
+    firstInstallment: input.firstInstallment,
     installments: await installmentTargets(
       tx,
       { workspaceId, cardAccountId: card.id },
@@ -121,7 +123,8 @@ async function installmentTargets(
   input: CardPurchaseInput,
   today: IsoDate,
 ): Promise<InstallmentTarget[]> {
-  const refs = invoicesForInstallments(input.occurredOn, cycle, input.installmentCount)
+  const allRefs = invoicesForInstallments(input.occurredOn, cycle, input.installmentCount)
+  const refs = allRefs.slice(input.firstInstallment - 1)
   await insertInvoicesIfMissing(
     tx,
     refs.map((ref) => ({
@@ -142,7 +145,7 @@ async function installmentTargets(
       throw new Error(`Invoice ${ref.referenceMonth} of card ${cardAccountId} is missing`)
     }
     if (invoice.status === 'closed') {
-      throw new ValidationError('INVOICE_CLOSED', `The ${ref.referenceMonth} invoice is closed`)
+      throw invoiceClosed(ref, firstOpenInstallment(allRefs, today, cycle))
     }
     return { invoiceId: invoice.id, effectiveOn: invoice.dueOn }
   })
@@ -154,4 +157,20 @@ function firstDayOf(ref: InvoiceRef): string {
 
 function monthLabelOf(referenceMonth: string): string {
   return referenceMonth.slice(0, -FIRST_DAY_SUFFIX.length)
+}
+
+function firstOpenInstallment(refs: InvoiceRef[], today: IsoDate, cycle: CardCycle): number {
+  const index = refs.findIndex((ref) => invoiceStatusOn(ref, today, cycle) !== 'closed')
+  return index + 1
+}
+
+function invoiceClosed(ref: InvoiceRef, firstOpen: number): ValidationError {
+  const hint =
+    firstOpen > 0
+      ? `record it from installment ${firstOpen} (firstInstallment)`
+      : 'every installment is on a closed invoice'
+  return new ValidationError(
+    'INVOICE_CLOSED',
+    `The ${ref.referenceMonth} invoice is closed; ${hint}`,
+  )
 }

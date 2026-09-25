@@ -277,6 +277,8 @@ describe('planPostings for cards', () => {
       amountCents: 120000,
       card,
       category: electronics,
+      installmentCount: 3,
+      firstInstallment: 1,
       installments: [octInvoice, novInvoice, decInvoice],
     })
     expect(cardLines(plan)).toEqual([
@@ -296,12 +298,33 @@ describe('planPostings for cards', () => {
       amountCents: 100000,
       card,
       category: groceries,
+      installmentCount: 3,
+      firstInstallment: 1,
       installments: [octInvoice, novInvoice, decInvoice],
     })
     const cardAmounts = cardLines(plan)
       .filter(([accountId]) => accountId === 'card')
       .map(([, amount]) => amount)
     expect(cardAmounts).toEqual([-33334, -33333, -33333])
+  })
+
+  it('records only the remaining installments of a purchase already in progress', () => {
+    const plan = planPostings({
+      entryType: 'card_purchase',
+      occurredOn: '2026-04-15',
+      amountCents: 100000,
+      card,
+      category: electronics,
+      installmentCount: 3,
+      firstInstallment: 2,
+      installments: [octInvoice, novInvoice],
+    })
+    expect(cardLines(plan)).toEqual([
+      ['card', -33333, 'inv-oct', 2, '2026-10-10'],
+      ['card', -33333, 'inv-nov', 3, '2026-11-10'],
+      ['electronics', 33333, null, 2, '2026-10-10'],
+      ['electronics', 33333, null, 3, '2026-11-10'],
+    ])
   })
 
   it('5. paying R$ 400,00 of the October invoice from checking', () => {
@@ -328,6 +351,8 @@ describe('planPostings for cards', () => {
         amountCents: 100,
         card: checking,
         category: groceries,
+        installmentCount: 1,
+        firstInstallment: 1,
         installments: [octInvoice],
       },
       'NOT_A_CARD',
@@ -340,6 +365,8 @@ describe('planPostings for cards', () => {
         amountCents: 100,
         card,
         category: groceries,
+        installmentCount: 1,
+        firstInstallment: 1,
         installments: [],
       },
       'NO_INSTALLMENTS',
@@ -352,6 +379,8 @@ describe('planPostings for cards', () => {
         amountCents: 2,
         card,
         category: groceries,
+        installmentCount: 3,
+        firstInstallment: 1,
         installments: [octInvoice, novInvoice, decInvoice],
       },
       'TOO_MANY_INSTALLMENTS',
@@ -364,9 +393,39 @@ describe('planPostings for cards', () => {
         amountCents: 100,
         card,
         category: salary,
+        installmentCount: 1,
+        firstInstallment: 1,
         installments: [octInvoice],
       },
       'NOT_AN_EXPENSE_CATEGORY',
+    ],
+    [
+      'a first installment after the last one',
+      {
+        entryType: 'card_purchase',
+        occurredOn: DAY,
+        amountCents: 100,
+        card,
+        category: groceries,
+        installmentCount: 3,
+        firstInstallment: 4,
+        installments: [octInvoice],
+      },
+      'FIRST_INSTALLMENT_OUT_OF_RANGE',
+    ],
+    [
+      'targets that do not match the remaining installments',
+      {
+        entryType: 'card_purchase',
+        occurredOn: DAY,
+        amountCents: 100,
+        card,
+        category: groceries,
+        installmentCount: 3,
+        firstInstallment: 2,
+        installments: [octInvoice],
+      },
+      'INSTALLMENTS_DO_NOT_MATCH',
     ],
     [
       'a payment from a category',

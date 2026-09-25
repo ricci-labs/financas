@@ -168,7 +168,7 @@ describe('entryInputSchema for cards', () => {
       cardAccountId: ACCOUNT,
       categoryId: CATEGORY,
     })
-    expect(parsed).toMatchObject({ installmentCount: 1 })
+    expect(parsed).toMatchObject({ installmentCount: 1, firstInstallment: 1 })
   })
 
   it('refuses more than 48 installments', () => {
