@@ -29,6 +29,18 @@ updated: 2026-09-25
 - [x] Card purchases in installments, invoice payment
 - [x] Purchases already in progress: record only the remaining installments
 - [x] DB: balance views (`account_balances`, `invoice_totals`)
+- [x] **Ledger series done** (#19–#27): accounts, entries, cards, installments, invoices, balances
+- [ ] **Next session: choose the next step** (the user will decide; options below)
+  1. **HTTP API + web auth (recommended):** routes for what exists (accounts, cards, entries,
+     balances, invoices) with the `(module, action)` permission check, request validation with the
+     shared schemas, error mapping (`AppError` → HTTP). Without it nothing built so far is usable
+     by the web or the agent. **Needs a decision first:** open question 3 (web auth method).
+  2. **Contacts and charges:** third parties who owe part of a purchase (receivable postings with
+     `contact_id`, lifts the temporary refusal of receivable/payable postings), charges over
+     WhatsApp, settlements. Uses the multi-party allocation already in `shared`.
+  3. **Planning:** recurring bills and incomes, commission forecast, budgets, "free to spend".
+  4. **Deploy on the homelab:** Dockerfile, Dokploy deploy workflow, backups, Level 0
+     observability.
 - [ ] DB: contacts/charges, planning, support tables
 - [ ] Observability core (OTel register, metrics, error refs), Dockerfile, deploy workflow
 - [ ] Web foundation: TanStack Router/Query, shadcn/ui, layout
