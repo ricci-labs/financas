@@ -820,6 +820,31 @@ describe('recordEntry', () => {
     ])
   })
 
+  it('records who spent when that person is a member', async () => {
+    const { entryId } = await recordEntry(databases.app, context, {
+      ...details,
+      entryType: 'expense',
+      amountCents: 300,
+      spentByUserId: ownerUserId,
+      paidFromAccountId: checking,
+      categoryId: groceries,
+    })
+    expect((await entryRow(entryId))?.spentByUserId).toBe(ownerUserId)
+  })
+
+  it('refuses a spender who is not a member of the workspace', async () => {
+    const outsider = await fixtures.createUser('outsider')
+    const recorded = recordEntry(databases.app, context, {
+      ...details,
+      entryType: 'expense',
+      amountCents: 300,
+      spentByUserId: outsider,
+      paidFromAccountId: checking,
+      categoryId: groceries,
+    })
+    await expect(recorded).rejects.toMatchObject({ code: 'SPENT_BY_NOT_A_MEMBER' })
+  })
+
   it('refuses input that does not match the schema', async () => {
     const recorded = recordEntry(databases.app, context, {
       ...details,

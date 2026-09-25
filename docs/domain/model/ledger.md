@@ -93,7 +93,7 @@ The amount due and "paid" are **derived** (`invoice_totals` view) from postings 
 | `entry_type` | enum | `expense`, `income`, `card_purchase`, `transfer`, `invoice_payment`, `refund`, `settlement` (contact paid back), `adjustment`, `opening_balance` |
 | `payment_method` | enum null | `pix`, `debit`, `credit`, `cash`, `boleto`, `bank_transfer`, `auto_debit`, `other` |
 | `installment_count` | smallint ≥ 1 | 1 = paid at once |
-| `spent_by_user_id` | FK users null | Who actually spent (vs who recorded it) |
+| `spent_by_user_id` | FK users null | Who actually spent (vs who recorded it). An active member when recorded |
 | `source` | enum `entry_source`: `web`, `whatsapp`, `job`, `import` | |
 | `created_by_user_id` | FK users | |
 | `replaces_entry_id` | FK self null | Set when an entry is edited: the old one is soft-deleted and this one replaces it |
@@ -148,8 +148,9 @@ negative = overdraft, against the system account). Card purchases, invoice payme
 settlements come with cards and contacts. Errors are `ValidationError` codes: `ENTRY_INVALID`,
 `ACCOUNT_NOT_AVAILABLE` or the planner rule (`NOT_AN_EXPENSE_CATEGORY`, `SAME_ACCOUNT`...).
 
-**Open question:** should `spent_by_user_id` be limited to members of the workspace? Today it is
-only an FK to `users`.
+`spent_by_user_id` must be an active member of the workspace when the entry is recorded (trigger
+`journal_entries_spender_is_member`, error `SPENT_BY_NOT_A_MEMBER`). Entries of someone who later
+leaves stay valid. Decided with the user on 2026-09-25.
 
 **Correction policy** (ADR 0016):
 - **Delete:** soft delete (`deleted_at`). The whole entry leaves all sums together, so the ledger stays balanced. It can be restored from the trash.

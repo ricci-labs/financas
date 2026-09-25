@@ -1,6 +1,10 @@
 import { type Clock, systemClock } from '@api/core/clock'
 import type { Database } from '@api/core/db/client'
-import { POSTGRES_CHECK_VIOLATION, postgresErrorCode } from '@api/core/db/errors'
+import {
+  POSTGRES_CHECK_VIOLATION,
+  postgresConstraintName,
+  postgresErrorCode,
+} from '@api/core/db/errors'
 import { type WorkspaceTransaction, withWorkspace } from '@api/core/db/tx'
 import { ConflictError, NotFoundError, ValidationError } from '@api/core/http/errors'
 import {
@@ -33,6 +37,8 @@ import {
 import type { z } from 'zod'
 
 type AccountsById = ReadonlyMap<string, AccountRef>
+
+const SPENDER_IS_MEMBER_CONSTRAINT = 'journal_entries_spender_is_member'
 
 export async function createSystemAccounts(
   tx: WorkspaceTransaction,
@@ -73,7 +79,7 @@ async function recordParsedEntry(
     throw new ValidationError(planned.violation, `Entry breaks the rule ${planned.violation}`)
   }
 
-  const entryId = await insertEntry(tx, {
+  const entryId = await insertEntryWithMemberSpender(tx, {
     workspaceId: context.workspaceId,
     occurredOn: input.occurredOn,
     description: input.description,
@@ -173,6 +179,22 @@ async function refusingBrokenRules<T>(code: string, work: () => Promise<T>): Pro
   } catch (error) {
     if (postgresErrorCode(error) === POSTGRES_CHECK_VIOLATION) {
       throw new ConflictError(code, 'The ledger rules refuse this change', { cause: error })
+    }
+    throw error
+  }
+}
+
+async function insertEntryWithMemberSpender(
+  tx: WorkspaceTransaction,
+  entry: Parameters<typeof insertEntry>[1],
+): Promise<string> {
+  try {
+    return await insertEntry(tx, entry)
+  } catch (error) {
+    if (postgresConstraintName(error) === SPENDER_IS_MEMBER_CONSTRAINT) {
+      throw new ValidationError('SPENT_BY_NOT_A_MEMBER', 'Who spent must be a workspace member', {
+        cause: error,
+      })
     }
     throw error
   }
