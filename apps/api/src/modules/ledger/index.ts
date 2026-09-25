@@ -1,8 +1,10 @@
 export {
   archiveAccount,
   changeAccount,
+  changeCard,
   changeEntryDetails,
   createAccount,
+  createCard,
   createSystemAccounts,
   deleteAccount,
   deleteEntry,
@@ -22,4 +24,5 @@ export type {
   NewLedgerAccount,
   RecordedEntry,
   WorkspaceAccount,
+  WorkspaceCard,
 } from '@api/modules/ledger/ledger.types'

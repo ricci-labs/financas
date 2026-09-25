@@ -61,4 +61,26 @@ describe('table conventions', () => {
       .where(eq(users.id, userId))
     expect(user?.updatedAt.getTime()).toBeGreaterThan(user?.createdAt.getTime() ?? Infinity)
   })
+
+  it('defer every non-cascading foreign key between tenant tables, so erasure works', async () => {
+    const result = await databases.owner.execute<{ constraint_name: string }>(
+      sql`select constraint_info.conname as constraint_name
+          from pg_constraint constraint_info
+          where constraint_info.contype = 'f'
+            and constraint_info.confdeltype <> 'c'
+            and not constraint_info.condeferrable
+            and exists (
+              select 1 from information_schema.columns
+              where table_schema = 'public' and column_name = 'workspace_id'
+                and table_name = constraint_info.conrelid::regclass::text
+            )
+            and exists (
+              select 1 from information_schema.columns
+              where table_schema = 'public' and column_name = 'workspace_id'
+                and table_name = constraint_info.confrelid::regclass::text
+            )
+          order by constraint_name`,
+    )
+    expect(result.rows.map((row) => row.constraint_name)).toEqual([])
+  })
 })

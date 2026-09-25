@@ -169,6 +169,14 @@ describe('owner invariant', () => {
   it('still lets a whole workspace be erased', async () => {
     const eraser = await fixtures.createUser('eraser')
     const { workspaceId } = await fixtures.createWorkspaceOwnedBy(eraser, 'Erase')
+    const guest = await fixtures.createUser('erased-guest')
+    await insertMembershipWithRole(workspaceId, guest, 'member')
+    await createInvitation(databases.app, {
+      workspaceId,
+      roleId: await systemRoleId(workspaceId, 'viewer'),
+      invitedByUserId: eraser,
+      email: `erased-${fixtures.runId}@example.test`,
+    })
     const erase = databases.owner.delete(workspaces).where(eq(workspaces.id, workspaceId))
     expect(await postgresErrorCodeOf(erase)).toBeUndefined()
   })

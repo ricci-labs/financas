@@ -45,3 +45,8 @@ export type DeleteAccountInput = WorkspaceAccount & {
 export type CreatedAccount = {
   accountId: string
 }
+
+export type WorkspaceCard = {
+  workspaceId: string
+  cardAccountId: string
+}

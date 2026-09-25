@@ -114,8 +114,8 @@ src/
 │   ├── onboarding/           # flows spanning modules: createWorkspace() (no tables)
 │   ├── access/               # module actions, roles, role permissions, authorization
 │   ├── members/              # memberships (owner invariant), invitations
-│   ├── ledger/               # ledger accounts (incl. categories), journal entries, postings
-│   ├── cards/                # card details, invoices
+│   ├── ledger/               # ledger accounts (incl. categories), cards and invoices,
+│   │                         #   journal entries, postings (cards live here: see dependency-rules)
 │   ├── contacts/             # contacts, charges, settlements
 │   ├── planning/             # recurrence rules, occurrences, periods, budgets, goals, holidays
 │   ├── attachments/          # files + link tables, FileStorage interface
