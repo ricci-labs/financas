@@ -50,11 +50,12 @@ export async function findInvitationWorkspaceId(db: Database, tokenHash: string)
   return result.rows[0]?.workspace_id ?? null
 }
 
-export async function findInvitationByTokenHash(tx: WorkspaceTransaction, tokenHash: string) {
+export async function lockInvitationByTokenHash(tx: WorkspaceTransaction, tokenHash: string) {
   const [invitation] = await tx
     .select()
     .from(invitations)
     .where(eq(invitations.tokenHash, tokenHash))
+    .for('update')
   return invitation
 }
 

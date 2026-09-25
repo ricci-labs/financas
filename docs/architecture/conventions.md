@@ -1,7 +1,7 @@
 ---
 summary: Coding conventions — naming, money, dates, IDs, errors, validation, tests, migrations, commits.
 read_when: Writing or reviewing any code.
-updated: 2026-09-23
+updated: 2026-09-24
 ---
 
 # Conventions
@@ -77,6 +77,7 @@ without comments.
 - Seed through `createFixtures()` (`src/testing/fixtures.ts`), which uses the real services (e.g. `createWorkspace()`), so tests run on the real flow. Call `removeEverything()` in `afterAll`.
 - **Tests are independent:** each test creates the users it changes, so order doesn't matter. Never start two DB operations without awaiting the first (they would run as parallel transactions).
 - For a DB rule (trigger, policy, constraint), prove the test can fail: disable the rule locally, see the test go red, re-enable.
+- **Races must be tested deterministically.** Firing concurrent calls and hoping they overlap passes by luck. Hold a lock from the owner connection (e.g. `lock table ... in exclusive mode`) so the racing calls queue up, wait for them with `waitForBlockedQueries()`, then release. Example: the invitation race test in `members.integration.test.ts`.
 - `pnpm test` never needs a database.
 - The agent gets an eval set of real anonymized messages later (see `../integrations/ai-agent.md`).
 

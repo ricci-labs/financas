@@ -1,7 +1,7 @@
 ---
 summary: Identity and multi-tenancy tables — users, WhatsApp identities, workspaces, memberships, invitations — and all settings/preferences tables (financial period, installment view, notifications).
 read_when: Working on auth, workspaces, memberships, invitations, settings screens, or anything scoped by tenant.
-updated: 2026-09-23
+updated: 2026-09-24
 ---
 
 # Tenancy, identity and settings
@@ -77,7 +77,8 @@ One pending invitation per contact and workspace (partial unique indexes). RLS i
 **Flow** (`members` service):
 - `createInvitation()` generates the token, stores its hash, and returns the raw token for the link.
 - `acceptInvitation(token, userId)` hashes the token, finds the workspace with the SECURITY DEFINER
-  function `invitation_workspace_id()` (ADR 0019), then inside that workspace refuses revoked,
+  function `invitation_workspace_id()` (ADR 0019), then inside that workspace locks the invitation
+  row (`FOR UPDATE`, so concurrent accepts of one token let exactly one user in), refuses revoked,
   accepted or expired invitations and existing members (`ConflictError` codes), adds the member with
   the invited role, and marks the invitation accepted.
 - **Open question:** acceptance is token-based (whoever holds the link). Requiring the accepting

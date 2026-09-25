@@ -1,4 +1,5 @@
-import { createDatabase } from '@api/core/db/client'
+import { createDatabase, type Database } from '@api/core/db/client'
+import { sql } from 'drizzle-orm'
 
 function requiredEnv(name: string): string {
   const value = process.env[name]
@@ -56,5 +57,25 @@ export async function postgresErrorCodeOf(
     return undefined
   } catch (error) {
     return findPostgresCode(error)
+  }
+}
+
+const BLOCKED_QUERIES_POLL_MS = 20
+const BLOCKED_QUERIES_TIMEOUT_MS = 5000
+
+async function countBlockedQueries(db: Database): Promise<number> {
+  const result = await db.execute<{ blocked: number }>(
+    sql`select count(*)::int as blocked from pg_locks where not granted`,
+  )
+  return result.rows[0]?.blocked ?? 0
+}
+
+export async function waitForBlockedQueries(db: Database, expected: number): Promise<void> {
+  const deadline = Date.now() + BLOCKED_QUERIES_TIMEOUT_MS
+  while ((await countBlockedQueries(db)) < expected) {
+    if (Date.now() > deadline) {
+      throw new Error(`Timed out waiting for ${expected} blocked queries`)
+    }
+    await new Promise((resolve) => setTimeout(resolve, BLOCKED_QUERIES_POLL_MS))
   }
 }
