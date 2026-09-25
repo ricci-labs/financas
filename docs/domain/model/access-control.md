@@ -1,7 +1,7 @@
 ---
 summary: Access control inside a workspace — roles (system templates + custom), a module × action permission matrix (view/create/update/delete), owner rules, and where permissions are enforced (routes, agent tools, UI).
 read_when: Adding a route, agent tool or screen; working on roles, members or invitations; any "who can do what" question.
-updated: 2026-09-23
+updated: 2026-09-24
 ---
 
 # Access control
@@ -50,7 +50,7 @@ the app role** (writes revoked).
 | `name` | Unique per workspace (among non-deleted) |
 | `system_key` | `owner`, `admin`, `member`, `viewer` or null for custom roles |
 | `description` | |
-| `deleted_at`, `deleted_by_user_id` | Custom roles only. Can't be deleted while assigned. |
+| `deleted_at`, `deleted_by_user_id` | Custom roles only. Can't be deleted while an active member or a pending invitation uses it, and a deleted role can't be given to a member or an invitation (triggers, `check_violation`). |
 
 System roles are created with each workspace. `owner` can't be edited. The other system roles can be edited per workspace.
 
