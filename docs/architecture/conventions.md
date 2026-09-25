@@ -88,7 +88,7 @@ without comments.
 - **CHECK constraints must handle NULL explicitly.** A CHECK passes when its expression is NULL, so `value between 1 and 31` accepts a NULL `value`. Write `value is not null and value between 1 and 31`, or compare nullness directly (`(a is null) = (b is null)`). Add a test with the NULL case.
 - A trigger that checks an invariant across rows uses a `SECURITY DEFINER` trigger function with `SET search_path = public, pg_temp` (ADR 0020). Test it with a workspace switch in the same transaction.
 - A migration that exists only on your machine (not merged) may be regenerated. Delete its SQL, snapshot and journal entry, then `pnpm db:reset` and migrate. Once merged, never edit it.
-- Shared column helpers (`core/db/columns.ts`): `primaryId()`, `timestamps()`, `softDelete(() => users.id)`. Use them in every table.
+- Shared column helpers (`core/db/columns.ts`): `primaryId()`, `timestamps()`, `softDelete(() => users.id)` (`deleted_at`, `deleted_by_user_id`, `delete_reason`). Use them in every table. `core/db/conventions.integration.test.ts` fails if a table has only part of a convention.
 - A destructive change (drop/rename) needs an explicit mention to the user before it runs anywhere with real data.
 
 ## Logging
