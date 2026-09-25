@@ -10,6 +10,8 @@ updates:
       include: scope
     ignore:
       - dependency-name: baileys
+      - dependency-name: '@types/node'
+        update-types: [version-update:semver-major]
     groups:
       production-minor:
         dependency-type: production
