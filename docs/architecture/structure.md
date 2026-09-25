@@ -1,7 +1,7 @@
 ---
 summary: The intended folder tree for the whole monorepo, with the role of every folder and file type.
 read_when: Creating files or folders, or deciding where a piece of code belongs.
-updated: 2026-09-23
+updated: 2026-09-25
 ---
 
 # Project structure
@@ -103,7 +103,8 @@ src/
 │   └── clock.ts              # injectable "now" (Clock, systemClock)
 ├── modules/                  # one folder per domain (see "Module anatomy")
 │   ├── identity/             # users, sessions, channel identities (WhatsApp numbers)
-│   ├── workspaces/           # workspaces, creation flow, settings tables
+│   ├── workspaces/           # workspaces, settings tables
+│   ├── onboarding/           # flows spanning modules: createWorkspace() (no tables)
 │   ├── access/               # module actions, roles, role permissions, authorization
 │   ├── members/              # memberships (owner invariant), invitations
 │   ├── ledger/               # ledger accounts (incl. categories), journal entries, postings

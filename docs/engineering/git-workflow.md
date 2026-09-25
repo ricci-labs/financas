@@ -1,7 +1,7 @@
 ---
 summary: Commit message format, branch naming, PR rules, squash-merge policy and the git hooks that enforce them.
 read_when: Committing, branching, opening or merging a PR, or configuring git hooks.
-updated: 2026-09-23
+updated: 2026-09-25
 ---
 
 # Git workflow

@@ -1,7 +1,7 @@
 ---
 summary: Allowed and forbidden import directions across packages, layers and modules; enforced by dependency-cruiser.
 read_when: Adding an import that crosses a module, layer or package boundary.
-updated: 2026-09-22
+updated: 2026-09-25
 ---
 
 # Dependency rules
@@ -61,8 +61,9 @@ routes / agent tools / jobs / channels
 | `planning` | `notifications` | Bill and invoice reminders |
 | `reports` | `ledger`, `planning`, `cards`, `contacts` | Read-only aggregates |
 | every module | `workspaces` | Current workspace settings |
-| `workspaces` | `access` | Creating a workspace creates its system roles |
-| `workspaces` | `members` | Creating a workspace adds the creator as owner |
+| `onboarding` | `workspaces`, `access`, `members` | Creating a workspace: the workspace and its settings, the system roles, the creator as owner |
+
+`onboarding` only orchestrates flows that span modules (creating a workspace) and nothing depends on it, so every module can depend on `workspaces` without a cycle.
 
 Contact validity on postings is enforced by the composite FK, so `ledger` never calls `contacts` (that would create a cycle with `contacts → ledger`).
 
