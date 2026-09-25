@@ -27,3 +27,13 @@ export async function insertDefaultSettings(tx: WorkspaceTransaction, workspaceI
   }
   return settings
 }
+
+export async function selectCurrentSettings(tx: WorkspaceTransaction) {
+  const [settings] = await tx
+    .select({ currency: workspaceSettings.currency })
+    .from(workspaceSettings)
+  if (!settings) {
+    throw new Error('The current workspace has no settings')
+  }
+  return settings
+}

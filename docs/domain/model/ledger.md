@@ -134,13 +134,23 @@ Status: rows marked ✅ are implemented (`drizzle/0021`–`0024`); the others co
 transaction's `now()` on insert) with the current `now()`.
 
 ## Services (`modules/ledger`)
+Use cases live in `modules/ledger/use-cases/` (`accounts.ts`, `entries.ts`); `ledger.service.ts` re-exports them.
+
 | Service | Does |
 |---|---|
+| `createAccount(db, context, input)` | Validates with `newAccountSchema` (user kinds only: no system accounts, cards come with `card_details`), checks the parent (same class, not deleted) and takes the currency from `workspace_settings` |
+| `changeAccount(db, ref, change)` | Rename, move (never under a descendant), owner, color, icon, order. System accounts accept only color, icon and order |
+| `archiveAccount` / `unarchiveAccount` | Archive keeps history; archived accounts leave the pickers and take no new postings |
+| `deleteAccount(db, input, clock)` / `restoreAccount` | Soft delete (refused for system accounts, accounts with active children or used by active entries) and restore (refused under a deleted parent or when the name was taken meanwhile) |
 | `recordEntry(db, context, input)` | Validates with `entryInputSchema`, loads the accounts (same workspace, not archived, not deleted), plans the postings with `planPostings()` (`packages/shared/src/ledger/postings.ts`) and writes the entry with its postings |
 | `changeEntryDetails(db, ref, change)` | Description and notes in place |
 | `deleteEntry(db, input, clock)` | Soft delete with who, when and why |
 | `restoreEntry(db, ref)` | Back from the trash. A database refusal becomes `ENTRY_CANNOT_BE_RESTORED` |
 | `replaceEntry(db, context, entryId, input, clock)` | Locks the entry, soft-deletes it and records the new one with `replaces_entry_id`, in one transaction |
+
+Account errors: `ACCOUNT_INVALID`, `ACCOUNT_NOT_FOUND`, `ACCOUNT_DELETED`, `ACCOUNT_NAME_TAKEN`,
+`PARENT_NOT_AVAILABLE`, `PARENT_OF_ANOTHER_CLASS`, and `ACCOUNT_CHANGE_REFUSED` /
+`ACCOUNT_CANNOT_BE_DELETED` / `ACCOUNT_CANNOT_BE_RESTORED` when a database rule refuses.
 
 Entry types supported so far: `expense` (paid from a money account: checking, savings, cash
 wallet, investment), `income`, `transfer` between two money accounts, `opening_balance` (signed:

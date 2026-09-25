@@ -1,4 +1,9 @@
-import { entryDetailsChangeSchema, entryInputSchema } from '@shared/ledger/ledger.schemas'
+import {
+  accountChangeSchema,
+  entryDetailsChangeSchema,
+  entryInputSchema,
+  newAccountSchema,
+} from '@shared/ledger/ledger.schemas'
 import { describe, expect, it } from 'vitest'
 
 const ACCOUNT = '01a0d8ce-060b-7dd3-a56f-5995e1676b98'
@@ -70,5 +75,58 @@ describe('entryDetailsChangeSchema', () => {
 
   it('refuses an empty change', () => {
     expect(entryDetailsChangeSchema.safeParse({}).success).toBe(false)
+  })
+})
+
+describe('newAccountSchema', () => {
+  it('accepts a category under a parent and trims the name', () => {
+    const parsed = newAccountSchema.parse({
+      kind: 'expense_category',
+      name: '  Mercado ',
+      parentId: ACCOUNT,
+      color: '#00AA00',
+    })
+    expect(parsed).toMatchObject({ name: 'Mercado', parentId: ACCOUNT })
+  })
+
+  it('requires the income nature on income categories and only there', () => {
+    expect(newAccountSchema.safeParse({ kind: 'income_category', name: 'Salário' }).success).toBe(
+      false,
+    )
+    expect(
+      newAccountSchema.safeParse({
+        kind: 'income_category',
+        name: 'Salário',
+        incomeNature: 'fixed',
+      }).success,
+    ).toBe(true)
+    expect(
+      newAccountSchema.safeParse({ kind: 'checking', name: 'Conta', incomeNature: 'fixed' })
+        .success,
+    ).toBe(false)
+  })
+
+  it.each(['receivable', 'opening_balance', 'credit_card'])(
+    'refuses creating a %s account here',
+    (kind) => {
+      expect(newAccountSchema.safeParse({ kind, name: 'X' }).success).toBe(false)
+    },
+  )
+
+  it('refuses a color that is not #rrggbb', () => {
+    expect(
+      newAccountSchema.safeParse({ kind: 'checking', name: 'X', color: 'green' }).success,
+    ).toBe(false)
+  })
+})
+
+describe('accountChangeSchema', () => {
+  it('accepts moving to the root and renaming', () => {
+    expect(accountChangeSchema.safeParse({ parentId: null }).success).toBe(true)
+    expect(accountChangeSchema.safeParse({ name: 'Feira' }).success).toBe(true)
+  })
+
+  it('refuses an empty change', () => {
+    expect(accountChangeSchema.safeParse({}).success).toBe(false)
   })
 })
