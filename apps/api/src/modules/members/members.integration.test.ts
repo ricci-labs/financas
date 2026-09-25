@@ -4,10 +4,15 @@ import { roles } from '@api/modules/access/access.table'
 import { acceptInvitation, addMember, createInvitation } from '@api/modules/members'
 import { invitations, membershipPreferences, memberships } from '@api/modules/members/members.table'
 import { workspaces } from '@api/modules/workspaces/workspaces.table'
-import { connectTestDatabases, POSTGRES_ERRORS, postgresErrorCodeOf } from '@api/testing/database'
+import {
+  connectTestDatabases,
+  POSTGRES_ERRORS,
+  postgresErrorCodeOf,
+  waitForBlockedQueries,
+} from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
 import type { SystemRoleKey } from '@financas/shared'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const databases = connectTestDatabases()
@@ -304,6 +309,13 @@ describe('invitations', () => {
 describe('invitation flow', () => {
   const EIGHT_DAYS_MS = 8 * 24 * 60 * 60 * 1000
 
+  function whileMembershipsAreLocked<T>(work: () => Promise<T>) {
+    return databases.owner.transaction(async (tx) => {
+      await tx.execute(sql`lock table memberships in exclusive mode`)
+      return work()
+    })
+  }
+
   async function inviteToA(email: string) {
     const roleId = await systemRoleId(workspaceA, 'member')
     return createInvitation(databases.app, {
@@ -378,6 +390,29 @@ describe('invitation flow', () => {
     await expect(acceptInvitation(databases.app, { token, userId: second })).rejects.toMatchObject({
       code: 'INVITATION_ALREADY_ACCEPTED',
     })
+  })
+
+  it('lets only one of two users racing on the same token join', async () => {
+    const racers = [await fixtures.createUser('racer-1'), await fixtures.createUser('racer-2')]
+    const { token } = await inviteToA(`race-${fixtures.runId}@example.test`)
+
+    const race = await whileMembershipsAreLocked(async () => {
+      const outcomes = Promise.allSettled(
+        racers.map((userId) => acceptInvitation(databases.app, { token, userId })),
+      )
+      await waitForBlockedQueries(databases.owner, racers.length)
+      return { outcomes }
+    })
+
+    const outcomes = await race.outcomes
+    const joinedRacers = await withWorkspace(databases.app, workspaceA, (tx) =>
+      tx.select().from(memberships).where(inArray(memberships.userId, racers)),
+    )
+    expect(outcomes.filter((outcome) => outcome.status === 'fulfilled')).toHaveLength(1)
+    expect(outcomes.filter((outcome) => outcome.status === 'rejected')).toMatchObject([
+      { reason: { code: 'INVITATION_ALREADY_ACCEPTED' } },
+    ])
+    expect(joinedRacers).toHaveLength(1)
   })
 
   it('refuses a revoked invitation', async () => {

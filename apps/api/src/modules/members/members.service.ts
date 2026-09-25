@@ -4,12 +4,12 @@ import { type WorkspaceTransaction, withWorkspace } from '@api/core/db/tx'
 import { ConflictError, NotFoundError } from '@api/core/http/errors'
 import { generateToken, hashToken } from '@api/core/security/tokens'
 import {
-  findInvitationByTokenHash,
   findInvitationWorkspaceId,
   hasActiveMembership,
   insertDefaultPreferencesIfMissing,
   insertInvitation,
   insertMembership,
+  lockInvitationByTokenHash,
   markInvitationAccepted,
 } from '@api/modules/members/members.repository'
 import type {
@@ -57,7 +57,7 @@ export async function acceptInvitation(
   }
 
   return withWorkspace(db, workspaceId, async (tx) => {
-    const invitation = await findInvitationByTokenHash(tx, tokenHash)
+    const invitation = await lockInvitationByTokenHash(tx, tokenHash)
     if (!invitation) {
       throw new NotFoundError('INVITATION_NOT_FOUND', 'Invitation not found')
     }
