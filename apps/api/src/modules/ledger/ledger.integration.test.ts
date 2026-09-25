@@ -619,3 +619,96 @@ describe('ledger invariants', () => {
     expect(await changeEntry(entryId, { deletedAt: null })).toBe(POSTGRES_ERRORS.checkViolation)
   })
 })
+
+describe('entry replacement', () => {
+  let checking: string
+  let groceries: string
+
+  beforeAll(async () => {
+    checking = await insertAccount({ kind: 'checking' })
+    groceries = await insertAccount({ kind: 'expense_category' })
+  })
+
+  function replaceRaw(oldEntryId: string, { deleteOld = true } = {}) {
+    return withWorkspace(databases.app, workspaceA, async (tx) => {
+      if (deleteOld) {
+        await tx
+          .update(journalEntries)
+          .set({ deletedAt: new Date() })
+          .where(eq(journalEntries.id, oldEntryId))
+      }
+      const [replacement] = await tx
+        .insert(journalEntries)
+        .values({
+          workspaceId: workspaceA,
+          occurredOn: ENTRY_DATE,
+          description: 'Mercado (corrigido)',
+          entryType: 'expense',
+          source: 'web',
+          createdByUserId: ownerUserId,
+          replacesEntryId: oldEntryId,
+        })
+        .returning({ id: journalEntries.id })
+      if (!replacement) {
+        throw new Error('Could not insert the replacement')
+      }
+      await tx.insert(postings).values(
+        spend(1200, checking, groceries).map((line, index) => ({
+          workspaceId: workspaceA,
+          entryId: replacement.id,
+          lineNo: index + 1,
+          accountId: line.accountId,
+          accountKind: line.kind,
+          amountCents: line.amountCents,
+          effectiveOn: ENTRY_DATE,
+        })),
+      )
+      return replacement.id
+    })
+  }
+
+  function setDeleted(entryId: string, deleted: boolean) {
+    return postgresErrorCodeOf(
+      withWorkspace(databases.app, workspaceA, (tx) =>
+        tx
+          .update(journalEntries)
+          .set({ deletedAt: deleted ? new Date() : null })
+          .where(eq(journalEntries.id, entryId)),
+      ),
+    )
+  }
+
+  it('accepts deleting the old entry and adding its replacement together', async () => {
+    const original = await recordRaw(spend(1000, checking, groceries))
+    expect(await postgresErrorCodeOf(replaceRaw(original))).toBeUndefined()
+  })
+
+  it('refuses a replacement while the old entry stays active', async () => {
+    const original = await recordRaw(spend(1000, checking, groceries))
+    expect(await postgresErrorCodeOf(replaceRaw(original, { deleteOld: false }))).toBe(
+      POSTGRES_ERRORS.checkViolation,
+    )
+  })
+
+  it('refuses restoring a replaced entry while its replacement is active', async () => {
+    const original = await recordRaw(spend(1000, checking, groceries))
+    await replaceRaw(original)
+    expect(await setDeleted(original, false)).toBe(POSTGRES_ERRORS.checkViolation)
+  })
+
+  it('refuses restoring a replacement once the original came back', async () => {
+    const original = await recordRaw(spend(1000, checking, groceries))
+    const replacement = await replaceRaw(original)
+    expect(await setDeleted(replacement, true)).toBeUndefined()
+    expect(await setDeleted(original, false)).toBeUndefined()
+    expect(await setDeleted(replacement, false)).toBe(POSTGRES_ERRORS.checkViolation)
+  })
+
+  it('allows only one active replacement per entry', async () => {
+    const original = await recordRaw(spend(1000, checking, groceries))
+    await replaceRaw(original)
+    expect(await postgresErrorCodeOf(replaceRaw(original, { deleteOld: false }))).toBe(
+      POSTGRES_ERRORS.uniqueViolation,
+    )
+  })
+})
