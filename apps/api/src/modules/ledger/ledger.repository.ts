@@ -1,13 +1,14 @@
 import type { WorkspaceTransaction } from '@api/core/db/tx'
 import {
   cardDetails,
+  cardInvoices,
   journalEntries,
   ledgerAccounts,
   postings,
 } from '@api/modules/ledger/ledger.table'
 import type { NewLedgerAccount } from '@api/modules/ledger/ledger.types'
-import type { SystemAccountKind } from '@financas/shared'
-import { and, eq, inArray, isNull } from 'drizzle-orm'
+import type { InvoiceStatus, SystemAccountKind } from '@financas/shared'
+import { and, eq, inArray, isNull, ne } from 'drizzle-orm'
 
 type NewEntry = typeof journalEntries.$inferInsert
 
@@ -182,4 +183,76 @@ export async function updateCardDetails(
   changes: CardDetailsUpdate,
 ) {
   await tx.update(cardDetails).set(changes).where(eq(cardDetails.accountId, cardAccountId))
+}
+
+type NewInvoice = typeof cardInvoices.$inferInsert
+
+export async function findCardCycle(tx: WorkspaceTransaction, cardAccountId: string) {
+  const [card] = await tx
+    .select({
+      closingDay: cardDetails.closingDay,
+      dueDay: cardDetails.dueDay,
+      purchaseOnClosingDayGoesNext: cardDetails.purchaseOnClosingDayGoesNext,
+      paymentAccountId: cardDetails.paymentAccountId,
+    })
+    .from(cardDetails)
+    .where(eq(cardDetails.accountId, cardAccountId))
+  return card
+}
+
+export function selectInvoicesNotClosed(tx: WorkspaceTransaction, cardAccountId: string) {
+  return tx
+    .select({
+      id: cardInvoices.id,
+      closingOn: cardInvoices.closingOn,
+      referenceMonth: cardInvoices.referenceMonth,
+      status: cardInvoices.status,
+    })
+    .from(cardInvoices)
+    .where(and(eq(cardInvoices.cardAccountId, cardAccountId), ne(cardInvoices.status, 'closed')))
+}
+
+export async function setInvoiceStatus(
+  tx: WorkspaceTransaction,
+  invoiceId: string,
+  status: InvoiceStatus,
+) {
+  await tx.update(cardInvoices).set({ status }).where(eq(cardInvoices.id, invoiceId))
+}
+
+export async function insertInvoicesIfMissing(tx: WorkspaceTransaction, invoices: NewInvoice[]) {
+  await tx.insert(cardInvoices).values(invoices).onConflictDoNothing()
+}
+
+export function selectInvoicesOfMonths(
+  tx: WorkspaceTransaction,
+  cardAccountId: string,
+  referenceMonths: string[],
+) {
+  return tx
+    .select({
+      id: cardInvoices.id,
+      referenceMonth: cardInvoices.referenceMonth,
+      dueOn: cardInvoices.dueOn,
+      status: cardInvoices.status,
+    })
+    .from(cardInvoices)
+    .where(
+      and(
+        eq(cardInvoices.cardAccountId, cardAccountId),
+        inArray(cardInvoices.referenceMonth, referenceMonths),
+      ),
+    )
+}
+
+export async function findInvoiceOfCard(
+  tx: WorkspaceTransaction,
+  invoiceId: string,
+  cardAccountId: string,
+) {
+  const [invoice] = await tx
+    .select({ id: cardInvoices.id })
+    .from(cardInvoices)
+    .where(and(eq(cardInvoices.id, invoiceId), eq(cardInvoices.cardAccountId, cardAccountId)))
+  return invoice
 }

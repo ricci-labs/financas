@@ -82,3 +82,5 @@ export const ENTRY_TYPES_ALLOWED_ON_CLOSED_INVOICES = [
   'invoice_payment',
   'refund',
 ] as const
+
+export const MAX_INSTALLMENTS = 48

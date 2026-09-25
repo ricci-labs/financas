@@ -100,3 +100,15 @@ function padYear(year: number): string {
 function padTwoDigits(value: number): string {
   return String(value).padStart(2, '0')
 }
+
+export function todayIn(timeZone: string, instant: Date): IsoDate {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(instant)
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((candidate) => candidate.type === type)?.value)
+  return toIsoDate(part('year'), part('month'), part('day'))
+}

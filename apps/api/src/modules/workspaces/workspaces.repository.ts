@@ -21,7 +21,7 @@ export async function insertDefaultSettings(tx: WorkspaceTransaction, workspaceI
   const [settings] = await tx
     .insert(workspaceSettings)
     .values({ workspaceId })
-    .returning({ currency: workspaceSettings.currency })
+    .returning({ currency: workspaceSettings.currency, timezone: workspaceSettings.timezone })
   if (!settings) {
     throw new Error(`Settings of workspace ${workspaceId} were not inserted`)
   }
@@ -30,7 +30,7 @@ export async function insertDefaultSettings(tx: WorkspaceTransaction, workspaceI
 
 export async function selectCurrentSettings(tx: WorkspaceTransaction) {
   const [settings] = await tx
-    .select({ currency: workspaceSettings.currency })
+    .select({ currency: workspaceSettings.currency, timezone: workspaceSettings.timezone })
     .from(workspaceSettings)
   if (!settings) {
     throw new Error('The current workspace has no settings')

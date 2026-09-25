@@ -5,7 +5,6 @@ import { type WorkspaceTransaction, withWorkspace } from '@api/core/db/tx'
 import { ConflictError, NotFoundError, ValidationError } from '@api/core/http/errors'
 import {
   findSystemAccount,
-  findUsableAccounts,
   insertEntry,
   insertPostings,
   lockEntry,
@@ -19,19 +18,22 @@ import type {
   EntryRef,
   RecordedEntry,
 } from '@api/modules/ledger/ledger.types'
+import { planCardPurchase, planInvoicePayment } from '@api/modules/ledger/use-cases/card-entries'
+import { loadAccounts, pick } from '@api/modules/ledger/use-cases/lookups'
 import { parseOrThrow, refusingBrokenRules } from '@api/modules/ledger/use-cases/rules'
+import { currentWorkspaceDefaults } from '@api/modules/workspaces'
 import {
-  type AccountRef,
   type EntryInput,
   type EntryPlan,
   entryDetailsChangeSchema,
   entryInputSchema,
+  type IsoDate,
+  type PaymentMethod,
   planPostings,
+  todayIn,
 } from '@financas/shared'
 
 const ENTRY_INVALID = 'ENTRY_INVALID'
-
-type AccountsById = ReadonlyMap<string, AccountRef>
 
 const SPENDER_IS_MEMBER_CONSTRAINT = 'journal_entries_spender_is_member'
 
@@ -39,10 +41,11 @@ export async function recordEntry(
   db: Database,
   context: EntryContext,
   rawInput: unknown,
+  clock: Clock = systemClock,
 ): Promise<RecordedEntry> {
   const input = parseEntryInput(rawInput)
   return withWorkspace(db, context.workspaceId, async (tx) => ({
-    entryId: await recordParsedEntry(tx, context, input),
+    entryId: await recordParsedEntry(tx, context, input, clock),
   }))
 }
 
@@ -50,9 +53,12 @@ async function recordParsedEntry(
   tx: WorkspaceTransaction,
   context: EntryContext,
   input: EntryInput,
+  clock: Clock,
   replacesEntryId?: string,
 ): Promise<string> {
-  const plan = await toEntryPlan(tx, input)
+  const { timezone } = await currentWorkspaceDefaults(tx)
+  const today = todayIn(timezone, clock.now())
+  const plan = await toEntryPlan(tx, context.workspaceId, input, today)
   const planned = planPostings(plan)
   if (!planned.ok) {
     throw new ValidationError(planned.violation, `Entry breaks the rule ${planned.violation}`)
@@ -64,7 +70,8 @@ async function recordParsedEntry(
     description: input.description,
     notes: input.notes ?? null,
     entryType: input.entryType,
-    paymentMethod: input.paymentMethod ?? null,
+    installmentCount: input.entryType === 'card_purchase' ? input.installmentCount : 1,
+    paymentMethod: input.paymentMethod ?? defaultPaymentMethod(input),
     spentByUserId: input.spentByUserId ?? null,
     source: context.source,
     createdByUserId: context.userId,
@@ -134,7 +141,7 @@ export async function replaceEntry(
       deletedByUserId: context.userId,
       deleteReason: null,
     })
-    return { entryId: await recordParsedEntry(tx, context, input, entryId) }
+    return { entryId: await recordParsedEntry(tx, context, input, clock, entryId) }
   })
 }
 
@@ -172,8 +179,17 @@ function parseEntryInput(rawInput: unknown): EntryInput {
   return parseOrThrow(entryInputSchema, rawInput, ENTRY_INVALID)
 }
 
-async function toEntryPlan(tx: WorkspaceTransaction, input: EntryInput): Promise<EntryPlan> {
+async function toEntryPlan(
+  tx: WorkspaceTransaction,
+  workspaceId: string,
+  input: EntryInput,
+  today: IsoDate,
+): Promise<EntryPlan> {
   switch (input.entryType) {
+    case 'card_purchase':
+      return planCardPurchase(tx, workspaceId, input, today)
+    case 'invoice_payment':
+      return planInvoicePayment(tx, input, today)
     case 'expense': {
       const accounts = await loadAccounts(tx, [input.paidFromAccountId, input.categoryId])
       return {
@@ -217,15 +233,6 @@ async function toEntryPlan(tx: WorkspaceTransaction, input: EntryInput): Promise
   }
 }
 
-async function loadAccounts(tx: WorkspaceTransaction, accountIds: string[]): Promise<AccountsById> {
-  const found = await findUsableAccounts(tx, accountIds)
-  return new Map(found.map((account) => [account.id, account]))
-}
-
-function pick(accounts: AccountsById, accountId: string): AccountRef {
-  const account = accounts.get(accountId)
-  if (!account) {
-    throw new ValidationError('ACCOUNT_NOT_AVAILABLE', `Account ${accountId} is not available`)
-  }
-  return account
+function defaultPaymentMethod(input: EntryInput): PaymentMethod | null {
+  return input.entryType === 'card_purchase' ? 'credit' : null
 }

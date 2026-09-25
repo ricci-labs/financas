@@ -1460,3 +1460,256 @@ describe('card services', () => {
     }
   })
 })
+
+describe('card purchases and invoice payments', () => {
+  let context: EntryContext
+  let checking: string
+  let electronics: string
+  let card: string
+
+  const onDay = (isoInstant: string) => ({ now: () => new Date(isoInstant) })
+  const midSeptember = onDay('2026-09-15T15:00:00Z')
+
+  beforeAll(async () => {
+    context = { workspaceId: workspaceA, userId: ownerUserId, source: 'web' }
+    checking = await insertAccount({ kind: 'checking' })
+    electronics = await insertAccount({ kind: 'expense_category' })
+    card = (
+      await createCard(
+        databases.app,
+        { workspaceId: workspaceA, userId: ownerUserId },
+        { name: uniqueName('Cartão X'), closingDay: 3, dueDay: 10, paymentAccountId: checking },
+      )
+    ).accountId
+  })
+
+  function buy(amountCents: number, installmentCount: number, occurredOn = '2026-09-15') {
+    return {
+      entryType: 'card_purchase',
+      occurredOn,
+      description: 'TV',
+      amountCents,
+      installmentCount,
+      cardAccountId: card,
+      categoryId: electronics,
+    }
+  }
+
+  async function invoicesOf(cardAccountId: string) {
+    return withWorkspace(databases.app, workspaceA, (tx) =>
+      tx
+        .select({
+          id: cardInvoices.id,
+          referenceMonth: cardInvoices.referenceMonth,
+          closingOn: cardInvoices.closingOn,
+          dueOn: cardInvoices.dueOn,
+          status: cardInvoices.status,
+        })
+        .from(cardInvoices)
+        .where(eq(cardInvoices.cardAccountId, cardAccountId))
+        .orderBy(asc(cardInvoices.referenceMonth)),
+    )
+  }
+
+  async function cardLinesOf(entryId: string) {
+    return withWorkspace(databases.app, workspaceA, (tx) =>
+      tx
+        .select({
+          accountId: postings.accountId,
+          amountCents: postings.amountCents,
+          invoiceId: postings.invoiceId,
+          installmentNo: postings.installmentNo,
+          effectiveOn: postings.effectiveOn,
+        })
+        .from(postings)
+        .where(eq(postings.entryId, entryId))
+        .orderBy(asc(postings.lineNo)),
+    )
+  }
+
+  it('splits R$ 1.000,00 in 3x over the October, November and December invoices', async () => {
+    const { entryId } = await recordEntry(databases.app, context, buy(100000, 3), midSeptember)
+    const invoices = await invoicesOf(card)
+    expect(
+      invoices.map(({ referenceMonth, closingOn, dueOn, status }) => [
+        referenceMonth,
+        closingOn,
+        dueOn,
+        status,
+      ]),
+    ).toEqual([
+      ['2026-10-01', '2026-10-03', '2026-10-10', 'open'],
+      ['2026-11-01', '2026-11-03', '2026-11-10', 'future'],
+      ['2026-12-01', '2026-12-03', '2026-12-10', 'future'],
+    ])
+    const [october, november, december] = invoices.map((invoice) => invoice.id)
+    expect(await cardLinesOf(entryId)).toEqual([
+      {
+        accountId: card,
+        amountCents: -33334,
+        invoiceId: october,
+        installmentNo: 1,
+        effectiveOn: '2026-10-10',
+      },
+      {
+        accountId: card,
+        amountCents: -33333,
+        invoiceId: november,
+        installmentNo: 2,
+        effectiveOn: '2026-11-10',
+      },
+      {
+        accountId: card,
+        amountCents: -33333,
+        invoiceId: december,
+        installmentNo: 3,
+        effectiveOn: '2026-12-10',
+      },
+      {
+        accountId: electronics,
+        amountCents: 33334,
+        invoiceId: null,
+        installmentNo: 1,
+        effectiveOn: '2026-10-10',
+      },
+      {
+        accountId: electronics,
+        amountCents: 33333,
+        invoiceId: null,
+        installmentNo: 2,
+        effectiveOn: '2026-11-10',
+      },
+      {
+        accountId: electronics,
+        amountCents: 33333,
+        invoiceId: null,
+        installmentNo: 3,
+        effectiveOn: '2026-12-10',
+      },
+    ])
+    expect(await entryRow(entryId)).toMatchObject({ installmentCount: 3, paymentMethod: 'credit' })
+  })
+
+  it('reuses the invoices that already exist', async () => {
+    await recordEntry(databases.app, context, buy(5000, 2), midSeptember)
+    const months = (await invoicesOf(card)).map((invoice) => invoice.referenceMonth)
+    expect(months).toEqual([...new Set(months)])
+  })
+
+  it('refuses a purchase that would land on a closed invoice', async () => {
+    await expect(
+      recordEntry(databases.app, context, buy(5000, 1, '2026-09-02'), midSeptember),
+    ).rejects.toMatchObject({ code: 'INVOICE_CLOSED' })
+  })
+
+  it('moves the statuses forward with time, in the workspace time zone', async () => {
+    const lateOnOctoberSecondInSaoPaulo = onDay('2026-10-03T02:00:00Z')
+    await recordEntry(
+      databases.app,
+      context,
+      buy(1000, 1, '2026-10-02'),
+      lateOnOctoberSecondInSaoPaulo,
+    )
+    expect((await invoicesOf(card)).find((i) => i.referenceMonth === '2026-10-01')?.status).toBe(
+      'open',
+    )
+
+    await recordEntry(
+      databases.app,
+      context,
+      buy(1000, 1, '2026-10-05'),
+      onDay('2026-10-05T15:00:00Z'),
+    )
+    const statuses = Object.fromEntries(
+      (await invoicesOf(card)).map((invoice) => [invoice.referenceMonth, invoice.status]),
+    )
+    expect(statuses).toMatchObject({
+      '2026-10-01': 'closed',
+      '2026-11-01': 'open',
+      '2026-12-01': 'future',
+    })
+  })
+
+  it('pays a closed invoice from the card payment account', async () => {
+    const october = (await invoicesOf(card)).find((i) => i.referenceMonth === '2026-10-01')
+    const { entryId } = await recordEntry(
+      databases.app,
+      context,
+      {
+        entryType: 'invoice_payment',
+        occurredOn: '2026-10-10',
+        description: 'Fatura outubro',
+        amountCents: 40000,
+        cardAccountId: card,
+        invoiceId: october?.id,
+      },
+      onDay('2026-10-10T15:00:00Z'),
+    )
+    expect(await postingsOf(entryId)).toEqual([
+      [card, 40000],
+      [checking, -40000],
+    ])
+  })
+
+  it('refuses a payment without an account to pay from', async () => {
+    const cardWithoutPaymentAccount = (
+      await createCard(
+        databases.app,
+        { workspaceId: workspaceA, userId: ownerUserId },
+        { name: uniqueName('Cartão Y'), closingDay: 28, dueDay: 5 },
+      )
+    ).accountId
+    const { entryId } = await recordEntry(
+      databases.app,
+      context,
+      { ...buy(1000, 1), cardAccountId: cardWithoutPaymentAccount },
+      midSeptember,
+    )
+    const [invoice] = await invoicesOf(cardWithoutPaymentAccount)
+    expect(entryId).toBeDefined()
+    await expect(
+      recordEntry(
+        databases.app,
+        context,
+        {
+          entryType: 'invoice_payment',
+          occurredOn: '2026-10-05',
+          description: 'Fatura',
+          amountCents: 1000,
+          cardAccountId: cardWithoutPaymentAccount,
+          invoiceId: invoice?.id,
+        },
+        midSeptember,
+      ),
+    ).rejects.toMatchObject({ code: 'PAYMENT_ACCOUNT_REQUIRED' })
+  })
+
+  it('refuses paying the invoice of another card and buying on something that is not a card', async () => {
+    const otherCard = await insertCard()
+    const otherInvoice = await insertInvoice(otherCard)
+    await expect(
+      recordEntry(
+        databases.app,
+        context,
+        {
+          entryType: 'invoice_payment',
+          occurredOn: '2026-10-10',
+          description: 'Fatura',
+          amountCents: 1000,
+          cardAccountId: card,
+          invoiceId: otherInvoice,
+        },
+        midSeptember,
+      ),
+    ).rejects.toMatchObject({ code: 'INVOICE_NOT_FOUND' })
+
+    await expect(
+      recordEntry(
+        databases.app,
+        context,
+        { ...buy(1000, 1), cardAccountId: checking },
+        midSeptember,
+      ),
+    ).rejects.toMatchObject({ code: 'NOT_A_CARD' })
+  })
+})

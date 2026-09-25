@@ -1,6 +1,7 @@
 import type { IsoDate, YearMonth } from '@shared/calendar/calendar.types'
 import { addMonths, clampedDate, parseIsoDate, toYearMonthLabel } from '@shared/calendar/dates'
 import type { CardCycle, InvoiceRef } from '@shared/cards/cards.types'
+import type { InvoiceStatus } from '@shared/ledger/ledger.constants'
 
 export function invoiceForPurchase(purchaseDate: IsoDate, card: CardCycle): InvoiceRef {
   assertDayOfMonth(card.closingDay, 'closingDay')
@@ -51,4 +52,18 @@ function assertDayOfMonth(value: number, label: string): void {
   if (!Number.isInteger(value) || value < 1 || value > 31) {
     throw new RangeError(`${label} must be between 1 and 31: ${value}`)
   }
+}
+
+export function invoiceStatusOn(
+  invoice: Pick<InvoiceRef, 'closingOn' | 'referenceMonth'>,
+  today: IsoDate,
+  card: CardCycle,
+): InvoiceStatus {
+  const closesToday = invoice.closingOn === today
+  const hasClosed = invoice.closingOn < today || (closesToday && card.purchaseOnClosingDayGoesNext)
+  if (hasClosed) {
+    return 'closed'
+  }
+  const openReferenceMonth = invoiceForPurchase(today, card).referenceMonth
+  return invoice.referenceMonth <= openReferenceMonth ? 'open' : 'future'
 }

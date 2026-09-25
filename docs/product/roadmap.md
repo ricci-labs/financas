@@ -26,7 +26,7 @@ updated: 2026-09-25
 - [x] Ledger services: postings planner + record / change / delete / restore / replace entry
 - [x] Ledger account services: create / change / archive / delete / restore
 - [x] DB: cards and invoices (tables, card creation, invoice rules)
-- [ ] Card purchases in installments, invoice payment
+- [x] Card purchases in installments, invoice payment
 - [ ] DB: balance views (`account_balances`, `invoice_totals`)
 - [ ] DB: contacts/charges, planning, support tables
 - [ ] Observability core (OTel register, metrics, error refs), Dockerfile, deploy workflow

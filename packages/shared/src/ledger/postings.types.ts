@@ -30,6 +30,22 @@ export type EntryPlan =
       to: AccountRef
     }
   | {
+      entryType: 'card_purchase'
+      occurredOn: IsoDate
+      amountCents: Cents
+      card: AccountRef
+      category: AccountRef
+      installments: InstallmentTarget[]
+    }
+  | {
+      entryType: 'invoice_payment'
+      occurredOn: IsoDate
+      amountCents: Cents
+      card: AccountRef
+      invoiceId: string
+      paidFrom: AccountRef
+    }
+  | {
       entryType: 'opening_balance'
       occurredOn: IsoDate
       balanceCents: Cents
@@ -37,18 +53,28 @@ export type EntryPlan =
       openingBalanceAccount: AccountRef
     }
 
+export type InstallmentTarget = {
+  invoiceId: string
+  effectiveOn: IsoDate
+}
+
 export type PostingDraft = {
   lineNo: number
   accountId: string
   accountKind: AccountKind
   amountCents: Cents
   effectiveOn: IsoDate
+  invoiceId: string | null
+  installmentNo: number | null
 }
 
 export type PostingsViolation =
   | 'AMOUNT_NOT_POSITIVE'
   | 'BALANCE_IS_ZERO'
   | 'NOT_A_MONEY_ACCOUNT'
+  | 'NOT_A_CARD'
+  | 'NO_INSTALLMENTS'
+  | 'TOO_MANY_INSTALLMENTS'
   | 'NOT_AN_EXPENSE_CATEGORY'
   | 'NOT_AN_INCOME_CATEGORY'
   | 'NOT_THE_OPENING_BALANCE_ACCOUNT'

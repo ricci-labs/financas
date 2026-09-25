@@ -1,12 +1,15 @@
 import type { IsoDate } from '@shared/calendar/calendar.types'
+import { splitInstallments } from '@shared/installments/installments'
 import {
   type AccountKind,
+  MAX_INSTALLMENTS,
   MONEY_ACCOUNT_KINDS,
   type MoneyAccountKind,
 } from '@shared/ledger/ledger.constants'
 import type {
   AccountRef,
   EntryPlan,
+  InstallmentTarget,
   PostingDraft,
   PostingsPlan,
   PostingsViolation,
@@ -16,6 +19,9 @@ import type { Cents } from '@shared/money/money.types'
 type Line = {
   account: AccountRef
   amountCents: Cents
+  effectiveOn?: IsoDate
+  invoiceId?: string
+  installmentNo?: number
 }
 
 export function isMoneyAccountKind(kind: AccountKind): kind is MoneyAccountKind {
@@ -30,38 +36,73 @@ export function planPostings(plan: EntryPlan): PostingsPlan {
   return { ok: true, postings: toDrafts(linesOf(plan), plan.occurredOn) }
 }
 
+type PlanOf<T extends EntryPlan['entryType']> = Extract<EntryPlan, { entryType: T }>
+
 function findViolation(plan: EntryPlan): PostingsViolation | undefined {
   switch (plan.entryType) {
     case 'expense':
-      return (
-        positiveAmountViolation(plan.amountCents) ??
-        moneyAccountViolation(plan.paidFrom) ??
-        kindViolation(plan.category, 'expense_category', 'NOT_AN_EXPENSE_CATEGORY')
-      )
+      return expenseViolation(plan)
     case 'income':
-      return (
-        positiveAmountViolation(plan.amountCents) ??
-        moneyAccountViolation(plan.receivedIn) ??
-        kindViolation(plan.category, 'income_category', 'NOT_AN_INCOME_CATEGORY')
-      )
+      return incomeViolation(plan)
     case 'transfer':
-      return (
-        positiveAmountViolation(plan.amountCents) ??
-        moneyAccountViolation(plan.from) ??
-        moneyAccountViolation(plan.to) ??
-        (plan.from.id === plan.to.id ? 'SAME_ACCOUNT' : undefined)
-      )
+      return transferViolation(plan)
+    case 'card_purchase':
+      return cardPurchaseViolation(plan)
+    case 'invoice_payment':
+      return invoicePaymentViolation(plan)
     case 'opening_balance':
-      return (
-        (isNonZeroCents(plan.balanceCents) ? undefined : 'BALANCE_IS_ZERO') ??
-        moneyAccountViolation(plan.account) ??
-        kindViolation(
-          plan.openingBalanceAccount,
-          'opening_balance',
-          'NOT_THE_OPENING_BALANCE_ACCOUNT',
-        )
-      )
+      return openingBalanceViolation(plan)
   }
+}
+
+function expenseViolation(plan: PlanOf<'expense'>): PostingsViolation | undefined {
+  return (
+    positiveAmountViolation(plan.amountCents) ??
+    moneyAccountViolation(plan.paidFrom) ??
+    kindViolation(plan.category, 'expense_category', 'NOT_AN_EXPENSE_CATEGORY')
+  )
+}
+
+function incomeViolation(plan: PlanOf<'income'>): PostingsViolation | undefined {
+  return (
+    positiveAmountViolation(plan.amountCents) ??
+    moneyAccountViolation(plan.receivedIn) ??
+    kindViolation(plan.category, 'income_category', 'NOT_AN_INCOME_CATEGORY')
+  )
+}
+
+function transferViolation(plan: PlanOf<'transfer'>): PostingsViolation | undefined {
+  return (
+    positiveAmountViolation(plan.amountCents) ??
+    moneyAccountViolation(plan.from) ??
+    moneyAccountViolation(plan.to) ??
+    (plan.from.id === plan.to.id ? 'SAME_ACCOUNT' : undefined)
+  )
+}
+
+function cardPurchaseViolation(plan: PlanOf<'card_purchase'>): PostingsViolation | undefined {
+  return (
+    positiveAmountViolation(plan.amountCents) ??
+    kindViolation(plan.card, 'credit_card', 'NOT_A_CARD') ??
+    kindViolation(plan.category, 'expense_category', 'NOT_AN_EXPENSE_CATEGORY') ??
+    installmentsViolation(plan.amountCents, plan.installments)
+  )
+}
+
+function invoicePaymentViolation(plan: PlanOf<'invoice_payment'>): PostingsViolation | undefined {
+  return (
+    positiveAmountViolation(plan.amountCents) ??
+    kindViolation(plan.card, 'credit_card', 'NOT_A_CARD') ??
+    moneyAccountViolation(plan.paidFrom)
+  )
+}
+
+function openingBalanceViolation(plan: PlanOf<'opening_balance'>): PostingsViolation | undefined {
+  return (
+    (isNonZeroCents(plan.balanceCents) ? undefined : 'BALANCE_IS_ZERO') ??
+    moneyAccountViolation(plan.account) ??
+    kindViolation(plan.openingBalanceAccount, 'opening_balance', 'NOT_THE_OPENING_BALANCE_ACCOUNT')
+  )
 }
 
 function linesOf(plan: EntryPlan): Line[] {
@@ -72,9 +113,44 @@ function linesOf(plan: EntryPlan): Line[] {
       return moneyMoves(plan.amountCents, plan.category, plan.receivedIn)
     case 'transfer':
       return moneyMoves(plan.amountCents, plan.from, plan.to)
+    case 'card_purchase':
+      return cardPurchaseLines(plan.amountCents, plan.card, plan.category, plan.installments)
+    case 'invoice_payment':
+      return [
+        { account: plan.card, amountCents: plan.amountCents, invoiceId: plan.invoiceId },
+        { account: plan.paidFrom, amountCents: -plan.amountCents },
+      ]
     case 'opening_balance':
       return moneyMoves(plan.balanceCents, plan.openingBalanceAccount, plan.account)
   }
+}
+
+function cardPurchaseLines(
+  amountCents: Cents,
+  card: AccountRef,
+  category: AccountRef,
+  installments: InstallmentTarget[],
+): Line[] {
+  const amounts = splitInstallments(amountCents, installments.length)
+  const perInstallment = installments.map((target, index) => ({
+    target,
+    installmentNo: index + 1,
+    amountCents: amounts[index] ?? 0,
+  }))
+  const cardLines = perInstallment.map(({ target, installmentNo, amountCents: amount }) => ({
+    account: card,
+    amountCents: -amount,
+    effectiveOn: target.effectiveOn,
+    invoiceId: target.invoiceId,
+    installmentNo,
+  }))
+  const categoryLines = perInstallment.map(({ target, installmentNo, amountCents: amount }) => ({
+    account: category,
+    amountCents: amount,
+    effectiveOn: target.effectiveOn,
+    installmentNo,
+  }))
+  return [...cardLines, ...categoryLines]
 }
 
 function moneyMoves(amountCents: Cents, from: AccountRef, to: AccountRef): Line[] {
@@ -84,14 +160,27 @@ function moneyMoves(amountCents: Cents, from: AccountRef, to: AccountRef): Line[
   ]
 }
 
-function toDrafts(lines: Line[], effectiveOn: IsoDate): PostingDraft[] {
+function toDrafts(lines: Line[], occurredOn: IsoDate): PostingDraft[] {
   return lines.map((line, index) => ({
     lineNo: index + 1,
     accountId: line.account.id,
     accountKind: line.account.kind,
     amountCents: line.amountCents,
-    effectiveOn,
+    effectiveOn: line.effectiveOn ?? occurredOn,
+    invoiceId: line.invoiceId ?? null,
+    installmentNo: line.installmentNo ?? null,
   }))
+}
+
+function installmentsViolation(
+  amountCents: Cents,
+  installments: InstallmentTarget[],
+): PostingsViolation | undefined {
+  if (installments.length === 0) {
+    return 'NO_INSTALLMENTS'
+  }
+  const tooMany = installments.length > MAX_INSTALLMENTS || installments.length > amountCents
+  return tooMany ? 'TOO_MANY_INSTALLMENTS' : undefined
 }
 
 function isNonZeroCents(value: number): boolean {

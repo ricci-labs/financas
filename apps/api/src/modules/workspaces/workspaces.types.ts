@@ -6,4 +6,5 @@ export type NewWorkspace = {
 
 export type WorkspaceDefaults = {
   currency: string
+  timezone: string
 }

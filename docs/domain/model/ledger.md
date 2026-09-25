@@ -77,7 +77,9 @@ account must be an active money account (checked by the service).
 | `payment_account_id` | FK ledger_accounts null (default account used to pay the invoice) |
 
 ## `card_invoices`
-**Implemented** (table and rules). Invoices are created by the card purchase flow (next PR).
+**Implemented.** Created on demand by the card purchase flow, for every installment, with
+`ON CONFLICT DO NOTHING` so concurrent purchases share them. Status rules:
+`../billing-and-installments.md` → Invoice status.
 
 | Column | Notes |
 |---|---|
@@ -160,8 +162,19 @@ Account errors: `ACCOUNT_INVALID`, `ACCOUNT_NOT_FOUND`, `ACCOUNT_DELETED`, `ACCO
 
 Entry types supported so far: `expense` (paid from a money account: checking, savings, cash
 wallet, investment), `income`, `transfer` between two money accounts, `opening_balance` (signed:
-negative = overdraft, against the system account). Card purchases, invoice payments, refunds and
-settlements come with cards and contacts. Errors are `ValidationError` codes: `ENTRY_INVALID`,
+negative = overdraft, against the system account), `card_purchase` (1–48 installments on the
+card's invoices, payment method `credit` by default) and `invoice_payment` (partial payments
+allowed, from the card's payment account unless another money account is given). Refunds,
+adjustments and settlements come later.
+
+Card errors: `NOT_A_CARD`, `CARD_NOT_SET_UP`, `INVOICE_CLOSED`, `INVOICE_NOT_FOUND`,
+`PAYMENT_ACCOUNT_REQUIRED`, `TOO_MANY_INSTALLMENTS`.
+
+**Open question:** recording an installment purchase whose first installments fall on invoices
+that already closed. It happens when onboarding purchases already in progress (a TV bought five
+months ago in 10×) or when recording a purchase late. Today it is refused (`INVOICE_CLOSED`).
+Options: record only the remaining installments ("starting at installment k"), or allow
+`adjustment` entries for onboarding. Errors are `ValidationError` codes: `ENTRY_INVALID`,
 `ACCOUNT_NOT_AVAILABLE` or the planner rule (`NOT_AN_EXPENSE_CATEGORY`, `SAME_ACCOUNT`...).
 
 `spent_by_user_id` must be an active member of the workspace when the entry is recorded (trigger

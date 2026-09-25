@@ -1,6 +1,7 @@
 import { parseIsoDate } from '@shared/calendar/dates'
 import {
   INCOME_NATURES,
+  MAX_INSTALLMENTS,
   PAYMENT_METHODS,
   USER_ACCOUNT_KINDS,
 } from '@shared/ledger/ledger.constants'
@@ -57,6 +58,20 @@ export const entryInputSchema = z.discriminatedUnion('entryType', [
     amountCents: positiveCentsSchema,
     fromAccountId: accountIdSchema,
     toAccountId: accountIdSchema,
+  }),
+  entryDetailsSchema.extend({
+    entryType: z.literal('card_purchase'),
+    amountCents: positiveCentsSchema,
+    installmentCount: z.number().int().min(1).max(MAX_INSTALLMENTS).default(1),
+    cardAccountId: accountIdSchema,
+    categoryId: accountIdSchema,
+  }),
+  entryDetailsSchema.extend({
+    entryType: z.literal('invoice_payment'),
+    amountCents: positiveCentsSchema,
+    cardAccountId: accountIdSchema,
+    invoiceId: z.uuid(),
+    paidFromAccountId: accountIdSchema.nullish(),
   }),
   entryDetailsSchema.extend({
     entryType: z.literal('opening_balance'),

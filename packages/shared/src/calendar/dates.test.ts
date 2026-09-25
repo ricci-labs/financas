@@ -7,6 +7,7 @@ import {
   isBusinessDay,
   nthBusinessDay,
   parseIsoDate,
+  todayIn,
 } from '@shared/calendar/dates'
 import { describe, expect, it } from 'vitest'
 
@@ -74,5 +75,13 @@ describe('business days', () => {
   it('rejects impossible positions', () => {
     expect(() => nthBusinessDay({ year: 2026, month: 10 }, 0, NO_HOLIDAYS)).toThrow(RangeError)
     expect(() => nthBusinessDay({ year: 2026, month: 10 }, 30, NO_HOLIDAYS)).toThrow(RangeError)
+  })
+})
+
+describe('todayIn', () => {
+  it('takes the calendar day of the time zone, not of UTC', () => {
+    const lateNightInSaoPaulo = new Date('2026-09-25T02:30:00Z')
+    expect(todayIn('America/Sao_Paulo', lateNightInSaoPaulo)).toBe('2026-09-24')
+    expect(todayIn('UTC', lateNightInSaoPaulo)).toBe('2026-09-25')
   })
 })
