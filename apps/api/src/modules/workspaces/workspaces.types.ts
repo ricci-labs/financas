@@ -1,9 +1,5 @@
-export type CreateWorkspaceInput = {
+export type NewWorkspace = {
+  id: string
   name: string
-  ownerUserId: string
-}
-
-export type CreatedWorkspace = {
-  workspaceId: string
-  ownerMembershipId: string
+  createdByUserId: string
 }

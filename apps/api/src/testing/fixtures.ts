@@ -1,6 +1,6 @@
 import type { Database } from '@api/core/db/client'
 import { users } from '@api/modules/identity/identity.table'
-import { createWorkspace } from '@api/modules/workspaces'
+import { createWorkspace } from '@api/modules/onboarding'
 import { workspaces } from '@api/modules/workspaces/workspaces.table'
 import { inArray, like } from 'drizzle-orm'
 

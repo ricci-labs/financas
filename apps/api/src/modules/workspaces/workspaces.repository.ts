@@ -1,15 +1,10 @@
 import type { Database } from '@api/core/db/client'
 import type { WorkspaceTransaction } from '@api/core/db/tx'
 import { workspaceSettings, workspaces } from '@api/modules/workspaces/workspaces.table'
+import type { NewWorkspace } from '@api/modules/workspaces/workspaces.types'
 import { sql } from 'drizzle-orm'
 
-type NewWorkspace = {
-  id: string
-  name: string
-  createdByUserId: string
-}
-
-export async function reserveWorkspaceId(db: Database): Promise<string> {
+export async function generateWorkspaceId(db: Database): Promise<string> {
   const result = await db.execute<{ id: string }>(sql`select uuidv7() as id`)
   const reserved = result.rows[0]
   if (!reserved) {

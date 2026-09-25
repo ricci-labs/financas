@@ -1,7 +1,7 @@
 ---
 summary: Identity and multi-tenancy tables — users, WhatsApp identities, workspaces, memberships, invitations — and all settings/preferences tables (financial period, installment view, notifications).
 read_when: Working on auth, workspaces, memberships, invitations, settings screens, or anything scoped by tenant.
-updated: 2026-09-24
+updated: 2026-09-25
 ---
 
 # Tenancy, identity and settings
@@ -56,9 +56,9 @@ Web sessions: `id`, `user_id`, `token_hash`, `expires_at`, `last_seen_at`, `user
 membership, the last active owner can't be removed or demoted, and the owner role can't lose its
 `owner` key. Erasing the whole workspace is still allowed.
 
-**Creating a workspace** (`createWorkspace()` in `modules/workspaces`): reserve the id with
-`uuidv7()`, then in one workspace-scoped transaction insert the workspace, the four system roles
-with the default matrix, and the creator's owner membership.
+**Creating a workspace** (`createWorkspace()` in `modules/onboarding`): reserve the id with
+`uuidv7()`, then in one workspace-scoped transaction insert the workspace and its settings, the four
+system roles with the default matrix, and the creator's owner membership.
 
 ### `invitations` (module `members`)
 | Column | Notes |
