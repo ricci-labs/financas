@@ -1,0 +1,59 @@
+import type { IsoDate } from '@shared/calendar/calendar.types'
+import type { AccountKind } from '@shared/ledger/ledger.constants'
+import type { Cents } from '@shared/money/money.types'
+
+export type AccountRef = {
+  id: string
+  kind: AccountKind
+}
+
+export type EntryPlan =
+  | {
+      entryType: 'expense'
+      occurredOn: IsoDate
+      amountCents: Cents
+      paidFrom: AccountRef
+      category: AccountRef
+    }
+  | {
+      entryType: 'income'
+      occurredOn: IsoDate
+      amountCents: Cents
+      receivedIn: AccountRef
+      category: AccountRef
+    }
+  | {
+      entryType: 'transfer'
+      occurredOn: IsoDate
+      amountCents: Cents
+      from: AccountRef
+      to: AccountRef
+    }
+  | {
+      entryType: 'opening_balance'
+      occurredOn: IsoDate
+      balanceCents: Cents
+      account: AccountRef
+      openingBalanceAccount: AccountRef
+    }
+
+export type PostingDraft = {
+  lineNo: number
+  accountId: string
+  accountKind: AccountKind
+  amountCents: Cents
+  effectiveOn: IsoDate
+}
+
+export type PostingsViolation =
+  | 'AMOUNT_NOT_POSITIVE'
+  | 'BALANCE_IS_ZERO'
+  | 'NOT_A_MONEY_ACCOUNT'
+  | 'NOT_AN_EXPENSE_CATEGORY'
+  | 'NOT_AN_INCOME_CATEGORY'
+  | 'NOT_THE_OPENING_BALANCE_ACCOUNT'
+  | 'SAME_ACCOUNT'
+
+export type PostingsPlan =
+  | { ok: true; postings: PostingDraft[] }
+  | { ok: false; violation: PostingsViolation }
