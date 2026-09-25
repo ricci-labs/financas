@@ -1,7 +1,7 @@
 ---
 summary: Coding conventions — naming, money, dates, IDs, errors, validation, tests, migrations, commits.
 read_when: Writing or reviewing any code.
-updated: 2026-09-24
+updated: 2026-09-25
 ---
 
 # Conventions
@@ -86,6 +86,7 @@ without comments.
 - SQL that Drizzle can't express (functions, triggers) goes in a custom migration: `pnpm db:generate --custom --name=<what>`, then write the SQL in the generated file.
 - CI fails if a table definition changed without its migration.
 - **CHECK constraints must handle NULL explicitly.** A CHECK passes when its expression is NULL, so `value between 1 and 31` accepts a NULL `value`. Write `value is not null and value between 1 and 31`, or compare nullness directly (`(a is null) = (b is null)`). Add a test with the NULL case.
+- A trigger that forbids hard deletes must still let a whole workspace be erased: allow the delete when `workspace_is_being_erased(workspace_id)` is true, and add an erasure test.
 - A new table with `timestamps()` needs its `updated_at` trigger in a custom migration: `create trigger <table>_set_updated_at before update on <table> for each row execute function set_updated_at();`.
 - A trigger that checks an invariant across rows uses a `SECURITY DEFINER` trigger function with `SET search_path = public, pg_temp` (ADR 0020). Test it with a workspace switch in the same transaction.
 - A migration that exists only on your machine (not merged) may be regenerated. Delete its SQL, snapshot and journal entry, then `pnpm db:reset` and migrate. Once merged, never edit it.

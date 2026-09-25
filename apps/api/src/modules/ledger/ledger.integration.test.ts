@@ -1,7 +1,12 @@
 import { withWorkspace } from '@api/core/db/tx'
 import { journalEntries, ledgerAccounts, postings } from '@api/modules/ledger/ledger.table'
 import { workspaces } from '@api/modules/workspaces/workspaces.table'
-import { connectTestDatabases, POSTGRES_ERRORS, postgresErrorCodeOf } from '@api/testing/database'
+import {
+  connectTestDatabases,
+  POSTGRES_ERRORS,
+  postgresErrorCodeOf,
+  switchWorkspaceMidTransaction,
+} from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
 import {
   ACCOUNT_CLASS_BY_KIND,
@@ -465,5 +470,152 @@ describe('journal entries and postings', () => {
       .from(postings)
       .where(inArray(postings.entryId, [entryId]))
     expect(leftovers).toEqual([])
+  })
+})
+
+describe('ledger invariants', () => {
+  let checking: string
+  let groceries: string
+
+  beforeAll(async () => {
+    checking = await insertAccount({ kind: 'checking' })
+    groceries = await insertAccount({ kind: 'expense_category' })
+  })
+
+  function changeEntry(entryId: string, changes: NewEntry) {
+    return postgresErrorCodeOf(
+      withWorkspace(databases.app, workspaceA, (tx) =>
+        tx.update(journalEntries).set(changes).where(eq(journalEntries.id, entryId)),
+      ),
+    )
+  }
+
+  it('refuse an entry whose postings do not sum to zero', async () => {
+    const unbalanced: PostingLine[] = [
+      { accountId: groceries, kind: 'expense_category', amountCents: 1000 },
+      { accountId: checking, kind: 'checking', amountCents: -900 },
+    ]
+    expect(await recordOutcome(unbalanced)).toBe(POSTGRES_ERRORS.checkViolation)
+  })
+
+  it('refuse an entry with fewer than two postings', async () => {
+    expect(await recordOutcome([])).toBe(POSTGRES_ERRORS.checkViolation)
+    const single: PostingLine[] = [
+      { accountId: groceries, kind: 'expense_category', amountCents: 1000 },
+    ]
+    expect(await recordOutcome(single)).toBe(POSTGRES_ERRORS.checkViolation)
+  })
+
+  it('accept a balanced entry with several postings', async () => {
+    const split: PostingLine[] = [
+      { accountId: groceries, kind: 'expense_category', amountCents: 600 },
+      { accountId: groceries, kind: 'expense_category', amountCents: 400 },
+      { accountId: checking, kind: 'checking', amountCents: -1000 },
+    ]
+    expect(await recordOutcome(split)).toBeUndefined()
+  })
+
+  it('refuse an unbalanced entry even if the transaction switches workspace', async () => {
+    const unbalancedThenSwitch = withWorkspace(databases.app, workspaceA, async (tx) => {
+      const [entry] = await tx
+        .insert(journalEntries)
+        .values({
+          workspaceId: workspaceA,
+          occurredOn: ENTRY_DATE,
+          description: 'Mercado',
+          entryType: 'expense',
+          source: 'web',
+          createdByUserId: ownerUserId,
+        })
+        .returning({ id: journalEntries.id })
+      if (!entry) {
+        throw new Error('Could not insert the entry')
+      }
+      await tx.insert(postings).values({
+        workspaceId: workspaceA,
+        entryId: entry.id,
+        lineNo: 1,
+        accountId: groceries,
+        accountKind: 'expense_category',
+        amountCents: 1000,
+        effectiveOn: ENTRY_DATE,
+      })
+      await switchWorkspaceMidTransaction(tx, workspaceB)
+    })
+    expect(await postgresErrorCodeOf(unbalancedThenSwitch)).toBe(POSTGRES_ERRORS.checkViolation)
+  })
+
+  it('keep postings immutable: no update, no delete, no new line later', async () => {
+    const entryId = await recordRaw(spend(1000, checking, groceries))
+    const changeAmount = withWorkspace(databases.app, workspaceA, (tx) =>
+      tx.update(postings).set({ amountCents: 2000 }).where(eq(postings.entryId, entryId)),
+    )
+    expect(await postgresErrorCodeOf(changeAmount)).toBe(POSTGRES_ERRORS.checkViolation)
+
+    const removeLines = withWorkspace(databases.app, workspaceA, (tx) =>
+      tx.delete(postings).where(eq(postings.entryId, entryId)),
+    )
+    expect(await postgresErrorCodeOf(removeLines)).toBe(POSTGRES_ERRORS.checkViolation)
+
+    const addBalancedPairLater = withWorkspace(databases.app, workspaceA, (tx) =>
+      tx.insert(postings).values(
+        spend(500, checking, groceries).map((line, index) => ({
+          workspaceId: workspaceA,
+          entryId,
+          lineNo: index + 3,
+          accountId: line.accountId,
+          accountKind: line.kind,
+          amountCents: line.amountCents,
+          effectiveOn: ENTRY_DATE,
+        })),
+      ),
+    )
+    expect(await postgresErrorCodeOf(addBalancedPairLater)).toBe(POSTGRES_ERRORS.checkViolation)
+  })
+
+  it('let an entry change only its description and notes in place', async () => {
+    const entryId = await recordRaw(spend(1000, checking, groceries))
+    expect(await changeEntry(entryId, { description: 'Feira', notes: 'semana 1' })).toBeUndefined()
+    expect(await changeEntry(entryId, { occurredOn: '2026-10-02' })).toBe(
+      POSTGRES_ERRORS.checkViolation,
+    )
+    expect(await changeEntry(entryId, { entryType: 'income' })).toBe(POSTGRES_ERRORS.checkViolation)
+  })
+
+  it('let an entry be soft deleted and restored, never hard deleted', async () => {
+    const entryId = await recordRaw(spend(1000, checking, groceries))
+    expect(await changeEntry(entryId, { deletedAt: new Date(), deleteReason: 'engano' })).toBe(
+      undefined,
+    )
+    expect(await changeEntry(entryId, { deletedAt: null, deleteReason: null })).toBeUndefined()
+
+    const hardDelete = withWorkspace(databases.app, workspaceA, (tx) =>
+      tx.delete(journalEntries).where(eq(journalEntries.id, entryId)),
+    )
+    expect(await postgresErrorCodeOf(hardDelete)).toBe(POSTGRES_ERRORS.checkViolation)
+  })
+
+  it('refuse postings on an archived or a deleted account', async () => {
+    const archived = await insertAccount({ kind: 'checking', archivedAt: new Date() })
+    expect(await recordOutcome(spend(1000, archived, groceries))).toBe(
+      POSTGRES_ERRORS.checkViolation,
+    )
+    const deleted = await insertAccount({ kind: 'checking', deletedAt: new Date() })
+    expect(await recordOutcome(spend(1000, deleted, groceries))).toBe(
+      POSTGRES_ERRORS.checkViolation,
+    )
+  })
+
+  it('refuse deleting an account used by active entries, but allow archiving it', async () => {
+    const wallet = await insertAccount({ kind: 'checking' })
+    const entryId = await recordRaw(spend(1000, wallet, groceries))
+    expect(await updateOutcome(wallet, { deletedAt: new Date() })).toBe(
+      POSTGRES_ERRORS.checkViolation,
+    )
+    expect(await updateOutcome(wallet, { archivedAt: new Date() })).toBeUndefined()
+
+    expect(await changeEntry(entryId, { deletedAt: new Date() })).toBeUndefined()
+    expect(await updateOutcome(wallet, { deletedAt: new Date() })).toBeUndefined()
+    expect(await changeEntry(entryId, { deletedAt: null })).toBe(POSTGRES_ERRORS.checkViolation)
   })
 })

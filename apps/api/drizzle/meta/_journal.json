@@ -169,6 +169,13 @@
       "when": 1790343801483,
       "tag": "0023_postings_account_fk_deferred",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1790343923595,
+      "tag": "0024_ledger_integrity",
+      "breakpoints": true
     }
   ]
 }
