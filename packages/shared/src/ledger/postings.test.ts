@@ -107,6 +107,8 @@ describe('planPostings', () => {
           accountKind: 'expense_category',
           amountCents: 100,
           effectiveOn: DAY,
+          invoiceId: null,
+          installmentNo: null,
         },
         {
           lineNo: 2,
@@ -114,6 +116,8 @@ describe('planPostings', () => {
           accountKind: 'checking',
           amountCents: -100,
           effectiveOn: DAY,
+          invoiceId: null,
+          installmentNo: null,
         },
       ],
     })
@@ -239,6 +243,142 @@ describe('planPostings', () => {
         openingBalanceAccount: savings,
       },
       'NOT_THE_OPENING_BALANCE_ACCOUNT',
+    ],
+  ] as [string, EntryPlan, string][])('refuses %s', (_case, plan, violation) => {
+    expect(planPostings(plan)).toEqual({ ok: false, violation })
+  })
+})
+
+describe('planPostings for cards', () => {
+  const octInvoice = { invoiceId: 'inv-oct', effectiveOn: '2026-10-10' }
+  const novInvoice = { invoiceId: 'inv-nov', effectiveOn: '2026-11-10' }
+  const decInvoice = { invoiceId: 'inv-dec', effectiveOn: '2026-12-10' }
+  const electronics: AccountRef = { id: 'electronics', kind: 'expense_category' }
+
+  function cardLines(plan: PostingsPlan) {
+    if (!plan.ok) {
+      throw new Error(`Unexpected violation ${plan.violation}`)
+    }
+    return plan.postings.map(
+      ({ accountId, amountCents, invoiceId, installmentNo, effectiveOn }) => [
+        accountId,
+        amountCents,
+        invoiceId,
+        installmentNo,
+        effectiveOn,
+      ],
+    )
+  }
+
+  it('2. a TV for R$ 1.200,00 in 3x: one card line per invoice, expense per installment', () => {
+    const plan = planPostings({
+      entryType: 'card_purchase',
+      occurredOn: '2026-09-15',
+      amountCents: 120000,
+      card,
+      category: electronics,
+      installments: [octInvoice, novInvoice, decInvoice],
+    })
+    expect(cardLines(plan)).toEqual([
+      ['card', -40000, 'inv-oct', 1, '2026-10-10'],
+      ['card', -40000, 'inv-nov', 2, '2026-11-10'],
+      ['card', -40000, 'inv-dec', 3, '2026-12-10'],
+      ['electronics', 40000, null, 1, '2026-10-10'],
+      ['electronics', 40000, null, 2, '2026-11-10'],
+      ['electronics', 40000, null, 3, '2026-12-10'],
+    ])
+  })
+
+  it('puts the rounding cents on the first installment (R$ 1.000,00 in 3x)', () => {
+    const plan = planPostings({
+      entryType: 'card_purchase',
+      occurredOn: '2026-09-15',
+      amountCents: 100000,
+      card,
+      category: groceries,
+      installments: [octInvoice, novInvoice, decInvoice],
+    })
+    const cardAmounts = cardLines(plan)
+      .filter(([accountId]) => accountId === 'card')
+      .map(([, amount]) => amount)
+    expect(cardAmounts).toEqual([-33334, -33333, -33333])
+  })
+
+  it('5. paying R$ 400,00 of the October invoice from checking', () => {
+    const plan = planPostings({
+      entryType: 'invoice_payment',
+      occurredOn: '2026-10-10',
+      amountCents: 40000,
+      card,
+      invoiceId: 'inv-oct',
+      paidFrom: checking,
+    })
+    expect(cardLines(plan)).toEqual([
+      ['card', 40000, 'inv-oct', null, '2026-10-10'],
+      ['checking', -40000, null, null, '2026-10-10'],
+    ])
+  })
+
+  it.each([
+    [
+      'a purchase on an account that is not a card',
+      {
+        entryType: 'card_purchase',
+        occurredOn: DAY,
+        amountCents: 100,
+        card: checking,
+        category: groceries,
+        installments: [octInvoice],
+      },
+      'NOT_A_CARD',
+    ],
+    [
+      'a purchase without installments',
+      {
+        entryType: 'card_purchase',
+        occurredOn: DAY,
+        amountCents: 100,
+        card,
+        category: groceries,
+        installments: [],
+      },
+      'NO_INSTALLMENTS',
+    ],
+    [
+      'more installments than cents',
+      {
+        entryType: 'card_purchase',
+        occurredOn: DAY,
+        amountCents: 2,
+        card,
+        category: groceries,
+        installments: [octInvoice, novInvoice, decInvoice],
+      },
+      'TOO_MANY_INSTALLMENTS',
+    ],
+    [
+      'a purchase on an income category',
+      {
+        entryType: 'card_purchase',
+        occurredOn: DAY,
+        amountCents: 100,
+        card,
+        category: salary,
+        installments: [octInvoice],
+      },
+      'NOT_AN_EXPENSE_CATEGORY',
+    ],
+    [
+      'a payment from a category',
+      {
+        entryType: 'invoice_payment',
+        occurredOn: DAY,
+        amountCents: 100,
+        card,
+        invoiceId: 'inv-oct',
+        paidFrom: groceries,
+      },
+      'NOT_A_MONEY_ACCOUNT',
     ],
   ] as [string, EntryPlan, string][])('refuses %s', (_case, plan, violation) => {
     expect(planPostings(plan)).toEqual({ ok: false, violation })
