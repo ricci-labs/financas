@@ -1,8 +1,14 @@
 import { withWorkspace } from '@api/core/db/tx'
 import { ledgerAccounts } from '@api/modules/ledger/ledger.table'
+import { workspaces } from '@api/modules/workspaces/workspaces.table'
 import { connectTestDatabases, POSTGRES_ERRORS, postgresErrorCodeOf } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
-import { ACCOUNT_CLASS_BY_KIND, ACCOUNT_KINDS, type AccountKind } from '@financas/shared'
+import {
+  ACCOUNT_CLASS_BY_KIND,
+  ACCOUNT_KINDS,
+  type AccountKind,
+  type SystemAccountKind,
+} from '@financas/shared'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
@@ -170,5 +176,103 @@ describe('ledger_accounts', () => {
         .where(eq(ledgerAccounts.id, receivableId)),
     )
     expect(stored?.isSystem).toBe(true)
+  })
+})
+
+function updateAccount(
+  accountId: string,
+  changes: Partial<typeof ledgerAccounts.$inferInsert>,
+  workspaceId = workspaceA,
+) {
+  return withWorkspace(databases.app, workspaceId, (tx) =>
+    tx.update(ledgerAccounts).set(changes).where(eq(ledgerAccounts.id, accountId)),
+  )
+}
+
+function updateOutcome(
+  accountId: string,
+  changes: Partial<typeof ledgerAccounts.$inferInsert>,
+  workspaceId = workspaceA,
+) {
+  return postgresErrorCodeOf(updateAccount(accountId, changes, workspaceId))
+}
+
+async function systemAccountOf(workspaceId: string, kind: SystemAccountKind): Promise<string> {
+  const [existing] = await withWorkspace(databases.app, workspaceId, (tx) =>
+    tx.select({ id: ledgerAccounts.id }).from(ledgerAccounts).where(eq(ledgerAccounts.kind, kind)),
+  )
+  return existing?.id ?? insertAccount({ kind }, workspaceId)
+}
+
+describe('account tree', () => {
+  it('refuses a cycle', async () => {
+    const grandparent = await insertAccount({ kind: 'expense_category' })
+    const parent = await insertAccount({ kind: 'expense_category', parentId: grandparent })
+    const child = await insertAccount({ kind: 'expense_category', parentId: parent })
+    expect(await updateOutcome(grandparent, { parentId: child })).toBe(
+      POSTGRES_ERRORS.checkViolation,
+    )
+  })
+
+  it('still allows moving an account to another branch', async () => {
+    const branchA = await insertAccount({ kind: 'expense_category' })
+    const branchB = await insertAccount({ kind: 'expense_category' })
+    const leaf = await insertAccount({ kind: 'expense_category', parentId: branchA })
+    expect(await updateOutcome(leaf, { parentId: branchB })).toBeUndefined()
+  })
+
+  it('refuses deleting an account that has active children, until they are deleted', async () => {
+    const parent = await insertAccount({ kind: 'expense_category' })
+    const child = await insertAccount({ kind: 'expense_category', parentId: parent })
+    expect(await updateOutcome(parent, { deletedAt: new Date() })).toBe(
+      POSTGRES_ERRORS.checkViolation,
+    )
+    await updateAccount(child, { deletedAt: new Date() })
+    expect(await updateOutcome(parent, { deletedAt: new Date() })).toBeUndefined()
+  })
+
+  it('refuses a child, new or restored, under a deleted parent', async () => {
+    const parent = await insertAccount({ kind: 'expense_category' })
+    const child = await insertAccount({ kind: 'expense_category', parentId: parent })
+    await updateAccount(child, { deletedAt: new Date() })
+    await updateAccount(parent, { deletedAt: new Date() })
+
+    expect(await insertOutcome({ kind: 'expense_category', parentId: parent })).toBe(
+      POSTGRES_ERRORS.checkViolation,
+    )
+    expect(await updateOutcome(child, { deletedAt: null })).toBe(POSTGRES_ERRORS.checkViolation)
+  })
+})
+
+describe('workspace erasure', () => {
+  it('still removes a workspace with a nested account tree', async () => {
+    const workspaceId = (await fixtures.createWorkspaceOwnedBy(ownerUserId, 'Erase')).workspaceId
+    const parentId = await insertAccount({ kind: 'expense_category' }, workspaceId)
+    await insertAccount({ kind: 'expense_category', parentId }, workspaceId)
+    await systemAccountOf(workspaceId, 'receivable')
+
+    const erase = databases.owner.delete(workspaces).where(eq(workspaces.id, workspaceId))
+    expect(await postgresErrorCodeOf(erase)).toBeUndefined()
+  })
+})
+
+describe('system accounts', () => {
+  let receivable: string
+
+  beforeAll(async () => {
+    receivable = await systemAccountOf(workspaceA, 'receivable')
+  })
+
+  it.each([
+    ['renamed', { name: 'Renamed' }],
+    ['archived', { archivedAt: new Date() }],
+    ['deleted', { deletedAt: new Date() }],
+    ['turned into another kind', { kind: 'checking' as const }],
+  ])('cannot be %s', async (_change, changes) => {
+    expect(await updateOutcome(receivable, changes)).toBe(POSTGRES_ERRORS.checkViolation)
+  })
+
+  it('can still be personalized', async () => {
+    expect(await updateOutcome(receivable, { color: '#00aa00', sortOrder: 9 })).toBeUndefined()
   })
 })
