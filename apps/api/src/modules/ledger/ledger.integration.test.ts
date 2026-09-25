@@ -13,7 +13,13 @@ import {
   restoreEntry,
   unarchiveAccount,
 } from '@api/modules/ledger'
-import { journalEntries, ledgerAccounts, postings } from '@api/modules/ledger/ledger.table'
+import {
+  cardDetails,
+  cardInvoices,
+  journalEntries,
+  ledgerAccounts,
+  postings,
+} from '@api/modules/ledger/ledger.table'
 import { workspaces } from '@api/modules/workspaces/workspaces.table'
 import {
   connectTestDatabases,
@@ -303,6 +309,7 @@ type PostingLine = {
   kind: AccountKind
   amountCents: number
   lineNo?: number
+  invoiceId?: string
 }
 
 const ENTRY_DATE = '2026-10-01'
@@ -338,6 +345,7 @@ async function recordRaw(
           accountKind: line.kind,
           amountCents: line.amountCents,
           effectiveOn: ENTRY_DATE,
+          invoiceId: line.invoiceId ?? null,
         })),
       )
     }
@@ -423,14 +431,7 @@ describe('journal entries and postings', () => {
     )
   })
 
-  it('refuse postings on cards, receivables and payables until their columns exist', async () => {
-    const card = await insertAccount({ kind: 'credit_card' })
-    const onCard: PostingLine[] = [
-      { accountId: groceries, kind: 'expense_category', amountCents: 1000 },
-      { accountId: card, kind: 'credit_card', amountCents: -1000 },
-    ]
-    expect(await recordOutcome(onCard)).toBe(POSTGRES_ERRORS.checkViolation)
-
+  it('refuse postings on receivables and payables until their contact column exists', async () => {
     const receivable = await systemAccountOf(workspaceA, 'receivable')
     const onReceivable: PostingLine[] = [
       { accountId: receivable, kind: 'receivable', amountCents: 1000 },
@@ -1167,3 +1168,195 @@ describe('account services', () => {
     ).rejects.toMatchObject({ code: 'ACCOUNT_NOT_FOUND' })
   })
 })
+
+type NewInvoice = Partial<typeof cardInvoices.$inferInsert>
+
+async function insertCard(
+  workspaceId = workspaceA,
+  details: Partial<typeof cardDetails.$inferInsert> = {},
+) {
+  const accountId = await insertAccount({ kind: 'credit_card' }, workspaceId)
+  await withWorkspace(databases.app, workspaceId, (tx) =>
+    tx
+      .insert(cardDetails)
+      .values({ workspaceId, accountId, closingDay: 3, dueDay: 10, ...details }),
+  )
+  return accountId
+}
+
+async function insertInvoice(
+  cardAccountId: string,
+  invoice: NewInvoice = {},
+  workspaceId = workspaceA,
+): Promise<string> {
+  const [inserted] = await withWorkspace(databases.app, workspaceId, (tx) =>
+    tx
+      .insert(cardInvoices)
+      .values({
+        workspaceId,
+        cardAccountId,
+        referenceMonth: '2026-10-01',
+        closingOn: '2026-10-03',
+        dueOn: '2026-10-10',
+        status: 'open',
+        ...invoice,
+      })
+      .returning({ id: cardInvoices.id }),
+  )
+  if (!inserted) {
+    throw new Error('Could not insert the invoice')
+  }
+  return inserted.id
+}
+
+function purchase(amountCents: number, card: string, invoiceId: string, on: string): PostingLine[] {
+  return [
+    { accountId: on, kind: 'expense_category', amountCents },
+    { accountId: card, kind: 'credit_card', amountCents: -amountCents, invoiceId },
+  ]
+}
+
+describe('cards and invoices', () => {
+  let groceries: string
+  let checking: string
+
+  beforeAll(async () => {
+    groceries = await insertAccount({ kind: 'expense_category' })
+    checking = await insertAccount({ kind: 'checking' })
+  })
+
+  it('attach card details only to credit card accounts', async () => {
+    const notACard = await insertAccount({ kind: 'checking' })
+    const details = withWorkspace(databases.app, workspaceA, (tx) =>
+      tx
+        .insert(cardDetails)
+        .values({ workspaceId: workspaceA, accountId: notACard, closingDay: 3, dueDay: 10 }),
+    )
+    expect(await postgresErrorCodeOf(details)).toBe(POSTGRES_ERRORS.foreignKeyViolation)
+  })
+
+  it('keep closing and due days within a month', async () => {
+    expect(await postgresErrorCodeOf(insertCard(workspaceA, { closingDay: 32 }))).toBe(
+      POSTGRES_ERRORS.checkViolation,
+    )
+    expect(await postgresErrorCodeOf(insertCard(workspaceA, { dueDay: 0 }))).toBe(
+      POSTGRES_ERRORS.checkViolation,
+    )
+  })
+
+  it('have one invoice per card and month, due after closing, on the first of the month', async () => {
+    const card = await insertCard()
+    await insertInvoice(card)
+    expect(await postgresErrorCodeOf(insertInvoice(card))).toBe(POSTGRES_ERRORS.uniqueViolation)
+    expect(await postgresErrorCodeOf(insertInvoice(card, { referenceMonth: '2026-11-15' }))).toBe(
+      POSTGRES_ERRORS.checkViolation,
+    )
+    expect(
+      await postgresErrorCodeOf(
+        insertInvoice(card, { referenceMonth: '2026-12-01', dueOn: '2026-10-02' }),
+      ),
+    ).toBe(POSTGRES_ERRORS.checkViolation)
+  })
+
+  it('are isolated per workspace', async () => {
+    const cardInB = await insertCard(workspaceB)
+    await insertInvoice(cardInB, {}, workspaceB)
+    const seenFromA = await withWorkspace(databases.app, workspaceA, async (tx) => ({
+      details: await tx.select().from(cardDetails).where(eq(cardDetails.accountId, cardInB)),
+      invoices: await tx.select().from(cardInvoices).where(eq(cardInvoices.cardAccountId, cardInB)),
+    }))
+    expect(seenFromA).toEqual({ details: [], invoices: [] })
+  })
+
+  it('record a card purchase on an invoice of that card', async () => {
+    const card = await insertCard()
+    const invoice = await insertInvoice(card)
+    expect(
+      await recordOutcome(purchase(4000, card, invoice, groceries), { entryType: 'card_purchase' }),
+    ).toBeUndefined()
+  })
+
+  it('refuse a card posting without an invoice or on the invoice of another card', async () => {
+    const card = await insertCard()
+    const otherCard = await insertCard()
+    const otherInvoice = await insertInvoice(otherCard)
+    const withoutInvoice: PostingLine[] = [
+      { accountId: groceries, kind: 'expense_category', amountCents: 1000 },
+      { accountId: card, kind: 'credit_card', amountCents: -1000 },
+    ]
+    expect(await recordOutcome(withoutInvoice)).toBe(POSTGRES_ERRORS.checkViolation)
+    expect(await recordOutcome(purchase(1000, card, otherInvoice, groceries))).toBe(
+      POSTGRES_ERRORS.foreignKeyViolation,
+    )
+  })
+
+  it('refuse an invoice on a posting that is not on a card', async () => {
+    const card = await insertCard()
+    const invoice = await insertInvoice(card)
+    const invoiceOnChecking: PostingLine[] = [
+      { accountId: groceries, kind: 'expense_category', amountCents: 1000 },
+      { accountId: checking, kind: 'checking', amountCents: -1000, invoiceId: invoice },
+    ]
+    expect(await recordOutcome(invoiceOnChecking)).toBe(POSTGRES_ERRORS.checkViolation)
+  })
+
+  it('refuse purchases on a closed invoice but accept payments, refunds and adjustments', async () => {
+    const card = await insertCard()
+    const closed = await insertInvoice(card, { status: 'closed' })
+    expect(
+      await recordOutcome(purchase(1000, card, closed, groceries), { entryType: 'card_purchase' }),
+    ).toBe(POSTGRES_ERRORS.checkViolation)
+
+    const payment: PostingLine[] = [
+      { accountId: card, kind: 'credit_card', amountCents: 1000, invoiceId: closed },
+      { accountId: checking, kind: 'checking', amountCents: -1000 },
+    ]
+    for (const entryType of ['invoice_payment', 'refund', 'adjustment'] as const) {
+      expect(await recordOutcome(payment, { entryType })).toBeUndefined()
+    }
+  })
+
+  it('keep an entry on a closed invoice from being deleted or restored', async () => {
+    const card = await insertCard()
+    const invoice = await insertInvoice(card)
+    const entryId = await recordRaw(purchase(1000, card, invoice, groceries), {
+      entryType: 'card_purchase',
+    })
+    const deletedEntryId = await recordRaw(purchase(500, card, invoice, groceries), {
+      entryType: 'card_purchase',
+    })
+    await updateEntryRaw(deletedEntryId, { deletedAt: new Date() })
+    await withWorkspace(databases.app, workspaceA, (tx) =>
+      tx.update(cardInvoices).set({ status: 'closed' }).where(eq(cardInvoices.id, invoice)),
+    )
+
+    expect(await postgresErrorCodeOf(updateEntryRaw(entryId, { deletedAt: new Date() }))).toBe(
+      POSTGRES_ERRORS.checkViolation,
+    )
+    expect(await postgresErrorCodeOf(updateEntryRaw(deletedEntryId, { deletedAt: null }))).toBe(
+      POSTGRES_ERRORS.checkViolation,
+    )
+  })
+
+  it('go away with the workspace when it is erased', async () => {
+    const workspaceId = (await fixtures.createWorkspaceOwnedBy(ownerUserId, 'Erase cards'))
+      .workspaceId
+    const card = await insertCard(workspaceId)
+    const invoice = await insertInvoice(card, {}, workspaceId)
+    const food = await insertAccount({ kind: 'expense_category' }, workspaceId)
+    await recordRaw(
+      purchase(1000, card, invoice, food),
+      { entryType: 'card_purchase' },
+      workspaceId,
+    )
+
+    const erase = databases.owner.delete(workspaces).where(eq(workspaces.id, workspaceId))
+    expect(await postgresErrorCodeOf(erase)).toBeUndefined()
+  })
+})
+
+function updateEntryRaw(entryId: string, changes: NewEntry, workspaceId = workspaceA) {
+  return withWorkspace(databases.app, workspaceId, (tx) =>
+    tx.update(journalEntries).set(changes).where(eq(journalEntries.id, entryId)),
+  )
+}

@@ -72,3 +72,13 @@ export const USER_ACCOUNT_KINDS = [
 ] as const
 
 export type UserAccountKind = (typeof USER_ACCOUNT_KINDS)[number]
+
+export const INVOICE_STATUSES = ['future', 'open', 'closed'] as const
+
+export type InvoiceStatus = (typeof INVOICE_STATUSES)[number]
+
+export const ENTRY_TYPES_ALLOWED_ON_CLOSED_INVOICES = [
+  'adjustment',
+  'invoice_payment',
+  'refund',
+] as const

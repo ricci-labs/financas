@@ -9,6 +9,7 @@ import {
   ENTRY_SOURCES,
   ENTRY_TYPES,
   INCOME_NATURES,
+  INVOICE_STATUSES,
   PAYMENT_METHODS,
   SYSTEM_ACCOUNT_KINDS,
 } from '@financas/shared'
@@ -44,7 +45,11 @@ export const paymentMethod = pgEnum('payment_method', PAYMENT_METHODS)
 
 export const entrySource = pgEnum('entry_source', ENTRY_SOURCES)
 
-const ACCOUNT_KINDS_WAITING_FOR_THEIR_COLUMNS = ['credit_card', 'receivable', 'payable'] as const
+export const invoiceStatus = pgEnum('invoice_status', INVOICE_STATUSES)
+
+const ACCOUNT_KINDS_WAITING_FOR_THEIR_COLUMNS = ['receivable', 'payable'] as const
+
+const CARD_KIND = sql.raw(`'credit_card'`)
 
 function quoted(values: readonly string[]): SQL {
   return sql.raw(values.map((value) => `'${value}'`).join(', '))
@@ -123,6 +128,78 @@ export const ledgerAccounts = pgTable(
   ],
 ).enableRLS()
 
+export const cardDetails = pgTable(
+  'card_details',
+  {
+    workspaceId: uuid().notNull(),
+    accountId: uuid().primaryKey(),
+    accountKind: accountKind().notNull().default('credit_card'),
+    closingDay: smallint().notNull(),
+    dueDay: smallint().notNull(),
+    purchaseOnClosingDayGoesNext: boolean().notNull().default(true),
+    limitCents: bigint({ mode: 'number' }),
+    holderUserId: uuid().references(() => users.id),
+    paymentAccountId: uuid(),
+    ...timestamps(),
+  },
+  (table) => [
+    unique('card_details_workspace_id_account_id_unique').on(table.workspaceId, table.accountId),
+    foreignKey({
+      name: 'card_details_account_fk',
+      columns: [table.workspaceId, table.accountId, table.accountKind],
+      foreignColumns: [ledgerAccounts.workspaceId, ledgerAccounts.id, ledgerAccounts.kind],
+    }).onDelete('cascade'),
+    foreignKey({
+      name: 'card_details_payment_account_fk',
+      columns: [table.workspaceId, table.paymentAccountId],
+      foreignColumns: [ledgerAccounts.workspaceId, ledgerAccounts.id],
+    }),
+    check('card_details_is_a_card', sql`${table.accountKind} = ${CARD_KIND}`),
+    check('card_details_closing_day', sql`${table.closingDay} between 1 and 31`),
+    check('card_details_due_day', sql`${table.dueDay} between 1 and 31`),
+    check('card_details_limit', sql`${table.limitCents} is null or ${table.limitCents} > 0`),
+    tenantIsolation('card_details', table.workspaceId),
+  ],
+).enableRLS()
+
+export const cardInvoices = pgTable(
+  'card_invoices',
+  {
+    workspaceId: uuid().notNull(),
+    id: primaryId(),
+    cardAccountId: uuid().notNull(),
+    referenceMonth: date().notNull(),
+    closingOn: date().notNull(),
+    dueOn: date().notNull(),
+    status: invoiceStatus().notNull(),
+    ...timestamps(),
+  },
+  (table) => [
+    unique('card_invoices_workspace_id_id_unique').on(table.workspaceId, table.id),
+    unique('card_invoices_workspace_id_id_card_unique').on(
+      table.workspaceId,
+      table.id,
+      table.cardAccountId,
+    ),
+    unique('card_invoices_card_month_unique').on(
+      table.workspaceId,
+      table.cardAccountId,
+      table.referenceMonth,
+    ),
+    foreignKey({
+      name: 'card_invoices_card_fk',
+      columns: [table.workspaceId, table.cardAccountId],
+      foreignColumns: [cardDetails.workspaceId, cardDetails.accountId],
+    }).onDelete('cascade'),
+    check(
+      'card_invoices_reference_month_first_day',
+      sql`extract(day from ${table.referenceMonth}) = 1`,
+    ),
+    check('card_invoices_due_after_closing', sql`${table.dueOn} > ${table.closingOn}`),
+    tenantIsolation('card_invoices', table.workspaceId),
+  ],
+).enableRLS()
+
 export const journalEntries = pgTable(
   'journal_entries',
   {
@@ -180,6 +257,7 @@ export const postings = pgTable(
     accountKind: accountKind().notNull(),
     amountCents: bigint({ mode: 'number' }).notNull(),
     effectiveOn: date().notNull(),
+    invoiceId: uuid(),
     installmentNo: smallint(),
     memo: text(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
@@ -196,6 +274,15 @@ export const postings = pgTable(
       columns: [table.workspaceId, table.accountId, table.accountKind],
       foreignColumns: [ledgerAccounts.workspaceId, ledgerAccounts.id, ledgerAccounts.kind],
     }),
+    foreignKey({
+      name: 'postings_invoice_of_the_card_fk',
+      columns: [table.workspaceId, table.invoiceId, table.accountId],
+      foreignColumns: [cardInvoices.workspaceId, cardInvoices.id, cardInvoices.cardAccountId],
+    }),
+    check(
+      'postings_invoice_exactly_on_cards',
+      sql`(${table.accountKind} = ${CARD_KIND}) = (${table.invoiceId} is not null)`,
+    ),
     check('postings_amount_not_zero', sql`${table.amountCents} <> 0`),
     check('postings_line_no', sql`${table.lineNo} >= 1`),
     check(
