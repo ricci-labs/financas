@@ -50,7 +50,7 @@ PLAN  │ recurrence_rules ──< planned_occurrences ──(matched_entry)─�
 | Tenant key | Every tenant-owned table has `workspace_id uuid not null` and `unique (workspace_id, id)` |
 | **Composite foreign keys** | Tenant tables reference each other with `(workspace_id, x_id) → parent(workspace_id, id)`. The database itself makes it impossible to link rows from different workspaces. |
 | Row Level Security | Enabled on every tenant table, with a policy for `financas_app`: `workspace_id = app_current_workspace_id()`. The API connects as `financas_app` (not owner, no `BYPASSRLS`), so policies always apply. The workspace is set per transaction by `withWorkspace()` (ADR 0018). Cross-workspace jobs will use a separate `BYPASSRLS` role, only in `jobs/`. |
-| Timestamps | `created_at timestamptz default now()`, `updated_at` (trigger). Calendar dates are `date`. |
+| Timestamps | `created_at timestamptz default now()`, `updated_at` kept by the `set_updated_at()` BEFORE UPDATE trigger, one per table, so every update bumps it, raw SQL included. Calendar dates are `date`. |
 | Money | `bigint` cents. In postings the amount is signed (sign convention in `ledger.md`). Everywhere else it's `> 0` and the meaning comes from context. |
 | Deletion | **Soft delete everywhere** (below). Hard delete only for LGPD erasure of a whole workspace and for purging trashed files. |
 | Naming | snake_case tables in the plural; FK columns `<entity>_id`. |
