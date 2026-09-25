@@ -155,3 +155,44 @@ describe('cardChangeSchema', () => {
     expect(cardChangeSchema.safeParse({}).success).toBe(false)
   })
 })
+
+describe('entryInputSchema for cards', () => {
+  const INVOICE = '01a0d8ce-0000-7000-8000-000000000001'
+
+  it('defaults a card purchase to one installment', () => {
+    const parsed = entryInputSchema.parse({
+      entryType: 'card_purchase',
+      occurredOn: '2026-09-15',
+      description: 'TV',
+      amountCents: 120000,
+      cardAccountId: ACCOUNT,
+      categoryId: CATEGORY,
+    })
+    expect(parsed).toMatchObject({ installmentCount: 1 })
+  })
+
+  it('refuses more than 48 installments', () => {
+    const parsed = entryInputSchema.safeParse({
+      entryType: 'card_purchase',
+      occurredOn: '2026-09-15',
+      description: 'Carro',
+      amountCents: 12000000,
+      installmentCount: 49,
+      cardAccountId: ACCOUNT,
+      categoryId: CATEGORY,
+    })
+    expect(parsed.success).toBe(false)
+  })
+
+  it('accepts an invoice payment without an explicit account', () => {
+    const parsed = entryInputSchema.safeParse({
+      entryType: 'invoice_payment',
+      occurredOn: '2026-10-10',
+      description: 'Fatura outubro',
+      amountCents: 40000,
+      cardAccountId: ACCOUNT,
+      invoiceId: INVOICE,
+    })
+    expect(parsed.success).toBe(true)
+  })
+})
