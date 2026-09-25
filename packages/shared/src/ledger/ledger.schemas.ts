@@ -118,3 +118,36 @@ export const accountChangeSchema = accountPersonalizationSchema
   })
 
 export type AccountChange = z.infer<typeof accountChangeSchema>
+
+const dayOfMonthSchema = z.number().int().min(1).max(31)
+
+const cardCycleFields = {
+  closingDay: dayOfMonthSchema,
+  dueDay: dayOfMonthSchema,
+  purchaseOnClosingDayGoesNext: z.boolean().optional(),
+  limitCents: positiveCentsSchema.nullish(),
+  holderUserId: z.uuid().nullish(),
+  paymentAccountId: z.uuid().nullish(),
+}
+
+export const newCardSchema = accountPersonalizationSchema.extend({
+  name: accountNameSchema,
+  ...cardCycleFields,
+})
+
+export type NewCardInput = z.infer<typeof newCardSchema>
+
+export const cardChangeSchema = z
+  .object({
+    closingDay: dayOfMonthSchema.optional(),
+    dueDay: dayOfMonthSchema.optional(),
+    purchaseOnClosingDayGoesNext: z.boolean().optional(),
+    limitCents: positiveCentsSchema.nullable().optional(),
+    holderUserId: z.uuid().nullable().optional(),
+    paymentAccountId: z.uuid().nullable().optional(),
+  })
+  .refine((change) => Object.values(change).some((value) => value !== undefined), {
+    message: 'Nothing to change',
+  })
+
+export type CardChange = z.infer<typeof cardChangeSchema>

@@ -9,6 +9,9 @@ CREATE TRIGGER card_invoices_set_updated_at
 ALTER TABLE postings
   ALTER CONSTRAINT postings_invoice_of_the_card_fk DEFERRABLE INITIALLY DEFERRED;
 --> statement-breakpoint
+ALTER TABLE card_details
+  ALTER CONSTRAINT card_details_payment_account_fk DEFERRABLE INITIALLY DEFERRED;
+--> statement-breakpoint
 CREATE FUNCTION entry_touches_closed_invoice(checked_entry uuid) RETURNS boolean
   LANGUAGE sql
   STABLE

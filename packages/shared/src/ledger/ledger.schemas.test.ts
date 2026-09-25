@@ -1,8 +1,10 @@
 import {
   accountChangeSchema,
+  cardChangeSchema,
   entryDetailsChangeSchema,
   entryInputSchema,
   newAccountSchema,
+  newCardSchema,
 } from '@shared/ledger/ledger.schemas'
 import { describe, expect, it } from 'vitest'
 
@@ -128,5 +130,28 @@ describe('accountChangeSchema', () => {
 
   it('refuses an empty change', () => {
     expect(accountChangeSchema.safeParse({}).success).toBe(false)
+  })
+})
+
+describe('newCardSchema', () => {
+  it('accepts a card with its cycle', () => {
+    const parsed = newCardSchema.safeParse({ name: 'Cartão X', closingDay: 3, dueDay: 10 })
+    expect(parsed.success).toBe(true)
+  })
+
+  it.each([
+    ['a closing day of 0', { closingDay: 0 }],
+    ['a due day of 32', { dueDay: 32 }],
+    ['a zero limit', { limitCents: 0 }],
+  ])('refuses %s', (_case, change) => {
+    const card = { name: 'Cartão X', closingDay: 3, dueDay: 10, ...change }
+    expect(newCardSchema.safeParse(card).success).toBe(false)
+  })
+})
+
+describe('cardChangeSchema', () => {
+  it('accepts removing the limit and refuses an empty change', () => {
+    expect(cardChangeSchema.safeParse({ limitCents: null }).success).toBe(true)
+    expect(cardChangeSchema.safeParse({}).success).toBe(false)
   })
 })

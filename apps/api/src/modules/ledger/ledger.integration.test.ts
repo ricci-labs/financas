@@ -2,8 +2,10 @@ import { withWorkspace } from '@api/core/db/tx'
 import {
   archiveAccount,
   changeAccount,
+  changeCard,
   changeEntryDetails,
   createAccount,
+  createCard,
   deleteAccount,
   deleteEntry,
   type EntryContext,
@@ -1341,12 +1343,19 @@ describe('cards and invoices', () => {
   it('go away with the workspace when it is erased', async () => {
     const workspaceId = (await fixtures.createWorkspaceOwnedBy(ownerUserId, 'Erase cards'))
       .workspaceId
-    const card = await insertCard(workspaceId)
+    const payFrom = await insertAccount({ kind: 'checking' }, workspaceId)
+    const card = await insertCard(workspaceId, { paymentAccountId: payFrom })
     const invoice = await insertInvoice(card, {}, workspaceId)
     const food = await insertAccount({ kind: 'expense_category' }, workspaceId)
-    await recordRaw(
+    const original = await recordRaw(
       purchase(1000, card, invoice, food),
       { entryType: 'card_purchase' },
+      workspaceId,
+    )
+    await updateEntryRaw(original, { deletedAt: new Date() }, workspaceId)
+    await recordRaw(
+      purchase(1200, card, invoice, food),
+      { entryType: 'card_purchase', replacesEntryId: original },
       workspaceId,
     )
 
@@ -1360,3 +1369,94 @@ function updateEntryRaw(entryId: string, changes: NewEntry, workspaceId = worksp
     tx.update(journalEntries).set(changes).where(eq(journalEntries.id, entryId)),
   )
 }
+
+describe('card services', () => {
+  const context = () => ({ workspaceId: workspaceA, userId: ownerUserId })
+
+  async function cardRow(cardAccountId: string) {
+    const [row] = await withWorkspace(databases.app, workspaceA, (tx) =>
+      tx.select().from(cardDetails).where(eq(cardDetails.accountId, cardAccountId)),
+    )
+    return row
+  }
+
+  it('creates a card account with its details', async () => {
+    const payFrom = await insertAccount({ kind: 'checking' })
+    const name = uniqueName('Cartão')
+    const { accountId } = await createCard(databases.app, context(), {
+      name,
+      closingDay: 28,
+      dueDay: 5,
+      limitCents: 500000,
+      paymentAccountId: payFrom,
+    })
+    expect(await accountRow(accountId)).toMatchObject({
+      kind: 'credit_card',
+      name,
+      currency: 'BRL',
+    })
+    expect(await cardRow(accountId)).toMatchObject({
+      closingDay: 28,
+      dueDay: 5,
+      purchaseOnClosingDayGoesNext: true,
+      limitCents: 500000,
+      paymentAccountId: payFrom,
+    })
+  })
+
+  it('pays invoices only from an active money account', async () => {
+    const category = await insertAccount({ kind: 'expense_category' })
+    const archived = await insertAccount({ kind: 'checking', archivedAt: new Date() })
+    for (const paymentAccountId of [category, archived]) {
+      await expect(
+        createCard(databases.app, context(), {
+          name: uniqueName('Cartão'),
+          closingDay: 3,
+          dueDay: 10,
+          paymentAccountId,
+        }),
+      ).rejects.toMatchObject({ code: 'PAYMENT_ACCOUNT_NOT_AVAILABLE' })
+    }
+  })
+
+  it('refuses an invalid cycle and a taken name', async () => {
+    await expect(
+      createCard(databases.app, context(), { name: 'X', closingDay: 0, dueDay: 10 }),
+    ).rejects.toMatchObject({ code: 'CARD_INVALID' })
+    const name = uniqueName('Cartão')
+    await createCard(databases.app, context(), { name, closingDay: 3, dueDay: 10 })
+    await expect(
+      createCard(databases.app, context(), { name, closingDay: 3, dueDay: 10 }),
+    ).rejects.toMatchObject({ code: 'ACCOUNT_NAME_TAKEN' })
+  })
+
+  it('changes the cycle, limit and payment account of a card', async () => {
+    const { accountId } = await createCard(databases.app, context(), {
+      name: uniqueName('Cartão'),
+      closingDay: 3,
+      dueDay: 10,
+      limitCents: 100000,
+    })
+    await changeCard(
+      databases.app,
+      { workspaceId: workspaceA, cardAccountId: accountId },
+      { closingDay: 5, dueDay: 12, limitCents: null, purchaseOnClosingDayGoesNext: false },
+    )
+    expect(await cardRow(accountId)).toMatchObject({
+      closingDay: 5,
+      dueDay: 12,
+      limitCents: null,
+      purchaseOnClosingDayGoesNext: false,
+    })
+  })
+
+  it('does not find a card that is not a card or is in another workspace', async () => {
+    const checking = await insertAccount({ kind: 'checking' })
+    const cardInB = await insertCard(workspaceB)
+    for (const cardAccountId of [checking, cardInB]) {
+      await expect(
+        changeCard(databases.app, { workspaceId: workspaceA, cardAccountId }, { dueDay: 9 }),
+      ).rejects.toMatchObject({ code: 'CARD_NOT_FOUND' })
+    }
+  })
+})

@@ -1,5 +1,10 @@
 import type { WorkspaceTransaction } from '@api/core/db/tx'
-import { journalEntries, ledgerAccounts, postings } from '@api/modules/ledger/ledger.table'
+import {
+  cardDetails,
+  journalEntries,
+  ledgerAccounts,
+  postings,
+} from '@api/modules/ledger/ledger.table'
 import type { NewLedgerAccount } from '@api/modules/ledger/ledger.types'
 import type { SystemAccountKind } from '@financas/shared'
 import { and, eq, inArray, isNull } from 'drizzle-orm'
@@ -142,4 +147,39 @@ export async function markAccountRestored(tx: WorkspaceTransaction, accountId: s
     .update(ledgerAccounts)
     .set({ deletedAt: null, deletedByUserId: null, deleteReason: null })
     .where(eq(ledgerAccounts.id, accountId))
+}
+
+type NewCardDetails = typeof cardDetails.$inferInsert
+
+type CardDetailsUpdate = Partial<
+  Pick<
+    NewCardDetails,
+    | 'closingDay'
+    | 'dueDay'
+    | 'purchaseOnClosingDayGoesNext'
+    | 'limitCents'
+    | 'holderUserId'
+    | 'paymentAccountId'
+  >
+>
+
+export async function insertCardDetails(tx: WorkspaceTransaction, details: NewCardDetails) {
+  await tx.insert(cardDetails).values(details)
+}
+
+export async function lockCardDetails(tx: WorkspaceTransaction, cardAccountId: string) {
+  const [details] = await tx
+    .select({ accountId: cardDetails.accountId })
+    .from(cardDetails)
+    .where(eq(cardDetails.accountId, cardAccountId))
+    .for('update')
+  return details
+}
+
+export async function updateCardDetails(
+  tx: WorkspaceTransaction,
+  cardAccountId: string,
+  changes: CardDetailsUpdate,
+) {
+  await tx.update(cardDetails).set(changes).where(eq(cardDetails.accountId, cardAccountId))
 }
