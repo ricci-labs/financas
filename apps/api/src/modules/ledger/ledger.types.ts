@@ -1,4 +1,4 @@
-import type { AccountKind, EntrySource } from '@financas/shared'
+import type { AccountClass, AccountKind, EntrySource, InvoiceStatus } from '@financas/shared'
 
 export type NewLedgerAccount = {
   workspaceId: string
@@ -49,4 +49,23 @@ export type CreatedAccount = {
 export type WorkspaceCard = {
   workspaceId: string
   cardAccountId: string
+}
+
+export type AccountBalance = {
+  accountId: string
+  kind: AccountKind
+  class: AccountClass
+  balanceCents: number
+  naturalBalanceCents: number
+}
+
+export type InvoiceTotal = {
+  invoiceId: string
+  referenceMonth: string
+  closingOn: string
+  dueOn: string
+  status: InvoiceStatus
+  totalCents: number
+  paidCents: number
+  dueCents: number
 }

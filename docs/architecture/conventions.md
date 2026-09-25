@@ -88,6 +88,7 @@ without comments.
 - **CHECK constraints must handle NULL explicitly.** A CHECK passes when its expression is NULL, so `value between 1 and 31` accepts a NULL `value`. Write `value is not null and value between 1 and 31`, or compare nullness directly (`(a is null) = (b is null)`). Add a test with the NULL case.
 - **Workspace erasure must keep working.** A foreign key between tenant tables that doesn't cascade is `DEFERRABLE INITIALLY DEFERRED` (Drizzle can't express it: `alter constraint` in a custom migration); otherwise the cascade checks it before the referencing rows are gone. Every area has an erasure test with its rows filled in.
 - A trigger that forbids hard deletes must still let a whole workspace be erased: allow the delete when `workspace_is_being_erased(workspace_id)` is true, and add an erasure test.
+- A view is `security_invoker = true` (Drizzle: `pgView(...).with({ securityInvoker: true })`), or it skips RLS. The conventions test checks it.
 - A new table with `timestamps()` needs its `updated_at` trigger in a custom migration: `create trigger <table>_set_updated_at before update on <table> for each row execute function set_updated_at();`.
 - A trigger that checks an invariant across rows uses a `SECURITY DEFINER` trigger function with `SET search_path = public, pg_temp` (ADR 0020). Test it with a workspace switch in the same transaction.
 - A migration that exists only on your machine (not merged) may be regenerated. Delete its SQL, snapshot and journal entry, then `pnpm db:reset` and migrate. Once merged, never edit it.

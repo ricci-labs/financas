@@ -91,6 +91,9 @@ Settings are **typed columns** in 1:1 tables (`workspace_settings`, `user_prefer
 `membership_preferences`), not key-value rows, so every setting has a type, a default and constraints.
 
 ## Derived data (views, not tables)
-`account_balances`, `invoice_totals`, `contact_balances`, `period_category_totals`,
+`account_balances` ✅, `invoice_totals` ✅, `contact_balances`, `period_category_totals`,
 `period_overview` (fixed income, spent, committed, free to spend). Materialize them only when
 measurements show a need.
+
+Every view is `security_invoker = true`: a Postgres view otherwise runs with its owner's
+permissions and skips RLS. `core/db/conventions.integration.test.ts` fails on a view without it.
