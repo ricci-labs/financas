@@ -1,7 +1,7 @@
 ---
 summary: Rules for card invoices (closing/due), installment splitting, multi-party allocation, refunds, and competence vs cash views — with worked examples that double as test cases.
 read_when: Any code or question involving card invoices, installments, refunds, competence month or cash month.
-updated: 2026-09-22
+updated: 2026-09-25
 ---
 
 # Billing cycle and installments
@@ -45,12 +45,35 @@ Card Z: `closingDay = 31`, `dueDay = 8`
 | 2026-09-10 | 2026-09-30 | 2026-10-08 | 2026-10 |
 | 2027-02-10 | 2027-02-28 | 2027-03-08 | 2027-03 |
 
+## Invoice status
+`invoiceStatusOn()` in `packages/shared/src/cards/billing-cycle.ts`. "Today" is the calendar day in
+the workspace time zone (`todayIn()`).
+
+1. **Closed** once its stored `closing_on` has passed. On the closing day itself it is already closed
+   when `purchase_on_closing_day_goes_next` is true (that day's purchases go to the next invoice).
+   Closed is final: statuses are recomputed only for invoices that aren't closed.
+2. **Open** while purchases still land on it: its reference month is at most the one of the invoice
+   a purchase made today would go to.
+3. **Future** after that (installments already placed on it).
+
+Card X (`closingDay = 3`, `dueDay = 10`), invoices of October (closes 10-03) and November:
+
+| Today | October | November |
+|---|---|---|
+| 2026-09-15 | open | future |
+| 2026-10-03 | closed | open |
+| 2026-10-03, issuer keeps closing-day purchases | open | open |
+
+Statuses are refreshed whenever an entry touches the card (a daily job comes later).
+
 ## Installment split
 
 1. `base = floor(amountCents / n)`, `remainder = amountCents - base * n`.
 2. **Installment 1 takes `base + remainder`**; the rest take `base`. Brazilian issuers usually load the rounding difference on the first installment.
 3. Installment 1 goes to the invoice of the purchase date. Installment k goes to the invoice k−1 months later, on the same card.
 4. The installment amount is fixed at purchase time. The MVP doesn't model interest ("parcelado com juros"); the total entered is the total charged.
+5. Each installment's postings are effective on its invoice's **due date** (`effective_on`), so the per-installment view counts it in the month it is paid.
+6. At most 48 installments (`MAX_INSTALLMENTS`), and never more installments than cents.
 
 ### Examples
 

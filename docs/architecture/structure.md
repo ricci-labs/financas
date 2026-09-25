@@ -50,13 +50,13 @@ src/
 │   └── money.test.ts
 ├── calendar/
 │   ├── calendar.types.ts     # IsoDate, YearMonth, PeriodSettings, Period
-│   ├── dates.ts              # calendar-date math, business days
+│   ├── dates.ts              # calendar-date math, business days, todayIn(timeZone)
 │   ├── dates.test.ts
 │   ├── period.ts             # financial period (configurable anchor)
 │   └── period.test.ts
 ├── cards/
 │   ├── cards.types.ts        # CardCycle, InvoiceRef
-│   ├── billing-cycle.ts      # which invoice a purchase / installment falls into
+│   ├── billing-cycle.ts      # which invoice a purchase / installment falls into; invoice status
 │   └── billing-cycle.test.ts
 ├── installments/
 │   ├── installments.ts       # split + multi-party allocation
@@ -71,7 +71,7 @@ src/
 │   ├── ledger.ts             # kind → class, system account names
 │   ├── ledger.schemas.ts     # entryInputSchema, entryDetailsChangeSchema
 │   ├── postings.types.ts     # EntryPlan, PostingDraft, PostingsViolation
-│   ├── postings.ts           # planPostings(): entry plan → balanced posting drafts
+│   ├── postings.ts           # planPostings(): entry plan → balanced posting drafts (incl. card installments)
 │   └── *.test.ts
 ├── pix/                      # planned: Pix copia-e-cola payload
 └── index.ts                  # public surface of the package
