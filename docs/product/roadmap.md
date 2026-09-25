@@ -27,7 +27,8 @@ updated: 2026-09-25
 - [x] Ledger account services: create / change / archive / delete / restore
 - [x] DB: cards and invoices (tables, card creation, invoice rules)
 - [x] Card purchases in installments, invoice payment
-- [ ] DB: balance views (`account_balances`, `invoice_totals`)
+- [x] Purchases already in progress: record only the remaining installments
+- [x] DB: balance views (`account_balances`, `invoice_totals`)
 - [ ] DB: contacts/charges, planning, support tables
 - [ ] Observability core (OTel register, metrics, error refs), Dockerfile, deploy workflow
 - [ ] Web foundation: TanStack Router/Query, shadcn/ui, layout

@@ -140,6 +140,15 @@ Status: rows marked ✅ are implemented; row 4 comes with contacts.
 "Recorded in an earlier transaction" compares the entry's `created_at` (always stamped with the
 transaction's `now()` on insert) with the current `now()`.
 
+## Derived views
+| View | Per | Columns |
+|---|---|---|
+| `account_balances` | account (not deleted) | `balance_cents` (signed, debit +) and `natural_balance_cents` (liabilities, income and equity flipped, as the UI shows them), from postings of active entries |
+| `invoice_totals` | invoice | `total_cents` (everything but invoice payments, so refunds reduce it), `paid_cents` (invoice payments), `due_cents` = total − paid |
+
+Read through `listAccountBalances(db, workspaceId)` and `listInvoiceTotals(db, card)`. The sum of
+`balance_cents` over all accounts of a workspace is always zero.
+
 ## Services (`modules/ledger`)
 Use cases live in `modules/ledger/use-cases/` (`accounts.ts`, `cards.ts`, `entries.ts`); `ledger.service.ts` re-exports them.
 
