@@ -8,6 +8,7 @@ import {
   connectTestDatabases,
   POSTGRES_ERRORS,
   postgresErrorCodeOf,
+  switchWorkspaceMidTransaction,
   waitForBlockedQueries,
 } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
@@ -131,6 +132,18 @@ describe('owner invariant', () => {
         .where(ownerMembershipOf(workspaceA, creatorId)),
     )
     expect(await postgresErrorCodeOf(demoteOnlyOwner)).toBe(POSTGRES_ERRORS.checkViolation)
+  })
+
+  it('refuses demoting the only owner even if the transaction switches workspace', async () => {
+    const viewerRole = await systemRoleId(workspaceA, 'viewer')
+    const demoteThenSwitch = withWorkspace(databases.app, workspaceA, async (tx) => {
+      await tx
+        .update(memberships)
+        .set({ roleId: viewerRole })
+        .where(ownerMembershipOf(workspaceA, creatorId))
+      await switchWorkspaceMidTransaction(tx, workspaceB)
+    })
+    expect(await postgresErrorCodeOf(demoteThenSwitch)).toBe(POSTGRES_ERRORS.checkViolation)
   })
 
   it('refuses taking the owner key away from the owner role', async () => {

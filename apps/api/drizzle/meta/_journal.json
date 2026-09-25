@@ -99,6 +99,13 @@
       "when": 1790139352772,
       "tag": "0013_invitation_lookup",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790297022460,
+      "tag": "0014_invariant_triggers_ignore_rls",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,5 @@
 import { createDatabase, type Database } from '@api/core/db/client'
+import type { WorkspaceTransaction } from '@api/core/db/tx'
 import { sql } from 'drizzle-orm'
 
 function requiredEnv(name: string): string {
@@ -36,6 +37,10 @@ export const POSTGRES_ERRORS = {
   insufficientPrivilege: '42501',
   rowLevelSecurityViolation: '42501',
 } as const
+
+export async function switchWorkspaceMidTransaction(tx: WorkspaceTransaction, workspaceId: string) {
+  await tx.execute(sql`select set_config('app.workspace_id', ${workspaceId}, true)`)
+}
 
 function findPostgresCode(error: unknown): string | undefined {
   let current: unknown = error
