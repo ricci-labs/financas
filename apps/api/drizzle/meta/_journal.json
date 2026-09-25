@@ -127,6 +127,20 @@
       "when": 1790297761735,
       "tag": "0017_updated_at_trigger",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790342728115,
+      "tag": "0018_ledger_accounts",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790342765611,
+      "tag": "0019_ledger_accounts_updated_at",
+      "breakpoints": true
     }
   ]
 }
