@@ -1,8 +1,14 @@
+import type { WeekendRule } from '@shared/calendar/calendar.constants'
 import type { DateParts, IsoDate, YearMonth } from '@shared/calendar/calendar.types'
 
 const ISO_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/
 const SUNDAY = 0
 const SATURDAY = 6
+const STEP_OF_WEEKEND_RULE: Record<WeekendRule, number> = {
+  keep: 0,
+  previous_business_day: -1,
+  next_business_day: 1,
+}
 
 export function parseIsoDate(date: IsoDate): DateParts {
   const match = ISO_DATE_PATTERN.exec(date)
@@ -62,6 +68,19 @@ export function isBusinessDay(date: IsoDate, holidays: ReadonlySet<IsoDate>): bo
   const weekday = dayOfWeek(date)
   const isWeekend = weekday === SUNDAY || weekday === SATURDAY
   return !isWeekend && !holidays.has(date)
+}
+
+export function shiftToBusinessDay(
+  date: IsoDate,
+  rule: WeekendRule,
+  holidays: ReadonlySet<IsoDate>,
+): IsoDate {
+  const step = STEP_OF_WEEKEND_RULE[rule]
+  let shifted = date
+  while (step !== 0 && !isBusinessDay(shifted, holidays)) {
+    shifted = addDays(shifted, step)
+  }
+  return shifted
 }
 
 export function nthBusinessDay(

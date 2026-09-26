@@ -1,7 +1,7 @@
 ---
 summary: Canonical terms. Maps Portuguese words used by the user and the UI to English code names.
 read_when: Naming anything, or turning a Portuguese term from the user or a WhatsApp message into code.
-updated: 2026-09-22
+updated: 2026-09-26
 ---
 
 # Glossary
@@ -44,6 +44,7 @@ updated: 2026-09-22
 | conta fixa, assinatura, boleto recorrente | `recurrence_rule` | A rule that generates expected occurrences. |
 | previsto | `planned_occurrence` | An expected bill or income on a date. |
 | mês financeiro | financial period (`period_anchor`) | Configurable start (calendar, day N, N-th business day). |
+| feriado, dia útil | holiday, business day | Bank holidays: national ones computed, workspace ones stored (`model/planning.md`). |
 | competência / caixa | `purchase_month` / cash views | See `billing-and-installments.md`. |
 | orçamento | `budget_line` | A category limit valid from a period onward. |
 | reserva de emergência, meta | `goal` (+ a savings account) | |

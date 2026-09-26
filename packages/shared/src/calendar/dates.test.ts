@@ -7,6 +7,7 @@ import {
   isBusinessDay,
   nthBusinessDay,
   parseIsoDate,
+  shiftToBusinessDay,
   todayIn,
 } from '@shared/calendar/dates'
 import { describe, expect, it } from 'vitest'
@@ -83,5 +84,19 @@ describe('todayIn', () => {
     const lateNightInSaoPaulo = new Date('2026-09-25T02:30:00Z')
     expect(todayIn('America/Sao_Paulo', lateNightInSaoPaulo)).toBe('2026-09-24')
     expect(todayIn('UTC', lateNightInSaoPaulo)).toBe('2026-09-25')
+  })
+})
+
+describe('shiftToBusinessDay', () => {
+  const holidays = new Set(['2026-10-12'])
+
+  it('keeps a business day whatever the rule', () => {
+    expect(shiftToBusinessDay('2026-10-13', 'next_business_day', holidays)).toBe('2026-10-13')
+  })
+
+  it('moves a date on a weekend or holiday back or forth, or keeps it', () => {
+    expect(shiftToBusinessDay('2026-10-10', 'next_business_day', holidays)).toBe('2026-10-13')
+    expect(shiftToBusinessDay('2026-10-12', 'previous_business_day', holidays)).toBe('2026-10-09')
+    expect(shiftToBusinessDay('2026-10-11', 'keep', holidays)).toBe('2026-10-11')
   })
 })
