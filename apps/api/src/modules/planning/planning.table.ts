@@ -181,3 +181,32 @@ export const plannedOccurrences = pgTable(
     tenantIsolation('planned_occurrences', table.workspaceId),
   ],
 ).enableRLS()
+
+export const budgetLines = pgTable(
+  'budget_lines',
+  {
+    workspaceId: uuid()
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    id: primaryId(),
+    categoryAccountId: uuid().notNull(),
+    limitCents: bigint({ mode: 'number' }),
+    validFrom: date().notNull(),
+    ...softDelete(() => users.id),
+    ...timestamps(),
+  },
+  (table) => [
+    unique('budget_lines_workspace_id_id_unique').on(table.workspaceId, table.id),
+    uniqueIndex('budget_lines_one_per_category_and_period')
+      .on(table.workspaceId, table.categoryAccountId, table.validFrom)
+      .where(sql`${table.deletedAt} is null`),
+    foreignKey({
+      name: 'budget_lines_category_fk',
+      columns: [table.workspaceId, table.categoryAccountId],
+      foreignColumns: [ledgerAccounts.workspaceId, ledgerAccounts.id],
+    }),
+    check('budget_lines_limit', sql`${table.limitCents} is null or ${table.limitCents} > 0`),
+    check('budget_lines_valid_from_first_day', sql`extract(day from ${table.validFrom}) = 1`),
+    tenantIsolation('budget_lines', table.workspaceId),
+  ],
+).enableRLS()

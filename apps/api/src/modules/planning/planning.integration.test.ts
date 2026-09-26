@@ -1,7 +1,11 @@
 import { withWorkspace } from '@api/core/db/tx'
 import { ledgerAccounts } from '@api/modules/ledger/ledger.table'
 import { holidayDatesOf } from '@api/modules/planning'
-import { recurrenceRules, workspaceHolidays } from '@api/modules/planning/planning.table'
+import {
+  budgetLines,
+  recurrenceRules,
+  workspaceHolidays,
+} from '@api/modules/planning/planning.table'
 import { workspaces } from '@api/modules/workspaces/workspaces.table'
 import { connectTestDatabases, POSTGRES_ERRORS, postgresErrorCodeOf } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
@@ -145,6 +149,43 @@ describe('recurrence_rules', () => {
   it('go away with the workspace when it is erased', async () => {
     const workspaceId = await newWorkspace('Erase rules')
     await insertRule(workspaceId)
+    const erase = databases.owner.delete(workspaces).where(eq(workspaces.id, workspaceId))
+    expect(await postgresErrorCodeOf(erase)).toBeUndefined()
+  })
+})
+
+describe('budget_lines', () => {
+  async function insertLine(
+    workspaceId: string,
+    validFrom: string,
+    limitCents: number | null = 100,
+  ) {
+    const category = await accountIn(
+      workspaceId,
+      'expense_category',
+      `Budget ${crypto.randomUUID()}`,
+    )
+    return withWorkspace(databases.app, workspaceId, (tx) =>
+      tx
+        .insert(budgetLines)
+        .values({ workspaceId, categoryAccountId: category, validFrom, limitCents }),
+    )
+  }
+
+  it('start on the first day of a month and hold a positive limit or none', async () => {
+    const workspaceId = await newWorkspace('Budget checks')
+    expect(await postgresErrorCodeOf(insertLine(workspaceId, '2026-10-02'))).toBe(
+      POSTGRES_ERRORS.checkViolation,
+    )
+    expect(await postgresErrorCodeOf(insertLine(workspaceId, '2026-10-01', 0))).toBe(
+      POSTGRES_ERRORS.checkViolation,
+    )
+    expect(await postgresErrorCodeOf(insertLine(workspaceId, '2026-10-01', null))).toBeUndefined()
+  })
+
+  it('go away with the workspace when it is erased', async () => {
+    const workspaceId = await newWorkspace('Erase budgets')
+    await insertLine(workspaceId, '2026-10-01')
     const erase = databases.owner.delete(workspaces).where(eq(workspaces.id, workspaceId))
     expect(await postgresErrorCodeOf(erase)).toBeUndefined()
   })

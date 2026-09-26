@@ -9,10 +9,12 @@ import {
   createRecurrenceRule,
   deleteHoliday,
   deleteRecurrenceRule,
+  listBudgets,
   listHolidays,
   listOccurrences,
   listRecurrenceRules,
   matchOccurrence,
+  setBudget,
   skipOccurrence,
   suggestOccurrencesForEntry,
   unmatchOccurrence,
@@ -20,6 +22,9 @@ import {
 } from '@api/modules/planning/planning.service'
 import type { PlanningRouteDeps } from '@api/modules/planning/planning.types'
 import {
+  budgetChangeSchema,
+  budgetListQuerySchema,
+  budgetParamsSchema,
   deletionRequestSchema,
   holidayListQuerySchema,
   holidayParamsSchema,
@@ -43,6 +48,7 @@ export function planningRoutes(deps: PlanningRouteDeps) {
     .route('/holidays', holidayRoutes(deps))
     .route('/recurrences', recurrenceRoutes(deps))
     .route('/occurrences', occurrenceRoutes(deps))
+    .route('/budgets', budgetRoutes(deps))
 }
 
 function holidayRoutes({ db }: PlanningRouteDeps) {
@@ -195,6 +201,31 @@ function occurrenceRoutes({ db }: PlanningRouteDeps) {
         const { workspaceId } = currentWorkspace(c)
         const { occurrenceId } = c.req.valid('param')
         await changeOccurrenceAmount(db, { workspaceId, occurrenceId }, c.req.valid('json'))
+        return c.body(null, NO_CONTENT)
+      },
+    )
+}
+
+function budgetRoutes({ db }: PlanningRouteDeps) {
+  return new Hono<AppEnv>()
+    .get(
+      '/',
+      authorize('budgets', 'view'),
+      queryParams(budgetListQuerySchema, 'BUDGET_QUERY_INVALID'),
+      async (c) => {
+        const { workspaceId } = currentWorkspace(c)
+        return c.json(await listBudgets(db, workspaceId, c.req.valid('query').period))
+      },
+    )
+    .put(
+      '/:categoryId',
+      authorize('budgets', 'update'),
+      pathParams(budgetParamsSchema, 'BUDGET_CATEGORY_NOT_FOUND'),
+      jsonBody(budgetChangeSchema, 'BUDGET_INVALID'),
+      async (c) => {
+        const { workspaceId } = currentWorkspace(c)
+        const categoryAccountId = c.req.valid('param').categoryId
+        await setBudget(db, { workspaceId, categoryAccountId }, c.req.valid('json'))
         return c.body(null, NO_CONTENT)
       },
     )
