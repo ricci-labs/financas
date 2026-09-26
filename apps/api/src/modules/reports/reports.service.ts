@@ -3,6 +3,7 @@ import type { Clock } from '@api/core/clock.types'
 import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { withWorkspace } from '@api/core/db/tx'
 import { ValidationError } from '@api/core/http/errors'
+import { readContactBalanceFacts } from '@api/modules/contacts'
 import {
   readAccountFacts,
   readBalanceFacts,
@@ -158,6 +159,7 @@ async function loadPeriodFacts(
     invoices: await readInvoiceFacts(tx, cycleStart),
     allocation: await loadAllocationFact(tx),
     balances: await readBalanceFacts(tx),
+    contactBalances: await readContactBalanceFacts(tx, today),
   }
 }
 

@@ -83,8 +83,8 @@ updated: 2026-09-26
            yet split
      - [x] Balance forecast per account
      - [x] "Posso comprar?" purchase simulation
-  3. [ ] **Contacts, charges and settlements** (model in `../domain/model/third-parties.md`,
-         approved 2026-09-22; started 2026-09-26). Sending over WhatsApp comes with the outbox (step
+  3. [x] **Contacts, charges and settlements** (model in `../domain/model/third-parties.md`,
+         approved 2026-09-22; done 2026-09-26, #87–#98). Sending over WhatsApp comes with the outbox (step
          4) and the channel; here a charge is built up to its message and Pix copia-e-cola:
      - [x] `contacts` module: table and routes (name, phone, notes, opt-out)
      - [x] `postings.contact_id`: receivable/payable lines carry their contact (CHECK row 4)
@@ -95,7 +95,7 @@ updated: 2026-09-26
      - [x] Charges: `charges` + `charge_items`, built from a contact's open items, pt-BR message,
            Pix copia-e-cola from the workspace key; mark sent; cancel
      - [x] Settlements pay charges (`charge_payments`, paid / partially paid derived)
-     - [ ] Insight: a contact with overdue items
+     - [x] Insight: a contact with overdue items
   4. [ ] **Reminders:** notification outbox and its worker, email first
   5. [ ] **Attachments** on entries (`FileStorage`)
   6. [ ] **Audit log**

@@ -1,6 +1,7 @@
 import { balanceGoingNegative } from '@shared/insights/balance-going-negative'
 import { budgetAhead } from '@shared/insights/budget-ahead'
 import { budgetOver } from '@shared/insights/budget-over'
+import { contactOverdue } from '@shared/insights/contact-overdue'
 import { INSIGHT_SEVERITIES } from '@shared/insights/insights.constants'
 import type { Insight, InsightRule } from '@shared/insights/insights.types'
 import { occurrenceOverdue } from '@shared/insights/occurrence-overdue'
@@ -18,6 +19,7 @@ export const INSIGHTS: readonly InsightRule[] = [
   periodHeavilyCommitted,
   variableIncomeToSplit,
   balanceGoingNegative,
+  contactOverdue,
 ]
 
 export function computeInsights(facts: PeriodFacts, metrics: PeriodMetrics): Insight[] {

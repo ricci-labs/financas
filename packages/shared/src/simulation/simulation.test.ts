@@ -76,6 +76,7 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
     invoices: [],
     allocation: null,
     balances: [{ accountId: 'checking', balanceCents: 300_000 }],
+    contactBalances: [],
     ...overrides,
   }
 }
