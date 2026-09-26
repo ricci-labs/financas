@@ -17,6 +17,7 @@ const app = createApp({
   version: env.APP_VERSION,
   startedAt: Date.now(),
   isDatabaseReachable: database.isReachable,
+  logger,
 })
 
 const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {

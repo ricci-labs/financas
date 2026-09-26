@@ -1,5 +1,6 @@
 import { createApp } from '@api/app'
 import { loadEnv, publicUrlOf } from '@api/core/config/env'
+import { createCapturingLogger } from '@api/testing/logger'
 import { describe, expect, it } from 'vitest'
 
 const FIVE_SECONDS_AGO = Date.now() - 5_000
@@ -10,6 +11,7 @@ function appWithDatabase(isUp: boolean) {
     version: 'test-sha',
     startedAt: FIVE_SECONDS_AGO,
     isDatabaseReachable: async () => isUp,
+    logger: createCapturingLogger().logger,
   })
 }
 

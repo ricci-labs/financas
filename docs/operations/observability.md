@@ -53,7 +53,9 @@ Output: one JSON object per line to stdout. Docker keeps it (with rotation, see 
 |---|---|
 | `app.started`, `app.stopping` | info |
 | `db.connection.lost` | warn |
-| `http.request.failed` | error/warn |
+| `http.request.completed` | debug (off in production) |
+| `http.request.rejected` (4xx, with `route` pattern and `status`) | info |
+| `http.request.failed` (5xx, with `err`) | error |
 | `whatsapp.connection.opened` / `.closed` / `.logged_out` | info / warn / error |
 | `whatsapp.message.received` / `.ignored` / `.sent` / `.send_failed` | info / debug / info / error |
 | `agent.run.started` / `.completed` / `.failed` | info / info / error |
@@ -74,6 +76,8 @@ Output: one JSON object per line to stdout. Docker keeps it (with rotation, see 
 ## Errors
 - Services throw `AppError` subclasses with a stable `code` (`CARD_NOT_FOUND`, `INVOICE_CLOSED`...), defined in `core/http/errors.ts`.
 - Unexpected errors are logged once at the boundary (HTTP middleware, agent runner, job runner) with the fingerprint `type:code:top-frame`, never at every layer.
+- Until the OTel SDK is wired, `core/http/middleware/request-context.ts` makes a random 32-hex id per request, logs it as `trace_id`, returns it in `X-Request-Id`, and never accepts one from the client. The OTel trace id replaces it later with no change to fields or refs.
+- Request logs carry the route pattern (`/api/items/:itemId`), never the real path or query string.
 - **Users see a reference, never a stack:** "Algo deu errado (ref: `4f3a9c1b`)" in the web or WhatsApp. The ref is a `trace_id` prefix. When the user pastes it, run `pnpm ops:trace 4f3a9c1b`.
 
 ## Metrics
