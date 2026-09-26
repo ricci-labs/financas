@@ -7,10 +7,12 @@ import {
   selectRolePermissions,
 } from '@api/modules/access/access.repository'
 import type {
+  RoleRef,
   SystemRoleIds,
   WorkspaceAccess,
   WorkspaceAccessInput,
   WorkspaceListItem,
+  WorkspaceRole,
 } from '@api/modules/access/access.types'
 import { findActiveMembership, listWorkspaceIdsOfUser } from '@api/modules/members'
 import { findCurrentWorkspace } from '@api/modules/workspaces'
@@ -62,4 +64,11 @@ export async function listWorkspacesOfUser(
     }
   }
   return items.sort((first, second) => first.name.localeCompare(second.name, 'pt-BR'))
+}
+
+export function findRole(
+  db: Database,
+  { workspaceId, roleId }: RoleRef,
+): Promise<WorkspaceRole | undefined> {
+  return withWorkspace(db, workspaceId, (tx) => selectActiveRole(tx, roleId))
 }

@@ -8,11 +8,13 @@ export {
 export { accessRoutes, workspaceListRoutes } from '@api/modules/access/access.routes'
 export {
   createSystemRoles,
+  findRole,
   listWorkspacesOfUser,
   loadWorkspaceAccess,
 } from '@api/modules/access/access.service'
 export type {
   AccessRouteDeps,
+  RoleRef,
   SystemRoleIds,
   WorkspaceAccess,
   WorkspaceListItem,

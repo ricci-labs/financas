@@ -1,7 +1,7 @@
 ---
 summary: Access control inside a workspace — roles (system templates + custom), a module × action permission matrix (view/create/update/delete), owner rules, and where permissions are enforced (routes, agent tools, UI).
 read_when: Adding a route, agent tool or screen; working on roles, members or invitations; any "who can do what" question.
-updated: 2026-09-25
+updated: 2026-09-26
 ---
 
 # Access control
@@ -104,6 +104,8 @@ The permission set is loaded once per request/turn and cached on the context. Ro
    workspace transaction (`loadWorkspaceAccess`). Not a member, a deleted workspace or membership,
    an unknown id or one that isn't a UUID all give the same `404 WORKSPACE_NOT_FOUND`, so a stranger
    can't learn that a workspace exists.
+   The request also carries the caller's `roleKey` (`owner`, `admin`, `member`, `viewer` or null for
+   a custom role) for the owner-only rules outside the matrix.
 3. `authorize(module, action)` on the route: `403 PERMISSION_DENIED`, logged as `authz.denied` with
    module, action, workspace and user. Routes every member may use declare `authorizeAnyMember()`.
 4. A test (`app.routes.test.ts`) walks every route under `/api/workspaces/` and fails if one has no

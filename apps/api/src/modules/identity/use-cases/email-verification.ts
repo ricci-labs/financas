@@ -1,4 +1,5 @@
 import type { Database } from '@api/core/db/db.types'
+import { pageLink } from '@api/core/email/links'
 import { ValidationError } from '@api/core/http/errors'
 import { hashToken } from '@api/core/security/tokens'
 import { emailVerificationMessage } from '@api/modules/identity/identity.emails'
@@ -9,7 +10,7 @@ import type {
   EmailRecipient,
   IdentityDeps,
 } from '@api/modules/identity/identity.types'
-import { issueAuthToken, pageLink } from '@api/modules/identity/use-cases/auth-tokens'
+import { issueAuthToken } from '@api/modules/identity/use-cases/auth-tokens'
 import { withDefaults } from '@api/modules/identity/use-cases/defaults'
 import { emailSchema } from '@financas/shared'
 

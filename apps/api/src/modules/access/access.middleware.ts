@@ -25,6 +25,7 @@ export function workspaceAccess({ db }: AccessRouteDeps) {
     c.set('workspace', {
       workspaceId: workspaceId.data,
       membershipId: access.membershipId,
+      roleKey: access.role.systemKey,
       permissions: access.permissions,
     })
     await next()

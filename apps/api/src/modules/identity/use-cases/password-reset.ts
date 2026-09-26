@@ -1,4 +1,5 @@
 import type { Database } from '@api/core/db/db.types'
+import { pageLink } from '@api/core/email/links'
 import { parseOrThrow, ValidationError } from '@api/core/http/errors'
 import { hashPassword } from '@api/core/security/passwords'
 import { hashToken } from '@api/core/security/tokens'
@@ -13,7 +14,7 @@ import type {
   EmailOnlyInput,
   ResetPasswordInput,
 } from '@api/modules/identity/identity.types'
-import { issueAuthToken, pageLink } from '@api/modules/identity/use-cases/auth-tokens'
+import { issueAuthToken } from '@api/modules/identity/use-cases/auth-tokens'
 import { withDefaults } from '@api/modules/identity/use-cases/defaults'
 import { emailSchema, passwordSchema } from '@financas/shared'
 

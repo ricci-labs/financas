@@ -1,5 +1,5 @@
 import type { Logger } from '@api/core/observability/logger'
-import type { Permission } from '@financas/shared'
+import type { Permission, SystemRoleKey } from '@financas/shared'
 
 export type RequestSession = {
   sessionId: string
@@ -9,6 +9,7 @@ export type RequestSession = {
 export type RequestWorkspace = {
   workspaceId: string
   membershipId: string
+  roleKey: SystemRoleKey | null
   permissions: readonly Permission[]
 }
 

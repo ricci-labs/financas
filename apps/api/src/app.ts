@@ -7,6 +7,7 @@ import { accessRoutes, workspaceAccess, workspaceListRoutes } from '@api/modules
 import { healthRoutes, PUBLIC_HEALTH_ROUTES } from '@api/modules/health'
 import { identityRoutes, PUBLIC_AUTH_ROUTES, resolveSession } from '@api/modules/identity'
 import { ledgerRoutes } from '@api/modules/ledger'
+import { invitationRoutes } from '@api/modules/onboarding'
 import { Hono } from 'hono'
 
 export const PUBLIC_ROUTES: ReadonlySet<string> = new Set([
@@ -36,6 +37,7 @@ function workspaceScopedRoutes(deps: AppDeps) {
     .use(workspaceAccess(deps))
     .route('/', accessRoutes(deps))
     .route('/', ledgerRoutes(deps))
+    .route('/invitations', invitationRoutes(deps))
 }
 
 export type AppType = ReturnType<typeof createApp>

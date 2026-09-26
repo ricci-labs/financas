@@ -1,7 +1,7 @@
 ---
 summary: Identity and multi-tenancy tables — users, WhatsApp identities, workspaces, memberships, invitations — and all settings/preferences tables (financial period, installment view, notifications).
 read_when: Working on auth, workspaces, memberships, invitations, settings screens, or anything scoped by tenant.
-updated: 2026-09-25
+updated: 2026-09-26
 ---
 
 # Tenancy, identity and settings
@@ -132,15 +132,32 @@ membership.
 One pending invitation per contact and workspace (partial unique indexes). RLS isolated.
 
 **Flow** (`members` service):
-- `createInvitation()` generates the token, stores its hash, and returns the raw token for the link.
+- `createInvitation()` retires expired pending invitations of the same contact (soft delete, reason
+  `expired`), generates the token, stores its hash, and returns the raw token for the link. A second
+  pending invitation for the same contact is `409 INVITATION_PENDING`.
+- `listPendingInvitations()` returns invitations not accepted, not revoked and not expired.
+- `revokeInvitation()` soft deletes a pending invitation (reason `revoked`); an accepted or revoked
+  one is a `ConflictError`.
 - `acceptInvitation(token, userId)` hashes the token, finds the workspace with the SECURITY DEFINER
   function `invitation_workspace_id()` (ADR 0019; `user_workspace_ids()` is the other such
   lookup, see `access-control.md`), then inside that workspace locks the invitation
   row (`FOR UPDATE`, so concurrent accepts of one token let exactly one user in), refuses revoked,
   accepted or expired invitations and existing members (`ConflictError` codes), adds the member with
   the invited role, and marks the invitation accepted.
-- **Open question:** acceptance is token-based (whoever holds the link). Requiring the accepting
-  user's verified email/phone to match can be added when auth exists.
+- **Who may accept (user decision, 2026-09-26):** an email invitation can only be accepted by a
+  user logged in with that same email, so a forwarded or leaked link is useless to anyone else. A
+  phone invitation is accepted by whoever holds the link until the WhatsApp channel can verify the
+  number (routes in the next PR).
+
+**Routes** (`onboarding.routes.ts`, under `/api/workspaces/:workspaceId/invitations`):
+| Route | Permission | Behavior |
+|---|---|---|
+| `GET /` | `members:view` | pending invitations |
+| `POST /` `{ email \| phoneE164, roleId }` | `members:create` | `onboarding.inviteMember()`: the role must be active in the workspace (`ROLE_NOT_AVAILABLE`), and **only an owner may invite an owner** (`403 OWNER_ONLY`). Answers `201 { invitationId, expiresAt, inviteLink }`. An email invitation is also emailed in the background (`workspace_invitation`). A phone one has no channel yet, so the inviter shares the link |
+| `DELETE /:invitationId` | `members:delete` | revoke → `204` |
+
+They live in `onboarding` because they span `members`, `access`, `identity` and email, and because
+`members` can't import `access` (which already imports `members`) without a cycle.
 
 ## Settings (typed 1:1 tables)
 ### `workspace_settings` (PK = `workspace_id`, module `workspaces`)

@@ -1,18 +1,27 @@
 import type { Database } from '@api/core/db/db.types'
 import { withWorkspace } from '@api/core/db/tx'
-import { ValidationError } from '@api/core/http/errors'
-import { createSystemRoles } from '@api/modules/access'
-import { createUser, type IdentityDeps } from '@api/modules/identity'
+import { pageLink } from '@api/core/email/links'
+import { ForbiddenError, ValidationError } from '@api/core/http/errors'
+import { createSystemRoles, findRole } from '@api/modules/access'
+import { createUser, getAccount, type IdentityDeps } from '@api/modules/identity'
 import { createSystemAccounts } from '@api/modules/ledger'
-import { addMember } from '@api/modules/members'
+import { addMember, createInvitation } from '@api/modules/members'
+import { invitationMessage } from '@api/modules/onboarding/onboarding.emails'
 import type {
   CreatedWorkspace,
   CreateWorkspaceInput,
+  InvitationDeps,
+  InvitationEmailInput,
+  InviteMemberInput,
+  IssuedInvitation,
   RegisteredOwner,
   RegisterOwnerInput,
 } from '@api/modules/onboarding/onboarding.types'
-import { addWorkspace, reserveWorkspaceId } from '@api/modules/workspaces'
+import { addWorkspace, findCurrentWorkspace, reserveWorkspaceId } from '@api/modules/workspaces'
 import { workspaceNameSchema } from '@financas/shared'
+
+const OWNER_ROLE = 'owner'
+const INVITE_PATH = '/invite'
 
 export async function createWorkspace(
   db: Database,
@@ -56,6 +65,52 @@ export async function registerOwner(
   )
   const { workspaceId } = await createWorkspace(db, { name: workspaceName, ownerUserId: userId })
   return { userId, workspaceId }
+}
+
+export async function inviteMember(
+  db: Database,
+  { workspaceId, inviterUserId, inviterRoleKey, request }: InviteMemberInput,
+  deps: InvitationDeps,
+): Promise<IssuedInvitation> {
+  const role = await findRole(db, { workspaceId, roleId: request.roleId })
+  if (!role) {
+    throw new ValidationError('ROLE_NOT_AVAILABLE', 'The role does not exist in this workspace')
+  }
+  const isOwnerInvitation = role.systemKey === OWNER_ROLE
+  if (isOwnerInvitation && inviterRoleKey !== OWNER_ROLE) {
+    throw new ForbiddenError('OWNER_ONLY', 'Only an owner can invite another owner')
+  }
+
+  const created = await createInvitation(db, {
+    ...request,
+    workspaceId,
+    invitedByUserId: inviterUserId,
+  })
+  return {
+    invitationId: created.invitationId,
+    expiresAt: created.expiresAt,
+    inviteLink: pageLink(deps.publicUrl, INVITE_PATH, created.token),
+  }
+}
+
+export async function sendInvitationEmail(
+  db: Database,
+  { workspaceId, inviterUserId, email, inviteLink }: InvitationEmailInput,
+  deps: InvitationDeps,
+): Promise<void> {
+  const workspace = await withWorkspace(db, workspaceId, (tx) => findCurrentWorkspace(tx))
+  if (!workspace) {
+    throw new ValidationError('WORKSPACE_NOT_AVAILABLE', 'The workspace was deleted')
+  }
+  const inviter = await getAccount(db, inviterUserId)
+  await deps.mailer.send(
+    invitationMessage({
+      recipientEmail: email,
+      workspaceName: workspace.name,
+      inviterName: inviter.displayName,
+      inviteLink,
+    }),
+  )
 }
 
 function parseWorkspaceName(rawName: string): string {
