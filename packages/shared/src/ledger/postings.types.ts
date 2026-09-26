@@ -52,6 +52,14 @@ export type EntryPlan =
       paidFrom: AccountRef
     }
   | {
+      entryType: 'settlement'
+      occurredOn: IsoDate
+      amountCents: Cents
+      contactId: string
+      receivedIn: AccountRef
+      receivable: AccountRef
+    }
+  | {
       entryType: 'opening_balance'
       occurredOn: IsoDate
       balanceCents: Cents

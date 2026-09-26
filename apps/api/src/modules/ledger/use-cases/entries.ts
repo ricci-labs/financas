@@ -314,6 +314,17 @@ async function toEntryPlan(
         to: pick(accounts, input.toAccountId),
       }
     }
+    case 'settlement': {
+      const accounts = await loadAccounts(tx, [input.receivedInAccountId])
+      return {
+        entryType: 'settlement',
+        occurredOn: input.occurredOn,
+        amountCents: input.amountCents,
+        contactId: input.contactId,
+        receivedIn: pick(accounts, input.receivedInAccountId),
+        receivable: await findSystemAccount(tx, 'receivable'),
+      }
+    }
     case 'opening_balance': {
       const accounts = await loadAccounts(tx, [input.accountId])
       return {

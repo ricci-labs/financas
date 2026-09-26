@@ -423,6 +423,42 @@ describe('entries shared with contacts', () => {
     ])
   })
 
+  it('records a contact paying back into a money account', async () => {
+    const j = await contact('Contact S')
+    const settlementId = await created(
+      member.post(entriesPath, {
+        entryType: 'settlement',
+        occurredOn: '2026-10-08',
+        description: 'Pix do J',
+        amountCents: 10_000,
+        contactId: j,
+        receivedInAccountId: checkingId,
+      }),
+    )
+    const settlement = (await listed()).find((item) => item.id === settlementId)
+    expect(settlement).toMatchObject({ entryType: 'settlement' })
+    expect(
+      settlement?.postings.map((posting) => [
+        posting.accountKind,
+        posting.amountCents,
+        posting.contactId,
+      ]),
+    ).toEqual([
+      ['checking', 10_000, null],
+      ['receivable', -10_000, j],
+    ])
+
+    const unknown = await member.post(entriesPath, {
+      entryType: 'settlement',
+      occurredOn: '2026-10-08',
+      description: 'Pix',
+      amountCents: 10_000,
+      contactId: UNKNOWN_ID,
+      receivedInAccountId: checkingId,
+    })
+    expect([unknown.status, await codeOf(unknown)]).toEqual([400, 'CONTACT_NOT_AVAILABLE'])
+  })
+
   it('refuses an unknown contact and shares above the amount', async () => {
     const unknown = await member.post(entriesPath, {
       ...expense('Pizza', '2026-10-06', 5_000),

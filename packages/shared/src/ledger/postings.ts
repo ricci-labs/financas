@@ -43,6 +43,8 @@ function findViolation(plan: EntryPlan): PostingsViolation | undefined {
       return cardPurchaseViolation(plan)
     case 'invoice_payment':
       return invoicePaymentViolation(plan)
+    case 'settlement':
+      return settlementViolation(plan)
     case 'opening_balance':
       return openingBalanceViolation(plan)
   }
@@ -92,6 +94,14 @@ function invoicePaymentViolation(plan: PlanOf<'invoice_payment'>): PostingsViola
   )
 }
 
+function settlementViolation(plan: PlanOf<'settlement'>): PostingsViolation | undefined {
+  return (
+    positiveAmountViolation(plan.amountCents) ??
+    moneyAccountViolation(plan.receivedIn) ??
+    kindViolation(plan.receivable, 'receivable', 'NOT_THE_RECEIVABLE_ACCOUNT')
+  )
+}
+
 function openingBalanceViolation(plan: PlanOf<'opening_balance'>): PostingsViolation | undefined {
   return (
     (isNonZeroCents(plan.balanceCents) ? undefined : 'BALANCE_IS_ZERO') ??
@@ -114,6 +124,11 @@ function linesOf(plan: EntryPlan): PlanLine[] {
       return [
         { account: plan.card, amountCents: plan.amountCents, invoiceId: plan.invoiceId },
         { account: plan.paidFrom, amountCents: -plan.amountCents },
+      ]
+    case 'settlement':
+      return [
+        { account: plan.receivedIn, amountCents: plan.amountCents },
+        { account: plan.receivable, amountCents: -plan.amountCents, contactId: plan.contactId },
       ]
     case 'opening_balance':
       return moneyMoves(plan.balanceCents, plan.openingBalanceAccount, plan.account)

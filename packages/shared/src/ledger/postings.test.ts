@@ -624,3 +624,43 @@ describe('planPostings with contacts (ledger.md examples 2 and 3)', () => {
     )
   })
 })
+
+describe('planPostings for a settlement (ledger.md example 4)', () => {
+  const receivable: AccountRef = { id: 'receivable', kind: 'receivable' }
+
+  it('4. J pays R$ 100,00 back by Pix: money in, J owes less', () => {
+    const plan = planPostings({
+      entryType: 'settlement',
+      occurredOn: DAY,
+      amountCents: 10_000,
+      contactId: 'j',
+      receivedIn: checking,
+      receivable,
+    })
+    if (!plan.ok) {
+      throw new Error(plan.violation)
+    }
+    expect(
+      plan.postings.map(({ accountId, amountCents, contactId }) => [
+        accountId,
+        amountCents,
+        contactId,
+      ]),
+    ).toEqual([
+      ['checking', 10_000, null],
+      ['receivable', -10_000, 'j'],
+    ])
+  })
+
+  it('refuses money arriving anywhere but a money account', () => {
+    const plan = planPostings({
+      entryType: 'settlement',
+      occurredOn: DAY,
+      amountCents: 10_000,
+      contactId: 'j',
+      receivedIn: groceries,
+      receivable,
+    })
+    expect(plan).toEqual({ ok: false, violation: 'NOT_A_MONEY_ACCOUNT' })
+  })
+})

@@ -88,8 +88,10 @@ to the bot. Anti-ban practices are deferred, but these hooks exist from day one:
 - the message identifies who is charging ("Member A pediu para te lembrar...").
 
 ### Recording a payment
-"O J me pagou 100 no pix": a `settlement` entry (ledger example 4) plus a `charge_payments` row
-if an open charge exists. The J share on the card invoice becomes the household's own money again:
+"O J me pagou 100 no pix": a `settlement` entry `{ entryType: 'settlement', amountCents, contactId,
+receivedInAccountId }` (ledger example 4): money into a money account, J's `receivable` down. An
+unknown contact is `400 CONTACT_NOT_AVAILABLE`. Paying more than owed leaves the contact with a
+credit (negative balance). A `charge_payments` row links it to an open charge (with the charges PR). The J share on the card invoice becomes the household's own money again:
 the invoice total never changed, and the incoming money is in the account.
 
 ### Reports
