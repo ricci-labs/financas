@@ -37,3 +37,8 @@ export type WorkspaceListItem = {
   isArchived: boolean
   role: WorkspaceRole
 }
+
+export type RoleRef = {
+  workspaceId: string
+  roleId: string
+}

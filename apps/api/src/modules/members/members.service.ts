@@ -1,6 +1,11 @@
 import { systemClock } from '@api/core/clock'
 import type { Clock } from '@api/core/clock.types'
 import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
+import {
+  POSTGRES_UNIQUE_VIOLATION,
+  postgresConstraintName,
+  postgresErrorCode,
+} from '@api/core/db/errors'
 import { withWorkspace } from '@api/core/db/tx'
 import { ConflictError, NotFoundError } from '@api/core/http/errors'
 import { generateToken, hashToken } from '@api/core/security/tokens'
@@ -10,9 +15,13 @@ import {
   insertDefaultPreferencesIfMissing,
   insertInvitation,
   insertMembership,
+  lockInvitation,
   lockInvitationByTokenHash,
   markInvitationAccepted,
+  markInvitationRevoked,
+  retireExpiredInvitations,
   selectActiveMembershipOfUser,
+  selectPendingInvitations,
   selectWorkspaceIdsOfUser,
 } from '@api/modules/members/members.repository'
 import type {
@@ -21,11 +30,21 @@ import type {
   ActiveMembership,
   CreatedInvitation,
   CreateInvitationInput,
+  InvitationContact,
   InvitationState,
   NewMembership,
+  PendingInvitation,
+  RevocableInvitation,
+  RevokeInvitationInput,
 } from '@api/modules/members/members.types'
 
 const INVITATION_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000
+const EXPIRED_REASON = 'expired'
+const REVOKED_REASON = 'revoked'
+const PENDING_INVITATION_CONSTRAINTS = new Set([
+  'invitations_pending_email_unique',
+  'invitations_pending_phone_unique',
+])
 
 export async function addMember(
   tx: WorkspaceTransaction,
@@ -42,10 +61,18 @@ export async function createInvitation(
   clock: Clock = systemClock,
 ): Promise<CreatedInvitation> {
   const token = generateToken()
-  const expiresAt = new Date(clock.now().getTime() + INVITATION_LIFETIME_MS)
+  const now = clock.now()
+  const expiresAt = new Date(now.getTime() + INVITATION_LIFETIME_MS)
 
-  const invitationId = await withWorkspace(db, input.workspaceId, (tx) =>
-    insertInvitation(tx, { ...input, tokenHash: hashToken(token), expiresAt }),
+  const invitationId = await refusingPendingDuplicate(() =>
+    withWorkspace(db, input.workspaceId, async (tx) => {
+      await retireExpiredInvitations(tx, contactOf(input), {
+        deletedAt: now,
+        deletedByUserId: null,
+        deleteReason: EXPIRED_REASON,
+      })
+      return insertInvitation(tx, { ...input, tokenHash: hashToken(token), expiresAt })
+    }),
   )
   return { invitationId, token, expiresAt }
 }
@@ -100,4 +127,64 @@ export function findActiveMembership(
 
 export function listWorkspaceIdsOfUser(db: Database, userId: string): Promise<string[]> {
   return selectWorkspaceIdsOfUser(db, userId)
+}
+
+export function listPendingInvitations(
+  db: Database,
+  workspaceId: string,
+  clock: Clock = systemClock,
+): Promise<PendingInvitation[]> {
+  return withWorkspace(db, workspaceId, (tx) => selectPendingInvitations(tx, clock.now()))
+}
+
+export async function revokeInvitation(
+  db: Database,
+  { workspaceId, invitationId, userId }: RevokeInvitationInput,
+  clock: Clock = systemClock,
+): Promise<void> {
+  await withWorkspace(db, workspaceId, async (tx) => {
+    const invitation = await lockInvitation(tx, invitationId)
+    if (!invitation) {
+      throw new NotFoundError('INVITATION_NOT_FOUND', 'Invitation not found')
+    }
+    assertInvitationCanBeRevoked(invitation)
+    await markInvitationRevoked(tx, invitationId, {
+      deletedAt: clock.now(),
+      deletedByUserId: userId,
+      deleteReason: REVOKED_REASON,
+    })
+  })
+}
+
+function assertInvitationCanBeRevoked(invitation: RevocableInvitation): void {
+  if (invitation.deletedAt) {
+    throw new ConflictError('INVITATION_REVOKED', 'Invitation was revoked')
+  }
+  if (invitation.acceptedAt) {
+    throw new ConflictError('INVITATION_ALREADY_ACCEPTED', 'Invitation was already accepted')
+  }
+}
+
+function contactOf(input: InvitationContact): InvitationContact {
+  return 'email' in input ? { email: input.email } : { phoneE164: input.phoneE164 }
+}
+
+async function refusingPendingDuplicate<T>(work: () => Promise<T>): Promise<T> {
+  try {
+    return await work()
+  } catch (error) {
+    const isPendingDuplicate =
+      postgresErrorCode(error) === POSTGRES_UNIQUE_VIOLATION &&
+      PENDING_INVITATION_CONSTRAINTS.has(postgresConstraintName(error) ?? '')
+    if (isPendingDuplicate) {
+      throw new ConflictError(
+        'INVITATION_PENDING',
+        'This contact already has a pending invitation',
+        {
+          cause: error,
+        },
+      )
+    }
+    throw error
+  }
 }

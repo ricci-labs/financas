@@ -3,7 +3,9 @@ export {
   addMember,
   createInvitation,
   findActiveMembership,
+  listPendingInvitations,
   listWorkspaceIdsOfUser,
+  revokeInvitation,
 } from '@api/modules/members/members.service'
 export type {
   AcceptedInvitation,
@@ -12,4 +14,6 @@ export type {
   CreatedInvitation,
   CreateInvitationInput,
   NewMembership,
+  PendingInvitation,
+  RevokeInvitationInput,
 } from '@api/modules/members/members.types'
