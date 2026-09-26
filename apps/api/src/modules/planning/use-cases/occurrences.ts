@@ -2,14 +2,17 @@ import { systemClock } from '@api/core/clock'
 import type { Clock } from '@api/core/clock.types'
 import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { withWorkspace } from '@api/core/db/tx'
+import { NotFoundError } from '@api/core/http/errors'
 import {
   deletePendingOccurrences,
   insertOccurrencesIfMissing,
+  lockOccurrence,
   selectActiveRules,
   selectOccurrencesBetween,
   selectPlannedDueDates,
 } from '@api/modules/planning/planning.repository'
 import type {
+  LockedOccurrence,
   OccurrenceItem,
   OccurrenceRow,
   RecurrenceRuleRow,
@@ -88,6 +91,17 @@ export function scheduleOf(rule: RecurrenceRuleRow): RecurrenceSchedule {
     startsOn: rule.startsOn,
     endsOn: rule.endsOn,
   }
+}
+
+export async function lockExistingOccurrence(
+  tx: WorkspaceTransaction,
+  occurrenceId: string,
+): Promise<LockedOccurrence> {
+  const occurrence = await lockOccurrence(tx, occurrenceId)
+  if (!occurrence) {
+    throw new NotFoundError('OCCURRENCE_NOT_FOUND', `Occurrence ${occurrenceId} not found`)
+  }
+  return occurrence
 }
 
 async function planRuleOccurrences(

@@ -1,21 +1,17 @@
 import { systemClock } from '@api/core/clock'
 import type { Clock } from '@api/core/clock.types'
-import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
+import type { Database } from '@api/core/db/db.types'
 import { POSTGRES_UNIQUE_VIOLATION, postgresErrorCode } from '@api/core/db/errors'
 import { withWorkspace } from '@api/core/db/tx'
 import { ConflictError, NotFoundError, ValidationError } from '@api/core/http/errors'
 import { findActiveEntry } from '@api/modules/ledger'
 import {
-  lockOccurrence,
   selectOccurrencesBetween,
   setOccurrenceMatch,
 } from '@api/modules/planning/planning.repository'
-import type {
-  LockedOccurrence,
-  OccurrenceItem,
-  OccurrenceRef,
-} from '@api/modules/planning/planning.types'
+import type { OccurrenceItem, OccurrenceRef } from '@api/modules/planning/planning.types'
 import {
+  lockExistingOccurrence,
   refreshOccurrences,
   withOverdueFlag,
   workspaceToday,
@@ -92,17 +88,6 @@ export async function unmatchOccurrence(
     }
     await setOccurrenceMatch(tx, occurrenceId, null)
   })
-}
-
-async function lockExistingOccurrence(
-  tx: WorkspaceTransaction,
-  occurrenceId: string,
-): Promise<LockedOccurrence> {
-  const occurrence = await lockOccurrence(tx, occurrenceId)
-  if (!occurrence) {
-    throw new NotFoundError('OCCURRENCE_NOT_FOUND', `Occurrence ${occurrenceId} not found`)
-  }
-  return occurrence
 }
 
 async function refusingEntriesAlreadyMatched<T>(work: () => Promise<T>): Promise<T> {

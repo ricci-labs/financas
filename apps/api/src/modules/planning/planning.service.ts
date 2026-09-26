@@ -9,6 +9,11 @@ export {
   suggestOccurrencesForEntry,
   unmatchOccurrence,
 } from '@api/modules/planning/use-cases/matching'
+export {
+  changeOccurrenceAmount,
+  skipOccurrence,
+  unskipOccurrence,
+} from '@api/modules/planning/use-cases/occurrence-changes'
 export { listOccurrences } from '@api/modules/planning/use-cases/occurrences'
 export {
   changeRecurrenceRule,

@@ -95,3 +95,9 @@ export const occurrenceParamsSchema = z.object({ occurrenceId: z.uuid() })
 export const occurrenceSuggestionQuerySchema = z.object({ entryId: z.uuid() })
 
 export const occurrenceMatchSchema = z.strictObject({ entryId: z.uuid() })
+
+export const occurrenceChangeSchema = z.strictObject({
+  amountCents: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+})
+
+export type OccurrenceChange = z.infer<typeof occurrenceChangeSchema>

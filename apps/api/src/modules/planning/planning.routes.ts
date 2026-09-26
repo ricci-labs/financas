@@ -4,6 +4,7 @@ import { jsonBody, pathParams, queryParams } from '@api/core/http/validation'
 import { authorize, currentWorkspace } from '@api/modules/access'
 import {
   addHoliday,
+  changeOccurrenceAmount,
   changeRecurrenceRule,
   createRecurrenceRule,
   deleteHoliday,
@@ -12,8 +13,10 @@ import {
   listOccurrences,
   listRecurrenceRules,
   matchOccurrence,
+  skipOccurrence,
   suggestOccurrencesForEntry,
   unmatchOccurrence,
+  unskipOccurrence,
 } from '@api/modules/planning/planning.service'
 import type { PlanningRouteDeps } from '@api/modules/planning/planning.types'
 import {
@@ -22,6 +25,7 @@ import {
   holidayParamsSchema,
   newHolidaySchema,
   newRecurrenceRuleSchema,
+  occurrenceChangeSchema,
   occurrenceListQuerySchema,
   occurrenceMatchSchema,
   occurrenceParamsSchema,
@@ -172,4 +176,26 @@ function occurrenceRoutes({ db }: PlanningRouteDeps) {
       await unmatchOccurrence(db, { workspaceId, occurrenceId: c.req.valid('param').occurrenceId })
       return c.body(null, NO_CONTENT)
     })
+    .post('/:occurrenceId/skip', authorize('planning', 'update'), occurrence, async (c) => {
+      const { workspaceId } = currentWorkspace(c)
+      await skipOccurrence(db, { workspaceId, occurrenceId: c.req.valid('param').occurrenceId })
+      return c.body(null, NO_CONTENT)
+    })
+    .post('/:occurrenceId/unskip', authorize('planning', 'update'), occurrence, async (c) => {
+      const { workspaceId } = currentWorkspace(c)
+      await unskipOccurrence(db, { workspaceId, occurrenceId: c.req.valid('param').occurrenceId })
+      return c.body(null, NO_CONTENT)
+    })
+    .patch(
+      '/:occurrenceId',
+      authorize('planning', 'update'),
+      occurrence,
+      jsonBody(occurrenceChangeSchema, 'OCCURRENCE_INVALID'),
+      async (c) => {
+        const { workspaceId } = currentWorkspace(c)
+        const { occurrenceId } = c.req.valid('param')
+        await changeOccurrenceAmount(db, { workspaceId, occurrenceId }, c.req.valid('json'))
+        return c.body(null, NO_CONTENT)
+      },
+    )
 }

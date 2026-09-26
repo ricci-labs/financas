@@ -115,3 +115,5 @@ export type OccurrenceRef = {
 }
 
 export type LockedOccurrence = OccurrenceRow
+
+export type OccurrenceUpdate = Partial<Pick<NewOccurrenceRow, 'status' | 'amountCents'>>
