@@ -125,7 +125,10 @@ today (workspace time zone), the period (from the settings and the holidays), th
 before and the 6 after it, the budget view and base, the accounts (`ledger.readAccountFacts`), the postings of active entries that fall in the
 period by `effective_on` or by the entry's `occurred_on` (`ledger.readPostingFacts`), and the
 occurrences due in the period (`planning.readOccurrenceFacts`, which tops up the horizon first),
-the budgets in force (`planning.readBudgetFacts`) and the reserve (`planning.readReserveFact`).
+the budgets in force (`planning.readBudgetFacts`), the reserve (`planning.readReserveFact`), the
+cards (`ledger.readCardFacts`) and the invoices closing from a month ago on
+(`ledger.readInvoiceFacts`). Occurrences also load from a month before today when the period starts
+later, so the open invoice's subscriptions are there.
 Postings are loaded from the start of the oldest previous period to the end of the last coming
 one, and occurrences from the start of the period to that same end. The plan reaches 6 months past
 today, so a coming period beyond it only shows what is already posted.
@@ -152,7 +155,10 @@ committed_ahead   = for each of the next 6 periods: installments already posted 
                     `effective_on`, whatever the budget view: it's the burden that month) + pending
                     bills and subscriptions, and that total as a whole % of the period's fixed
                     income (null without fixed income)
-next_invoice      = per card: posted on the open invoice + pending recurring card charges before closing
+next_invoice      = per card, the invoice a purchase made today goes to (`invoiceForPurchase`):
+                    its total so far + the pending subscriptions of that card whose due date lands
+                    on the same invoice → { closingOn, dueOn, postedCents, plannedCents,
+                    forecastCents }
 variable_average  = variable income averaged over the 6 previous periods that have any posting
                     (a new household isn't averaged with empty months); null without history.
                     Information only: never part of the budget, household policy

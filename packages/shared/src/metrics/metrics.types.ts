@@ -1,4 +1,5 @@
 import type { IsoDate, Period } from '@shared/calendar/calendar.types'
+import type { CardCycle } from '@shared/cards/cards.types'
 import type { AccountClass, AccountKind, IncomeNature } from '@shared/ledger/ledger.constants'
 import type { OccurrenceStatus, RecurringEntryType } from '@shared/recurrence/recurrence.constants'
 import type { BudgetBase, InstallmentBudgetView } from '@shared/workspaces/workspaces.constants'
@@ -19,6 +20,7 @@ export type FactPosting = {
 }
 
 export type FactOccurrence = {
+  sourceAccountId: string
   dueOn: IsoDate
   amountCents: number
   entryType: RecurringEntryType
@@ -29,6 +31,16 @@ export type FactOccurrence = {
 export type FactBudget = {
   categoryAccountId: string
   limitCents: number
+}
+
+export type FactCard = CardCycle & {
+  accountId: string
+}
+
+export type FactInvoice = {
+  cardAccountId: string
+  closingOn: IsoDate
+  totalCents: number
 }
 
 export type FactReserve = {
@@ -48,6 +60,8 @@ export type PeriodFacts = {
   occurrences: readonly FactOccurrence[]
   budgets: readonly FactBudget[]
   reserve: FactReserve | null
+  cards: readonly FactCard[]
+  invoices: readonly FactInvoice[]
 }
 
 export type BudgetPace = {
@@ -78,4 +92,13 @@ export type CommittedPeriod = {
   committedCents: number
   fixedIncomeCents: number
   percentOfIncome: number | null
+}
+
+export type InvoiceForecast = {
+  cardAccountId: string
+  closingOn: IsoDate
+  dueOn: IsoDate
+  postedCents: number
+  plannedCents: number
+  forecastCents: number
 }

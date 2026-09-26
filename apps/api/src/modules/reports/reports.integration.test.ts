@@ -130,17 +130,25 @@ async function household() {
     categoryAccountId: housing,
     schedule: { frequency: 'monthly', dayOfMonth: 25, startsOn: '2026-10-25' },
   })
+  await rule({
+    description: 'Streaming',
+    entryType: 'card_purchase',
+    amountCents: 3_990,
+    sourceAccountId: card,
+    categoryAccountId: groceries,
+    schedule: { frequency: 'monthly', dayOfMonth: 20, startsOn: '2026-10-20' },
+  })
   await setBudget(
     databases.app,
     { workspaceId, categoryAccountId: groceries },
     { limitCents: 100_000, fromPeriod: '2026-10' },
   )
-  return { workspaceId, userId, groceries }
+  return { workspaceId, userId, groceries, card }
 }
 
 describe('getPeriodOverview', () => {
   it('puts the ledger, the plan and the settings together for the current period', async () => {
-    const { workspaceId, groceries } = await household()
+    const { workspaceId, groceries, card } = await household()
     const overview = await getPeriodOverview(databases.app, workspaceId, {}, MID_OCTOBER)
 
     expect(overview.today).toBe('2026-10-15')
@@ -149,10 +157,10 @@ describe('getPeriodOverview', () => {
       fixedIncome: 900_000,
       variableIncome: 120_000,
       budgetIncome: 900_000,
-      committed: 200_000,
+      committed: 203_990,
     })
     const { spent, freeToSpend, dailyAllowance } = overview.metrics
-    expect(freeToSpend).toBe(900_000 - spent - 200_000)
+    expect(freeToSpend).toBe(900_000 - spent - 203_990)
     expect(dailyAllowance).toBe(Math.floor(freeToSpend / 17))
     expect(overview.metrics.committedAhead.map((period) => period.label)).toEqual([
       '2026-11',
@@ -163,13 +171,23 @@ describe('getPeriodOverview', () => {
       '2027-04',
     ])
     expect(overview.metrics.committedAhead[0]).toMatchObject({
-      plannedCents: 200_000,
+      plannedCents: 203_990,
       fixedIncomeCents: 400_000,
     })
     const installments = overview.metrics.committedAhead.map((period) => period.installmentsCents)
     expect(installments.reduce((sum, cents) => sum + cents, 0)).toBe(
       90_000 - (overview.metrics.spent - 30_000),
     )
+    expect(overview.metrics.nextInvoice).toEqual([
+      {
+        cardAccountId: card,
+        closingOn: '2026-11-03',
+        dueOn: '2026-11-10',
+        postedCents: 30_000,
+        plannedCents: 3_990,
+        forecastCents: 33_990,
+      },
+    ])
     expect(overview.metrics.variableAverage).toBe(60_000)
     expect(overview.metrics.reserveCoverage).toEqual({
       savedCents: 300_000,
@@ -207,7 +225,7 @@ describe('getPeriodOverview', () => {
       MID_OCTOBER,
     )
     expect(next.period).toEqual({ label: '2026-10', start: '2026-10-20', end: '2026-11-19' })
-    expect(next.metrics.committed).toBe(200_000)
+    expect(next.metrics.committed).toBe(203_990)
   })
 })
 
