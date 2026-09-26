@@ -1,7 +1,7 @@
 ---
 summary: Mermaid ER diagrams of every model area (tenancy and access, ledger, third parties, planning, support), rendered by GitHub; key columns only.
 read_when: You need a visual of tables and relationships, or are reviewing the model. Column details live in the area docs.
-updated: 2026-09-22
+updated: 2026-09-25
 ---
 
 # Model diagrams
@@ -16,6 +16,7 @@ the diagrams readable. Full columns: the area docs linked in each section.
 erDiagram
     users ||--o{ channel_identities : "reached via"
     users ||--o{ sessions : has
+    users ||--o{ auth_tokens : "email links"
     users ||--|| user_preferences : has
     users ||--o{ memberships : "belongs to"
     workspaces ||--o{ memberships : has

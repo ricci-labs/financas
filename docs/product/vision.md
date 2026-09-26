@@ -1,7 +1,7 @@
 ---
 summary: The problem, the users, the goals and non-goals of the project.
 read_when: You need product context, or need to judge whether a feature belongs in the product.
-updated: 2026-09-22
+updated: 2026-09-25
 ---
 
 # Vision
@@ -14,9 +14,12 @@ invoice, and installments quietly eat into future months. One partner's income i
 
 ## Users
 It starts with one couple sharing a workspace, but the product is **multi-tenant from day one**
-(`../decisions/0012-multi-tenancy.md`). Any person can sign up, create private isolated
-workspaces ("Casa", "Pessoal") and invite members. Friends are the next audience, and possibly the
-public later.
+(`../decisions/0012-multi-tenancy.md`). People create private isolated workspaces ("Casa",
+"Pessoal") and invite members. Public sign-up is a switch, off by default (ADR 0021). Friends are
+the next audience, and possibly the public later.
+
+It's built for the couple first, but nothing about them is hard-coded: anyone can run their own
+instance by setting env vars (ADR 0023).
 
 ## Goals
 1. **Recording with no effort:** logging an expense takes one WhatsApp message (text, later audio or a receipt photo).

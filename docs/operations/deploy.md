@@ -1,7 +1,7 @@
 ---
 summary: Production setup on Dokploy — containers, image, env vars, resources, logs rotation, backups, remote access (open), first-deploy checklist.
 read_when: Deploying, changing env vars or runtime config, setting up backups, or exposing the app.
-updated: 2026-09-22
+updated: 2026-09-25
 ---
 
 # Deploy
@@ -20,8 +20,11 @@ Pipeline: `../engineering/ci-cd.md`. Decision: `../decisions/0010-deploy-ghcr-do
 | `DATABASE_URL` | App connection as `financas_app` (RLS applies) |
 | `DATABASE_MIGRATION_URL` | Owner connection as `financas_owner`, used only to run migrations |
 | `ANTHROPIC_API_KEY` | Agent |
-| `SESSION_SECRET` | Web auth cookies |
-| `PUBLIC_URL` | Base URL of the dashboard |
+| `PUBLIC_URL` | Base URL of the dashboard, used in email links |
+| `PUBLIC_SIGNUP_ENABLED` | `true` opens public sign-up; default `false` (ADR 0021) |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE` | Email provider (ADR 0022). `SMTP_HOST` is required in production |
+| `SMTP_USER`, `SMTP_PASSWORD` | SMTP login, as a pair |
+| `EMAIL_FROM`, `EMAIL_FROM_NAME` | Sender address (required in production) and display name |
 | `LOG_LEVEL` | `info` in prod |
 | `OTEL_SERVICE_NAME=financas-api`, `OTEL_METRICS_EXPORTER=prometheus`, `OTEL_TRACES_EXPORTER=none` | Observability Level 0 (`observability.md`) |
 | `UPTIME_KUMA_PUSH_URL_<JOB>` | Heartbeats (optional) |
