@@ -3,7 +3,6 @@ export {
   createLoginLimits,
   limitInvalidLinks,
 } from '@api/modules/identity/identity.middleware'
-export { identityRoutes, PUBLIC_AUTH_ROUTES } from '@api/modules/identity/identity.routes'
 export {
   createUser,
   getAccount,
