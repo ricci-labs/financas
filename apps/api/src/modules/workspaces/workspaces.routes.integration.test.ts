@@ -134,3 +134,33 @@ describe('workspace settings', () => {
     }
   })
 })
+
+describe('PUT /settings/pix', () => {
+  it('stores the key and receiver the charges use, and removes them with null', async () => {
+    const pix = {
+      key: 'household@example.test',
+      receiverName: 'Casa A e B',
+      receiverCity: 'Sao Paulo',
+    }
+    expect((await member.put(`${workspacePath}/settings/pix`, pix)).status).toBe(403)
+    expect((await admin.put(`${workspacePath}/settings/pix`, pix)).status).toBe(204)
+    expect(await (await owner.get(`${workspacePath}/settings`)).json()).toMatchObject({
+      pixReceivingKey: 'household@example.test',
+      pixReceiverName: 'Casa A e B',
+      pixReceiverCity: 'Sao Paulo',
+    })
+
+    const tooLong = await admin.put(`${workspacePath}/settings/pix`, {
+      ...pix,
+      receiverCity: 'A city far too long',
+    })
+    expect([tooLong.status, await codeOf(tooLong)]).toEqual([400, 'PIX_INVALID'])
+
+    expect((await admin.put(`${workspacePath}/settings/pix`, null)).status).toBe(204)
+    expect(await (await owner.get(`${workspacePath}/settings`)).json()).toMatchObject({
+      pixReceivingKey: null,
+      pixReceiverName: null,
+      pixReceiverCity: null,
+    })
+  })
+})

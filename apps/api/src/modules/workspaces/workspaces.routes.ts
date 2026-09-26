@@ -7,9 +7,14 @@ import {
   changeWorkspaceSettings,
   getWorkspaceSettings,
   renameWorkspace,
+  setPixReceiving,
 } from '@api/modules/workspaces/workspaces.service'
 import type { WorkspaceRouteDeps } from '@api/modules/workspaces/workspaces.types'
-import { workspaceNameRequestSchema, workspaceSettingsChangeSchema } from '@financas/shared'
+import {
+  pixReceivingSchema,
+  workspaceNameRequestSchema,
+  workspaceSettingsChangeSchema,
+} from '@financas/shared'
 import { Hono } from 'hono'
 
 const CREATED = 201
@@ -53,6 +58,15 @@ export function workspaceSettingsRoutes({ db }: WorkspaceRouteDeps) {
       async (c) => {
         const { workspaceId } = currentWorkspace(c)
         return c.json(await changeWorkspaceSettings(db, workspaceId, c.req.valid('json')))
+      },
+    )
+    .put(
+      '/settings/pix',
+      authorize('settings', 'update'),
+      jsonBody(pixReceivingSchema, 'PIX_INVALID'),
+      async (c) => {
+        await setPixReceiving(db, currentWorkspace(c).workspaceId, c.req.valid('json'))
+        return c.body(null, NO_CONTENT)
       },
     )
 }

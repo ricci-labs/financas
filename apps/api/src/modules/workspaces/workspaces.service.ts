@@ -19,7 +19,11 @@ import type {
   WorkspaceSettings,
   WorkspaceSummary,
 } from '@api/modules/workspaces/workspaces.types'
-import { workspaceNameSchema, workspaceSettingsChangeSchema } from '@financas/shared'
+import {
+  pixReceivingSchema,
+  workspaceNameSchema,
+  workspaceSettingsChangeSchema,
+} from '@financas/shared'
 
 const SETTINGS_INVALID = 'SETTINGS_INVALID'
 
@@ -108,6 +112,21 @@ export async function changeWorkspaceSettings(
     }
     throw error
   }
+}
+
+export async function setPixReceiving(
+  db: Database,
+  workspaceId: string,
+  rawInput: unknown,
+): Promise<void> {
+  const pix = parseOrThrow(pixReceivingSchema, rawInput, 'PIX_INVALID')
+  await withWorkspace(db, workspaceId, (tx) =>
+    updateSettings(tx, workspaceId, {
+      pixReceivingKey: pix?.key ?? null,
+      pixReceiverName: pix?.receiverName ?? null,
+      pixReceiverCity: pix?.receiverCity ?? null,
+    }),
+  )
 }
 
 async function selectCurrentSettingsOrFail(tx: WorkspaceTransaction): Promise<WorkspaceSettings> {

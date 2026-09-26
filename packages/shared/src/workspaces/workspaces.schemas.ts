@@ -1,3 +1,4 @@
+import { PIX_KEY_MAX_LENGTH } from '@shared/contacts/contacts.schemas'
 import {
   BUDGET_BASES,
   INSTALLMENT_BUDGET_VIEWS,
@@ -72,3 +73,17 @@ export const workspaceSettingsChangeSchema = z
 
 export type WorkspaceNameRequest = z.infer<typeof workspaceNameRequestSchema>
 export type WorkspaceSettingsChange = z.infer<typeof workspaceSettingsChangeSchema>
+
+export const PIX_RECEIVER_NAME_MAX_LENGTH = 25
+
+export const PIX_RECEIVER_CITY_MAX_LENGTH = 15
+
+export const pixReceivingSchema = z
+  .strictObject({
+    key: z.string().trim().min(1).max(PIX_KEY_MAX_LENGTH),
+    receiverName: z.string().trim().min(1).max(PIX_RECEIVER_NAME_MAX_LENGTH),
+    receiverCity: z.string().trim().min(1).max(PIX_RECEIVER_CITY_MAX_LENGTH),
+  })
+  .nullable()
+
+export type PixReceiving = z.infer<typeof pixReceivingSchema>

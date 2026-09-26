@@ -46,6 +46,9 @@ export type WorkspaceRename = {
 
 export type SettingsUpdate = Omit<WorkspaceSettingsChange, 'periodAnchorValue'> & {
   periodAnchorValue?: number | null
+  pixReceivingKey?: string | null
+  pixReceiverName?: string | null
+  pixReceiverCity?: string | null
 }
 
 export type WorkspaceRouteDeps = {
