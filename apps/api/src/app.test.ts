@@ -46,7 +46,49 @@ describe('loadEnv', () => {
       LOG_LEVEL: 'info',
       APP_VERSION: 'dev',
       DATABASE_URL: LOCAL_DATABASE_URL,
+      SMTP_PORT: 587,
+      EMAIL_FROM_NAME: 'Finanças',
+      EMAIL_OUTBOX_DIR: '.private/outbox',
     })
+  })
+
+  it('reads the SMTP settings', () => {
+    const env = loadEnv({
+      DATABASE_URL: LOCAL_DATABASE_URL,
+      SMTP_HOST: 'smtp.example.test',
+      SMTP_PORT: '465',
+      SMTP_SECURE: 'false',
+      SMTP_USER: 'sender',
+      SMTP_PASSWORD: 'smtp-secret-value',
+      EMAIL_FROM: 'no-reply@example.test',
+    })
+    expect(env).toMatchObject({
+      SMTP_HOST: 'smtp.example.test',
+      SMTP_PORT: 465,
+      SMTP_SECURE: false,
+      SMTP_USER: 'sender',
+      EMAIL_FROM: 'no-reply@example.test',
+    })
+  })
+
+  it('requires SMTP_USER and SMTP_PASSWORD together, without printing the password', () => {
+    const onlyPassword = { DATABASE_URL: LOCAL_DATABASE_URL, SMTP_PASSWORD: 'smtp-secret-value' }
+    expect(() => loadEnv(onlyPassword)).toThrow(/SMTP_USER: SMTP_USER and SMTP_PASSWORD/)
+    expect(() => loadEnv(onlyPassword)).not.toThrow(/smtp-secret-value/)
+  })
+
+  it('requires SMTP_HOST and EMAIL_FROM in production only', () => {
+    const production = { DATABASE_URL: LOCAL_DATABASE_URL, NODE_ENV: 'production' }
+    expect(() => loadEnv(production)).toThrow(
+      /SMTP_HOST: required in production; EMAIL_FROM: required in production/,
+    )
+    expect(() =>
+      loadEnv({
+        ...production,
+        SMTP_HOST: 'smtp.example.test',
+        EMAIL_FROM: 'no-reply@example.test',
+      }),
+    ).not.toThrow()
   })
 
   it('requires a postgres DATABASE_URL', () => {
