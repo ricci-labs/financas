@@ -8,7 +8,10 @@ updated: 2026-09-25
 
 ## Language
 - Code, identifiers, file names, URLs, commits and docs are in English.
-- User-facing text (UI, agent replies) is in pt-BR.
+- Product text for the app's users is in pt-BR: the web UI, agent replies, WhatsApp messages and
+  emails.
+- Everything for the operator or the developer is in English: ops command prompts and output
+  (`src/ops/`), error codes and messages, logs, env var names and their validation messages.
 - Domain terms come from `../domain/glossary.md`.
 
 ## Code style (ADR 0017)

@@ -28,7 +28,7 @@ export function openTerminal(): Terminal {
   async function nextLine(): Promise<string> {
     const line = await lines.next()
     if (line.done) {
-      throw new Error('a entrada terminou antes de todas as respostas')
+      throw new Error('The input ended before every answer was given')
     }
     return line.value
   }
