@@ -1,7 +1,7 @@
 ---
 summary: Postgres 18 with two roles — financas_owner (owns schema, runs migrations) and financas_app (DML only, subject to RLS); tenant scope set per transaction with withWorkspace().
 read_when: Touching database roles, connection strings, migrations, RLS policies, or tenant-scoped queries.
-updated: 2026-09-23
+updated: 2026-09-26
 ---
 
 # 0018. Database roles and RLS enforcement
@@ -20,7 +20,7 @@ Row Level Security doesn't apply to superusers or to roles with `BYPASSRLS`, and
 - Tenant policies compare the row's workspace with `app_current_workspace_id()`, which reads the transaction-local setting `app.workspace_id`.
 - Tenant queries go through `withWorkspace(db, workspaceId, work)` (`apps/api/src/core/db/tx.ts`), which sets the setting with `set_config(..., true)` inside a transaction. Nothing leaks to the next query on that pooled connection.
 - Roles are created by `docker/postgres/init/01-roles.sh`: automatically in dev and CI, and once by hand in production.
-- A future `financas_jobs` role with `BYPASSRLS` is added only when a cross-workspace job needs it.
+- Cross-workspace jobs don't get a `BYPASSRLS` role: they list workspace ids through a narrow function and work per workspace (ADR 0025).
 
 ## Alternatives considered
 - One role for everything plus forced RLS: migrations and data fixes would also be filtered, and the superuser created by the Docker image would still bypass everything.

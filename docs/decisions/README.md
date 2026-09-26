@@ -32,6 +32,7 @@ updated: 2026-09-26
 | 0022 | [Email via Nodemailer over SMTP](0022-email-via-nodemailer-smtp.md) | Accepted |
 | 0023 | [Instance configuration from the environment](0023-instance-configuration-from-env.md) | Accepted |
 | 0024 | [Metrics and insights over period facts](0024-metrics-and-insights-over-period-facts.md) | Accepted |
+| 0025 | [Cross-workspace jobs without a bypass role](0025-cross-workspace-jobs-without-bypass.md) | Accepted |
 
 ## Rules
 - ADRs are append-only. To change a decision, write a new ADR that supersedes the old one and set the old one to `Superseded by NNNN`.

@@ -41,7 +41,7 @@ routes / agent tools / jobs / channels
 | 6 | Services never import Hono, Baileys or the Anthropic SDK | Services stay testable and don't depend on the channel |
 | 7 | No circular dependencies between modules | If A needs B and B needs A, extract the shared part or merge them |
 | 8 | `packages/shared` never reads the clock or env | Pure and deterministic: "now" is passed in as a parameter |
-| 9 | Every DB access runs through `core/db/tx.ts` with a workspace set, except global tables (`users`...) and the `BYPASSRLS` job role | Tenant isolation (ADR 0012) |
+| 9 | Every DB access runs through `core/db/tx.ts` with a workspace set, except global tables (`users`...) and the narrow lookups of ADRs 0019 and 0025 (jobs list workspace ids, then work per workspace) | Tenant isolation (ADR 0012) |
 
 ## Web
 | # | Rule |
