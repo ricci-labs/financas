@@ -100,6 +100,7 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
     ],
     occurrences: [
       {
+        sourceAccountId: 'checking',
         dueOn: '2026-10-20',
         amountCents: 400_000,
         entryType: 'income',
@@ -107,6 +108,7 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
         categoryAccountId: 'salary-b',
       },
       {
+        sourceAccountId: 'checking',
         dueOn: '2026-10-30',
         amountCents: 100_000,
         entryType: 'income',
@@ -114,6 +116,7 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
         categoryAccountId: 'commission',
       },
       {
+        sourceAccountId: 'checking',
         dueOn: '2026-10-13',
         amountCents: 200_000,
         entryType: 'expense',
@@ -121,6 +124,7 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
         categoryAccountId: 'housing',
       },
       {
+        sourceAccountId: 'card',
         dueOn: '2026-10-25',
         amountCents: 4_000,
         entryType: 'card_purchase',
@@ -128,6 +132,7 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
         categoryAccountId: 'electronics',
       },
       {
+        sourceAccountId: 'checking',
         dueOn: '2026-10-08',
         amountCents: 15_000,
         entryType: 'expense',
@@ -135,6 +140,7 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
         categoryAccountId: 'housing',
       },
       {
+        sourceAccountId: 'checking',
         dueOn: '2026-10-09',
         amountCents: 9_000,
         entryType: 'expense',
@@ -142,6 +148,7 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
         categoryAccountId: 'housing',
       },
       {
+        sourceAccountId: 'checking',
         dueOn: '2026-11-10',
         amountCents: 200_000,
         entryType: 'expense',
@@ -149,6 +156,7 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
         categoryAccountId: 'housing',
       },
       {
+        sourceAccountId: 'checking',
         dueOn: '2026-11-20',
         amountCents: 400_000,
         entryType: 'income',
@@ -157,6 +165,11 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
       },
     ],
     reserve: { targetCents: 3_000_000, savedCents: 1_200_000 },
+    cards: [{ accountId: 'card', closingDay: 3, dueDay: 10, purchaseOnClosingDayGoesNext: true }],
+    invoices: [
+      { cardAccountId: 'card', closingOn: '2026-10-03', totalCents: 30_000 },
+      { cardAccountId: 'card', closingOn: '2026-11-03', totalCents: 45_000 },
+    ],
     budgets: [
       { categoryAccountId: 'food', limitCents: 20_000 },
       { categoryAccountId: 'housing', limitCents: 250_000 },
@@ -324,5 +337,59 @@ describe('committedAhead', () => {
   it('keeps counting installments by their month even when the budget counts purchases', () => {
     const byPurchase = computeMetrics(household({ installmentBudgetView: 'purchase_month' }))
     expect(byPurchase.committedAhead[0]?.installmentsCents).toBe(30_000)
+  })
+})
+
+describe('nextInvoice', () => {
+  it('forecasts the open invoice: what is on it plus the subscriptions before it closes', () => {
+    expect(computeMetrics(household()).nextInvoice).toEqual([
+      {
+        cardAccountId: 'card',
+        closingOn: '2026-11-03',
+        dueOn: '2026-11-10',
+        postedCents: 45_000,
+        plannedCents: 4_000,
+        forecastCents: 49_000,
+      },
+    ])
+  })
+
+  it('leaves out subscriptions of the next cycle, of other cards and skipped ones', () => {
+    const base = household()
+    const busier = household({
+      occurrences: [
+        ...base.occurrences,
+        {
+          sourceAccountId: 'card',
+          dueOn: '2026-11-05',
+          amountCents: 7_000,
+          entryType: 'card_purchase',
+          status: 'pending',
+          categoryAccountId: 'electronics',
+        },
+        {
+          sourceAccountId: 'card',
+          dueOn: '2026-10-27',
+          amountCents: 6_000,
+          entryType: 'card_purchase',
+          status: 'skipped',
+          categoryAccountId: 'electronics',
+        },
+        {
+          sourceAccountId: 'other-card',
+          dueOn: '2026-10-26',
+          amountCents: 5_000,
+          entryType: 'card_purchase',
+          status: 'pending',
+          categoryAccountId: 'electronics',
+        },
+      ],
+    })
+    expect(computeMetrics(busier).nextInvoice[0]?.plannedCents).toBe(4_000)
+  })
+
+  it('starts empty for a card with nothing on its open invoice yet', () => {
+    const forecast = computeMetrics(household({ invoices: [], occurrences: [] })).nextInvoice
+    expect(forecast[0]).toMatchObject({ postedCents: 0, plannedCents: 0, forecastCents: 0 })
   })
 })

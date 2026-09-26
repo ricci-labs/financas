@@ -493,3 +493,14 @@ export function selectPostingFacts(tx: WorkspaceTransaction, from: IsoDate, to: 
       ),
     )
 }
+
+export function selectInvoiceFacts(tx: WorkspaceTransaction, closingFrom: IsoDate) {
+  return tx
+    .select({
+      cardAccountId: invoiceTotals.cardAccountId,
+      closingOn: invoiceTotals.closingOn,
+      totalCents: invoiceTotals.totalCents,
+    })
+    .from(invoiceTotals)
+    .where(gte(invoiceTotals.closingOn, closingFrom))
+}

@@ -20,6 +20,8 @@ export {
   loadUsableAccounts,
   readAccountBalances,
   readAccountFacts,
+  readCardFacts,
+  readInvoiceFacts,
   readPostingFacts,
   recordEntry,
   replaceEntry,

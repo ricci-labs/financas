@@ -26,5 +26,10 @@ export {
   replaceEntry,
   restoreEntry,
 } from '@api/modules/ledger/use-cases/entries'
-export { readAccountFacts, readPostingFacts } from '@api/modules/ledger/use-cases/facts'
+export {
+  readAccountFacts,
+  readCardFacts,
+  readInvoiceFacts,
+  readPostingFacts,
+} from '@api/modules/ledger/use-cases/facts'
 export { loadAccounts as loadUsableAccounts } from '@api/modules/ledger/use-cases/lookups'
