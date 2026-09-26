@@ -216,3 +216,65 @@ describe('GET /cards/:cardId/invoices/:invoiceId/lines', () => {
     }
   })
 })
+
+describe('own vs fronted on card invoices', () => {
+  it('splits every invoice and each line into what is ours and what others owe', async () => {
+    const cardId = (
+      (await (await createCard(owner, 'Card Fronted')).json()) as { accountId: string }
+    ).accountId
+    const contact = await owner.post(`${workspacePath}/contacts`, { name: 'Contact J' })
+    const j = ((await contact.json()) as { contactId: string }).contactId
+    await owner.post(`${workspacePath}/entries`, {
+      entryType: 'card_purchase',
+      occurredOn: '2026-10-05',
+      description: 'TV',
+      amountCents: 90_000,
+      installmentCount: 3,
+      cardAccountId: cardId,
+      categoryId,
+      shares: [{ contactId: j, amountCents: 30_000 }],
+    })
+    await owner.post(`${workspacePath}/entries`, {
+      entryType: 'card_purchase',
+      occurredOn: '2026-10-06',
+      description: 'Farmácia',
+      amountCents: 5_000,
+      cardAccountId: cardId,
+      categoryId,
+    })
+
+    const invoices = (await (
+      await owner.get(`${workspacePath}/cards/${cardId}/invoices`)
+    ).json()) as {
+      invoiceId: string
+      totalCents: number
+      frontedCents: number
+      ownCents: number
+    }[]
+    expect(
+      invoices.map(({ totalCents, frontedCents, ownCents }) => [
+        totalCents,
+        frontedCents,
+        ownCents,
+      ]),
+    ).toEqual([
+      [35_000, 10_000, 25_000],
+      [30_000, 10_000, 20_000],
+      [30_000, 10_000, 20_000],
+    ])
+
+    const lines = (await (
+      await owner.get(`${workspacePath}/cards/${cardId}/invoices/${invoices[0]?.invoiceId}/lines`)
+    ).json()) as { description: string; amountCents: number; frontedCents: number }[]
+    expect(
+      lines.map(({ description, amountCents, frontedCents }) => [
+        description,
+        amountCents,
+        frontedCents,
+      ]),
+    ).toEqual([
+      ['TV', 30_000, 10_000],
+      ['Farmácia', 5_000, 0],
+    ])
+  })
+})

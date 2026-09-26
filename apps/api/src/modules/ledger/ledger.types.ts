@@ -87,6 +87,8 @@ export type InvoiceTotal = {
   totalCents: number
   paidCents: number
   dueCents: number
+  frontedCents: number
+  ownCents: number
 }
 
 export type AccountsById = ReadonlyMap<string, AccountRef>
@@ -194,6 +196,7 @@ export type InvoiceLine = {
   installmentNo: number | null
   installmentCount: number
   amountCents: number
+  frontedCents: number
 }
 
 export type CardInvoiceRef = WorkspaceCard & {

@@ -102,4 +102,4 @@ the invoice total never changed, and the incoming money is in the account.
   - overdue = what fell due up to today (including today) minus everything paid, never below
     zero. A payment ahead of time counts against what's due;
   - next due = the earliest future date and its total.
-- The dashboard separates **own spending** (expense postings) from **fronted for others** (receivable postings) on every card invoice.
+- **Own vs fronted on card invoices:** `GET /cards/:cardId/invoices` adds `frontedCents` (the receivable lines of the same entries and installments) and `ownCents` (total − fronted) to each invoice. Each line of `GET …/invoices/:invoiceId/lines` gets its `frontedCents`.

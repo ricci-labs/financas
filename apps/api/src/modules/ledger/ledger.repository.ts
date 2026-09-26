@@ -464,6 +464,7 @@ export function selectInvoiceLines(
       installmentNo: postings.installmentNo,
       installmentCount: journalEntries.installmentCount,
       cardAmountCents: postings.amountCents,
+      frontedCents: frontedOnTheSameInstallment(),
     })
     .from(postings)
     .innerJoin(journalEntries, eq(journalEntries.id, postings.entryId))
@@ -522,4 +523,26 @@ export function selectContactPostings(tx: WorkspaceTransaction, contactId?: stri
     .from(postings)
     .innerJoin(journalEntries, eq(journalEntries.id, postings.entryId))
     .where(and(...conditions))
+}
+
+export function selectFrontedByInvoice(tx: WorkspaceTransaction, cardAccountId: string) {
+  return tx
+    .select({
+      invoiceId: sql<string>`${postings.invoiceId}`,
+      frontedCents: sql<number>`coalesce(sum(${frontedOnTheSameInstallment()}), 0)`.mapWith(Number),
+    })
+    .from(postings)
+    .innerJoin(journalEntries, eq(journalEntries.id, postings.entryId))
+    .where(and(eq(postings.accountId, cardAccountId), isNull(journalEntries.deletedAt)))
+    .groupBy(postings.invoiceId)
+}
+
+function frontedOnTheSameInstallment() {
+  return sql<number>`(
+    select coalesce(sum(shares.amount_cents), 0)
+    from postings shares
+    where shares.entry_id = ${postings.entryId}
+      and shares.account_kind = 'receivable'
+      and shares.installment_no is not distinct from ${postings.installmentNo}
+  )`.mapWith(Number)
 }
