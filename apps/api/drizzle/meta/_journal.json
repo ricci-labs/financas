@@ -330,6 +330,20 @@
       "when": 1790456993869,
       "tag": "0046_allocation_steps_triggers_and_deferred_fks",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1790459910939,
+      "tag": "0047_contacts",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1790459912659,
+      "tag": "0048_contacts_updated_at",
+      "breakpoints": true
     }
   ]
 }

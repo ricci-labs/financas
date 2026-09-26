@@ -1,0 +1,115 @@
+import { systemClock } from '@api/core/clock'
+import type { Clock } from '@api/core/clock.types'
+import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
+import { POSTGRES_UNIQUE_VIOLATION, postgresErrorCode } from '@api/core/db/errors'
+import { withWorkspace } from '@api/core/db/tx'
+import { ConflictError, NotFoundError, parseOrThrow } from '@api/core/http/errors'
+import {
+  insertContact,
+  lockActiveContact,
+  selectActiveContacts,
+  updateContact,
+} from '@api/modules/contacts/contacts.repository'
+import type {
+  ContactItem,
+  ContactRef,
+  ContactRow,
+  ContactsContext,
+  CreatedContact,
+  DeleteContactInput,
+} from '@api/modules/contacts/contacts.types'
+import { contactChangeSchema, newContactSchema } from '@financas/shared'
+
+const CONTACT_INVALID = 'CONTACT_INVALID'
+
+export function listContacts(db: Database, workspaceId: string): Promise<ContactItem[]> {
+  return withWorkspace(db, workspaceId, async (tx) => (await selectActiveContacts(tx)).map(itemOf))
+}
+
+export async function createContact(
+  db: Database,
+  { workspaceId }: ContactsContext,
+  rawInput: unknown,
+): Promise<CreatedContact> {
+  const contact = parseOrThrow(newContactSchema, rawInput, CONTACT_INVALID)
+  return refusingTakenPhones(() =>
+    withWorkspace(db, workspaceId, async (tx) => ({
+      contactId: await insertContact(tx, { workspaceId, ...contact }),
+    })),
+  )
+}
+
+export async function changeContact(
+  db: Database,
+  { workspaceId, contactId }: ContactRef,
+  rawChange: unknown,
+  clock: Clock = systemClock,
+): Promise<void> {
+  const { isOptedOut, ...change } = parseOrThrow(contactChangeSchema, rawChange, CONTACT_INVALID)
+  await refusingTakenPhones(() =>
+    withWorkspace(db, workspaceId, async (tx) => {
+      const current = await lockExistingContact(tx, contactId)
+      const optedOutAt =
+        isOptedOut === undefined ? current.optedOutAt : optOutMoment(current, isOptedOut, clock)
+      await updateContact(tx, contactId, { ...change, optedOutAt })
+    }),
+  )
+}
+
+export async function deleteContact(
+  db: Database,
+  { workspaceId, contactId, userId, reason }: DeleteContactInput,
+  clock: Clock = systemClock,
+): Promise<void> {
+  await withWorkspace(db, workspaceId, async (tx) => {
+    await lockExistingContact(tx, contactId)
+    await updateContact(tx, contactId, {
+      deletedAt: clock.now(),
+      deletedByUserId: userId,
+      deleteReason: reason ?? null,
+    })
+  })
+}
+
+async function lockExistingContact(
+  tx: WorkspaceTransaction,
+  contactId: string,
+): Promise<ContactRow> {
+  const contact = await lockActiveContact(tx, contactId)
+  if (!contact) {
+    throw new NotFoundError('CONTACT_NOT_FOUND', `Contact ${contactId} not found`)
+  }
+  return contact
+}
+
+function optOutMoment(current: ContactRow, isOptedOut: boolean, clock: Clock): Date | null {
+  if (!isOptedOut) {
+    return null
+  }
+  return current.optedOutAt ?? clock.now()
+}
+
+async function refusingTakenPhones<T>(work: () => Promise<T>): Promise<T> {
+  try {
+    return await work()
+  } catch (error) {
+    if (postgresErrorCode(error) === POSTGRES_UNIQUE_VIOLATION) {
+      throw new ConflictError('CONTACT_PHONE_TAKEN', 'Another contact has this phone', {
+        cause: error,
+      })
+    }
+    throw error
+  }
+}
+
+function itemOf(contact: ContactRow): ContactItem {
+  return {
+    id: contact.id,
+    name: contact.name,
+    phoneE164: contact.phoneE164,
+    pixKey: contact.pixKey,
+    notes: contact.notes,
+    isOptedOut: contact.optedOutAt !== null,
+    isArchived: contact.archivedAt !== null,
+  }
+}

@@ -1,7 +1,7 @@
 ---
 summary: Contacts (third parties), how their share of entries is recorded (receivable postings, installments, several per entry), charges sent directly over WhatsApp, and settlements.
 read_when: Working on contacts, splitting an entry with other people, charges (cobranças) or recording that someone paid back.
-updated: 2026-09-22
+updated: 2026-09-26
 ---
 
 # Third parties: contacts, charges, settlements
@@ -17,14 +17,22 @@ updated: 2026-09-22
 | Column | Type | Notes |
 |---|---|---|
 | `workspace_id`, `id` | | |
-| `name` | text not null | |
-| `phone_e164` | text null | Required to send charges over WhatsApp |
-| `pix_key` | text null | Only if the household ever pays *them* |
-| `notes` | text null | |
-| `opted_out_at` | timestamptz null | Contact replied asking not to receive charges. Sending is blocked while set. |
-| `archived_at` | | Only when the balance is zero (trigger) |
+| `name` | text not null | 1–80 characters |
+| `phone_e164` | text null | `+55…` format (CHECK). Required to send charges over WhatsApp |
+| `pix_key` | text null | Only if the household ever pays *them* (≤ 77 characters, the Pix limit) |
+| `notes` | text null | ≤ 500 characters |
+| `opted_out_at` | timestamptz null | Contact replied asking not to receive charges. Sending is blocked while set. Set again, it keeps the first moment |
+| `archived_at` | | Only when the balance is zero (with the balances PR) |
+| soft delete, timestamps | | |
 
-`unique (workspace_id, phone_e164)` when a phone is set.
+One active contact per phone (`409 CONTACT_PHONE_TAKEN`); deleting a contact frees its phone.
+
+| Route | Permission | Does |
+|---|---|---|
+| `GET /contacts` | `contacts:view` | `listContacts`: active contacts by name, with `isOptedOut`, `isArchived` |
+| `POST /contacts` | `contacts:create` | `createContact` `{ name, phoneE164?, pixKey?, notes? }` → `201 { contactId }` |
+| `PATCH /contacts/:contactId` | `contacts:update` | `changeContact`: only the fields sent, plus `isOptedOut` → `204` |
+| `DELETE /contacts/:contactId` | `contacts:delete` | `deleteContact` (soft, optional `reason`) → `204` |
 
 ## `charges`
 | Column | Type | Notes |
