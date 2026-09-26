@@ -77,7 +77,7 @@ updated: 2026-09-26
      - [x] Period facts + first metrics + `GET /overview` (free to spend, per day, spent, committed)
      - [x] More metrics: budget pace, committed ahead (6 periods), next invoice, variable income
            average, reserve coverage
-     - [ ] Insights (first set) in the overview
+     - [x] Insights (first set) in the overview
      - [ ] Commission split: allocation steps + suggested transfers
      - [ ] Balance forecast per account
      - [ ] "Posso comprar?" purchase simulation

@@ -21,6 +21,7 @@ import {
   addDays,
   addMonths,
   clampedDate,
+  computeInsights,
   computeMetrics,
   type IsoDate,
   type OverviewQuery,
@@ -45,7 +46,13 @@ export function getPeriodOverview(
 ): Promise<PeriodOverview> {
   return withWorkspace(db, workspaceId, async (tx) => {
     const facts = await loadPeriodFacts(tx, label, clock)
-    return { today: facts.today, period: facts.period, metrics: computeMetrics(facts) }
+    const metrics = computeMetrics(facts)
+    return {
+      today: facts.today,
+      period: facts.period,
+      metrics,
+      insights: computeInsights(facts, metrics),
+    }
   })
 }
 

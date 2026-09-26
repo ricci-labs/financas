@@ -1,0 +1,148 @@
+import { computeInsights } from '@shared/insights/insights'
+import { computeMetrics, type PeriodMetrics } from '@shared/metrics/metrics'
+import type { PeriodFacts } from '@shared/metrics/metrics.types'
+import { describe, expect, it } from 'vitest'
+
+const FACTS: PeriodFacts = {
+  today: '2026-10-15',
+  period: { label: '2026-10', start: '2026-10-01', end: '2026-10-31' },
+  recentPeriods: [],
+  upcomingPeriods: [],
+  installmentBudgetView: 'per_installment',
+  budgetBase: 'fixed_income',
+  accounts: [],
+  postings: [],
+  occurrences: [
+    {
+      id: 'rent-october',
+      sourceAccountId: 'checking',
+      dueOn: '2026-10-10',
+      amountCents: 200_000,
+      entryType: 'expense',
+      status: 'pending',
+      categoryAccountId: 'housing',
+    },
+    {
+      id: 'energy-october',
+      sourceAccountId: 'checking',
+      dueOn: '2026-10-05',
+      amountCents: 15_000,
+      entryType: 'expense',
+      status: 'matched',
+      categoryAccountId: 'housing',
+    },
+    {
+      id: 'rent-november',
+      sourceAccountId: 'checking',
+      dueOn: '2026-11-10',
+      amountCents: 200_000,
+      entryType: 'expense',
+      status: 'pending',
+      categoryAccountId: 'housing',
+    },
+  ],
+  budgets: [],
+  reserve: null,
+  cards: [],
+  invoices: [],
+}
+
+function metricsWith(overrides: Partial<PeriodMetrics>): PeriodMetrics {
+  return { ...computeMetrics(FACTS), freeToSpend: 0, ...overrides }
+}
+
+function codes(metrics: PeriodMetrics): string[] {
+  return computeInsights(FACTS, metrics).map((insight) => `${insight.code} ${insight.subject}`)
+}
+
+describe('computeInsights', () => {
+  it('lists alerts before warnings, each group in the order of INSIGHTS', () => {
+    const insights = computeInsights(
+      FACTS,
+      metricsWith({
+        freeToSpend: -5_000,
+        budgetPace: [
+          {
+            categoryAccountId: 'food',
+            limitCents: 100,
+            spentCents: 50,
+            expectedCents: 40,
+            status: 'ahead',
+          },
+          {
+            categoryAccountId: 'fun',
+            limitCents: 100,
+            spentCents: 120,
+            expectedCents: 40,
+            status: 'over',
+          },
+          {
+            categoryAccountId: 'home',
+            limitCents: 100,
+            spentCents: 10,
+            expectedCents: 40,
+            status: 'within',
+          },
+        ],
+      }),
+    )
+    expect(insights).toEqual([
+      {
+        code: 'period_overspent',
+        severity: 'alert',
+        subject: '2026-10',
+        values: { overspentCents: 5_000 },
+      },
+      {
+        code: 'budget_over',
+        severity: 'alert',
+        subject: 'fun',
+        values: { limitCents: 100, spentCents: 120 },
+      },
+      {
+        code: 'occurrence_overdue',
+        severity: 'warning',
+        subject: 'rent-october',
+        values: { dueOn: '2026-10-10', amountCents: 200_000 },
+      },
+      {
+        code: 'budget_ahead',
+        severity: 'warning',
+        subject: 'food',
+        values: { limitCents: 100, spentCents: 50, expectedCents: 40 },
+      },
+    ])
+  })
+
+  it('points at bills still unpaid after their due date', () => {
+    expect(codes(metricsWith({}))).toEqual(['occurrence_overdue rent-october'])
+  })
+
+  it('warns about a coming period with most of its income already committed', () => {
+    const committedPeriod = (label: string, percentOfIncome: number | null) => ({
+      label,
+      installmentsCents: 0,
+      plannedCents: 0,
+      committedCents: 1_000,
+      fixedIncomeCents: 1_000,
+      percentOfIncome,
+    })
+    const metrics = metricsWith({
+      committedAhead: [
+        committedPeriod('2026-11', 69),
+        committedPeriod('2026-12', 70),
+        committedPeriod('2027-01', null),
+      ],
+    })
+    expect(codes(metrics)).toEqual([
+      'occurrence_overdue rent-october',
+      'period_heavily_committed 2026-12',
+    ])
+  })
+
+  it('stays quiet when all is well', () => {
+    expect(
+      computeInsights({ ...FACTS, occurrences: [] }, computeMetrics({ ...FACTS, occurrences: [] })),
+    ).toEqual([])
+  })
+})
