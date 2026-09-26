@@ -54,13 +54,26 @@ updated: 2026-09-26
   10b. [x] Invitation routes: preview, accept (email must match)
   10c. [x] Invitation routes: accept with sign-up
   Along the way: strict file roles, Claude Code hooks and the `new-module` / `pr` skills (#43–#46).
-- [ ] **Next session: choose the next step** (the user decides). Options:
-  1. **Web foundation:** Vite + React app shell, login and sign-up pages, workspace picker, and
-     the first screens on top of these routes (accounts, cards, entries). Makes the app usable.
-  2. **Deploy on the homelab:** Dockerfile, Dokploy deploy workflow, backups, Level 0
-     observability, SMTP provider (open question 10), remote access (open question 7).
-  3. **Contacts and charges** (third parties who owe part of a purchase).
-  4. **Planning:** recurring bills and incomes, commission forecast, budgets, "free to spend".
+- [ ] **Backend completion** (chosen 2026-09-26): finish the whole domain backend before the
+  frontend; the web comes next, and the WhatsApp channel with the agent comes last, reusing the
+  services. Small PRs, in order:
+  1. [ ] **Gaps in what exists** (tables already exist):
+     - [ ] Workspaces: create through the API, rename, settings (financial period, currency,
+           installment view, budget base…)
+     - [ ] Members: list, change role, remove; custom roles and their permission matrix
+     - [ ] My account: change password while logged in, display name, preferences
+     - [ ] Ledger reading: entries of an invoice, trash (deleted accounts and entries), paging
+           beyond the list limit
+     - [ ] Maintenance job (croner): purge expired sessions and used or expired auth tokens
+  2. [ ] **Planning + dashboard:** recurrence rules, planned occurrences and matching, budgets,
+         reserve goal, commission forecast, the period overview ("free to spend")
+  3. [ ] **Contacts, charges and settlements**
+  4. [ ] **Reminders:** notification outbox and its worker, email first
+  5. [ ] **Attachments** on entries (`FileStorage`)
+  6. [ ] **Audit log**
+  7. [ ] **Observability core and deploy:** OTel, metrics, error refs, ops scripts, Dockerfile,
+         Dokploy workflow, backups (needs open questions 7, 8 and 10)
+  Then: **web foundation**, then **WhatsApp channel + agent**.
 - [ ] DB: contacts/charges, planning, support tables
 - [ ] Observability core (OTel register, metrics, error refs), Dockerfile, deploy workflow
 - [ ] Web foundation: TanStack Router/Query, shadcn/ui, layout
