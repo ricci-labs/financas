@@ -23,10 +23,12 @@ export {
   listEntries,
   listTrashedEntries,
   recordEntry,
+  recordEntryInTransaction,
   replaceEntry,
   restoreEntry,
 } from '@api/modules/ledger/use-cases/entries'
 export {
+  activeEntryIdsOf,
   readAccountFacts,
   readBalanceFacts,
   readCardFacts,

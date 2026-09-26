@@ -1,4 +1,5 @@
 import type { IsoDate } from '@shared/calendar/calendar.types'
+import type { ChargeStatus } from '@shared/charges/charges.constants'
 import type { ChargeableItem, ChargeMessageInput, OpenItem } from '@shared/charges/charges.types'
 import { formatBrl } from '@shared/money/money'
 
@@ -46,4 +47,18 @@ function installmentLabel(item: OpenItem): string {
 function brazilianDate(date: IsoDate): string {
   const [year, month, day] = date.split('-')
   return `${day}/${month}/${year}`
+}
+
+export function chargeStatusOf(
+  stored: ChargeStatus,
+  amountCents: number,
+  paidCents: number,
+): ChargeStatus {
+  if (stored === 'cancelled') {
+    return stored
+  }
+  if (paidCents >= amountCents) {
+    return 'paid'
+  }
+  return paidCents > 0 ? 'partially_paid' : stored
 }

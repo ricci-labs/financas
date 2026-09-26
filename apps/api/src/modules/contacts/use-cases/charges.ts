@@ -6,9 +6,11 @@ import { ConflictError, NotFoundError, parseOrThrow } from '@api/core/http/error
 import {
   insertCharge,
   insertChargeItems,
+  insertChargePayment,
   lockActiveContact,
   lockCharge,
   selectChargeItems,
+  selectChargePayments,
   selectCharges,
   selectPostingsInOpenCharges,
   updateCharge,
@@ -19,13 +21,16 @@ import type {
   ChargeView,
   ContactRef,
   CreatedCharge,
+  RecordedPayment,
 } from '@api/modules/contacts/contacts.types'
 import { getAccount } from '@api/modules/identity'
-import { readContactItems } from '@api/modules/ledger'
+import { activeEntryIdsOf, readContactItems, recordEntryInTransaction } from '@api/modules/ledger'
 import { currentWorkspaceSettings } from '@api/modules/workspaces'
 import {
   type ChargeStatus,
   chargeMessage,
+  chargePaymentSchema,
+  chargeStatusOf,
   type IsoDate,
   newChargeSchema,
   OPEN_CHARGE_STATUSES,
@@ -36,6 +41,7 @@ import {
 } from '@financas/shared'
 
 const PLACEHOLDER_MESSAGE = '…'
+const SETTLEMENT_DESCRIPTION = 'Pagamento de cobrança'
 
 export async function createCharge(
   db: Database,
@@ -128,6 +134,42 @@ export async function cancelCharge(db: Database, ref: ChargeRef): Promise<void> 
   await moveCharge(db, ref, OPEN_CHARGE_STATUSES, { status: 'cancelled' })
 }
 
+export async function payCharge(
+  db: Database,
+  { workspaceId, chargeId }: ChargeRef,
+  userId: string,
+  rawInput: unknown,
+  clock: Clock = systemClock,
+): Promise<RecordedPayment> {
+  const payment = parseOrThrow(chargePaymentSchema, rawInput, 'CHARGE_PAYMENT_INVALID')
+  return withWorkspace(db, workspaceId, async (tx) => {
+    const charge = await lockExistingCharge(tx, chargeId)
+    if (charge.status === 'cancelled') {
+      throw new ConflictError('CHARGE_STATUS_REFUSED', `Charge ${chargeId} is cancelled`)
+    }
+    const entryId = await recordEntryInTransaction(
+      tx,
+      { workspaceId, userId, source: 'web' },
+      {
+        entryType: 'settlement',
+        occurredOn: payment.occurredOn,
+        description: SETTLEMENT_DESCRIPTION,
+        amountCents: payment.amountCents,
+        contactId: charge.contactId,
+        receivedInAccountId: payment.receivedInAccountId,
+      },
+      clock,
+    )
+    await insertChargePayment(tx, {
+      workspaceId,
+      chargeId,
+      entryId,
+      amountCents: payment.amountCents,
+    })
+    return { entryId }
+  })
+}
+
 async function moveCharge(
   db: Database,
   { workspaceId, chargeId }: ChargeRef,
@@ -135,15 +177,37 @@ async function moveCharge(
   update: { status: ChargeStatus; sentAt?: Date },
 ): Promise<void> {
   await withWorkspace(db, workspaceId, async (tx) => {
-    const charge = await lockCharge(tx, chargeId)
-    if (!charge) {
-      throw new NotFoundError('CHARGE_NOT_FOUND', `Charge ${chargeId} not found`)
-    }
-    if (!from.includes(charge.status)) {
+    const charge = await lockExistingCharge(tx, chargeId)
+    const paidCents = (await paidByCharge(tx, [chargeId])).get(chargeId) ?? 0
+    if (!from.includes(charge.status) || paidCents > 0) {
       throw new ConflictError('CHARGE_STATUS_REFUSED', `Charge ${chargeId} is ${charge.status}`)
     }
     await updateCharge(tx, chargeId, update)
   })
+}
+
+async function lockExistingCharge(tx: WorkspaceTransaction, chargeId: string): Promise<ChargeRow> {
+  const charge = await lockCharge(tx, chargeId)
+  if (!charge) {
+    throw new NotFoundError('CHARGE_NOT_FOUND', `Charge ${chargeId} not found`)
+  }
+  return charge
+}
+
+async function paidByCharge(
+  tx: WorkspaceTransaction,
+  chargeIds: string[],
+): Promise<ReadonlyMap<string, number>> {
+  const payments = await selectChargePayments(tx, chargeIds)
+  const active = await activeEntryIdsOf(
+    tx,
+    payments.map((payment) => payment.entryId),
+  )
+  const paid = new Map<string, number>()
+  for (const payment of payments.filter((candidate) => active.has(candidate.entryId))) {
+    paid.set(payment.chargeId, (paid.get(payment.chargeId) ?? 0) + payment.amountCents)
+  }
+  return paid
 }
 
 async function chargeableItemsOf(
@@ -160,16 +224,16 @@ async function viewsOf(tx: WorkspaceTransaction, rows: ChargeRow[]): Promise<Cha
   if (rows.length === 0) {
     return []
   }
-  const items = await selectChargeItems(
-    tx,
-    rows.map((row) => row.id),
-  )
+  const chargeIds = rows.map((row) => row.id)
+  const items = await selectChargeItems(tx, chargeIds)
+  const paid = await paidByCharge(tx, chargeIds)
   return rows.map((row) => ({
     id: row.id,
     contactId: row.contactId,
     amountCents: row.amountCents,
     dueOn: row.dueOn,
-    status: row.status,
+    status: chargeStatusOf(row.status, row.amountCents, paid.get(row.id) ?? 0),
+    paidCents: paid.get(row.id) ?? 0,
     messageText: row.messageText,
     pixPayload: row.pixPayload,
     sentAt: row.sentAt,

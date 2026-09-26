@@ -561,3 +561,17 @@ export function selectContactItems(tx: WorkspaceTransaction, contactId: string) 
     .innerJoin(journalEntries, eq(journalEntries.id, postings.entryId))
     .where(and(eq(postings.contactId, contactId), isNull(journalEntries.deletedAt)))
 }
+
+export async function selectActiveEntryIds(
+  tx: WorkspaceTransaction,
+  entryIds: string[],
+): Promise<string[]> {
+  if (entryIds.length === 0) {
+    return []
+  }
+  const rows = await tx
+    .select({ id: journalEntries.id })
+    .from(journalEntries)
+    .where(and(inArray(journalEntries.id, entryIds), isNull(journalEntries.deletedAt)))
+  return rows.map((row) => row.id)
+}

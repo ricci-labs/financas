@@ -3,6 +3,7 @@ export {
   createCharge,
   listCharges,
   markChargeSent,
+  payCharge,
 } from '@api/modules/contacts/use-cases/charges'
 export {
   changeContact,

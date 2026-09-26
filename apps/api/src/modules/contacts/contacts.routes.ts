@@ -12,11 +12,13 @@ import {
   listContactBalances,
   listContacts,
   markChargeSent,
+  payCharge,
 } from '@api/modules/contacts/contacts.service'
 import type { ContactRouteDeps } from '@api/modules/contacts/contacts.types'
 import {
   chargeListQuerySchema,
   chargeParamsSchema,
+  chargePaymentSchema,
   contactChangeSchema,
   contactParamsSchema,
   deletionRequestSchema,
@@ -119,6 +121,21 @@ export function chargeRoutes({ db }: ContactRouteDeps) {
       await markChargeSent(db, { workspaceId, chargeId: c.req.valid('param').chargeId })
       return c.body(null, NO_CONTENT)
     })
+    .post(
+      '/:chargeId/payments',
+      authorize('contacts', 'update'),
+      charge,
+      jsonBody(chargePaymentSchema, 'CHARGE_PAYMENT_INVALID'),
+      async (c) => {
+        const { workspaceId } = currentWorkspace(c)
+        const { userId } = currentSession(c)
+        const { chargeId } = c.req.valid('param')
+        return c.json(
+          await payCharge(db, { workspaceId, chargeId }, userId, c.req.valid('json')),
+          CREATED,
+        )
+      },
+    )
     .post('/:chargeId/cancel', authorize('contacts', 'update'), charge, async (c) => {
       const { workspaceId } = currentWorkspace(c)
       await cancelCharge(db, { workspaceId, chargeId: c.req.valid('param').chargeId })

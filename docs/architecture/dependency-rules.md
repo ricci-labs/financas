@@ -58,7 +58,7 @@ routes / agent tools / jobs / channels
 | `planning` | `ledger` | Check the accounts of a recurrence (`loadUsableAccounts`); read the entry a member matches to a planned occurrence (`findActiveEntry`); goal progress from account balances (`readAccountBalances`) |
 | `planning` | `workspaces` | The workspace time zone, for "today" (`currentWorkspaceDefaults`) |
 | `reports` | `ledger`, `planning`, `workspaces` | Load the period facts for the metrics and insights (ADR 0024) |
-| `contacts` | `ledger` | Open receivable items for charges and balances (`readContactPostings`); record settlements |
+| `contacts` | `ledger` | Open receivable items for charges and balances (`readContactPostings`, `readContactItems`); record settlements in the charge's transaction (`recordEntryInTransaction`); which payments are still active (`activeEntryIdsOf`) |
 | `contacts` | `workspaces` | The workspace time zone, for "today"; the Pix receiving settings |
 | `contacts` | `identity` | The requester's display name in the charge message |
 | `contacts` | `notifications` | Send charges and charge reminders |

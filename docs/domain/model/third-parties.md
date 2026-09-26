@@ -59,8 +59,12 @@ never run together. The FK to `postings` is added in SQL (`0052`), not in the Dr
 `contacts` and `ledger` table files don't import each other.
 
 ### `charge_payments`: settlements applied to a charge
-`charge_id`, `entry_id` (the `settlement` entry), `amount_cents`. Partial payments allowed.
-Sum of payments ≤ `charges.amount_cents` (trigger).
+`charge_id`, `entry_id` (the `settlement` entry; one charge per entry; FK added in SQL, deferred),
+`amount_cents`. Partial payments and paying more than the charge are allowed (the rest becomes the
+contact's credit). **`paid` / `partially_paid` are derived, not stored:** a charge's status is
+`chargeStatusOf(stored, amount, paid)`, where paid counts only settlements whose entry is still
+active. So deleting a settlement puts the charge back where it was, without a trigger. The stored
+status keeps the lifecycle: draft, sent, cancelled. A charge with payments can't be cancelled.
 
 ## Flows
 ### Splitting while recording
@@ -97,9 +101,10 @@ that month.
 | Route | Permission | Does |
 |---|---|---|
 | `POST /contacts/:contactId/charges` | `contacts:create` | `createCharge` `{ until? }` (default today, workspace time zone): the contact's open items due up to that day → `201 { chargeId }` with the stored message and Pix copia e cola (when the workspace Pix is set). Nothing open is `409 NOTHING_TO_CHARGE` |
-| `GET /charges?contactId=` | `contacts:view` | `listCharges`: newest first, with items |
+| `GET /charges?contactId=` | `contacts:view` | `listCharges`: newest first, with items, `paidCents` and the derived status |
 | `POST /charges/:chargeId/sent` | `contacts:update` | `markChargeSent`: draft → sent (also when a member forwards the message by hand) |
-| `POST /charges/:chargeId/cancel` | `contacts:update` | `cancelCharge`: any open charge → cancelled; its items can be charged again. `409 CHARGE_STATUS_REFUSED` otherwise |
+| `POST /charges/:chargeId/payments` | `contacts:update` | `payCharge` `{ amountCents, receivedInAccountId, occurredOn }`: records the `settlement` entry and links it → `201 { entryId }`; a cancelled charge is `409 CHARGE_STATUS_REFUSED` |
+| `POST /charges/:chargeId/cancel` | `contacts:update` | `cancelCharge`: an open charge without payments → cancelled; its items can be charged again. `409 CHARGE_STATUS_REFUSED` otherwise |
 
 ### Sending a charge (direct, via the platform's WhatsApp)
 1. The user asks ("cobra o J") or a scheduled monthly charge triggers.

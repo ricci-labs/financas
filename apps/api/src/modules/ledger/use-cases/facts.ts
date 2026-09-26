@@ -3,6 +3,7 @@ import {
   selectAccountBalances,
   selectActiveAccounts,
   selectActiveCards,
+  selectActiveEntryIds,
   selectContactItems,
   selectContactPostings,
   selectInvoiceFacts,
@@ -79,4 +80,11 @@ export async function readContactItems(
     .filter((line) => line.amountCents < 0)
     .reduce((sum, line) => sum + line.amountCents, 0)
   return { items, paidCents }
+}
+
+export async function activeEntryIdsOf(
+  tx: WorkspaceTransaction,
+  entryIds: string[],
+): Promise<ReadonlySet<string>> {
+  return new Set(await selectActiveEntryIds(tx, entryIds))
 }
