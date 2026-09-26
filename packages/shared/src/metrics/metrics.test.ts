@@ -174,11 +174,32 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
     ],
     reserve: { targetCents: 3_000_000, savedCents: 1_200_000 },
     allocation: null,
-    cards: [{ accountId: 'card', closingDay: 3, dueDay: 10, purchaseOnClosingDayGoesNext: true }],
-    invoices: [
-      { cardAccountId: 'card', closingOn: '2026-10-03', totalCents: 30_000 },
-      { cardAccountId: 'card', closingOn: '2026-11-03', totalCents: 45_000 },
+    cards: [
+      {
+        accountId: 'card',
+        paymentAccountId: 'checking',
+        closingDay: 3,
+        dueDay: 10,
+        purchaseOnClosingDayGoesNext: true,
+      },
     ],
+    invoices: [
+      {
+        cardAccountId: 'card',
+        closingOn: '2026-10-03',
+        dueOn: '2026-10-10',
+        totalCents: 30_000,
+        paidCents: 30_000,
+      },
+      {
+        cardAccountId: 'card',
+        closingOn: '2026-11-03',
+        dueOn: '2026-11-10',
+        totalCents: 45_000,
+        paidCents: 10_000,
+      },
+    ],
+    balances: [{ accountId: 'checking', balanceCents: 600_000 }],
     budgets: [
       { categoryAccountId: 'food', limitCents: 20_000 },
       { categoryAccountId: 'housing', limitCents: 250_000 },
@@ -403,5 +424,113 @@ describe('nextInvoice', () => {
   it('starts empty for a card with nothing on its open invoice yet', () => {
     const forecast = computeMetrics(household({ invoices: [], occurrences: [] })).nextInvoice
     expect(forecast[0]).toMatchObject({ postedCents: 0, plannedCents: 0, forecastCents: 0 })
+  })
+})
+
+describe('balanceForecast', () => {
+  const checkingOf = (facts: PeriodFacts) =>
+    computeMetrics(facts).balanceForecast.find((forecast) => forecast.accountId === 'checking')
+
+  it('walks the balance day by day: an unpaid bill leaves today, the salary comes in', () => {
+    expect(checkingOf(household())).toEqual({
+      accountId: 'checking',
+      until: '2026-10-31',
+      startCents: 600_000,
+      endCents: 800_000,
+      lowestCents: 400_000,
+      lowestOn: '2026-10-15',
+      points: [
+        { on: '2026-10-15', balanceCents: 400_000 },
+        { on: '2026-10-20', balanceCents: 800_000 },
+      ],
+    })
+  })
+
+  it('reaches the next salary after the period, paying the card invoice on its due date', () => {
+    const base = household()
+    const lateSalary = household({
+      today: '2026-10-25',
+      occurrences: [
+        ...base.occurrences.filter((occurrence) => occurrence.dueOn !== '2026-10-20'),
+        {
+          id: 'salary-november',
+          sourceAccountId: 'checking',
+          dueOn: '2026-11-12',
+          amountCents: 400_000,
+          entryType: 'income',
+          status: 'pending',
+          categoryAccountId: 'salary-b',
+        },
+      ],
+    })
+    const forecast = checkingOf(lateSalary)
+    expect(forecast?.until).toBe('2026-11-12')
+    expect(forecast?.points).toEqual([
+      { on: '2026-10-25', balanceCents: 400_000 },
+      { on: '2026-11-10', balanceCents: 400_000 - 200_000 - 39_000 },
+      { on: '2026-11-12', balanceCents: 400_000 - 200_000 - 39_000 + 400_000 },
+    ])
+  })
+
+  it('pays the subscriptions of an open invoice that has no purchase on it yet', () => {
+    const base = household()
+    const onlySubscriptions = household({
+      today: '2026-10-25',
+      invoices: [],
+      occurrences: [
+        ...base.occurrences.filter((occurrence) => occurrence.dueOn !== '2026-10-20'),
+        {
+          id: 'salary-november',
+          sourceAccountId: 'checking',
+          dueOn: '2026-11-12',
+          amountCents: 400_000,
+          entryType: 'income',
+          status: 'pending',
+          categoryAccountId: 'salary-b',
+        },
+      ],
+    })
+    expect(checkingOf(onlySubscriptions)?.points[1]).toEqual({
+      on: '2026-11-10',
+      balanceCents: 400_000 - 200_000 - 4_000,
+    })
+  })
+
+  it('counts transfers on both sides and future-dated entries, never the commission', () => {
+    const base = household()
+    const withSavings = household({
+      accounts: [
+        ...base.accounts,
+        { id: 'reserve', parentId: null, kind: 'savings', class: 'asset', incomeNature: null },
+      ],
+      postings: [...base.postings, moved('checking', -10_000, '2026-10-18')],
+      occurrences: [
+        ...base.occurrences,
+        {
+          id: 'save',
+          sourceAccountId: 'checking',
+          dueOn: '2026-10-22',
+          amountCents: 50_000,
+          entryType: 'transfer',
+          status: 'pending',
+          categoryAccountId: 'reserve',
+        },
+      ],
+      balances: [
+        { accountId: 'checking', balanceCents: 590_000 },
+        { accountId: 'reserve', balanceCents: 100_000 },
+      ],
+    })
+    const forecasts = computeMetrics(withSavings).balanceForecast
+    expect(forecasts.find((forecast) => forecast.accountId === 'reserve')?.endCents).toBe(150_000)
+    expect(forecasts.find((forecast) => forecast.accountId === 'checking')).toMatchObject({
+      startCents: 600_000,
+      endCents: 600_000 - 200_000 - 10_000 + 400_000 - 50_000,
+    })
+  })
+
+  it('finds the lowest point when the account goes below zero', () => {
+    const tight = household({ balances: [{ accountId: 'checking', balanceCents: 100_000 }] })
+    expect(checkingOf(tight)).toMatchObject({ lowestCents: -100_000, lowestOn: '2026-10-15' })
   })
 })

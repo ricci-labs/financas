@@ -28,6 +28,7 @@ export {
 } from '@api/modules/ledger/use-cases/entries'
 export {
   readAccountFacts,
+  readBalanceFacts,
   readCardFacts,
   readInvoiceFacts,
   readPostingFacts,

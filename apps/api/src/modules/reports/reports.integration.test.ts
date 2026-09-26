@@ -39,7 +39,12 @@ async function household() {
   const groceries = await account({ kind: 'expense_category', name: 'Mercado' })
   const housing = await account({ kind: 'expense_category', name: 'Moradia' })
   const card = (
-    await createCard(databases.app, context, { name: 'Card X', closingDay: 3, dueDay: 10 })
+    await createCard(databases.app, context, {
+      name: 'Card X',
+      closingDay: 3,
+      dueDay: 10,
+      paymentAccountId: checking,
+    })
   ).accountId
   const entry = (input: Record<string, unknown>) =>
     recordEntry(databases.app, { ...context, source: 'web' }, input, MID_OCTOBER)
@@ -148,12 +153,12 @@ async function household() {
     { workspaceId, categoryAccountId: groceries },
     { limitCents: 100_000, fromPeriod: '2026-10' },
   )
-  return { workspaceId, userId, groceries, card, context, account, reserveGoalId }
+  return { workspaceId, userId, groceries, card, context, account, reserveGoalId, checking }
 }
 
 describe('getPeriodOverview', () => {
   it('puts the ledger, the plan and the settings together for the current period', async () => {
-    const { workspaceId, groceries, card } = await household()
+    const { workspaceId, groceries, card, checking } = await household()
     const overview = await getPeriodOverview(databases.app, workspaceId, {}, MID_OCTOBER)
 
     expect(overview.today).toBe('2026-10-15')
@@ -193,6 +198,21 @@ describe('getPeriodOverview', () => {
         forecastCents: 33_990,
       },
     ])
+    expect(
+      overview.metrics.balanceForecast.find((forecast) => forecast.accountId === checking),
+    ).toEqual({
+      accountId: checking,
+      until: '2026-10-31',
+      startCents: 310_000,
+      endCents: 510_000,
+      lowestCents: 310_000,
+      lowestOn: '2026-10-15',
+      points: [
+        { on: '2026-10-15', balanceCents: 310_000 },
+        { on: '2026-10-20', balanceCents: 710_000 },
+        { on: '2026-10-25', balanceCents: 510_000 },
+      ],
+    })
     expect(overview.metrics.variableAverage).toBe(60_000)
     expect(overview.metrics.reserveCoverage).toEqual({
       savedCents: 300_000,
@@ -237,6 +257,22 @@ describe('getPeriodOverview', () => {
     )
     expect(next.period).toEqual({ label: '2026-10', start: '2026-10-20', end: '2026-11-19' })
     expect(next.metrics.committed).toBe(203_990)
+  })
+})
+
+describe('balanceForecast', () => {
+  it('pays the card invoice from its payment account on the due date', async () => {
+    const { workspaceId, checking } = await household()
+    const november = await getPeriodOverview(
+      databases.app,
+      workspaceId,
+      { period: '2026-11' },
+      MID_OCTOBER,
+    )
+    const forecast = november.metrics.balanceForecast.find((item) => item.accountId === checking)
+    const beforeDue = forecast?.points.filter((point) => point.on < '2026-11-10').at(-1)
+    const onDue = forecast?.points.find((point) => point.on === '2026-11-10')
+    expect((beforeDue?.balanceCents ?? 0) - (onDue?.balanceCents ?? 0)).toBe(33_990)
   })
 })
 

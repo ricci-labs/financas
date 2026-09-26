@@ -499,7 +499,9 @@ export function selectInvoiceFacts(tx: WorkspaceTransaction, closingFrom: IsoDat
     .select({
       cardAccountId: invoiceTotals.cardAccountId,
       closingOn: invoiceTotals.closingOn,
+      dueOn: invoiceTotals.dueOn,
       totalCents: invoiceTotals.totalCents,
+      paidCents: invoiceTotals.paidCents,
     })
     .from(invoiceTotals)
     .where(gte(invoiceTotals.closingOn, closingFrom))

@@ -1,3 +1,4 @@
+import { balanceForecast } from '@shared/metrics/balance-forecast'
 import { budgetIncome } from '@shared/metrics/budget-income'
 import { budgetPace } from '@shared/metrics/budget-pace'
 import { committed } from '@shared/metrics/committed'
@@ -25,6 +26,7 @@ export const METRICS = {
   reserveCoverage,
   committedAhead,
   nextInvoice,
+  balanceForecast,
 } as const
 
 export type PeriodMetrics = { [Key in keyof typeof METRICS]: ReturnType<(typeof METRICS)[Key]> }

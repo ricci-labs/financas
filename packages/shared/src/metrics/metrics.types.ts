@@ -36,12 +36,20 @@ export type FactBudget = {
 
 export type FactCard = CardCycle & {
   accountId: string
+  paymentAccountId: string | null
 }
 
 export type FactInvoice = {
   cardAccountId: string
   closingOn: IsoDate
+  dueOn: IsoDate
   totalCents: number
+  paidCents: number
+}
+
+export type FactBalance = {
+  accountId: string
+  balanceCents: number
 }
 
 export type FactAllocation = {
@@ -69,6 +77,7 @@ export type PeriodFacts = {
   cards: readonly FactCard[]
   invoices: readonly FactInvoice[]
   allocation: FactAllocation | null
+  balances: readonly FactBalance[]
 }
 
 export type BudgetPace = {
@@ -108,4 +117,24 @@ export type InvoiceForecast = {
   postedCents: number
   plannedCents: number
   forecastCents: number
+}
+
+export type BalancePoint = {
+  on: IsoDate
+  balanceCents: number
+}
+
+export type BalanceForecast = {
+  accountId: string
+  until: IsoDate
+  startCents: number
+  endCents: number
+  lowestCents: number
+  lowestOn: IsoDate
+  points: BalancePoint[]
+}
+
+export type BalanceMove = {
+  on: IsoDate
+  amountCents: number
 }

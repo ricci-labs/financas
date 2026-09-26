@@ -4,6 +4,7 @@ import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { withWorkspace } from '@api/core/db/tx'
 import {
   readAccountFacts,
+  readBalanceFacts,
   readCardFacts,
   readInvoiceFacts,
   readPostingFacts,
@@ -109,6 +110,7 @@ async function loadPeriodFacts(
     cards: await readCardFacts(tx),
     invoices: await readInvoiceFacts(tx, cycleStart),
     allocation: await loadAllocationFact(tx),
+    balances: await readBalanceFacts(tx),
   }
 }
 
