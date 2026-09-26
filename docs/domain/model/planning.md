@@ -86,8 +86,9 @@ holidays passed must cover the range plus `DAYS_A_DUE_DATE_MAY_SHIFT` (10). The 
   (`withoutDatesNearKept`: 15 days for monthly, 3.5 for weekly, scaled by `interval`). So a moved
   day, a new holiday or an unpaid month never gives the same month twice.
 - **Reading tops up the horizon:** `listOccurrences` first plans every active rule up to today's
-  horizon (idempotent). A cross-workspace job that does the same every night comes with the
-  reminders, which need occurrences even when nobody opens the app (ADR 0025).
+  horizon (idempotent). The job `plan-occurrences` does the same for every workspace at 02:47
+  (`refreshWorkspaceOccurrences`, ADR 0025), so reminders have occurrences even when nobody opens
+  the app.
 
 | Route | Permission | Does |
 |---|---|---|

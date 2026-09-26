@@ -180,6 +180,7 @@ src/
     ├── scheduler.ts          # startScheduler (one Cron per job, no overlap, stop waits for runs)
     │                         #   and runJob (logs job.run.*; a failure never stops the schedule)
     ├── scheduled-jobs.ts     # SCHEDULED_JOBS, the only list main.ts starts; schedule timezone
+    ├── for-each-workspace.ts # forEachWorkspace: job_workspace_ids(), then work per workspace (ADR 0025)
     ├── jobs.types.ts
     └── <job-name>.ts         # one ScheduledJob per file: name, cron pattern, run → one service
 src/testing/                  # test helpers: database.ts (connections, Postgres error codes),

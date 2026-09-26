@@ -35,6 +35,7 @@ export {
 export {
   listOccurrences,
   readOccurrenceFacts,
+  refreshWorkspaceOccurrences,
   workspaceToday,
 } from '@api/modules/planning/use-cases/occurrences'
 export {

@@ -5,6 +5,7 @@ import type { Logger } from '@api/core/observability/logger'
 export type JobDeps = {
   db: Database
   clock: Clock
+  logger: Logger
 }
 
 export type JobResult = Record<string, number>
@@ -16,9 +17,10 @@ export type ScheduledJob = {
 }
 
 export type SchedulerDeps = JobDeps & {
-  logger: Logger
   timezone: string
 }
+
+export type WorkspaceWork = (workspaceId: string) => Promise<void>
 
 export type Scheduler = {
   stop: () => Promise<void>

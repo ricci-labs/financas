@@ -93,3 +93,10 @@ export async function updateSettings(
     .set(change)
     .where(eq(workspaceSettings.workspaceId, workspaceId))
 }
+
+export async function selectJobWorkspaceIds(db: Database): Promise<string[]> {
+  const result = await db.execute<{ workspace_id: string }>(
+    sql`select job_workspace_ids() as workspace_id`,
+  )
+  return result.rows.map((row) => row.workspace_id)
+}

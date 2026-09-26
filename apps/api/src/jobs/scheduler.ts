@@ -29,7 +29,7 @@ export async function runJob(job: ScheduledJob, deps: SchedulerDeps): Promise<vo
   const durationMs = () => Math.round(performance.now() - startedAt)
   logger.info({ event: 'job.run.started' }, 'Job started')
   try {
-    const result = await job.run(deps)
+    const result = await job.run({ ...deps, logger })
     logger.info({ event: 'job.run.completed', durationMs: durationMs(), result }, 'Job completed')
   } catch (err) {
     logger.error({ event: 'job.run.failed', durationMs: durationMs(), err }, 'Job failed')
