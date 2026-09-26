@@ -3,15 +3,17 @@ import { createBaseApp } from '@api/core/http/base-app'
 import type { AppEnv } from '@api/core/http/http.types'
 import { sameOriginWrites } from '@api/core/http/middleware/same-origin-writes'
 import { requireSession } from '@api/core/http/middleware/session'
-import { accessRoutes, workspaceAccess, workspaceListRoutes } from '@api/modules/access'
-import { healthRoutes, PUBLIC_HEALTH_ROUTES } from '@api/modules/health'
-import { identityRoutes, PUBLIC_AUTH_ROUTES, resolveSession } from '@api/modules/identity'
-import { ledgerRoutes } from '@api/modules/ledger'
+import { workspaceAccess } from '@api/modules/access'
+import { accessRoutes, workspaceListRoutes } from '@api/modules/access/access.routes'
+import { healthRoutes, PUBLIC_HEALTH_ROUTES } from '@api/modules/health/health.routes'
+import { resolveSession } from '@api/modules/identity'
+import { identityRoutes, PUBLIC_AUTH_ROUTES } from '@api/modules/identity/identity.routes'
+import { ledgerRoutes } from '@api/modules/ledger/ledger.routes'
 import {
   invitationResponseRoutes,
   invitationRoutes,
   PUBLIC_INVITATION_ROUTES,
-} from '@api/modules/onboarding'
+} from '@api/modules/onboarding/onboarding.routes'
 import { Hono } from 'hono'
 
 export const PUBLIC_ROUTES: ReadonlySet<string> = new Set([

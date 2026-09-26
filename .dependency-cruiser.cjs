@@ -41,8 +41,27 @@ module.exports = {
       name: 'module-public-surface',
       severity: 'error',
       comment: 'Outside a module, import only its index.ts (rule 2).',
-      from: { path: '^apps/api/src/(?!modules/([^/]+)/)', pathNot: TEST_CODE },
+      from: {
+        path: '^apps/api/src/(?!modules/([^/]+)/)',
+        pathNot: [...TEST_CODE, '^apps/api/src/app\\.ts$'],
+      },
       to: { path: '^apps/api/src/modules/[^/]+/(?!index\\.ts$)' },
+    },
+    {
+      name: 'app-composes-routes',
+      severity: 'error',
+      comment:
+        'app.ts mounts routes straight from <module>.routes.ts, and otherwise uses index.ts (rule 2c).',
+      from: { path: '^apps/api/src/app\\.ts$' },
+      to: { path: '^apps/api/src/modules/[^/]+/(?!index\\.ts$)(?![^/]+\\.routes\\.ts$)' },
+    },
+    {
+      name: 'index-without-routes',
+      severity: 'error',
+      comment:
+        'A module index exposes services and types, never routes, so routes can import any module without cycles (rule 2c).',
+      from: { path: '^apps/api/src/modules/[^/]+/index\\.ts$' },
+      to: { path: '\\.routes\\.ts$' },
     },
     {
       name: 'cross-module-internals',

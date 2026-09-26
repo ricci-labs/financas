@@ -1,4 +1,3 @@
-export { ledgerRoutes } from '@api/modules/ledger/ledger.routes'
 export {
   archiveAccount,
   changeAccount,

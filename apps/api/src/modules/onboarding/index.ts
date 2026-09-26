@@ -1,9 +1,4 @@
 export {
-  invitationResponseRoutes,
-  invitationRoutes,
-  PUBLIC_INVITATION_ROUTES,
-} from '@api/modules/onboarding/onboarding.routes'
-export {
   acceptInvitationAsUser,
   createWorkspace,
   inviteMember,

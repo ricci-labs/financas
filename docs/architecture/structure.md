@@ -1,7 +1,7 @@
 ---
 summary: The intended folder tree for the whole monorepo, with the role of every folder and file type.
 read_when: Creating files or folders, or deciding where a piece of code belongs.
-updated: 2026-09-25
+updated: 2026-09-26
 ---
 
 # Project structure
@@ -170,7 +170,7 @@ modules/ledger/
 ├── ledger.table.ts              # Drizzle table definitions
 ├── ledger.types.ts              # exported types of the module
 ├── ledger.service.test.ts
-└── index.ts                     # public surface: service + routes (nothing else)
+└── index.ts                     # public surface: services, middleware and types, never routes
 ```
 
 - Handlers stay inline in the routes file. Separate "controller" files break Hono's type inference and the RPC types.
@@ -188,7 +188,7 @@ modules/ledger/
   | `<module>.middleware.ts` | Hono middleware the module offers to other routes (e.g. `access`: `workspaceAccess`, `authorize`) |
   | `<module>.emails.ts` | Email templates: pure functions that return an `EmailMessage` (pt-BR text, rendered by `core/email/layout.ts`) |
   | `<module>.test.ts` / `<module>.integration.test.ts` | Unit / database tests, one `describe` per table or use case. A big module may split them by area: `<module>.<area>.integration.test.ts` |
-  | `index.ts` | Public surface |
+  | `index.ts` | Public surface: services, middleware and types. **Never routes**: `app.ts` mounts each module's routes straight from `<module>.routes.ts`, so any module's routes can import any other module (e.g. `access` for `authorize`) without an import cycle |
 
 - If a module holds two concepts that feel separate, it is two modules (that's how `access` split from `workspaces`), not extra files inside one.
 
