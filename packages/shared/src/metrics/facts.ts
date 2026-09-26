@@ -26,6 +26,19 @@ export function postingsCounted(
   )
 }
 
+export function postingsEffectiveIn(
+  facts: PeriodFacts,
+  accountClass: AccountClass,
+  period: Period,
+): FactPosting[] {
+  const accounts = accountsById(facts)
+  return facts.postings.filter(
+    (posting) =>
+      accounts.get(posting.accountId)?.class === accountClass &&
+      isInPeriod(posting.effectiveOn, period),
+  )
+}
+
 export function pendingInPeriod(
   facts: PeriodFacts,
   entryTypes: readonly RecurringEntryType[],

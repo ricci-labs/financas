@@ -122,11 +122,13 @@ number or alert is one file, one line in `METRICS` / `INSIGHTS`, and a test.
 
 **The facts** (`PeriodFacts`, `metrics/metrics.types.ts`), loaded by `reports.getPeriodOverview`:
 today (workspace time zone), the period (from the settings and the holidays), the 6 periods
-before it, the budget view and base, the accounts (`ledger.readAccountFacts`), the postings of active entries that fall in the
+before and the 6 after it, the budget view and base, the accounts (`ledger.readAccountFacts`), the postings of active entries that fall in the
 period by `effective_on` or by the entry's `occurred_on` (`ledger.readPostingFacts`), and the
 occurrences due in the period (`planning.readOccurrenceFacts`, which tops up the horizon first),
 the budgets in force (`planning.readBudgetFacts`) and the reserve (`planning.readReserveFact`).
-Postings are loaded from the start of the oldest previous period.
+Postings are loaded from the start of the oldest previous period to the end of the last coming
+one, and occurrences from the start of the period to that same end. The plan reaches 6 months past
+today, so a coming period beyond it only shows what is already posted.
 
 **Metrics of the period** (a posting counts by `effective_on`, or by `occurred_on` under
 `installment_budget_view = purchase_month`; amounts in cents):
@@ -146,8 +148,10 @@ daily_allowance   = max(free_to_spend, 0) ÷ days left, today included (the whol
 budget_pace       = per budget in force (`planning.readBudgetFacts`): spent on the category and every
                     category below it; expected = limit × days elapsed ÷ days in the period (today
                     included); `over` past the limit, `ahead` past the expected, else `within`
-committed_ahead   = for each of the next 6 periods: installments + fixed expense occurrences,
-                    in cents and as % of that period's fixed income
+committed_ahead   = for each of the next 6 periods: installments already posted there (by
+                    `effective_on`, whatever the budget view: it's the burden that month) + pending
+                    bills and subscriptions, and that total as a whole % of the period's fixed
+                    income (null without fixed income)
 next_invoice      = per card: posted on the open invoice + pending recurring card charges before closing
 variable_average  = variable income averaged over the 6 previous periods that have any posting
                     (a new household isn't averaged with empty months); null without history.

@@ -14,4 +14,5 @@ export type ReportRouteDeps = {
 export type PeriodTimeline = {
   period: Period
   recentPeriods: Period[]
+  upcomingPeriods: Period[]
 }

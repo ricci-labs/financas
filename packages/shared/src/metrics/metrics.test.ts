@@ -23,6 +23,10 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
     today: '2026-10-15',
     period: OCTOBER,
     recentPeriods: RECENT,
+    upcomingPeriods: [
+      { label: '2026-11', start: '2026-11-01', end: '2026-11-30' },
+      { label: '2026-12', start: '2026-12-01', end: '2026-12-31' },
+    ],
     installmentBudgetView: 'per_installment',
     budgetBase: 'fixed_income',
     accounts: [
@@ -143,6 +147,13 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
         entryType: 'expense',
         status: 'pending',
         categoryAccountId: 'housing',
+      },
+      {
+        dueOn: '2026-11-20',
+        amountCents: 400_000,
+        entryType: 'income',
+        status: 'pending',
+        categoryAccountId: 'salary-b',
       },
     ],
     reserve: { targetCents: 3_000_000, savedCents: 1_200_000 },
@@ -285,5 +296,33 @@ describe('reserveCoverage', () => {
   it('has no months without spending history, and nothing without a reserve', () => {
     expect(computeMetrics(household({ recentPeriods: [] })).reserveCoverage?.months).toBeNull()
     expect(computeMetrics(household({ reserve: null })).reserveCoverage).toBeNull()
+  })
+})
+
+describe('committedAhead', () => {
+  it('shows how much of each coming period installments and bills already take', () => {
+    expect(computeMetrics(household()).committedAhead).toEqual([
+      {
+        label: '2026-11',
+        installmentsCents: 30_000,
+        plannedCents: 200_000,
+        committedCents: 230_000,
+        fixedIncomeCents: 400_000,
+        percentOfIncome: 58,
+      },
+      {
+        label: '2026-12',
+        installmentsCents: 0,
+        plannedCents: 0,
+        committedCents: 0,
+        fixedIncomeCents: 0,
+        percentOfIncome: null,
+      },
+    ])
+  })
+
+  it('keeps counting installments by their month even when the budget counts purchases', () => {
+    const byPurchase = computeMetrics(household({ installmentBudgetView: 'purchase_month' }))
+    expect(byPurchase.committedAhead[0]?.installmentsCents).toBe(30_000)
   })
 })

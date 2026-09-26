@@ -76,7 +76,8 @@ updated: 2026-09-26
      - [x] Budget lines and goals (with the reserve)
      - [x] Period facts + first metrics + `GET /overview` (free to spend, per day, spent, committed)
      - [ ] More metrics: budget pace, committed ahead (6 periods), next invoice, variable income
-           average, reserve in months (done: budget pace, variable average, reserve coverage)
+           average, reserve in months (done: budget pace, variable average, reserve coverage, committed
+           ahead)
      - [ ] Insights (first set) in the overview
      - [ ] Commission split: allocation steps + suggested transfers
      - [ ] Balance forecast per account
