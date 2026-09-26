@@ -15,3 +15,7 @@ export type Period = {
   start: IsoDate
   end: IsoDate
 }
+
+export type DateParts = YearMonth & {
+  day: number
+}

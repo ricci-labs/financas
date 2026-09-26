@@ -1,7 +1,5 @@
-import type { Database } from '@api/core/db/client'
+import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { sql } from 'drizzle-orm'
-
-export type WorkspaceTransaction = Parameters<Parameters<Database['transaction']>[0]>[0]
 
 export async function withWorkspace<T>(
   db: Database,

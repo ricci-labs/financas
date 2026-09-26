@@ -87,3 +87,13 @@ export type PostingsViolation =
 export type PostingsPlan =
   | { ok: true; postings: PostingDraft[] }
   | { ok: false; violation: PostingsViolation }
+
+export type PlanLine = {
+  account: AccountRef
+  amountCents: Cents
+  effectiveOn?: IsoDate
+  invoiceId?: string
+  installmentNo?: number
+}
+
+export type PlanOf<T extends EntryPlan['entryType']> = Extract<EntryPlan, { entryType: T }>

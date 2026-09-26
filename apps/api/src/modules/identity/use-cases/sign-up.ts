@@ -1,4 +1,4 @@
-import type { Database } from '@api/core/db/client'
+import type { Database } from '@api/core/db/db.types'
 import { AppError, ForbiddenError, parseOrThrow } from '@api/core/http/errors'
 import { accountAlreadyExistsMessage } from '@api/modules/identity/identity.emails'
 import { findAccountByEmail } from '@api/modules/identity/identity.repository'

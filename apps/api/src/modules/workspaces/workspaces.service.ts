@@ -1,5 +1,4 @@
-import type { Database } from '@api/core/db/client'
-import type { WorkspaceTransaction } from '@api/core/db/tx'
+import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import {
   generateWorkspaceId,
   insertDefaultSettings,

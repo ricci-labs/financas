@@ -1,12 +1,9 @@
 import { isIP } from 'node:net'
+import type { NodeBindings } from '@api/core/http/http.types'
 import type { Context } from 'hono'
 
 const UNKNOWN_CLIENT = 'unknown'
 const FORWARDED_FOR_HEADER = 'X-Forwarded-For'
-
-type NodeBindings = {
-  incoming?: { socket?: { remoteAddress?: string } }
-}
 
 export function clientIpOf(c: Context, trustedProxyHops: number): string {
   const address = trustedProxyHops > 0 ? forwardedAddress(c, trustedProxyHops) : socketAddressOf(c)

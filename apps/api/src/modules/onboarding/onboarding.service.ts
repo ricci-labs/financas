@@ -1,4 +1,4 @@
-import type { Database } from '@api/core/db/client'
+import type { Database } from '@api/core/db/db.types'
 import { withWorkspace } from '@api/core/db/tx'
 import { ValidationError } from '@api/core/http/errors'
 import { createSystemRoles } from '@api/modules/access'

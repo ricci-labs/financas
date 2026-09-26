@@ -1,17 +1,14 @@
 import { createApp } from '@api/app'
 import { createBackgroundTasks } from '@api/core/background-tasks'
 import type { Mailer } from '@api/core/email/email.types'
-import {
-  type AccountEmailLimits,
-  createAccountEmailLimits,
-  createUser,
-} from '@api/modules/identity'
+import { createAccountEmailLimits, createUser } from '@api/modules/identity'
 import { users } from '@api/modules/identity/identity.table'
 import { TEST_PUBLIC_URL, testAppDeps } from '@api/testing/app'
 import { connectTestDatabases } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
 import { createCapturingLogger } from '@api/testing/logger'
 import { createRecordingMailer, tokenFromEmail } from '@api/testing/mailer'
+import type { SetupOptions } from '@api/testing/testing.types'
 import { eq } from 'drizzle-orm'
 import { afterAll, describe, expect, it } from 'vitest'
 
@@ -28,12 +25,6 @@ afterAll(async () => {
 
 function emailFor(label: string): string {
   return `${label}-${crypto.randomUUID()}-${fixtures.runId}@example.test`
-}
-
-type SetupOptions = {
-  isPublicSignupEnabled?: boolean
-  mailer?: Mailer
-  accountEmailLimits?: AccountEmailLimits
 }
 
 function setup(options: SetupOptions = {}) {

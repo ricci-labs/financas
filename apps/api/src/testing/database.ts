@@ -1,6 +1,6 @@
-import { createDatabase, type Database } from '@api/core/db/client'
+import { createDatabase } from '@api/core/db/client'
+import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { postgresErrorCode } from '@api/core/db/errors'
-import type { WorkspaceTransaction } from '@api/core/db/tx'
 import { sql } from 'drizzle-orm'
 
 function requiredEnv(name: string): string {

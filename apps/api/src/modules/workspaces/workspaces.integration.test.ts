@@ -2,6 +2,7 @@ import { withWorkspace } from '@api/core/db/tx'
 import { workspaceSettings, workspaces } from '@api/modules/workspaces/workspaces.table'
 import { connectTestDatabases, POSTGRES_ERRORS, postgresErrorCodeOf } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
+import type { SettingsChange } from '@api/testing/testing.types'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
@@ -82,8 +83,6 @@ describe('workspaces table', () => {
 })
 
 describe('workspace settings', () => {
-  type SettingsChange = Partial<typeof workspaceSettings.$inferInsert>
-
   function updateSettingsOfA(change: SettingsChange) {
     return withWorkspace(databases.app, workspaceA, (tx) =>
       tx.update(workspaceSettings).set(change).where(eq(workspaceSettings.workspaceId, workspaceA)),

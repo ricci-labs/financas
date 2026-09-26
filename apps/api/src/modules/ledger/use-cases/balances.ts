@@ -1,4 +1,4 @@
-import type { Database } from '@api/core/db/client'
+import type { Database } from '@api/core/db/db.types'
 import { withWorkspace } from '@api/core/db/tx'
 import { selectAccountBalances, selectInvoiceTotals } from '@api/modules/ledger/ledger.repository'
 import type { AccountBalance, InvoiceTotal, WorkspaceCard } from '@api/modules/ledger/ledger.types'

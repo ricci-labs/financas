@@ -1,3 +1,4 @@
+import type { invitations } from '@api/modules/members/members.table'
 export type NewMembership = {
   workspaceId: string
   userId: string
@@ -31,4 +32,12 @@ export type AcceptedInvitation = {
 export type ActiveMembership = {
   membershipId: string
   roleId: string
+}
+
+export type NewInvitation = typeof invitations.$inferInsert
+
+export type InvitationState = {
+  deletedAt: Date | null
+  acceptedAt: Date | null
+  expiresAt: Date
 }

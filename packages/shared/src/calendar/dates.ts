@@ -1,8 +1,4 @@
-import type { IsoDate, YearMonth } from '@shared/calendar/calendar.types'
-
-type DateParts = YearMonth & {
-  day: number
-}
+import type { DateParts, IsoDate, YearMonth } from '@shared/calendar/calendar.types'
 
 const ISO_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/
 const SUNDAY = 0

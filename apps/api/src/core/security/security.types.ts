@@ -21,3 +21,8 @@ export type AttemptLimiter = {
   record: (key: string) => void
   clear: (key: string) => void
 }
+
+export type Window = {
+  attempts: number
+  startedAt: number
+}

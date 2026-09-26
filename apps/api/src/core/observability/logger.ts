@@ -1,7 +1,5 @@
-import type { Env } from '@api/core/config/env.schemas'
+import type { LoggerEnv } from '@api/core/observability/observability.types'
 import { type DestinationStream, pino } from 'pino'
-
-type LoggerEnv = Pick<Env, 'LOG_LEVEL' | 'NODE_ENV' | 'APP_VERSION'>
 
 const SECRET_FIELDS = [
   'password',

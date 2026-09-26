@@ -1,10 +1,7 @@
-import type { Database } from '@api/core/db/client'
-import type { WorkspaceTransaction } from '@api/core/db/tx'
+import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { invitations, membershipPreferences, memberships } from '@api/modules/members/members.table'
-import type { NewMembership } from '@api/modules/members/members.types'
+import type { NewInvitation, NewMembership } from '@api/modules/members/members.types'
 import { and, eq, isNull, sql } from 'drizzle-orm'
-
-type NewInvitation = typeof invitations.$inferInsert
 
 export async function insertMembership(tx: WorkspaceTransaction, membership: NewMembership) {
   const [inserted] = await tx

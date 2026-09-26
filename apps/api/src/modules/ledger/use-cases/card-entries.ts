@@ -1,4 +1,4 @@
-import type { WorkspaceTransaction } from '@api/core/db/tx'
+import type { WorkspaceTransaction } from '@api/core/db/db.types'
 import { ValidationError } from '@api/core/http/errors'
 import {
   findCardCycle,
@@ -8,12 +8,16 @@ import {
   selectInvoicesOfMonths,
   setInvoiceStatus,
 } from '@api/modules/ledger/ledger.repository'
-import type { WorkspaceCard } from '@api/modules/ledger/ledger.types'
+import type {
+  CardPurchaseInput,
+  CardSetup,
+  InvoicePaymentInput,
+  WorkspaceCard,
+} from '@api/modules/ledger/ledger.types'
 import { loadAccounts, pick } from '@api/modules/ledger/use-cases/lookups'
 import {
   type AccountRef,
   type CardCycle,
-  type EntryInput,
   type EntryPlan,
   type InstallmentTarget,
   type InvoiceRef,
@@ -21,14 +25,6 @@ import {
   invoiceStatusOn,
   invoicesForInstallments,
 } from '@financas/shared'
-
-type CardPurchaseInput = Extract<EntryInput, { entryType: 'card_purchase' }>
-
-type InvoicePaymentInput = Extract<EntryInput, { entryType: 'invoice_payment' }>
-
-type CardSetup = CardCycle & {
-  paymentAccountId: string | null
-}
 
 const FIRST_DAY_SUFFIX = '-01'
 

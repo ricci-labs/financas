@@ -1,4 +1,4 @@
-import type { WorkspaceTransaction } from '@api/core/db/tx'
+import type { WorkspaceTransaction } from '@api/core/db/db.types'
 import { ValidationError } from '@api/core/http/errors'
 import { findUsableAccounts } from '@api/modules/ledger/ledger.repository'
 import type { AccountsById } from '@api/modules/ledger/ledger.types'

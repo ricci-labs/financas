@@ -6,7 +6,9 @@ import type { AttemptLimiter } from '@api/core/security/security.types'
 import type {
   AccountEmailLimitSettings,
   AccountEmailLimits,
+  EmailBody,
   IdentityRouteDeps,
+  LimitKeys,
   LoginLimitSettings,
   LoginLimits,
 } from '@api/modules/identity/identity.types'
@@ -17,13 +19,6 @@ const MS_PER_MINUTE = 60 * 1000
 const MS_PER_HOUR = 60 * MS_PER_MINUTE
 const RETRY_AFTER_HEADER = 'Retry-After'
 const INVALID_LINK_CODE = 'LINK_INVALID'
-
-type EmailBody = { in: { json: { email: string } }; out: { json: { email: string } } }
-
-type LimitKeys = {
-  email: string
-  client: string
-}
 
 export function createLoginLimits(settings: LoginLimitSettings): LoginLimits {
   const windowMs = settings.windowMinutes * MS_PER_MINUTE

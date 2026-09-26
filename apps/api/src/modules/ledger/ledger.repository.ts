@@ -1,4 +1,4 @@
-import type { WorkspaceTransaction } from '@api/core/db/tx'
+import type { WorkspaceTransaction } from '@api/core/db/db.types'
 import {
   accountBalances,
   cardDetails,
@@ -8,13 +8,18 @@ import {
   ledgerAccounts,
   postings,
 } from '@api/modules/ledger/ledger.table'
-import type { NewLedgerAccount } from '@api/modules/ledger/ledger.types'
+import type {
+  AccountUpdate,
+  CardDetailsUpdate,
+  NewAccount,
+  NewCardDetails,
+  NewEntry,
+  NewInvoice,
+  NewLedgerAccount,
+  NewPosting,
+} from '@api/modules/ledger/ledger.types'
 import type { InvoiceStatus, SystemAccountKind } from '@financas/shared'
 import { and, asc, eq, inArray, isNull, ne } from 'drizzle-orm'
-
-type NewEntry = typeof journalEntries.$inferInsert
-
-type NewPosting = typeof postings.$inferInsert
 
 export async function insertAccounts(tx: WorkspaceTransaction, accounts: NewLedgerAccount[]) {
   await tx.insert(ledgerAccounts).values(accounts)
@@ -91,12 +96,6 @@ export async function updateEntryDetails(
   await tx.update(journalEntries).set(details).where(eq(journalEntries.id, entryId))
 }
 
-type NewAccount = typeof ledgerAccounts.$inferInsert
-
-type AccountUpdate = Partial<
-  Pick<NewAccount, 'name' | 'parentId' | 'ownerUserId' | 'color' | 'icon' | 'sortOrder'>
->
-
 export async function insertAccount(tx: WorkspaceTransaction, account: NewAccount) {
   const [inserted] = await tx
     .insert(ledgerAccounts)
@@ -152,20 +151,6 @@ export async function markAccountRestored(tx: WorkspaceTransaction, accountId: s
     .where(eq(ledgerAccounts.id, accountId))
 }
 
-type NewCardDetails = typeof cardDetails.$inferInsert
-
-type CardDetailsUpdate = Partial<
-  Pick<
-    NewCardDetails,
-    | 'closingDay'
-    | 'dueDay'
-    | 'purchaseOnClosingDayGoesNext'
-    | 'limitCents'
-    | 'holderUserId'
-    | 'paymentAccountId'
-  >
->
-
 export async function insertCardDetails(tx: WorkspaceTransaction, details: NewCardDetails) {
   await tx.insert(cardDetails).values(details)
 }
@@ -186,8 +171,6 @@ export async function updateCardDetails(
 ) {
   await tx.update(cardDetails).set(changes).where(eq(cardDetails.accountId, cardAccountId))
 }
-
-type NewInvoice = typeof cardInvoices.$inferInsert
 
 export async function findCardCycle(tx: WorkspaceTransaction, cardAccountId: string) {
   const [card] = await tx

@@ -1,4 +1,4 @@
-import type { Database } from '@api/core/db/client'
+import type { Database } from '@api/core/db/db.types'
 import { ForbiddenError, UnauthorizedError } from '@api/core/http/errors'
 import { hashPassword, passwordNeedsRehash, verifyPassword } from '@api/core/security/passwords'
 import { generateToken, hashToken } from '@api/core/security/tokens'

@@ -1,11 +1,6 @@
+import type { ProportionalShare } from '@shared/installments/installments.types'
 import { assertPositiveCents, sumCents } from '@shared/money/money'
 import type { Cents } from '@shared/money/money.types'
-
-type ProportionalShare = {
-  party: number
-  cents: Cents
-  remainder: bigint
-}
 
 export function splitInstallments(total: Cents, count: number): Cents[] {
   assertPositiveCents(total, 'total')

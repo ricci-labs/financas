@@ -1,13 +1,8 @@
-import type { WorkspaceTransaction } from '@api/core/db/tx'
+import type { WorkspaceTransaction } from '@api/core/db/db.types'
 import { rolePermissions, roles } from '@api/modules/access/access.table'
-import type { Permission, SystemRoleKey } from '@financas/shared'
+import type { NewSystemRole } from '@api/modules/access/access.types'
+import type { Permission } from '@financas/shared'
 import { and, eq, isNull } from 'drizzle-orm'
-
-type NewSystemRole = {
-  workspaceId: string
-  name: string
-  systemKey: SystemRoleKey
-}
 
 export async function insertSystemRole(tx: WorkspaceTransaction, role: NewSystemRole) {
   const [inserted] = await tx.insert(roles).values(role).returning({ id: roles.id })

@@ -1,7 +1,16 @@
 import type {
+  cardDetails,
+  cardInvoices,
+  journalEntries,
+  ledgerAccounts,
+  postings,
+} from '@api/modules/ledger/ledger.table'
+import type {
   AccountClass,
   AccountKind,
   AccountRef,
+  CardCycle,
+  EntryInput,
   EntrySource,
   InvoiceStatus,
 } from '@financas/shared'
@@ -77,3 +86,37 @@ export type InvoiceTotal = {
 }
 
 export type AccountsById = ReadonlyMap<string, AccountRef>
+
+export type NewEntry = typeof journalEntries.$inferInsert
+
+export type NewPosting = typeof postings.$inferInsert
+
+export type NewAccount = typeof ledgerAccounts.$inferInsert
+
+export type AccountUpdate = Partial<
+  Pick<NewAccount, 'name' | 'parentId' | 'ownerUserId' | 'color' | 'icon' | 'sortOrder'>
+>
+
+export type NewCardDetails = typeof cardDetails.$inferInsert
+
+export type CardDetailsUpdate = Partial<
+  Pick<
+    NewCardDetails,
+    | 'closingDay'
+    | 'dueDay'
+    | 'purchaseOnClosingDayGoesNext'
+    | 'limitCents'
+    | 'holderUserId'
+    | 'paymentAccountId'
+  >
+>
+
+export type NewInvoice = typeof cardInvoices.$inferInsert
+
+export type CardPurchaseInput = Extract<EntryInput, { entryType: 'card_purchase' }>
+
+export type InvoicePaymentInput = Extract<EntryInput, { entryType: 'invoice_payment' }>
+
+export type CardSetup = CardCycle & {
+  paymentAccountId: string | null
+}

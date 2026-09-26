@@ -1,4 +1,4 @@
-import type { Database } from '@api/core/db/client'
+import type { Database } from '@api/core/db/db.types'
 import { generateToken, hashToken } from '@api/core/security/tokens'
 import { deleteOpenAuthTokens, insertAuthToken } from '@api/modules/identity/identity.repository'
 import type { AuthTokenPurpose } from '@api/modules/identity/identity.types'

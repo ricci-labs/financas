@@ -1,7 +1,13 @@
 import { randomUUID } from 'node:crypto'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { EmailMessage, Mailer, MailerEnv, SentEmail } from '@api/core/email/email.types'
+import type {
+  Deliver,
+  EmailMessage,
+  Mailer,
+  MailerEnv,
+  SentEmail,
+} from '@api/core/email/email.types'
 import type { Logger } from '@api/core/observability/logger'
 import { createTransport } from 'nodemailer'
 import type SMTPTransport from 'nodemailer/lib/smtp-transport'
@@ -9,8 +15,6 @@ import type SMTPTransport from 'nodemailer/lib/smtp-transport'
 const IMPLICIT_TLS_PORT = 465
 const MINIMUM_TLS_VERSION = 'TLSv1.2'
 const DEVELOPMENT_SENDER = 'no-reply@localhost'
-
-type Deliver = (message: EmailMessage) => Promise<SentEmail>
 
 export function createMailer(env: MailerEnv, logger: Logger): Mailer {
   const deliver = env.SMTP_HOST ? smtpDelivery(env, env.SMTP_HOST) : outboxDelivery(env)

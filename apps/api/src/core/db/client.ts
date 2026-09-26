@@ -1,18 +1,15 @@
+import type { Database, DatabaseOptions } from '@api/core/db/db.types'
 import { sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
 
 const HEALTH_CHECK_TIMEOUT_MS = 2000
 
-type DatabaseOptions = {
-  onConnectionError: (error: Error) => void
-}
-
 export function createDatabase(connectionString: string, { onConnectionError }: DatabaseOptions) {
   const pool = new Pool({ connectionString })
   pool.on('error', onConnectionError)
 
-  const db = drizzle(pool, { casing: 'snake_case' })
+  const db: Database = drizzle(pool, { casing: 'snake_case' })
 
   async function isReachable(): Promise<boolean> {
     const timeout = new Promise<false>((resolve) => {
@@ -31,5 +28,3 @@ export function createDatabase(connectionString: string, { onConnectionError }: 
     close: () => pool.end(),
   }
 }
-
-export type Database = ReturnType<typeof createDatabase>['db']

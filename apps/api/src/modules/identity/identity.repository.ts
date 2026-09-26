@@ -1,30 +1,12 @@
-import type { Database } from '@api/core/db/client'
+import type { Database } from '@api/core/db/db.types'
 import { authTokens, sessions, users } from '@api/modules/identity/identity.table'
-import type { AuthTokenPurpose } from '@api/modules/identity/identity.types'
+import type {
+  AuthTokenPurpose,
+  AuthTokenRow,
+  SessionRow,
+  UserRow,
+} from '@api/modules/identity/identity.types'
 import { and, eq, gt, isNull, sql } from 'drizzle-orm'
-
-type UserRow = {
-  email: string
-  displayName: string
-  passwordHash: string
-  emailVerifiedAt: Date | null
-}
-
-type AuthTokenRow = {
-  userId: string
-  purpose: AuthTokenPurpose
-  tokenHash: string
-  createdAt: Date
-  expiresAt: Date
-}
-
-type SessionRow = {
-  userId: string
-  tokenHash: string
-  userAgent: string | null
-  createdAt: Date
-  expiresAt: Date
-}
 
 export async function insertUser(db: Database, user: UserRow): Promise<string> {
   const [inserted] = await db.insert(users).values(user).returning({ id: users.id })

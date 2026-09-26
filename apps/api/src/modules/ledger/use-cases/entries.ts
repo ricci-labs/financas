@@ -1,8 +1,8 @@
 import { systemClock } from '@api/core/clock'
 import type { Clock } from '@api/core/clock.types'
-import type { Database } from '@api/core/db/client'
+import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { postgresConstraintName } from '@api/core/db/errors'
-import { type WorkspaceTransaction, withWorkspace } from '@api/core/db/tx'
+import { withWorkspace } from '@api/core/db/tx'
 import { ConflictError, NotFoundError, parseOrThrow, ValidationError } from '@api/core/http/errors'
 import {
   findSystemAccount,
