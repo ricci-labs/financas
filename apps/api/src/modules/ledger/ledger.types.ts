@@ -184,3 +184,17 @@ export type EntryItem = {
   replacesEntryId: string | null
   postings: PostingItem[]
 }
+
+export type InvoiceLine = {
+  entryId: string
+  entryType: EntryType
+  occurredOn: string
+  description: string
+  installmentNo: number | null
+  installmentCount: number
+  amountCents: number
+}
+
+export type CardInvoiceRef = WorkspaceCard & {
+  invoiceId: string
+}

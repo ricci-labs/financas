@@ -1,5 +1,5 @@
 import { createApp } from '@api/app'
-import type { CardItem } from '@api/modules/ledger'
+import type { CardItem, InvoiceLine, InvoiceTotal } from '@api/modules/ledger'
 import { testAppDeps } from '@api/testing/app'
 import { connectTestDatabases } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
@@ -128,6 +128,91 @@ describe('GET /cards/:cardId/invoices', () => {
     for (const cardId of [checkingAccountId, UNKNOWN_ID, 'not-a-uuid']) {
       const response = await owner.get(`${workspacePath}/cards/${cardId}/invoices`)
       expect([response.status, await codeOf(response)]).toEqual([404, 'CARD_NOT_FOUND'])
+    }
+  })
+})
+
+describe('GET /cards/:cardId/invoices/:invoiceId/lines', () => {
+  async function entry(body: object): Promise<string> {
+    const response = await owner.post(`${workspacePath}/entries`, body)
+    return ((await response.json()) as { entryId: string }).entryId
+  }
+
+  it('lists the charges and payments of one invoice, as the card statement shows them', async () => {
+    const created = await createCard(owner, 'Card L')
+    const { accountId: lineCardId } = (await created.json()) as { accountId: string }
+    const purchase = {
+      entryType: 'card_purchase',
+      occurredOn: '2026-10-05',
+      cardAccountId: lineCardId,
+      categoryId,
+    }
+    await entry({
+      ...purchase,
+      description: 'Geladeira',
+      amountCents: 300_000,
+      installmentCount: 3,
+    })
+    await entry({ ...purchase, description: 'Farmácia', amountCents: 5_000 })
+    const deleted = await entry({ ...purchase, description: 'Engano', amountCents: 9_900 })
+    await owner.del(`${workspacePath}/entries/${deleted}`)
+
+    const invoices = (await (
+      await owner.get(`${workspacePath}/cards/${lineCardId}/invoices`)
+    ).json()) as InvoiceTotal[]
+    const first = invoices[0]
+    await entry({
+      entryType: 'invoice_payment',
+      occurredOn: '2026-10-06',
+      description: 'Pagamento parcial',
+      amountCents: 50_000,
+      cardAccountId: lineCardId,
+      invoiceId: first?.invoiceId,
+      paidFromAccountId: checkingAccountId,
+    })
+
+    const response = await viewer.get(
+      `${workspacePath}/cards/${lineCardId}/invoices/${first?.invoiceId}/lines`,
+    )
+    expect(response.status).toBe(200)
+    const lines = (await response.json()) as InvoiceLine[]
+    expect(
+      lines.map((line) => [
+        line.description,
+        line.installmentNo,
+        line.installmentCount,
+        line.amountCents,
+      ]),
+    ).toEqual([
+      ['Geladeira', 1, 3, 100_000],
+      ['Farmácia', 1, 1, 5_000],
+      ['Pagamento parcial', null, 1, -50_000],
+    ])
+  })
+
+  it('answers 404 for an invoice of another card and for malformed ids', async () => {
+    const created = await createCard(owner, 'Card M')
+    const { accountId: otherCardId } = (await created.json()) as { accountId: string }
+    await owner.post(`${workspacePath}/entries`, {
+      entryType: 'card_purchase',
+      occurredOn: '2026-10-05',
+      description: 'Livro',
+      amountCents: 4_000,
+      cardAccountId: otherCardId,
+      categoryId,
+    })
+    const [invoice] = (await (
+      await owner.get(`${workspacePath}/cards/${otherCardId}/invoices`)
+    ).json()) as InvoiceTotal[]
+
+    const cardsList = await cards()
+    const anotherCard = cardsList.find((card) => card.accountId !== otherCardId)
+    for (const path of [
+      `${anotherCard?.accountId}/invoices/${invoice?.invoiceId}`,
+      `${otherCardId}/invoices/not-a-uuid`,
+    ]) {
+      const response = await owner.get(`${workspacePath}/cards/${path}/lines`)
+      expect([response.status, await codeOf(response)]).toEqual([404, 'INVOICE_NOT_FOUND'])
     }
   })
 })

@@ -201,4 +201,8 @@ export type CardChange = z.infer<typeof cardChangeSchema>
 
 export const cardParamsSchema = z.object({ cardId: z.uuid() })
 
+export const invoiceParamsSchema = z.object({ cardId: z.uuid(), invoiceId: z.uuid() })
+
+export type InvoiceParams = z.infer<typeof invoiceParamsSchema>
+
 export type CardParams = z.infer<typeof cardParamsSchema>
