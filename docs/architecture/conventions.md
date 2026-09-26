@@ -164,6 +164,11 @@ without comments.
 - Every error response has the same body: `{ "error": { "code", "message", "ref" } }`. The web shows pt-BR text chosen by `code`, plus the `ref`.
 - Routes validate ids in the URL with `pathParams(schema, 'X_NOT_FOUND')`: a malformed id is a `404`
   before any query. Query strings go through `queryParams(schema, 'X_QUERY_INVALID')`. Routes validate bodies with `jsonBody(schema, 'X_INVALID')` (`core/http/validation.ts`, Hono's built-in validator + `parseOrThrow`), so validation errors take the same path. Bodies above 100 KB are refused with 413 before being read.
+- A list that grows without bound (entries, the trash) answers one page: `{ items, nextCursor }`. The
+  client sends `nextCursor` back as `?cursor=` until it is `null`. The cursor is keyset, `<sort key>_<id>`
+  over the list's order (never an offset, so a row recorded meanwhile is neither skipped nor repeated).
+  `pageOf` and `pageCursorSchema` live in `@financas/shared` (`paging/`). Small, bounded lists (accounts,
+  cards, members, roles) answer a plain array.
 - Never swallow errors. Log with context using the pino child logger.
 
 ## Tests
