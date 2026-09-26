@@ -75,6 +75,17 @@ exactly "parcela 2/3 da TV". The own part and each share are spread over the ins
 the remaining installments of that same split. Monthly charges group all of a contact's items whose invoice is due
 that month.
 
+### Building a charge (pure, `packages/shared/src/charges/` and `pix/`)
+- **Open items** (`openItems`): a contact's receivable lines, with their payments applied to the
+  **oldest items first** (by due date, then posting). Items still open, due up to the chosen date and
+  not already in an open charge. Each carries what's left of it.
+- **Message** (`chargeMessage`, pt-BR, the exact text is stored on the charge): who asks, one line
+  per item (`parcela n/N` when there are installments), the total, the due date and the Pix copia
+  e cola, each only when there is one.
+- **Pix copia e cola** (`pixCopiaECola`): a static BR Code (EMV) with the amount, the workspace's key,
+  receiver name (≤ 25) and city (≤ 15) without accents, the charge as the transaction id, closed by
+  its CRC-16/CCITT-FALSE.
+
 ### Sending a charge (direct, via the platform's WhatsApp)
 1. The user asks ("cobra o J") or a scheduled monthly charge triggers.
 2. The service collects the contact's open items, builds the message (items, total, due date, Pix copia-e-cola) and saves the `charge`.
