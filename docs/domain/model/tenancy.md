@@ -66,6 +66,13 @@ Web sessions (ADR 0021). Global table: no `workspace_id`, no RLS, hard deleted. 
 - `verifyEmail()` uses the token in one statement: it marks the token used and the email verified
   only if the token is an unused `email_verification` token that hasn't expired. Anything else is
   `LINK_INVALID`.
+- `requestPasswordReset()` emails a 1-hour reset link to an active user (retiring the previous
+  one). For anyone else it silently does nothing.
+- `resetPassword()` checks the new password first, so a bad one doesn't spend the link. Then one
+  statement uses the token (unused, unexpired, `password_reset`, active user), stores the new hash,
+  marks the email verified (the link proved the user reads it) and deletes every session. The owner
+  gets a "your password was changed" email with a link to reset it again. Anything else is
+  `LINK_INVALID`.
 - Email links carry the token in the URL fragment (`/verify-email#token=...`), which browsers never
   send to a server or put in a `Referer`. The web page reads it and posts it to the API.
 - The routes for sign-up, verification requests and forgotten passwords must answer `202` without
