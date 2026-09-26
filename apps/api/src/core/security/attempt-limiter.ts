@@ -1,5 +1,5 @@
 export type AttemptLimiterOptions = {
-  maxFailures: number
+  maxAttempts: number
   windowMs: number
   maxTrackedKeys?: number
   now?: () => number
@@ -12,12 +12,12 @@ export type AttemptCheck = {
 
 export type AttemptLimiter = {
   check: (key: string) => AttemptCheck
-  recordFailure: (key: string) => void
+  record: (key: string) => void
   clear: (key: string) => void
 }
 
 type Window = {
-  failures: number
+  attempts: number
   startedAt: number
 }
 
@@ -26,7 +26,7 @@ const MS_PER_SECOND = 1000
 const NOT_BLOCKED: AttemptCheck = { isBlocked: false, retryAfterSeconds: 0 }
 
 export function createAttemptLimiter({
-  maxFailures,
+  maxAttempts,
   windowMs,
   maxTrackedKeys = DEFAULT_MAX_TRACKED_KEYS,
   now = Date.now,
@@ -44,20 +44,20 @@ export function createAttemptLimiter({
 
   function check(key: string): AttemptCheck {
     const window = openWindow(key)
-    if (!window || window.failures < maxFailures) {
+    if (!window || window.attempts < maxAttempts) {
       return NOT_BLOCKED
     }
     const remainingMs = window.startedAt + windowMs - now()
     return { isBlocked: true, retryAfterSeconds: Math.ceil(remainingMs / MS_PER_SECOND) }
   }
 
-  function recordFailure(key: string): void {
+  function record(key: string): void {
     const window = openWindow(key)
     if (window) {
-      window.failures += 1
+      window.attempts += 1
       return
     }
-    windows.set(key, { failures: 1, startedAt: now() })
+    windows.set(key, { attempts: 1, startedAt: now() })
     keepWithinCapacity()
   }
 
@@ -76,5 +76,5 @@ export function createAttemptLimiter({
     }
   }
 
-  return { check, recordFailure, clear: (key) => windows.delete(key) }
+  return { check, record, clear: (key) => windows.delete(key) }
 }

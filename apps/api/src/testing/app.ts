@@ -1,7 +1,8 @@
 import type { AppDeps } from '@api/app'
+import { createBackgroundTasks } from '@api/core/background-tasks'
 import { createDatabase } from '@api/core/db/client'
 import { sessionCookieSettings } from '@api/core/http/session-cookie'
-import { createLoginLimits } from '@api/modules/identity'
+import { createAccountEmailLimits, createLoginLimits } from '@api/modules/identity'
 import { createCapturingLogger } from '@api/testing/logger'
 import { createRecordingMailer } from '@api/testing/mailer'
 
@@ -29,7 +30,12 @@ export function testAppDeps(overrides: Partial<AppDeps> = {}): AppDeps {
       maxFailuresPerClient: 30,
       windowMinutes: 15,
     }),
+    accountEmailLimits: createAccountEmailLimits({
+      maxPerEmailPerHour: 3,
+      maxPerClientPerHour: 10,
+    }),
     trustedProxyHops: 0,
+    background: createBackgroundTasks(),
     ...overrides,
   }
 }

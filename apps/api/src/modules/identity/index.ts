@@ -1,4 +1,5 @@
 export {
+  createAccountEmailLimits,
   createLoginLimits,
   identityRoutes,
   PUBLIC_AUTH_ROUTES,
@@ -17,6 +18,7 @@ export {
 } from '@api/modules/identity/identity.service'
 export type {
   AccountEmailDeps,
+  AccountEmailLimits,
   ActiveSession,
   EmailOnlyInput,
   IdentityDeps,

@@ -53,6 +53,8 @@ describe('loadEnv', () => {
       LOGIN_MAX_FAILURES_PER_EMAIL: 5,
       LOGIN_MAX_FAILURES_PER_IP: 30,
       LOGIN_FAILURE_WINDOW_MINUTES: 15,
+      ACCOUNT_EMAILS_PER_ADDRESS_PER_HOUR: 3,
+      ACCOUNT_EMAILS_PER_IP_PER_HOUR: 10,
       SMTP_PORT: 587,
       EMAIL_FROM_NAME: 'Finanças',
       EMAIL_OUTBOX_DIR: '.private/outbox',

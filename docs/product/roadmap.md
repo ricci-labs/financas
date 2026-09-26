@@ -41,7 +41,8 @@ updated: 2026-09-25
   6. [x] HTTP core: error handler (`AppError` → status, error ref), request id, request logger
   7. [x] Auth routes: login, logout, me, config; session required by default; same-origin writes
   7b. [x] Login rate limit (per email and per client IP)
-  7c. [ ] Routes for sign-up, verification and password reset (answer 202 without waiting), with limits
+  7c. [x] Routes that send account emails: sign-up, verification resend, forgot password (202, limits)
+  7d. [ ] Routes that use the links: verify email, reset password (with limits on failed links)
   8. [ ] `authorize(module, action)` middleware + workspace routes (`/api/workspaces/:workspaceId/...`)
      and a test that fails when a route has no permission
   9. [ ] Ledger routes, one PR per area: accounts, cards and invoices, entries, balances

@@ -1,3 +1,4 @@
+import type { BackgroundTasks } from '@api/core/background-tasks'
 import type { Database } from '@api/core/db/client'
 import type { Mailer } from '@api/core/email/email.types'
 import { createBaseApp } from '@api/core/http/base-app'
@@ -7,6 +8,7 @@ import type { SessionCookieSettings } from '@api/core/http/session-cookie'
 import type { Logger } from '@api/core/observability/logger'
 import { healthRoutes, PUBLIC_HEALTH_ROUTES } from '@api/modules/health'
 import {
+  type AccountEmailLimits,
   identityRoutes,
   type LoginLimits,
   PUBLIC_AUTH_ROUTES,
@@ -24,7 +26,9 @@ export type AppDeps = {
   isPublicSignupEnabled: boolean
   cookie: SessionCookieSettings
   loginLimits: LoginLimits
+  accountEmailLimits: AccountEmailLimits
   trustedProxyHops: number
+  background: BackgroundTasks
 }
 
 export const PUBLIC_ROUTES: ReadonlySet<string> = new Set([

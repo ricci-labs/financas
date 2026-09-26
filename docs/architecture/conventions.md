@@ -115,6 +115,12 @@ without comments.
   While either is over the limit, login answers `429 TOO_MANY_ATTEMPTS` with `Retry-After`, before
   any password hashing, even for the right password. Only wrong credentials count; a success clears
   the email's count. Memory is capped (oldest keys dropped first).
+- **Routes that send account emails** (sign-up, verification resend, forgot password) validate the
+  input, check the switch and the limits (per address and per client, per hour), then answer
+  `202` with an empty body **before** doing the work, which runs through `BackgroundTasks`
+  (`core/background-tasks.ts`). The response is the same whether the email exists or not, and its
+  timing doesn't depend on it. A failed task is logged as `background.task.failed`; shutdown waits
+  for pending tasks.
 - The client address is the socket address, or with `TRUSTED_PROXY_HOPS = n` the `X-Forwarded-For`
   entry `n` from the right (`core/http/client-ip.ts`). Entries a client writes further left are ignored.
 - The session cookie is `HttpOnly`, `SameSite=Lax`, `Path=/`, with the session expiry. In production

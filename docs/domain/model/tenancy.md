@@ -75,8 +75,9 @@ Web sessions (ADR 0021). Global table: no `workspace_id`, no RLS, hard deleted. 
   `LINK_INVALID`.
 - Email links carry the token in the URL fragment (`/verify-email#token=...`), which browsers never
   send to a server or put in a `Referer`. The web page reads it and posts it to the API.
-- The routes for sign-up, verification requests and forgotten passwords must answer `202` without
-  waiting for the work, so the response time doesn't reveal which branch ran (PR 7).
+- The routes for sign-up, verification requests and forgotten passwords answer `202` without
+  waiting for the work, so the response time doesn't reveal which branch ran
+  (`POST /api/auth/signup`, `/verify-email/resend`, `/password/forgot`).
 
 ### `auth_tokens`
 Single-use email links (ADR 0021). Global table, no RLS, hard deleted once expired.

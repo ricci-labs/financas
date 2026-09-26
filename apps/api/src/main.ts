@@ -1,10 +1,11 @@
 import { createApp } from '@api/app'
+import { createBackgroundTasks } from '@api/core/background-tasks'
 import { loadEnv, publicUrlOf } from '@api/core/config/env'
 import { createDatabase } from '@api/core/db/client'
 import { createMailer } from '@api/core/email/mailer'
 import { sessionCookieSettings } from '@api/core/http/session-cookie'
 import { createLogger } from '@api/core/observability/logger'
-import { createLoginLimits } from '@api/modules/identity'
+import { createAccountEmailLimits, createLoginLimits } from '@api/modules/identity'
 import { serve } from '@hono/node-server'
 
 const SHUTDOWN_TIMEOUT_MS = 10_000
@@ -16,6 +17,7 @@ const database = createDatabase(env.DATABASE_URL, {
     logger.warn({ event: 'db.connection.lost', err }, 'Idle database connection lost')
   },
 })
+const background = createBackgroundTasks()
 const app = createApp({
   version: env.APP_VERSION,
   startedAt: Date.now(),
@@ -31,7 +33,12 @@ const app = createApp({
     maxFailuresPerClient: env.LOGIN_MAX_FAILURES_PER_IP,
     windowMinutes: env.LOGIN_FAILURE_WINDOW_MINUTES,
   }),
+  accountEmailLimits: createAccountEmailLimits({
+    maxPerEmailPerHour: env.ACCOUNT_EMAILS_PER_ADDRESS_PER_HOUR,
+    maxPerClientPerHour: env.ACCOUNT_EMAILS_PER_IP_PER_HOUR,
+  }),
   trustedProxyHops: env.TRUSTED_PROXY_HOPS,
+  background,
 })
 
 const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
@@ -41,6 +48,7 @@ const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
 function shutdown(signal: NodeJS.Signals) {
   logger.info({ event: 'app.stopping', signal }, 'Shutting down')
   server.close(async () => {
+    await background.idle()
     await database.close()
     process.exit(0)
   })
