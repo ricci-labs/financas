@@ -1,3 +1,4 @@
+import type { BackgroundTasks } from '@api/core/background-tasks'
 import type { Clock } from '@api/core/clock'
 import type { Database } from '@api/core/db/client'
 import type { Mailer } from '@api/core/email/email.types'
@@ -75,7 +76,19 @@ export type IdentityRouteDeps = {
   isPublicSignupEnabled: boolean
   cookie: SessionCookieSettings
   loginLimits: LoginLimits
+  accountEmailLimits: AccountEmailLimits
   trustedProxyHops: number
+  background: BackgroundTasks
+}
+
+export type AccountEmailLimits = {
+  byEmail: AttemptLimiter
+  byClient: AttemptLimiter
+}
+
+export type AccountEmailLimitSettings = {
+  maxPerEmailPerHour: number
+  maxPerClientPerHour: number
 }
 
 export type LoginLimits = {

@@ -6,7 +6,7 @@ const WINDOW_MS = 15 * 60 * 1000
 function limiterAt(startMs = 0, maxTrackedKeys?: number) {
   let currentMs = startMs
   const limiter = createAttemptLimiter({
-    maxFailures: 3,
+    maxAttempts: 3,
     windowMs: WINDOW_MS,
     maxTrackedKeys,
     now: () => currentMs,
@@ -21,16 +21,16 @@ function limiterAt(startMs = 0, maxTrackedKeys?: number) {
 
 function failTimes(limiter: ReturnType<typeof limiterAt>['limiter'], key: string, times: number) {
   for (let attempt = 0; attempt < times; attempt += 1) {
-    limiter.recordFailure(key)
+    limiter.record(key)
   }
 }
 
 describe('createAttemptLimiter', () => {
-  it('blocks a key after the maximum failures, and only that key', () => {
+  it('blocks a key after the maximum attempts, and only that key', () => {
     const { limiter } = limiterAt()
     failTimes(limiter, 'email:a', 2)
     expect(limiter.check('email:a').isBlocked).toBe(false)
-    limiter.recordFailure('email:a')
+    limiter.record('email:a')
     expect(limiter.check('email:a')).toEqual({ isBlocked: true, retryAfterSeconds: 900 })
     expect(limiter.check('email:b').isBlocked).toBe(false)
   })
