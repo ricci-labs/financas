@@ -7,8 +7,24 @@ import {
   parseIsoDate,
   toYearMonthLabel,
 } from '@shared/calendar/dates'
+import type { PeriodAnchor } from '@shared/workspaces/workspaces.constants'
 
 const NO_HOLIDAYS: ReadonlySet<IsoDate> = new Set()
+
+export function periodSettingsOf(anchor: PeriodAnchor, anchorValue: number | null): PeriodSettings {
+  switch (anchor) {
+    case 'calendar_month':
+      return { anchor }
+    case 'day_of_month':
+      return { anchor, day: anchorValue ?? 1 }
+    case 'nth_business_day':
+      return { anchor, position: anchorValue ?? 1 }
+  }
+}
+
+export function isInPeriod(date: IsoDate, { start, end }: Period): boolean {
+  return date >= start && date <= end
+}
 
 export function periodOf(
   date: IsoDate,

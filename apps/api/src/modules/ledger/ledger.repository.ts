@@ -18,10 +18,17 @@ import type {
   NewLedgerAccount,
   NewPosting,
 } from '@api/modules/ledger/ledger.types'
-import type { EntryListQuery, InvoiceStatus, SystemAccountKind, TrashQuery } from '@financas/shared'
+import type {
+  EntryListQuery,
+  InvoiceStatus,
+  IsoDate,
+  SystemAccountKind,
+  TrashQuery,
+} from '@financas/shared'
 import {
   and,
   asc,
+  between,
   desc,
   eq,
   gte,
@@ -31,6 +38,7 @@ import {
   lte,
   ne,
   notExists,
+  or,
   sql,
 } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
@@ -466,4 +474,22 @@ export function selectInvoiceLines(
       ),
     )
     .orderBy(asc(journalEntries.occurredOn), asc(journalEntries.id))
+}
+
+export function selectPostingFacts(tx: WorkspaceTransaction, from: IsoDate, to: IsoDate) {
+  return tx
+    .select({
+      accountId: postings.accountId,
+      amountCents: postings.amountCents,
+      effectiveOn: postings.effectiveOn,
+      occurredOn: journalEntries.occurredOn,
+    })
+    .from(postings)
+    .innerJoin(journalEntries, eq(journalEntries.id, postings.entryId))
+    .where(
+      and(
+        isNull(journalEntries.deletedAt),
+        or(between(postings.effectiveOn, from, to), between(journalEntries.occurredOn, from, to)),
+      ),
+    )
 }

@@ -74,7 +74,7 @@ updated: 2026-09-26
      - [x] Matching real entries to pending occurrences, suggested and confirmed; matches follow
            edited or deleted entries; skip / edit one occurrence
      - [x] Budget lines and goals (with the reserve)
-     - [ ] Period facts + first metrics + `GET /overview` (free to spend, per day, spent, committed)
+     - [x] Period facts + first metrics + `GET /overview` (free to spend, per day, spent, committed)
      - [ ] More metrics: budget pace, committed ahead (6 periods), next invoice, variable income
            average, reserve in months
      - [ ] Insights (first set) in the overview
