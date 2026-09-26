@@ -78,3 +78,16 @@ export type InvitationDetails = {
   invitedByUserId: string
   expiresAt: Date
 }
+
+export type MembershipRow = {
+  membershipId: string
+  userId: string
+  roleId: string
+  joinedAt: Date
+}
+
+export type MembershipRemoval = {
+  deletedAt: Date
+  deletedByUserId: string
+  deleteReason: string | null
+}

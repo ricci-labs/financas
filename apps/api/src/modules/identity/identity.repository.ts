@@ -6,7 +6,7 @@ import type {
   SessionRow,
   UserRow,
 } from '@api/modules/identity/identity.types'
-import { and, eq, gt, isNull, sql } from 'drizzle-orm'
+import { and, eq, gt, inArray, isNull, sql } from 'drizzle-orm'
 
 export async function insertUser(db: Database, user: UserRow): Promise<string> {
   const [inserted] = await db.insert(users).values(user).returning({ id: users.id })
@@ -189,4 +189,11 @@ export async function isUsableAuthToken(
       ),
     )
   return usable !== undefined
+}
+
+export function selectAccountsByIds(db: Database, userIds: string[]) {
+  return db
+    .select({ userId: users.id, email: users.email, displayName: users.displayName })
+    .from(users)
+    .where(inArray(users.id, userIds))
 }

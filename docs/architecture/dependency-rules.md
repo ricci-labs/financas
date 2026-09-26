@@ -63,7 +63,8 @@ routes / agent tools / jobs / channels
 | every module | `workspaces` | Current workspace settings |
 | `onboarding` | `workspaces`, `ledger`, `access`, `members` | Creating a workspace: the workspace and its settings, the system accounts, the system roles, the creator as owner |
 | `onboarding` | `identity` | Registering an owner: the user, then their first workspace |
-| `access` | `members` | Loading the caller's active membership to authorize a request |
+| `access` | `members` | Loading the caller's active membership to authorize a request; managing members (role changes, removals) with the owner rules |
+| `access` | `identity` | Member names and emails in the member list |
 | every module's routes | `access` | `authorize()`, `currentWorkspace()` on workspace routes |
 | `workspaces` routes | `onboarding` | `POST /api/workspaces` creates a workspace through `createWorkspace` |
 

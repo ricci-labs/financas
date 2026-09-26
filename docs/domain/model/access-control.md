@@ -114,6 +114,21 @@ The permission set is loaded once per request/turn and cached on the context. Ro
 `GET /api/workspaces/:workspaceId` returns the workspace, the caller's membership, role and
 permissions, so the web can hide what the user can't do.
 
+### Members (`access.routes.ts`, use cases in `access/use-cases/members.ts`)
+| Route | Permission | Behavior |
+|---|---|---|
+| `GET /members` | `members:view` | active members with name, email, role and join date, oldest first |
+| `PATCH /members/:membershipId` `{ roleId }` | `members:update` | change a member's role; the role must be active in the workspace (`ROLE_NOT_AVAILABLE`) |
+| `DELETE /members/:membershipId` (optional `{ reason }`) | `members:delete` | remove (soft delete) a member, who loses access at once |
+| `POST /members/leave` | any member | leave the workspace |
+
+- **Owners are managed by owners only:** promoting someone to owner, changing an owner's role or
+  removing an owner needs the caller to be an owner (`403 OWNER_ONLY`). Leaving is always allowed.
+- **A workspace always keeps an owner:** the DB trigger refuses the change that would leave none,
+  answered as `409 LAST_OWNER` (e.g. the only owner demoting themselves or leaving).
+- `access` orchestrates it: it locks the membership through `members`, checks the roles, and reads
+  names through `identity`, so `members` never imports `access`.
+
 `GET /api/workspaces` lists the caller's workspaces (name, archived flag, role), sorted by name. RLS
 hides other tenants' memberships, so the ids come from the SECURITY DEFINER function
 `user_workspace_ids(user_id)` (ADR 0019): active memberships of workspaces that aren't deleted,

@@ -6,7 +6,11 @@ import {
 } from '@api/core/db/errors'
 import { ConflictError, NotFoundError, parseOrThrow } from '@api/core/http/errors'
 import { hashPassword } from '@api/core/security/passwords'
-import { findAccountById, insertUser } from '@api/modules/identity/identity.repository'
+import {
+  findAccountById,
+  insertUser,
+  selectAccountsByIds,
+} from '@api/modules/identity/identity.repository'
 import type {
   EmailRecipient,
   IdentityDeps,
@@ -42,6 +46,13 @@ export async function getAccount(db: Database, userId: string): Promise<EmailRec
     throw new NotFoundError('USER_NOT_FOUND', 'User not found')
   }
   return account
+}
+
+export async function listAccounts(db: Database, userIds: string[]): Promise<EmailRecipient[]> {
+  if (userIds.length === 0) {
+    return []
+  }
+  return selectAccountsByIds(db, userIds)
 }
 
 async function refusingTakenEmail<T>(work: () => Promise<T>): Promise<T> {

@@ -17,13 +17,17 @@ import {
   insertMembership,
   lockInvitation,
   lockInvitationByTokenHash,
+  lockMembership,
   markInvitationAccepted,
   markInvitationRevoked,
+  markMembershipRemoved,
   retireExpiredInvitations,
   selectActiveMembershipOfUser,
+  selectActiveMemberships,
   selectInvitationByTokenHash,
   selectPendingInvitations,
   selectWorkspaceIdsOfUser,
+  updateMembershipRole,
 } from '@api/modules/members/members.repository'
 import type {
   AcceptedInvitation,
@@ -34,6 +38,8 @@ import type {
   InvitationContact,
   InvitationDetails,
   InvitationState,
+  MembershipRemoval,
+  MembershipRow,
   NewMembership,
   PendingInvitation,
   RevocableInvitation,
@@ -225,4 +231,36 @@ async function refusingPendingDuplicate<T>(work: () => Promise<T>): Promise<T> {
     }
     throw error
   }
+}
+
+export function listActiveMemberships(tx: WorkspaceTransaction): Promise<MembershipRow[]> {
+  return selectActiveMemberships(tx)
+}
+
+export async function lockActiveMembership(
+  tx: WorkspaceTransaction,
+  membershipId: string,
+): Promise<MembershipRow> {
+  const membership = await lockMembership(tx, membershipId)
+  if (!membership || membership.deletedAt) {
+    throw new NotFoundError('MEMBER_NOT_FOUND', 'Member not found')
+  }
+  const { deletedAt: _deletedAt, ...active } = membership
+  return active
+}
+
+export function setMembershipRole(
+  tx: WorkspaceTransaction,
+  membershipId: string,
+  roleId: string,
+): Promise<void> {
+  return updateMembershipRole(tx, membershipId, roleId)
+}
+
+export function removeMembership(
+  tx: WorkspaceTransaction,
+  membershipId: string,
+  removal: MembershipRemoval,
+): Promise<void> {
+  return markMembershipRemoved(tx, membershipId, removal)
 }
