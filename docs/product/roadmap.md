@@ -69,7 +69,8 @@ updated: 2026-09-26
   2. [ ] **Planning + dashboard** (decided 2026-09-26, ADR 0024; `../domain/model/planning.md`):
      - [x] Plan: ADR 0024 (metrics and insights over period facts) and this list
      - [x] Holidays and business-day math: national bank holidays computed, workspace holidays
-     - [ ] Recurrence rules + planned occurrences (job materializes 6 months ahead)
+     - [ ] Recurrence rules + planned occurrences (job materializes 6 months ahead) (done: due-date
+           math)
      - [ ] Matching real entries to pending occurrences; skip / edit one occurrence
      - [ ] Budget lines and goals (reserve)
      - [ ] Period facts + first metrics + `GET /overview` (free to spend, per day, spent, committed)

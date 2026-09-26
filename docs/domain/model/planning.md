@@ -21,10 +21,10 @@ When a real entry is recorded, the service tries to **match** it to a pending oc
 | `entry_type` | enum | `expense`, `income`, `card_purchase`, `transfer` |
 | `amount_cents` | bigint > 0 | Expected amount |
 | `amount_is_estimate` | bool | True for variable bills (energy) and commission |
-| `frequency` | enum `recurrence_frequency`: `monthly`, `weekly`, `yearly`, `every_n_months` | |
-| `interval` | smallint default 1 | For `every_n_months` |
+| `frequency` | enum `recurrence_frequency`: `weekly`, `monthly`, `yearly` | |
+| `interval` | smallint default 1 | Every N weeks/months/years (1–52): quarterly is `monthly` + 3 |
 | `day_of_month` | smallint null | 1–31 (missing day → last day of the month) |
-| `nth_business_day` | smallint null | Alternative to `day_of_month` (e.g. salary on the 5th business day) |
+| `nth_business_day` | smallint null | Alternative to `day_of_month` (e.g. salary on the 5th business day, 1–10). Never both; neither for `weekly`, which repeats the weekday of `starts_on`. Without either, the day of `starts_on` |
 | `weekend_rule` | enum: `keep`, `previous_business_day`, `next_business_day` | Due dates that fall on non-business days |
 | `starts_on`, `ends_on` | date, date null | `ends_on` null = open-ended |
 | `source_account_id` | FK ledger_accounts null | Where the money leaves from or arrives (checking, card) |
@@ -33,6 +33,13 @@ When a real entry is recorded, the service tries to **match** it to a pending oc
 | `remind_days_before` | smallint null | Overrides the member preference |
 | `auto_record` | bool default false | If true, a job records the entry on the due date (auto-debit bills, card subscriptions) |
 | `active` | bool | |
+
+**Due dates** come from the pure `dueDatesBetween(schedule, { from, to }, holidays)` in
+`packages/shared/src/recurrence/`: the nominal date of each step (day clamped to shorter months,
+Feb 29 → 28), moved by `weekend_rule`, kept when inside the range and not before `starts_on` nor
+after `ends_on`. A date just past the range can move into it (`previous_business_day`), so the
+holidays passed must cover the range plus `DAYS_A_DUE_DATE_MAY_SHIFT` (10). The input schema is
+`recurrenceScheduleSchema`.
 
 ## `planned_occurrences`
 | Column | Type | Notes |
