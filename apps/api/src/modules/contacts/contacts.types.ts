@@ -1,5 +1,6 @@
 import type { Database } from '@api/core/db/db.types'
 import type { contacts } from '@api/modules/contacts/contacts.table'
+import type { ContactBalance } from '@financas/shared'
 
 export type ContactRow = typeof contacts.$inferSelect
 
@@ -40,4 +41,8 @@ export type CreatedContact = {
 
 export type ContactRouteDeps = {
   db: Database
+}
+
+export type ContactBalanceItem = ContactBalance & {
+  name: string
 }

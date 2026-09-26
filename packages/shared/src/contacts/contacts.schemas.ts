@@ -24,7 +24,7 @@ export const newContactSchema = z.strictObject({
 export type NewContact = z.infer<typeof newContactSchema>
 
 export const contactChangeSchema = z
-  .strictObject({ ...contactFields, isOptedOut: z.boolean() })
+  .strictObject({ ...contactFields, isOptedOut: z.boolean(), isArchived: z.boolean() })
   .partial()
   .refine((change) => Object.keys(change).length > 0, { message: 'Nothing to change' })
 

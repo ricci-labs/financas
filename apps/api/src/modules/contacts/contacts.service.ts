@@ -11,6 +11,7 @@ import {
   updateContact,
 } from '@api/modules/contacts/contacts.repository'
 import type {
+  ContactBalanceItem,
   ContactItem,
   ContactRef,
   ContactRow,
@@ -18,12 +19,31 @@ import type {
   CreatedContact,
   DeleteContactInput,
 } from '@api/modules/contacts/contacts.types'
-import { contactChangeSchema, newContactSchema } from '@financas/shared'
+import { readContactPostings } from '@api/modules/ledger'
+import { currentWorkspaceDefaults } from '@api/modules/workspaces'
+import { contactBalances, contactChangeSchema, newContactSchema, todayIn } from '@financas/shared'
 
 const CONTACT_INVALID = 'CONTACT_INVALID'
 
 export function listContacts(db: Database, workspaceId: string): Promise<ContactItem[]> {
   return withWorkspace(db, workspaceId, async (tx) => (await selectActiveContacts(tx)).map(itemOf))
+}
+
+export function listContactBalances(
+  db: Database,
+  workspaceId: string,
+  clock: Clock = systemClock,
+): Promise<ContactBalanceItem[]> {
+  return withWorkspace(db, workspaceId, async (tx) => {
+    const { timezone } = await currentWorkspaceDefaults(tx)
+    const names = new Map(
+      (await selectActiveContacts(tx)).map((contact) => [contact.id, contact.name]),
+    )
+    return contactBalances(await readContactPostings(tx), todayIn(timezone, clock.now()))
+      .filter((balance) => names.has(balance.contactId))
+      .map((balance) => ({ ...balance, name: names.get(balance.contactId) ?? '' }))
+      .sort((left, right) => left.name.localeCompare(right.name))
+  })
 }
 
 export async function createContact(
@@ -45,13 +65,24 @@ export async function changeContact(
   rawChange: unknown,
   clock: Clock = systemClock,
 ): Promise<void> {
-  const { isOptedOut, ...change } = parseOrThrow(contactChangeSchema, rawChange, CONTACT_INVALID)
+  const { isOptedOut, isArchived, ...change } = parseOrThrow(
+    contactChangeSchema,
+    rawChange,
+    CONTACT_INVALID,
+  )
   await refusingTakenPhones(() =>
     withWorkspace(db, workspaceId, async (tx) => {
       const current = await lockExistingContact(tx, contactId)
-      const optedOutAt =
-        isOptedOut === undefined ? current.optedOutAt : optOutMoment(current, isOptedOut, clock)
-      await updateContact(tx, contactId, { ...change, optedOutAt })
+      if (isArchived) {
+        await assertNothingOwed(tx, contactId)
+      }
+      await updateContact(tx, contactId, {
+        ...change,
+        optedOutAt:
+          isOptedOut === undefined ? current.optedOutAt : optOutMoment(current, isOptedOut, clock),
+        archivedAt:
+          isArchived === undefined ? current.archivedAt : archiveMoment(current, isArchived, clock),
+      })
     }),
   )
 }
@@ -80,6 +111,26 @@ async function lockExistingContact(
     throw new NotFoundError('CONTACT_NOT_FOUND', `Contact ${contactId} not found`)
   }
   return contact
+}
+
+async function assertNothingOwed(tx: WorkspaceTransaction, contactId: string): Promise<void> {
+  const owed = (await readContactPostings(tx, contactId)).reduce(
+    (sum, posting) => sum + posting.amountCents,
+    0,
+  )
+  if (owed !== 0) {
+    throw new ConflictError(
+      'CONTACT_HAS_BALANCE',
+      'Settle the balance before archiving the contact',
+    )
+  }
+}
+
+function archiveMoment(current: ContactRow, isArchived: boolean, clock: Clock): Date | null {
+  if (!isArchived) {
+    return null
+  }
+  return current.archivedAt ?? clock.now()
 }
 
 function optOutMoment(current: ContactRow, isOptedOut: boolean, clock: Clock): Date | null {

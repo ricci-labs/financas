@@ -22,6 +22,7 @@ export {
   readAccountFacts,
   readBalanceFacts,
   readCardFacts,
+  readContactPostings,
   readInvoiceFacts,
   readPostingFacts,
   recordEntry,

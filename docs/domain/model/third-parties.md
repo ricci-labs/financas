@@ -22,7 +22,7 @@ updated: 2026-09-26
 | `pix_key` | text null | Only if the household ever pays *them* (≤ 77 characters, the Pix limit) |
 | `notes` | text null | ≤ 500 characters |
 | `opted_out_at` | timestamptz null | Contact replied asking not to receive charges. Sending is blocked while set. Set again, it keeps the first moment |
-| `archived_at` | | Only when the balance is zero (with the balances PR) |
+| `archived_at` | | `PATCH { isArchived: true }` only when the balance is zero (`409 CONTACT_HAS_BALANCE`) |
 | soft delete, timestamps | | |
 
 One active contact per phone (`409 CONTACT_PHONE_TAKEN`); deleting a contact frees its phone.
@@ -31,7 +31,8 @@ One active contact per phone (`409 CONTACT_PHONE_TAKEN`); deleting a contact fre
 |---|---|---|
 | `GET /contacts` | `contacts:view` | `listContacts`: active contacts by name, with `isOptedOut`, `isArchived` |
 | `POST /contacts` | `contacts:create` | `createContact` `{ name, phoneE164?, pixKey?, notes? }` → `201 { contactId }` |
-| `PATCH /contacts/:contactId` | `contacts:update` | `changeContact`: only the fields sent, plus `isOptedOut` → `204` |
+| `GET /contacts/balances` | `contacts:view` | `listContactBalances`: per active contact with postings, `{ contactId, name, owedCents, overdueCents, nextDueOn, nextDueCents }` |
+| `PATCH /contacts/:contactId` | `contacts:update` | `changeContact`: only the fields sent, plus `isOptedOut` and `isArchived` → `204` |
 | `DELETE /contacts/:contactId` | `contacts:delete` | `deleteContact` (soft, optional `reason`) → `204` |
 
 ## `charges`
@@ -95,5 +96,10 @@ credit (negative balance). A `charge_payments` row links it to an open charge (w
 the invoice total never changed, and the incoming money is in the account.
 
 ### Reports
-- `contact_balances`: per contact, total owed, overdue and next due.
+- **Contact balances** (pure `contactBalances(postings, today)`, over the contact lines of active
+  entries, `ledger.readContactPostings`):
+  - owed = the sum of the lines;
+  - overdue = what fell due up to today (including today) minus everything paid, never below
+    zero. A payment ahead of time counts against what's due;
+  - next due = the earliest future date and its total.
 - The dashboard separates **own spending** (expense postings) from **fronted for others** (receivable postings) on every card invoice.

@@ -507,3 +507,19 @@ export function selectInvoiceFacts(tx: WorkspaceTransaction, closingFrom: IsoDat
     .from(invoiceTotals)
     .where(gte(invoiceTotals.closingOn, closingFrom))
 }
+
+export function selectContactPostings(tx: WorkspaceTransaction, contactId?: string) {
+  const conditions = [isNull(journalEntries.deletedAt), isNotNull(postings.contactId)]
+  if (contactId) {
+    conditions.push(eq(postings.contactId, contactId))
+  }
+  return tx
+    .select({
+      contactId: sql<string>`${postings.contactId}`,
+      amountCents: postings.amountCents,
+      effectiveOn: postings.effectiveOn,
+    })
+    .from(postings)
+    .innerJoin(journalEntries, eq(journalEntries.id, postings.entryId))
+    .where(and(...conditions))
+}

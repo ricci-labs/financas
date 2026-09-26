@@ -1,10 +1,11 @@
 import { createApp } from '@api/app'
-import type { ContactItem } from '@api/modules/contacts'
+import type { ContactBalanceItem, ContactItem } from '@api/modules/contacts'
 import { testAppDeps } from '@api/testing/app'
 import { connectTestDatabases } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
 import { addMemberWithSystemRole, loggedInUser, requestsAs } from '@api/testing/http'
 import type { SessionRequests } from '@api/testing/testing.types'
+import { addDays, todayIn } from '@financas/shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const databases = connectTestDatabases()
@@ -16,6 +17,7 @@ let owner: SessionRequests
 let member: SessionRequests
 let viewer: SessionRequests
 let contactsPath: string
+let workspacePath: string
 
 beforeAll(async () => {
   const ownerSession = await loggedInUser(app, databases.app, fixtures.runId, 'contacts-owner')
@@ -31,7 +33,8 @@ beforeAll(async () => {
   owner = requestsAs(app, ownerSession)
   member = requestsAs(app, memberSession)
   viewer = requestsAs(app, viewerSession)
-  contactsPath = `/api/workspaces/${workspaceId}/contacts`
+  workspacePath = `/api/workspaces/${workspaceId}`
+  contactsPath = `${workspacePath}/contacts`
 })
 
 afterAll(async () => {
@@ -125,5 +128,62 @@ describe('contacts', () => {
       const response = await owner.patch(`${contactsPath}/${id}`, { name: 'X' })
       expect([response.status, await codeOf(response)]).toEqual([404, 'CONTACT_NOT_FOUND'])
     }
+  })
+})
+
+describe('contact balances and archiving', () => {
+  it('show what each contact owes, and archive only a settled contact', async () => {
+    const today = todayIn('America/Sao_Paulo', new Date())
+    const account = async (kind: string, name: string) =>
+      (
+        (await (await owner.post(`${workspacePath}/accounts`, { kind, name })).json()) as {
+          accountId: string
+        }
+      ).accountId
+    const checking = await account('checking', 'Conta X')
+    const dining = await account('expense_category', 'Restaurantes')
+    const j = await created(member.post(contactsPath, { name: 'Contact Owing' }))
+    const dinner = (occurredOn: string, amountCents: number, share: number) =>
+      member.post(`${workspacePath}/entries`, {
+        entryType: 'expense',
+        occurredOn,
+        description: 'Jantar',
+        amountCents,
+        paidFromAccountId: checking,
+        categoryId: dining,
+        shares: [{ contactId: j, amountCents: share }],
+      })
+    const settle = (amountCents: number) =>
+      member.post(`${workspacePath}/entries`, {
+        entryType: 'settlement',
+        occurredOn: today,
+        description: 'Pix',
+        amountCents,
+        contactId: j,
+        receivedInAccountId: checking,
+      })
+    await dinner(addDays(today, -5), 30_000, 10_000)
+    await dinner(addDays(today, 10), 15_000, 5_000)
+    await settle(4_000)
+    const mistake = (await (await dinner(today, 9_000, 9_000)).json()) as { entryId: string }
+    await owner.del(`${workspacePath}/entries/${mistake.entryId}`)
+
+    const balances = (await (
+      await viewer.get(`${contactsPath}/balances`)
+    ).json()) as ContactBalanceItem[]
+    expect(balances.find((balance) => balance.contactId === j)).toEqual({
+      contactId: j,
+      name: 'Contact Owing',
+      owedCents: 11_000,
+      overdueCents: 6_000,
+      nextDueOn: addDays(today, 10),
+      nextDueCents: 5_000,
+    })
+
+    const early = await member.patch(`${contactsPath}/${j}`, { isArchived: true })
+    expect([early.status, await codeOf(early)]).toEqual([409, 'CONTACT_HAS_BALANCE'])
+    await settle(11_000)
+    expect((await member.patch(`${contactsPath}/${j}`, { isArchived: true })).status).toBe(204)
+    expect((await contacts()).find((contact) => contact.id === j)?.isArchived).toBe(true)
   })
 })
