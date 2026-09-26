@@ -42,3 +42,30 @@ export type RoleRef = {
   workspaceId: string
   roleId: string
 }
+
+export type MemberItem = {
+  membershipId: string
+  userId: string
+  displayName: string
+  email: string
+  role: WorkspaceRole
+  joinedAt: Date
+}
+
+export type MemberActor = {
+  workspaceId: string
+  userId: string
+  roleKey: SystemRoleKey | null
+}
+
+export type ChangeMemberRoleInput = {
+  actor: MemberActor
+  membershipId: string
+  roleId: string
+}
+
+export type RemoveMemberInput = {
+  actor: MemberActor
+  membershipId: string
+  reason?: string
+}

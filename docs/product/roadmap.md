@@ -60,7 +60,8 @@ updated: 2026-09-26
   1. [ ] **Gaps in what exists** (tables already exist):
      - [x] Workspaces: create through the API, rename, settings (financial period, currency,
            installment view, budget base…)
-     - [ ] Members: list, change role, remove; custom roles and their permission matrix
+     - [x] Members: list, change role, remove, leave (owner rules, last owner kept)
+     - [ ] Custom roles and their permission matrix
      - [ ] My account: change password while logged in, display name, preferences
      - [ ] Ledger reading: entries of an invoice, trash (deleted accounts and entries), paging
            beyond the list limit

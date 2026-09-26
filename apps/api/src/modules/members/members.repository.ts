@@ -3,6 +3,7 @@ import { invitations, membershipPreferences, memberships } from '@api/modules/me
 import type {
   InvitationContact,
   InvitationRevocation,
+  MembershipRemoval,
   NewInvitation,
   NewMembership,
 } from '@api/modules/members/members.types'
@@ -159,4 +160,48 @@ export async function selectInvitationByTokenHash(tx: WorkspaceTransaction, toke
     .from(invitations)
     .where(eq(invitations.tokenHash, tokenHash))
   return invitation
+}
+
+export function selectActiveMemberships(tx: WorkspaceTransaction) {
+  return tx
+    .select({
+      membershipId: memberships.id,
+      userId: memberships.userId,
+      roleId: memberships.roleId,
+      joinedAt: memberships.createdAt,
+    })
+    .from(memberships)
+    .where(isNull(memberships.deletedAt))
+    .orderBy(memberships.createdAt)
+}
+
+export async function lockMembership(tx: WorkspaceTransaction, membershipId: string) {
+  const [membership] = await tx
+    .select({
+      membershipId: memberships.id,
+      userId: memberships.userId,
+      roleId: memberships.roleId,
+      joinedAt: memberships.createdAt,
+      deletedAt: memberships.deletedAt,
+    })
+    .from(memberships)
+    .where(eq(memberships.id, membershipId))
+    .for('update')
+  return membership
+}
+
+export async function updateMembershipRole(
+  tx: WorkspaceTransaction,
+  membershipId: string,
+  roleId: string,
+): Promise<void> {
+  await tx.update(memberships).set({ roleId }).where(eq(memberships.id, membershipId))
+}
+
+export async function markMembershipRemoved(
+  tx: WorkspaceTransaction,
+  membershipId: string,
+  removal: MembershipRemoval,
+): Promise<void> {
+  await tx.update(memberships).set(removal).where(eq(memberships.id, membershipId))
 }

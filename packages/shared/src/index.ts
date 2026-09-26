@@ -1,5 +1,6 @@
 export * from '@shared/access/access'
 export * from '@shared/access/access.constants'
+export * from '@shared/access/access.schemas'
 export * from '@shared/access/access.types'
 export * from '@shared/calendar/calendar.types'
 export * from '@shared/calendar/dates'

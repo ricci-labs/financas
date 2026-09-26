@@ -72,3 +72,5 @@ export function findRole(
 ): Promise<WorkspaceRole | undefined> {
   return withWorkspace(db, workspaceId, (tx) => selectActiveRole(tx, roleId))
 }
+
+export { changeMemberRole, listMembers, removeMember } from '@api/modules/access/use-cases/members'

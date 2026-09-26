@@ -43,3 +43,10 @@ export function selectRolePermissions(
     .from(rolePermissions)
     .where(eq(rolePermissions.roleId, roleId))
 }
+
+export function selectActiveRoles(tx: WorkspaceTransaction) {
+  return tx
+    .select({ roleId: roles.id, name: roles.name, systemKey: roles.systemKey })
+    .from(roles)
+    .where(isNull(roles.deletedAt))
+}

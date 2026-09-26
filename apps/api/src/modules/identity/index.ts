@@ -6,6 +6,7 @@ export {
 export {
   createUser,
   getAccount,
+  listAccounts,
   login,
   logout,
   requestEmailVerification,
