@@ -1,6 +1,7 @@
 import { withWorkspace } from '@api/core/db/tx'
+import { ledgerAccounts } from '@api/modules/ledger/ledger.table'
 import { holidayDatesOf } from '@api/modules/planning'
-import { workspaceHolidays } from '@api/modules/planning/planning.table'
+import { recurrenceRules, workspaceHolidays } from '@api/modules/planning/planning.table'
 import { workspaces } from '@api/modules/workspaces/workspaces.table'
 import { connectTestDatabases, POSTGRES_ERRORS, postgresErrorCodeOf } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
@@ -91,5 +92,60 @@ describe('holidayDatesOf', () => {
       holidayDatesOf(tx, '2026-11-01', '2026-11-30'),
     )
     expect([...dates].sort()).toEqual(['2026-11-02', '2026-11-15', '2026-11-20', '2026-11-24'])
+  })
+})
+
+async function accountIn(workspaceId: string, kind: 'checking' | 'expense_category', name: string) {
+  const [account] = await withWorkspace(databases.app, workspaceId, (tx) =>
+    tx
+      .insert(ledgerAccounts)
+      .values({ workspaceId, kind, name, currency: 'BRL' })
+      .returning({ id: ledgerAccounts.id }),
+  )
+  return account?.id ?? ''
+}
+
+async function insertRule(
+  workspaceId: string,
+  overrides: Partial<typeof recurrenceRules.$inferInsert> = {},
+) {
+  const checking = await accountIn(workspaceId, 'checking', `Conta ${crypto.randomUUID()}`)
+  const category = await accountIn(workspaceId, 'expense_category', `Casa ${crypto.randomUUID()}`)
+  return withWorkspace(databases.app, workspaceId, (tx) =>
+    tx.insert(recurrenceRules).values({
+      workspaceId,
+      description: 'Aluguel',
+      entryType: 'expense',
+      amountCents: 100_000,
+      frequency: 'monthly',
+      startsOn: '2026-10-01',
+      sourceAccountId: checking,
+      categoryAccountId: category,
+      ...overrides,
+    }),
+  )
+}
+
+describe('recurrence_rules', () => {
+  it('refuse schedules the service would never build', async () => {
+    const workspaceId = await newWorkspace('Rule checks')
+    for (const broken of [
+      { frequency: 'weekly' as const, dayOfMonth: 5 },
+      { dayOfMonth: 5, nthBusinessDay: 5 },
+      { endsOn: '2026-09-30' },
+      { amountCents: 0 },
+      { dayOfMonth: null, nthBusinessDay: 11 },
+    ]) {
+      expect(await postgresErrorCodeOf(insertRule(workspaceId, broken))).toBe(
+        POSTGRES_ERRORS.checkViolation,
+      )
+    }
+  })
+
+  it('go away with the workspace when it is erased', async () => {
+    const workspaceId = await newWorkspace('Erase rules')
+    await insertRule(workspaceId)
+    const erase = databases.owner.delete(workspaces).where(eq(workspaces.id, workspaceId))
+    expect(await postgresErrorCodeOf(erase)).toBeUndefined()
   })
 })

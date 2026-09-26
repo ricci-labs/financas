@@ -1,5 +1,11 @@
 import type { Database } from '@api/core/db/db.types'
-import type { IsoDate, NationalHoliday } from '@financas/shared'
+import type { recurrenceRules } from '@api/modules/planning/planning.table'
+import type {
+  IsoDate,
+  NationalHoliday,
+  RecurrenceSchedule,
+  RecurringEntryType,
+} from '@financas/shared'
 
 export type PlanningContext = {
   workspaceId: string
@@ -41,3 +47,40 @@ export type HolidayDeletion = {
 export type PlanningRouteDeps = {
   db: Database
 }
+
+export type RecurrenceRuleRow = typeof recurrenceRules.$inferSelect
+
+export type NewRecurrenceRuleRow = typeof recurrenceRules.$inferInsert
+
+export type RecurrenceRuleUpdate = Partial<
+  Omit<NewRecurrenceRuleRow, 'workspaceId' | 'id' | 'entryType' | 'createdAt' | 'updatedAt'>
+>
+
+export type RecurrenceRuleItem = {
+  id: string
+  description: string
+  entryType: RecurringEntryType
+  amountCents: number
+  amountIsEstimate: boolean
+  sourceAccountId: string
+  categoryAccountId: string
+  schedule: RecurrenceSchedule
+  remindDaysBefore: number | null
+  autoRecord: boolean
+}
+
+export type CreatedRecurrenceRule = {
+  ruleId: string
+}
+
+export type RecurrenceRuleRef = {
+  workspaceId: string
+  ruleId: string
+}
+
+export type DeleteRecurrenceRuleInput = RecurrenceRuleRef & {
+  userId: string
+  reason?: string
+}
+
+export type RuleDeletion = HolidayDeletion

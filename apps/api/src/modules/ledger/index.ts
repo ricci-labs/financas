@@ -16,6 +16,7 @@ export {
   listInvoiceTotals,
   listTrashedAccounts,
   listTrashedEntries,
+  loadUsableAccounts,
   recordEntry,
   replaceEntry,
   restoreAccount,
@@ -24,6 +25,7 @@ export {
 } from '@api/modules/ledger/ledger.service'
 export type {
   AccountBalance,
+  AccountsById,
   CardItem,
   CreatedAccount,
   DeleteAccountInput,

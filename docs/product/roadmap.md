@@ -70,7 +70,7 @@ updated: 2026-09-26
      - [x] Plan: ADR 0024 (metrics and insights over period facts) and this list
      - [x] Holidays and business-day math: national bank holidays computed, workspace holidays
      - [ ] Recurrence rules + planned occurrences (job materializes 6 months ahead) (done: due-date
-           math)
+           math, rules and their routes)
      - [ ] Matching real entries to pending occurrences; skip / edit one occurrence
      - [ ] Budget lines and goals (reserve)
      - [ ] Period facts + first metrics + `GET /overview` (free to spend, per day, spent, committed)
