@@ -1,7 +1,7 @@
 ---
 summary: How the couple's money works (incomes, commissions, cards) and the proposed budgeting policy.
 read_when: Touching incomes, commissions, budgets, forecasts or dashboard totals.
-updated: 2026-09-22
+updated: 2026-09-26
 ---
 
 # Household finances
@@ -39,8 +39,8 @@ The goal is that a weak commission month never breaks the budget.
 Why: planning on variable income leads to spending on money that may not come. Planning on fixed income and allocating extras on purpose is a common, robust household practice.
 
 ## Forecast ("how much can we still spend?")
-Computed per financial period by the `period_overview` view (`../domain/model/planning.md`):
-`free_to_spend = fixed income − spent − committed`. The financial period start is configurable
+Computed per financial period by the dashboard metrics (`../domain/model/planning.md`, ADR 0024):
+`free_to_spend = fixed income − spent − committed`, also shown per day for the days left. The financial period start is configurable
 (calendar month, day N, or N-th business day).
 
 ## Needs raised by the user (2026-09-22)

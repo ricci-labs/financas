@@ -1,7 +1,7 @@
 ---
 summary: Data model overview — areas, conventions (IDs, tenancy keys, RLS, sign convention, enums vs config tables) and the map of all tables.
 read_when: Before creating or changing any table, or to find which model doc covers an entity.
-updated: 2026-09-25
+updated: 2026-09-26
 ---
 
 # Data model
@@ -91,9 +91,10 @@ Settings are **typed columns** in 1:1 tables (`workspace_settings`, `user_prefer
 `membership_preferences`), not key-value rows, so every setting has a type, a default and constraints.
 
 ## Derived data (views, not tables)
-`account_balances` ✅, `invoice_totals` ✅, `contact_balances`, `period_category_totals`,
-`period_overview` (fixed income, spent, committed, free to spend). Materialize them only when
-measurements show a need.
+`account_balances` ✅, `invoice_totals` ✅, `contact_balances`, `period_category_totals`.
+Materialize them only when measurements show a need. The period overview (fixed income, spent,
+committed, free to spend) is not a view: it's the dashboard metrics, pure functions over the loaded
+period facts (ADR 0024).
 
 Every view is `security_invoker = true`: a Postgres view otherwise runs with its owner's
 permissions and skips RLS. `core/db/conventions.integration.test.ts` fails on a view without it.

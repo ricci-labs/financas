@@ -56,6 +56,7 @@ routes / agent tools / jobs / channels
 |---|---|---|
 | `ledger` | `workspaces` | Settings (currency, timezone) |
 | `planning` | `ledger` | Match real entries to planned occurrences |
+| `reports` | `ledger`, `planning`, `workspaces` | Load the period facts for the metrics and insights (ADR 0024) |
 | `contacts` | `ledger` | Open receivable items for charges; record settlements |
 | `contacts` | `notifications` | Send charges and charge reminders |
 | `planning` | `notifications` | Bill and invoice reminders |

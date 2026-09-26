@@ -66,8 +66,19 @@ updated: 2026-09-26
      - [x] Ledger reading: lines of an invoice, trash of accounts and entries, keyset paging of
            entries
      - [x] Maintenance job (croner): purge expired sessions and expired auth tokens, daily
-  2. [ ] **Planning + dashboard:** recurrence rules, planned occurrences and matching, budgets,
-         reserve goal, commission forecast, the period overview ("free to spend")
+  2. [ ] **Planning + dashboard** (decided 2026-09-26, ADR 0024; `../domain/model/planning.md`):
+     - [ ] Plan: ADR 0024 (metrics and insights over period facts) and this list
+     - [ ] Holidays (national seed + workspace ones) and business-day math
+     - [ ] Recurrence rules + planned occurrences (job materializes 6 months ahead)
+     - [ ] Matching real entries to pending occurrences; skip / edit one occurrence
+     - [ ] Budget lines and goals (reserve)
+     - [ ] Period facts + first metrics + `GET /overview` (free to spend, per day, spent, committed)
+     - [ ] More metrics: budget pace, committed ahead (6 periods), next invoice, variable income
+           average, reserve in months
+     - [ ] Insights (first set) in the overview
+     - [ ] Commission split: allocation steps + suggested transfers
+     - [ ] Balance forecast per account
+     - [ ] "Posso comprar?" purchase simulation
   3. [ ] **Contacts, charges and settlements**
   4. [ ] **Reminders:** notification outbox and its worker, email first
   5. [ ] **Attachments** on entries (`FileStorage`)
