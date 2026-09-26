@@ -1,3 +1,4 @@
+import type { createApp } from '@api/app'
 import type { Mailer } from '@api/core/email/email.types'
 import type { AccountEmailLimits } from '@api/modules/identity'
 import type { cardInvoices, journalEntries, ledgerAccounts } from '@api/modules/ledger/ledger.table'
@@ -28,3 +29,17 @@ export type NewInvoice = Partial<typeof cardInvoices.$inferInsert>
 export type InvitationValues = Partial<typeof invitations.$inferInsert>
 
 export type SettingsChange = Partial<typeof workspaceSettings.$inferInsert>
+
+export type TestApp = ReturnType<typeof createApp>
+
+export type TestSession = {
+  userId: string
+  cookie: string
+}
+
+export type SessionRequests = {
+  get: (path: string) => Promise<Response>
+  post: (path: string, body?: unknown) => Promise<Response>
+  patch: (path: string, body: unknown) => Promise<Response>
+  del: (path: string, body?: unknown) => Promise<Response>
+}

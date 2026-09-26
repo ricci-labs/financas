@@ -1,7 +1,7 @@
 ---
 summary: The double-entry ledger — account kinds, cards and invoices, journal entries and postings, sign convention, DB-enforced invariants, correction policy (soft delete / replace), and worked examples.
 read_when: Anything that records, edits, reverses or reports money movements, cards or invoices.
-updated: 2026-09-25
+updated: 2026-09-26
 ---
 
 # Ledger (double-entry)
@@ -197,6 +197,22 @@ leaves stay valid. Decided with the user on 2026-09-25.
 - **Edit description/notes/tags:** updated in place (audit logged).
 - **After the invoice closed:** no delete. The correction is a new `refund`/`adjustment` on the open invoice, mirroring what the bank does.
 - "Desfazer" in the agent = soft delete of the last entry the user created.
+
+## HTTP routes (`ledger.routes.ts`)
+All under `/api/workspaces/:workspaceId`, behind the session and workspace checks
+(`access-control.md` → HTTP). Bodies are validated with the shared schemas and again by the service.
+A malformed or unknown id, or one from another workspace, is `404 ACCOUNT_NOT_FOUND`.
+
+| Route | Permission | Service |
+|---|---|---|
+| `GET /accounts` | `accounts:view` | `listAccounts`: active accounts (archived included, deleted not), system ones flagged `isSystem`, by `sortOrder` then name |
+| `POST /accounts` | `accounts:create` | `createAccount` → `201 { accountId }` |
+| `PATCH /accounts/:accountId` | `accounts:update` | `changeAccount` → `204` |
+| `POST /accounts/:accountId/archive`, `/unarchive` | `accounts:update` | `archiveAccount`, `unarchiveAccount` → `204` |
+| `DELETE /accounts/:accountId` (optional `{ reason }`) | `accounts:delete` | `deleteAccount` → `204` |
+| `POST /accounts/:accountId/restore` | `accounts:delete` | `restoreAccount` → `204` |
+
+Cards, entries and balances follow in the next PRs.
 
 ## Worked examples
 Placeholders only: Card X, Member A, Contact J, Contact M.

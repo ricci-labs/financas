@@ -273,3 +273,25 @@ export function selectInvoiceTotals(tx: WorkspaceTransaction, cardAccountId: str
     .where(eq(invoiceTotals.cardAccountId, cardAccountId))
     .orderBy(asc(invoiceTotals.referenceMonth))
 }
+
+export function selectActiveAccounts(tx: WorkspaceTransaction) {
+  return tx
+    .select({
+      id: ledgerAccounts.id,
+      parentId: ledgerAccounts.parentId,
+      kind: ledgerAccounts.kind,
+      class: ledgerAccounts.class,
+      name: ledgerAccounts.name,
+      currency: ledgerAccounts.currency,
+      incomeNature: ledgerAccounts.incomeNature,
+      ownerUserId: ledgerAccounts.ownerUserId,
+      isSystem: ledgerAccounts.isSystem,
+      sortOrder: ledgerAccounts.sortOrder,
+      color: ledgerAccounts.color,
+      icon: ledgerAccounts.icon,
+      archivedAt: ledgerAccounts.archivedAt,
+    })
+    .from(ledgerAccounts)
+    .where(isNull(ledgerAccounts.deletedAt))
+    .orderBy(asc(ledgerAccounts.sortOrder), asc(ledgerAccounts.name))
+}

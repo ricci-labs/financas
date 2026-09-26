@@ -1,3 +1,4 @@
+import type { Database } from '@api/core/db/db.types'
 import type {
   cardDetails,
   cardInvoices,
@@ -12,6 +13,7 @@ import type {
   CardCycle,
   EntryInput,
   EntrySource,
+  IncomeNature,
   InvoiceStatus,
 } from '@financas/shared'
 
@@ -119,4 +121,24 @@ export type InvoicePaymentInput = Extract<EntryInput, { entryType: 'invoice_paym
 
 export type CardSetup = CardCycle & {
   paymentAccountId: string | null
+}
+
+export type LedgerAccountItem = {
+  id: string
+  parentId: string | null
+  kind: AccountKind
+  class: AccountClass
+  name: string
+  currency: string
+  incomeNature: IncomeNature | null
+  ownerUserId: string | null
+  isSystem: boolean
+  sortOrder: number
+  color: string | null
+  icon: string | null
+  archivedAt: Date | null
+}
+
+export type LedgerRouteDeps = {
+  db: Database
 }

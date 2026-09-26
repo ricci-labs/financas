@@ -1,7 +1,7 @@
 ---
 summary: Allowed and forbidden import directions across packages, layers and modules; enforced by dependency-cruiser.
 read_when: Adding an import that crosses a module, layer or package boundary.
-updated: 2026-09-25
+updated: 2026-09-26
 ---
 
 # Dependency rules
@@ -63,6 +63,7 @@ routes / agent tools / jobs / channels
 | `onboarding` | `workspaces`, `ledger`, `access`, `members` | Creating a workspace: the workspace and its settings, the system accounts, the system roles, the creator as owner |
 | `onboarding` | `identity` | Registering an owner: the user, then their first workspace |
 | `access` | `members` | Loading the caller's active membership to authorize a request |
+| every module's routes | `access` | `authorize()`, `currentWorkspace()` on workspace routes |
 
 `onboarding` only orchestrates flows that span modules (creating a workspace) and nothing depends on it, so every module can depend on `workspaces` without a cycle.
 
