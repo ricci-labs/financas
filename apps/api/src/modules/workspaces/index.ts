@@ -7,6 +7,7 @@ export {
   getWorkspaceSettings,
   renameWorkspace,
   reserveWorkspaceId,
+  setPixReceiving,
 } from '@api/modules/workspaces/workspaces.service'
 export type {
   NewWorkspace,
