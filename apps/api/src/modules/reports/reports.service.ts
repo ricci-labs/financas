@@ -28,6 +28,7 @@ import {
 
 const LAST_DAY = 31
 const RECENT_PERIODS = 6
+const UPCOMING_PERIODS = 6
 
 export function getPeriodOverview(
   db: Database,
@@ -48,22 +49,24 @@ async function loadPeriodFacts(
 ): Promise<PeriodFacts> {
   const settings = await currentWorkspaceSettings(tx)
   const today = await workspaceToday(tx, clock)
-  const { period, recentPeriods } = await resolvePeriods(
+  const { period, recentPeriods, upcomingPeriods } = await resolvePeriods(
     tx,
     label,
     today,
     periodSettingsOf(settings.periodAnchor, settings.periodAnchorValue),
   )
   const earliest = recentPeriods[0]?.start ?? period.start
+  const latest = upcomingPeriods.at(-1)?.end ?? period.end
   return {
     today,
     period,
     recentPeriods,
+    upcomingPeriods,
     installmentBudgetView: settings.installmentBudgetView,
     budgetBase: settings.budgetBase,
     accounts: await readAccountFacts(tx),
-    postings: await readPostingFacts(tx, earliest, period.end),
-    occurrences: await readOccurrenceFacts(tx, { from: period.start, to: period.end }, today),
+    postings: await readPostingFacts(tx, earliest, latest),
+    occurrences: await readOccurrenceFacts(tx, { from: period.start, to: latest }, today),
     budgets: await readBudgetFacts(tx, period.label),
     reserve: await readReserveFact(tx),
   }
@@ -79,7 +82,7 @@ async function resolvePeriods(
   const holidays = await holidayDatesOf(
     tx,
     clampedDate(addMonths(reference, -(RECENT_PERIODS + 1)), 1),
-    clampedDate(addMonths(reference, 1), LAST_DAY),
+    clampedDate(addMonths(reference, UPCOMING_PERIODS + 1), LAST_DAY),
   )
   const period = label
     ? periodStartingIn(reference, settings, holidays)
@@ -88,5 +91,8 @@ async function resolvePeriods(
   const recentPeriods = Array.from({ length: RECENT_PERIODS }, (_, index) =>
     periodStartingIn(addMonths(labelMonth, index - RECENT_PERIODS), settings, holidays),
   )
-  return { period, recentPeriods }
+  const upcomingPeriods = Array.from({ length: UPCOMING_PERIODS }, (_, index) =>
+    periodStartingIn(addMonths(labelMonth, index + 1), settings, holidays),
+  )
+  return { period, recentPeriods, upcomingPeriods }
 }

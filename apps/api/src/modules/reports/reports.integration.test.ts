@@ -154,6 +154,22 @@ describe('getPeriodOverview', () => {
     const { spent, freeToSpend, dailyAllowance } = overview.metrics
     expect(freeToSpend).toBe(900_000 - spent - 200_000)
     expect(dailyAllowance).toBe(Math.floor(freeToSpend / 17))
+    expect(overview.metrics.committedAhead.map((period) => period.label)).toEqual([
+      '2026-11',
+      '2026-12',
+      '2027-01',
+      '2027-02',
+      '2027-03',
+      '2027-04',
+    ])
+    expect(overview.metrics.committedAhead[0]).toMatchObject({
+      plannedCents: 200_000,
+      fixedIncomeCents: 400_000,
+    })
+    const installments = overview.metrics.committedAhead.map((period) => period.installmentsCents)
+    expect(installments.reduce((sum, cents) => sum + cents, 0)).toBe(
+      90_000 - (overview.metrics.spent - 30_000),
+    )
     expect(overview.metrics.variableAverage).toBe(60_000)
     expect(overview.metrics.reserveCoverage).toEqual({
       savedCents: 300_000,
@@ -192,6 +208,40 @@ describe('getPeriodOverview', () => {
     )
     expect(next.period).toEqual({ label: '2026-10', start: '2026-10-20', end: '2026-11-19' })
     expect(next.metrics.committed).toBe(200_000)
+  })
+})
+
+describe('committedAhead', () => {
+  it('sees the coming installments of a purchase made long before the recent periods', async () => {
+    const userId = await fixtures.createUser(`ahead-${crypto.randomUUID()}`)
+    const { workspaceId } = await fixtures.createWorkspaceOwnedBy(userId, 'Ahead')
+    const context = { workspaceId, userId }
+    const furniture = (
+      await createAccount(databases.app, context, { kind: 'expense_category', name: 'Móveis' })
+    ).accountId
+    const card = (
+      await createCard(databases.app, context, { name: 'Card Y', closingDay: 3, dueDay: 10 })
+    ).accountId
+    await recordEntry(
+      databases.app,
+      { ...context, source: 'web' },
+      {
+        entryType: 'card_purchase',
+        occurredOn: '2026-01-10',
+        description: 'Sofá',
+        amountCents: 120_000,
+        installmentCount: 12,
+        firstInstallment: 10,
+        cardAccountId: card,
+        categoryId: furniture,
+      },
+      MID_OCTOBER,
+    )
+
+    const { metrics } = await getPeriodOverview(databases.app, workspaceId, {}, MID_OCTOBER)
+    const ahead = metrics.committedAhead.reduce((sum, period) => sum + period.installmentsCents, 0)
+    expect(ahead + metrics.spent).toBe(30_000)
+    expect(ahead).toBeGreaterThan(0)
   })
 })
 

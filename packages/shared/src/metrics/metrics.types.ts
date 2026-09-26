@@ -40,6 +40,7 @@ export type PeriodFacts = {
   today: IsoDate
   period: Period
   recentPeriods: readonly Period[]
+  upcomingPeriods: readonly Period[]
   installmentBudgetView: InstallmentBudgetView
   budgetBase: BudgetBase
   accounts: readonly FactAccount[]
@@ -68,4 +69,13 @@ export type ReserveCoverage = {
   targetCents: number
   monthlySpendingCents: number
   months: number | null
+}
+
+export type CommittedPeriod = {
+  label: string
+  installmentsCents: number
+  plannedCents: number
+  committedCents: number
+  fixedIncomeCents: number
+  percentOfIncome: number | null
 }
