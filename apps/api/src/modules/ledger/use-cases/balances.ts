@@ -5,6 +5,7 @@ import {
   findCardCycle,
   findInvoiceOfCard,
   selectAccountBalances,
+  selectFrontedByInvoice,
   selectInvoiceLines,
   selectInvoiceTotals,
 } from '@api/modules/ledger/ledger.repository'
@@ -32,7 +33,16 @@ export function listInvoiceTotals(
     if (!(await findCardCycle(tx, cardAccountId))) {
       throw new NotFoundError('CARD_NOT_FOUND', `Card ${cardAccountId} not found`)
     }
-    return selectInvoiceTotals(tx, cardAccountId)
+    const fronted = new Map(
+      (await selectFrontedByInvoice(tx, cardAccountId)).map((row) => [
+        row.invoiceId,
+        row.frontedCents,
+      ]),
+    )
+    return (await selectInvoiceTotals(tx, cardAccountId)).map((invoice) => {
+      const frontedCents = fronted.get(invoice.invoiceId) ?? 0
+      return { ...invoice, frontedCents, ownCents: invoice.totalCents - frontedCents }
+    })
   })
 }
 
