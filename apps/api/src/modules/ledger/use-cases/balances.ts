@@ -1,4 +1,4 @@
-import type { Database } from '@api/core/db/db.types'
+import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { withWorkspace } from '@api/core/db/tx'
 import { NotFoundError } from '@api/core/http/errors'
 import {
@@ -18,6 +18,10 @@ import type {
 
 export function listAccountBalances(db: Database, workspaceId: string): Promise<AccountBalance[]> {
   return withWorkspace(db, workspaceId, (tx) => selectAccountBalances(tx))
+}
+
+export function readAccountBalances(tx: WorkspaceTransaction): Promise<AccountBalance[]> {
+  return selectAccountBalances(tx)
 }
 
 export function listInvoiceTotals(

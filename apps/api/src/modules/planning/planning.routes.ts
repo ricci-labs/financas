@@ -4,12 +4,16 @@ import { jsonBody, pathParams, queryParams } from '@api/core/http/validation'
 import { authorize, currentWorkspace } from '@api/modules/access'
 import {
   addHoliday,
+  changeGoal,
   changeOccurrenceAmount,
   changeRecurrenceRule,
+  createGoal,
   createRecurrenceRule,
+  deleteGoal,
   deleteHoliday,
   deleteRecurrenceRule,
   listBudgets,
+  listGoals,
   listHolidays,
   listOccurrences,
   listRecurrenceRules,
@@ -26,8 +30,11 @@ import {
   budgetListQuerySchema,
   budgetParamsSchema,
   deletionRequestSchema,
+  goalChangeSchema,
+  goalParamsSchema,
   holidayListQuerySchema,
   holidayParamsSchema,
+  newGoalSchema,
   newHolidaySchema,
   newRecurrenceRuleSchema,
   occurrenceChangeSchema,
@@ -49,6 +56,7 @@ export function planningRoutes(deps: PlanningRouteDeps) {
     .route('/recurrences', recurrenceRoutes(deps))
     .route('/occurrences', occurrenceRoutes(deps))
     .route('/budgets', budgetRoutes(deps))
+    .route('/goals', goalRoutes(deps))
 }
 
 function holidayRoutes({ db }: PlanningRouteDeps) {
@@ -226,6 +234,53 @@ function budgetRoutes({ db }: PlanningRouteDeps) {
         const { workspaceId } = currentWorkspace(c)
         const categoryAccountId = c.req.valid('param').categoryId
         await setBudget(db, { workspaceId, categoryAccountId }, c.req.valid('json'))
+        return c.body(null, NO_CONTENT)
+      },
+    )
+}
+
+function goalRoutes({ db }: PlanningRouteDeps) {
+  const goal = pathParams(goalParamsSchema, 'GOAL_NOT_FOUND')
+
+  return new Hono<AppEnv>()
+    .get('/', authorize('planning', 'view'), async (c) => {
+      return c.json(await listGoals(db, currentWorkspace(c).workspaceId))
+    })
+    .post(
+      '/',
+      authorize('planning', 'create'),
+      jsonBody(newGoalSchema, 'GOAL_INVALID'),
+      async (c) => {
+        const { workspaceId } = currentWorkspace(c)
+        const { userId } = currentSession(c)
+        return c.json(await createGoal(db, { workspaceId, userId }, c.req.valid('json')), CREATED)
+      },
+    )
+    .patch(
+      '/:goalId',
+      authorize('planning', 'update'),
+      goal,
+      jsonBody(goalChangeSchema, 'GOAL_INVALID'),
+      async (c) => {
+        const { workspaceId } = currentWorkspace(c)
+        await changeGoal(
+          db,
+          { workspaceId, goalId: c.req.valid('param').goalId },
+          c.req.valid('json'),
+        )
+        return c.body(null, NO_CONTENT)
+      },
+    )
+    .delete(
+      '/:goalId',
+      authorize('planning', 'delete'),
+      goal,
+      jsonBody(deletionRequestSchema, 'DELETION_INVALID'),
+      async (c) => {
+        const { workspaceId } = currentWorkspace(c)
+        const { userId } = currentSession(c)
+        const { goalId } = c.req.valid('param')
+        await deleteGoal(db, { workspaceId, goalId, userId, reason: c.req.valid('json').reason })
         return c.body(null, NO_CONTENT)
       },
     )

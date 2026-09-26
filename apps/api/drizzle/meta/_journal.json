@@ -302,6 +302,20 @@
       "when": 1790452988254,
       "tag": "0042_budget_lines_triggers_and_deferred_fks",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1790453470575,
+      "tag": "0043_goals",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1790453472258,
+      "tag": "0044_goals_triggers_and_deferred_fks",
+      "breakpoints": true
     }
   ]
 }

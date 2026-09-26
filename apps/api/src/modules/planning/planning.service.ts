@@ -1,5 +1,11 @@
 export { listBudgets, setBudget } from '@api/modules/planning/use-cases/budgets'
 export {
+  changeGoal,
+  createGoal,
+  deleteGoal,
+  listGoals,
+} from '@api/modules/planning/use-cases/goals'
+export {
   addHoliday,
   deleteHoliday,
   holidayDatesOf,

@@ -4,6 +4,7 @@ import { users } from '@api/modules/identity/identity.table'
 import { journalEntries, ledgerAccounts } from '@api/modules/ledger/ledger.table'
 import { workspaces } from '@api/modules/workspaces/workspaces.table'
 import {
+  GOAL_NAME_MAX_LENGTH,
   HOLIDAY_NAME_MAX_LENGTH,
   MAX_RECURRENCE_BUSINESS_DAY,
   MAX_RECURRENCE_INTERVAL,
@@ -208,5 +209,42 @@ export const budgetLines = pgTable(
     check('budget_lines_limit', sql`${table.limitCents} is null or ${table.limitCents} > 0`),
     check('budget_lines_valid_from_first_day', sql`extract(day from ${table.validFrom}) = 1`),
     tenantIsolation('budget_lines', table.workspaceId),
+  ],
+).enableRLS()
+
+export const goals = pgTable(
+  'goals',
+  {
+    workspaceId: uuid()
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    id: primaryId(),
+    name: text().notNull(),
+    targetCents: bigint({ mode: 'number' }).notNull(),
+    targetOn: date(),
+    accountId: uuid().notNull(),
+    isReserve: boolean().notNull().default(false),
+    ...softDelete(() => users.id),
+    ...timestamps(),
+  },
+  (table) => [
+    unique('goals_workspace_id_id_unique').on(table.workspaceId, table.id),
+    uniqueIndex('goals_one_per_account')
+      .on(table.workspaceId, table.accountId)
+      .where(sql`${table.deletedAt} is null`),
+    uniqueIndex('goals_one_reserve')
+      .on(table.workspaceId)
+      .where(sql`${table.isReserve} and ${table.deletedAt} is null`),
+    foreignKey({
+      name: 'goals_account_fk',
+      columns: [table.workspaceId, table.accountId],
+      foreignColumns: [ledgerAccounts.workspaceId, ledgerAccounts.id],
+    }),
+    check(
+      'goals_name',
+      sql`length(trim(${table.name})) between 1 and ${limit(GOAL_NAME_MAX_LENGTH)}`,
+    ),
+    check('goals_target', sql`${table.targetCents} > 0`),
+    tenantIsolation('goals', table.workspaceId),
   ],
 ).enableRLS()

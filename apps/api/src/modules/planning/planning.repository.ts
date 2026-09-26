@@ -1,15 +1,19 @@
 import type { WorkspaceTransaction } from '@api/core/db/db.types'
 import {
   budgetLines,
+  goals,
   plannedOccurrences,
   recurrenceRules,
   workspaceHolidays,
 } from '@api/modules/planning/planning.table'
 import type {
   BudgetItem,
+  GoalRow,
+  GoalUpdate,
   HolidayDeletion,
   LockedOccurrence,
   NewBudgetLine,
+  NewGoalRow,
   NewOccurrenceRow,
   NewRecurrenceRuleRow,
   NewWorkspaceHoliday,
@@ -233,4 +237,40 @@ export async function upsertBudgetLine(
       targetWhere: isNull(budgetLines.deletedAt),
       set: { limitCents: line.limitCents },
     })
+}
+
+export function selectActiveGoals(tx: WorkspaceTransaction): Promise<GoalRow[]> {
+  return tx
+    .select()
+    .from(goals)
+    .where(isNull(goals.deletedAt))
+    .orderBy(desc(goals.isReserve), asc(goals.name))
+}
+
+export async function lockActiveGoal(
+  tx: WorkspaceTransaction,
+  goalId: string,
+): Promise<GoalRow | undefined> {
+  const [goal] = await tx
+    .select()
+    .from(goals)
+    .where(and(eq(goals.id, goalId), isNull(goals.deletedAt)))
+    .for('update')
+  return goal
+}
+
+export async function insertGoal(tx: WorkspaceTransaction, goal: NewGoalRow): Promise<string> {
+  const [inserted] = await tx.insert(goals).values(goal).returning({ id: goals.id })
+  if (!inserted) {
+    throw new Error('Goal was not inserted')
+  }
+  return inserted.id
+}
+
+export async function updateGoal(
+  tx: WorkspaceTransaction,
+  goalId: string,
+  update: GoalUpdate,
+): Promise<void> {
+  await tx.update(goals).set(update).where(eq(goals.id, goalId))
 }

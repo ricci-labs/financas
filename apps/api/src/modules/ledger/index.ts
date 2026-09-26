@@ -18,6 +18,7 @@ export {
   listTrashedAccounts,
   listTrashedEntries,
   loadUsableAccounts,
+  readAccountBalances,
   recordEntry,
   replaceEntry,
   restoreAccount,

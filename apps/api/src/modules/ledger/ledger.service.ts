@@ -13,6 +13,7 @@ export {
   listAccountBalances,
   listInvoiceLines,
   listInvoiceTotals,
+  readAccountBalances,
 } from '@api/modules/ledger/use-cases/balances'
 export { changeCard, createCard, listCards } from '@api/modules/ledger/use-cases/cards'
 export {
