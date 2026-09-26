@@ -18,7 +18,7 @@ updated: 2026-09-25
 | `id` | uuid PK | |
 | `email` | citext unique | Login identifier |
 | `display_name` | text not null | |
-| `password_hash` | text null | Null if passwordless (auth method decided at scaffold) |
+| `password_hash` | text null | `scrypt$N$r$p$salt$hash` (ADR 0021). Null until the user sets a password |
 | `email_verified_at` | timestamptz null | |
 | `disabled_at` | timestamptz null | |
 
@@ -34,7 +34,16 @@ updated: 2026-09-25
 The WhatsApp agent looks up `channel_identities` → `user` → the workspace (`user_preferences.default_workspace_id`, switchable by message).
 
 ### `sessions`
-Web sessions: `id`, `user_id`, `token_hash`, `expires_at`, `last_seen_at`, `user_agent`.
+Web sessions (ADR 0021). Global table: no `workspace_id`, no RLS, hard deleted.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid PK | |
+| `user_id` | FK users | Cascade on user delete |
+| `token_hash` | text unique | SHA-256 of the cookie token. The raw token exists only in the cookie |
+| `expires_at` | timestamptz | 30 days after the last use |
+| `last_seen_at` | timestamptz | Refreshed at most once per hour, together with `expires_at` |
+| `user_agent` | text null | Shown in a future "active sessions" list |
 
 ## Tenant tables
 ### `workspaces`

@@ -11,7 +11,7 @@ updated: 2026-09-25
 - [x] Docs skeleton written
 - [x] Engineering process (git, PRs, CI/CD, skills) and observability designed
 - [x] Problem deep-dive with the user; data model proposed (`../domain/model/`)
-- [ ] **User reviews the data model** (next step)
+- [x] User reviews the data model (approved area by area with each PR series)
 - [x] Scaffold the monorepo (pnpm workspaces, `apps/api`, `apps/web`, `packages/shared`), CI, quality gates
 - [x] Domain functions with tests: money, installments + multi-party allocation, billing cycle, financial period
 - [x] DB foundation: Postgres 18, owner/app roles, Drizzle migrations, `users` + `workspaces` with RLS, isolation tests in CI
@@ -30,17 +30,17 @@ updated: 2026-09-25
 - [x] Purchases already in progress: record only the remaining installments
 - [x] DB: balance views (`account_balances`, `invoice_totals`)
 - [x] **Ledger series done** (#19–#27): accounts, entries, cards, installments, invoices, balances
-- [ ] **Next session: choose the next step** (the user will decide; options below)
-  1. **HTTP API + web auth (recommended):** routes for what exists (accounts, cards, entries,
-     balances, invoices) with the `(module, action)` permission check, request validation with the
-     shared schemas, error mapping (`AppError` → HTTP). Without it nothing built so far is usable
-     by the web or the agent. **Needs a decision first:** open question 3 (web auth method).
-  2. **Contacts and charges:** third parties who owe part of a purchase (receivable postings with
-     `contact_id`, lifts the temporary refusal of receivable/payable postings), charges over
-     WhatsApp, settlements. Uses the multi-party allocation already in `shared`.
-  3. **Planning:** recurring bills and incomes, commission forecast, budgets, "free to spend".
-  4. **Deploy on the homelab:** Dockerfile, Dokploy deploy workflow, backups, Level 0
-     observability.
+- [ ] **HTTP API + web auth** (chosen 2026-09-25; password login, ADR 0021). Small PRs, in order:
+  1. [x] ADR 0021 and this plan
+  2. [ ] `identity`: `sessions` table, password hashing (scrypt)
+  3. [ ] `identity`: create user, login, resolve session, logout services + `ops:create-user`
+  4. [ ] HTTP core: error handler (`AppError` → status, error ref), request id, request logger
+  5. [ ] Auth routes (`/api/auth/login`, `/logout`, `/me`), session middleware, CSRF, login rate limit
+  6. [ ] `authorize(module, action)` middleware + workspace routes (`/api/workspaces/:workspaceId/...`)
+     and a test that fails when a route has no permission
+  7. [ ] Ledger routes, one PR per area: accounts, cards and invoices, entries, balances
+  8. [ ] Invitation routes (create, accept with sign-up)
+- Later options, in the order proposed: contacts and charges, planning, deploy on the homelab.
 - [ ] DB: contacts/charges, planning, support tables
 - [ ] Observability core (OTel register, metrics, error refs), Dockerfile, deploy workflow
 - [ ] Web foundation: TanStack Router/Query, shadcn/ui, layout
@@ -79,7 +79,7 @@ Goal: the couple records everything through WhatsApp and the web, and always kno
 ## Open questions
 1. Real data for the couple's setup (accounts, cards, closing/due days, pay days): collected at onboarding, stored only in the DB, never in the repo.
 2. Refund of installment purchases (`../domain/billing-and-installments.md`).
-3. Web auth method (password vs magic link vs WhatsApp code).
+3. ~~Web auth method~~: password with server-side sessions (ADR 0021). A WhatsApp code comes later as reset and second factor.
 4. Transcription for audio: local whisper.cpp vs external API.
 5. Model for the agent: default `claude-opus-5`; test cheaper models once real message samples exist.
 6. Alert channel (ntfy, Telegram, email). Must not be WhatsApp.
