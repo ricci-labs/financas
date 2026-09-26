@@ -41,12 +41,18 @@ export function invitationRoutes(deps: OnboardingRouteDeps) {
       authorize('members', 'create'),
       jsonBody(invitationRequestSchema, 'INVITATION_INVALID'),
       async (c) => {
-        const { workspaceId, roleKey } = currentWorkspace(c)
+        const { workspaceId, roleKey, permissions } = currentWorkspace(c)
         const { userId } = currentSession(c)
         const request = c.req.valid('json')
         const outcome = await inviteMember(
           deps.db,
-          { workspaceId, inviterUserId: userId, inviterRoleKey: roleKey, request },
+          {
+            workspaceId,
+            inviterUserId: userId,
+            inviterRoleKey: roleKey,
+            inviterPermissions: permissions,
+            request,
+          },
           deps,
         )
         const { emailToSend } = outcome

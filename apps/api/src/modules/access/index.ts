@@ -7,9 +7,14 @@ export {
 } from '@api/modules/access/access.middleware'
 export {
   changeMemberRole,
+  changeRole,
+  createRole,
   createSystemRoles,
+  deleteRole,
   findRole,
   listMembers,
+  listRolePermissions,
+  listRoles,
   listWorkspacesOfUser,
   loadWorkspaceAccess,
   removeMember,
@@ -17,6 +22,7 @@ export {
 export type {
   AccessRouteDeps,
   MemberItem,
+  RoleItem,
   RoleRef,
   SystemRoleIds,
   WorkspaceAccess,

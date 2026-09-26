@@ -4,7 +4,11 @@ import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { POSTGRES_CHECK_VIOLATION, postgresErrorCode } from '@api/core/db/errors'
 import { withWorkspace } from '@api/core/db/tx'
 import { ConflictError, ForbiddenError, ValidationError } from '@api/core/http/errors'
-import { selectActiveRole, selectActiveRoles } from '@api/modules/access/access.repository'
+import {
+  selectActiveRole,
+  selectActiveRoles,
+  selectRolePermissions,
+} from '@api/modules/access/access.repository'
 import type {
   ChangeMemberRoleInput,
   MemberActor,
@@ -12,6 +16,7 @@ import type {
   RemoveMemberInput,
   WorkspaceRole,
 } from '@api/modules/access/access.types'
+import { assertMayGrant } from '@api/modules/access/use-cases/roles'
 import { listAccounts } from '@api/modules/identity'
 import {
   listActiveMemberships,
@@ -62,6 +67,7 @@ export async function changeMemberRole(
       const currentRole = await activeRole(tx, membership.roleId)
       const newRole = await activeRole(tx, roleId)
       assertMayManage(actor, [currentRole, newRole])
+      assertMayGrant(actor, await selectRolePermissions(tx, newRole.roleId))
       await setMembershipRole(tx, membershipId, roleId)
     }),
   )

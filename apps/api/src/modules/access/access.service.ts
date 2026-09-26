@@ -74,3 +74,13 @@ export function findRole(
 }
 
 export { changeMemberRole, listMembers, removeMember } from '@api/modules/access/use-cases/members'
+export {
+  changeRole,
+  createRole,
+  deleteRole,
+  listRoles,
+} from '@api/modules/access/use-cases/roles'
+
+export function listRolePermissions(db: Database, { workspaceId, roleId }: RoleRef) {
+  return withWorkspace(db, workspaceId, (tx) => selectRolePermissions(tx, roleId))
+}

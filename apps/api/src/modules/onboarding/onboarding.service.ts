@@ -2,7 +2,7 @@ import type { Database } from '@api/core/db/db.types'
 import { withWorkspace } from '@api/core/db/tx'
 import { pageLink } from '@api/core/email/links'
 import { ForbiddenError, NotFoundError, ValidationError } from '@api/core/http/errors'
-import { createSystemRoles, findRole } from '@api/modules/access'
+import { createSystemRoles, findRole, listRolePermissions } from '@api/modules/access'
 import {
   createUser,
   getAccount,
@@ -34,7 +34,7 @@ import type {
   SignUpThroughInvitationInput,
 } from '@api/modules/onboarding/onboarding.types'
 import { addWorkspace, findCurrentWorkspace, reserveWorkspaceId } from '@api/modules/workspaces'
-import { workspaceNameSchema } from '@financas/shared'
+import { permissionsBeyond, workspaceNameSchema } from '@financas/shared'
 
 const OWNER_ROLE = 'owner'
 const INVITE_PATH = '/invite'
@@ -85,7 +85,7 @@ export async function registerOwner(
 
 export async function inviteMember(
   db: Database,
-  { workspaceId, inviterUserId, inviterRoleKey, request }: InviteMemberInput,
+  { workspaceId, inviterUserId, inviterRoleKey, inviterPermissions, request }: InviteMemberInput,
   deps: InvitationDeps,
 ): Promise<InvitationOutcome> {
   const role = await findRole(db, { workspaceId, roleId: request.roleId })
@@ -95,6 +95,13 @@ export async function inviteMember(
   const isOwnerInvitation = role.systemKey === OWNER_ROLE
   if (isOwnerInvitation && inviterRoleKey !== OWNER_ROLE) {
     throw new ForbiddenError('OWNER_ONLY', 'Only an owner can invite another owner')
+  }
+  const rolePermissions = await listRolePermissions(db, { workspaceId, roleId: role.roleId })
+  if (permissionsBeyond(inviterPermissions, rolePermissions).length > 0) {
+    throw new ForbiddenError(
+      'PERMISSION_ESCALATION',
+      'You can only invite with permissions you have yourself',
+    )
   }
 
   const created = await createInvitation(db, {

@@ -123,6 +123,13 @@ export function missingViewPermissions(permissions: readonly Permission[]): Perm
     .map((module) => ({ module, action: 'view' as const }))
 }
 
+export function permissionsBeyond(
+  held: readonly Permission[],
+  wanted: readonly Permission[],
+): Permission[] {
+  return wanted.filter(({ module, action }) => !can(held, module, action))
+}
+
 function expandMatrix(matrix: Record<AppModule, string>): Permission[] {
   return APP_MODULES.flatMap((module) =>
     [...matrix[module]].map((letter) => ({ module, action: toAction(letter) })),
