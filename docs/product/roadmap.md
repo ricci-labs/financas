@@ -73,7 +73,7 @@ updated: 2026-09-26
            topped up on reading; the nightly cross-workspace job comes with the reminders)
      - [x] Matching real entries to pending occurrences, suggested and confirmed; matches follow
            edited or deleted entries; skip / edit one occurrence
-     - [ ] Budget lines and goals (reserve) (done: budget lines)
+     - [x] Budget lines and goals (with the reserve)
      - [ ] Period facts + first metrics + `GET /overview` (free to spend, per day, spent, committed)
      - [ ] More metrics: budget pace, committed ahead (6 periods), next invoice, variable income
            average, reserve in months

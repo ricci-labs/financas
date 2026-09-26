@@ -184,8 +184,21 @@ period again replaces its limit.
 | `PUT /budgets/:categoryId` | `budgets:update` | `setBudget` `{ limitCents \| null, fromPeriod: 'YYYY-MM' }` → `204`. The category must be a usable expense category (`400 BUDGET_CATEGORY_INVALID`) |
 
 ## `goals`
-`workspace_id`, `id`, `name`, `target_cents`, `target_on` (date null), `account_id` (the savings
-account that holds it; progress = its balance), `archived_at`.
+| Column | Notes |
+|---|---|
+| `workspace_id`, `id`, `name` | Name of 1–80 characters |
+| `target_cents` | bigint > 0 |
+| `target_on` | date null: when the household wants to get there |
+| `account_id` | The money account (checking, savings, cash, investment) that holds it; composite FK, deferred. **Progress = that account's balance**, so one active goal per account |
+| `is_reserve` | The emergency reserve (the household policy's first destination for commissions); at most one per workspace |
+| soft delete, timestamps | |
+
+| Route | Permission | Does |
+|---|---|---|
+| `GET /goals` | `planning:view` | `listGoals`: active goals, the reserve first, each with `savedCents` (the account's balance) |
+| `POST /goals` | `planning:create` | `createGoal` `{ name, targetCents, targetOn?, accountId, isReserve? }` → `201 { goalId }`. Refused: not a usable money account (`400 GOAL_ACCOUNT_INVALID`), account already holding a goal (`409 GOAL_ACCOUNT_TAKEN`), a second reserve (`409 RESERVE_ALREADY_SET`) |
+| `PATCH /goals/:goalId` | `planning:update` | `changeGoal`: only the fields sent, same refusals → `204` |
+| `DELETE /goals/:goalId` | `planning:delete` | `deleteGoal` (soft, optional `reason`) → `204`; frees the account |
 
 ## Holidays
 Business days skip weekends and holidays. They drive `nth_business_day` periods, due dates

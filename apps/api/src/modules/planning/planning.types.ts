@@ -1,5 +1,9 @@
 import type { Database } from '@api/core/db/db.types'
-import type { plannedOccurrences, recurrenceRules } from '@api/modules/planning/planning.table'
+import type {
+  goals,
+  plannedOccurrences,
+  recurrenceRules,
+} from '@api/modules/planning/planning.table'
 import type {
   IsoDate,
   NationalHoliday,
@@ -134,4 +138,34 @@ export type NewBudgetLine = {
   categoryAccountId: string
   validFrom: IsoDate
   limitCents: number | null
+}
+
+export type GoalRow = typeof goals.$inferSelect
+
+export type NewGoalRow = typeof goals.$inferInsert
+
+export type GoalUpdate = Partial<Omit<NewGoalRow, 'workspaceId' | 'id' | 'createdAt' | 'updatedAt'>>
+
+export type GoalItem = {
+  id: string
+  name: string
+  targetCents: number
+  targetOn: IsoDate | null
+  accountId: string
+  isReserve: boolean
+  savedCents: number
+}
+
+export type GoalRef = {
+  workspaceId: string
+  goalId: string
+}
+
+export type DeleteGoalInput = GoalRef & {
+  userId: string
+  reason?: string
+}
+
+export type CreatedGoal = {
+  goalId: string
 }

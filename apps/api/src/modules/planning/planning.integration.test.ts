@@ -3,6 +3,7 @@ import { ledgerAccounts } from '@api/modules/ledger/ledger.table'
 import { holidayDatesOf } from '@api/modules/planning'
 import {
   budgetLines,
+  goals,
   recurrenceRules,
   workspaceHolidays,
 } from '@api/modules/planning/planning.table'
@@ -186,6 +187,18 @@ describe('budget_lines', () => {
   it('go away with the workspace when it is erased', async () => {
     const workspaceId = await newWorkspace('Erase budgets')
     await insertLine(workspaceId, '2026-10-01')
+    const erase = databases.owner.delete(workspaces).where(eq(workspaces.id, workspaceId))
+    expect(await postgresErrorCodeOf(erase)).toBeUndefined()
+  })
+})
+
+describe('goals', () => {
+  it('go away with the workspace when it is erased', async () => {
+    const workspaceId = await newWorkspace('Erase goals')
+    const savings = await accountIn(workspaceId, 'checking', 'Reserva')
+    await withWorkspace(databases.app, workspaceId, (tx) =>
+      tx.insert(goals).values({ workspaceId, name: 'Reserva', targetCents: 1, accountId: savings }),
+    )
     const erase = databases.owner.delete(workspaces).where(eq(workspaces.id, workspaceId))
     expect(await postgresErrorCodeOf(erase)).toBeUndefined()
   })
