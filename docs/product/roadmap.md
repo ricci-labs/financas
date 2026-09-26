@@ -64,7 +64,7 @@ updated: 2026-09-26
      - [x] Custom roles and their permission matrix (no privilege escalation)
      - [x] My account: change password while logged in, display name, preferences
      - [ ] Ledger reading: entries of an invoice (done: invoice lines), trash (deleted accounts
-           and entries), paging beyond the list limit
+           and entries), paging beyond the list limit (done: keyset cursor on entries)
      - [ ] Maintenance job (croner): purge expired sessions and used or expired auth tokens
   2. [ ] **Planning + dashboard:** recurrence rules, planned occurrences and matching, budgets,
          reserve goal, commission forecast, the period overview ("free to spend")

@@ -33,7 +33,9 @@ import {
   entryDetailsChangeSchema,
   entryInputSchema,
   type IsoDate,
+  type Page,
   type PaymentMethod,
+  pageOf,
   planPostings,
   todayIn,
 } from '@financas/shared'
@@ -93,23 +95,33 @@ export async function listEntries(
   db: Database,
   workspaceId: string,
   query: EntryListQuery,
-): Promise<EntryItem[]> {
+): Promise<Page<EntryItem>> {
   return withWorkspace(db, workspaceId, async (tx) => {
-    const entries = await selectEntries(tx, query)
-    if (entries.length === 0) {
-      return []
-    }
-    const postingRows = await selectPostingsOfEntries(
-      tx,
-      entries.map((entry) => entry.id),
-    )
-    return entries.map((entry) => ({
-      ...entry,
-      postings: postingRows
-        .filter((posting) => posting.entryId === entry.id)
-        .map(({ entryId: _entryId, ...posting }) => posting),
+    const page = pageOf(await selectEntries(tx, query), query.limit, (entry) => ({
+      key: entry.occurredOn,
+      id: entry.id,
     }))
+    return { ...page, items: await withPostings(tx, page.items) }
   })
+}
+
+async function withPostings(
+  tx: WorkspaceTransaction,
+  entries: Omit<EntryItem, 'postings'>[],
+): Promise<EntryItem[]> {
+  if (entries.length === 0) {
+    return []
+  }
+  const postingRows = await selectPostingsOfEntries(
+    tx,
+    entries.map((entry) => entry.id),
+  )
+  return entries.map((entry) => ({
+    ...entry,
+    postings: postingRows
+      .filter((posting) => posting.entryId === entry.id)
+      .map(({ entryId: _entryId, ...posting }) => posting),
+  }))
 }
 
 export async function changeEntryDetails(

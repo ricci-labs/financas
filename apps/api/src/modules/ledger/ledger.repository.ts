@@ -19,7 +19,7 @@ import type {
   NewPosting,
 } from '@api/modules/ledger/ledger.types'
 import type { EntryListQuery, InvoiceStatus, SystemAccountKind } from '@financas/shared'
-import { and, asc, desc, eq, gte, inArray, isNull, lte, ne } from 'drizzle-orm'
+import { and, asc, desc, eq, gte, inArray, isNull, lte, ne, sql } from 'drizzle-orm'
 
 export async function insertAccounts(tx: WorkspaceTransaction, accounts: NewLedgerAccount[]) {
   await tx.insert(ledgerAccounts).values(accounts)
@@ -333,6 +333,11 @@ export function selectEntries(tx: WorkspaceTransaction, query: EntryListQuery) {
       .where(eq(postings.accountId, query.accountId))
     conditions.push(inArray(journalEntries.id, entriesOfAccount))
   }
+  if (query.cursor) {
+    conditions.push(
+      sql`(${journalEntries.occurredOn}, ${journalEntries.id}) < (${query.cursor.key}::date, ${query.cursor.id}::uuid)`,
+    )
+  }
   return tx
     .select({
       id: journalEntries.id,
@@ -350,7 +355,7 @@ export function selectEntries(tx: WorkspaceTransaction, query: EntryListQuery) {
     .from(journalEntries)
     .where(and(...conditions))
     .orderBy(desc(journalEntries.occurredOn), desc(journalEntries.id))
-    .limit(query.limit)
+    .limit(query.limit + 1)
 }
 
 export function selectPostingsOfEntries(tx: WorkspaceTransaction, entryIds: string[]) {

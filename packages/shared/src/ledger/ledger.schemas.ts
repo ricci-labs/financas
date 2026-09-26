@@ -5,6 +5,7 @@ import {
   PAYMENT_METHODS,
   USER_ACCOUNT_KINDS,
 } from '@shared/ledger/ledger.constants'
+import { pageCursorSchema } from '@shared/paging/paging.schemas'
 import { z } from 'zod'
 
 export const ENTRY_DESCRIPTION_MAX_LENGTH = 200
@@ -110,6 +111,7 @@ export const entryListQuerySchema = z
     from: isoDateSchema.optional(),
     to: isoDateSchema.optional(),
     accountId: z.uuid().optional(),
+    cursor: pageCursorSchema(isoDateSchema).optional(),
     limit: z.coerce
       .number()
       .int()

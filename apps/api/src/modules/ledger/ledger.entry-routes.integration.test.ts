@@ -5,6 +5,7 @@ import { connectTestDatabases } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
 import { addMemberWithSystemRole, loggedInUser, requestsAs } from '@api/testing/http'
 import type { SessionRequests } from '@api/testing/testing.types'
+import type { Page } from '@financas/shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const databases = connectTestDatabases()
@@ -22,6 +23,7 @@ let groceriesId: string
 let salaryId: string
 let cardId: string
 let foreignCategoryId: string
+let ownerId: string
 
 beforeAll(async () => {
   const ownerSession = await loggedInUser(app, databases.app, fixtures.runId, 'entries-owner')
@@ -36,6 +38,7 @@ beforeAll(async () => {
     await addMemberWithSystemRole(databases.app, databases.owner, workspaceId, session.userId, role)
   }
   owner = requestsAs(app, ownerSession)
+  ownerId = ownerSession.userId
   member = requestsAs(app, memberSession)
   viewer = requestsAs(app, viewerSession)
   workspacePath = `/api/workspaces/${workspaceId}`
@@ -90,7 +93,11 @@ function expense(description: string, occurredOn = '2026-10-05', amountCents = 8
 }
 
 async function listed(query = ''): Promise<EntryItem[]> {
-  return (await (await viewer.get(`${entriesPath}${query}`)).json()) as EntryItem[]
+  return (await pageAt(`${entriesPath}${query}`)).items
+}
+
+async function pageAt(path: string, as = viewer): Promise<Page<EntryItem>> {
+  return (await (await as.get(path)).json()) as Page<EntryItem>
 }
 
 async function codeOf(response: Response): Promise<string> {
@@ -169,9 +176,54 @@ describe('GET /entries', () => {
     expect(await listed('?limit=1')).toHaveLength(1)
   })
 
+  it('walks every entry page by page, ties on the same day included, each once', async () => {
+    const { workspaceId } = await fixtures.createWorkspaceOwnedBy(ownerId, 'Paging')
+    const path = `/api/workspaces/${workspaceId}/entries`
+    const bank = await created(
+      owner.post(`/api/workspaces/${workspaceId}/accounts`, { kind: 'checking', name: 'Conta Y' }),
+    )
+    const food = await created(
+      owner.post(`/api/workspaces/${workspaceId}/accounts`, {
+        kind: 'expense_category',
+        name: 'Comida',
+      }),
+    )
+    for (const [description, occurredOn] of [
+      ['A', '2026-10-01'],
+      ['B', '2026-10-02'],
+      ['C', '2026-10-02'],
+      ['D', '2026-10-02'],
+      ['E', '2026-10-03'],
+    ]) {
+      await owner.post(path, {
+        entryType: 'expense',
+        occurredOn,
+        description,
+        amountCents: 1000,
+        paidFromAccountId: bank,
+        categoryId: food,
+      })
+    }
+    const everything = (await pageAt(path, owner)).items.map((item) => item.id)
+
+    const walked: string[] = []
+    let page = await pageAt(`${path}?limit=2`, owner)
+    walked.push(...page.items.map((item) => item.id))
+    while (page.nextCursor) {
+      page = await pageAt(`${path}?limit=2&cursor=${page.nextCursor}`, owner)
+      walked.push(...page.items.map((item) => item.id))
+    }
+
+    expect(everything).toHaveLength(5)
+    expect(walked).toEqual(everything)
+    expect((await pageAt(`${path}?limit=5`, owner)).nextCursor).toBeNull()
+  })
+
   it('refuses a malformed query', async () => {
     const response = await viewer.get(`${entriesPath}?from=2026-10-31&to=2026-10-01`)
     expect([response.status, await codeOf(response)]).toEqual([400, 'ENTRY_QUERY_INVALID'])
+    const cursor = await viewer.get(`${entriesPath}?cursor=2026-10-01_not-an-id`)
+    expect([cursor.status, await codeOf(cursor)]).toEqual([400, 'ENTRY_QUERY_INVALID'])
   })
 })
 
