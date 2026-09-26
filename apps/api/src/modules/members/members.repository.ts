@@ -75,3 +75,10 @@ export async function selectActiveMembershipOfUser(tx: WorkspaceTransaction, use
     .where(and(eq(memberships.userId, userId), isNull(memberships.deletedAt)))
   return membership
 }
+
+export async function selectWorkspaceIdsOfUser(db: Database, userId: string): Promise<string[]> {
+  const result = await db.execute<{ workspace_id: string }>(
+    sql`select user_workspace_ids(${userId}) as workspace_id`,
+  )
+  return result.rows.map((row) => row.workspace_id)
+}

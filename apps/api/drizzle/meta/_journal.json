@@ -232,6 +232,13 @@
       "when": 1790383305795,
       "tag": "0032_sessions_and_auth_tokens",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1790390944725,
+      "tag": "0033_user_workspace_lookup",
+      "breakpoints": true
     }
   ]
 }

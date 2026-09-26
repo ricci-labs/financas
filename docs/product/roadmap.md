@@ -45,7 +45,7 @@ updated: 2026-09-25
   7d. [x] Routes that use the links: verify email, reset password (with limits on failed links)
   8. [x] `authorize(module, action)` middleware + workspace routes (`/api/workspaces/:workspaceId/...`)
      and a test that fails when a route has no permission
-  8b. [ ] `GET /api/workspaces`: the caller's workspaces (narrow SECURITY DEFINER lookup, ADR 0019)
+  8b. [x] `GET /api/workspaces`: the caller's workspaces (narrow SECURITY DEFINER lookup, ADR 0019)
   9. [ ] Ledger routes, one PR per area: accounts, cards and invoices, entries, balances
   10. [ ] Invitation routes (create and email the link, accept with sign-up)
 - Later options, in the order proposed: contacts and charges, planning, deploy on the homelab.

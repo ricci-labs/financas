@@ -1,7 +1,12 @@
 import { withWorkspace } from '@api/core/db/tx'
 import { hashToken } from '@api/core/security/tokens'
 import { roles } from '@api/modules/access/access.table'
-import { acceptInvitation, addMember, createInvitation } from '@api/modules/members'
+import {
+  acceptInvitation,
+  addMember,
+  createInvitation,
+  listWorkspaceIdsOfUser,
+} from '@api/modules/members'
 import { invitations, membershipPreferences, memberships } from '@api/modules/members/members.table'
 import { workspaces } from '@api/modules/workspaces/workspaces.table'
 import {
@@ -534,5 +539,31 @@ describe('invitation flow', () => {
     await expect(
       acceptInvitation(databases.app, { token, userId: creatorId }),
     ).rejects.toMatchObject({ code: 'ALREADY_MEMBER' })
+  })
+})
+
+describe('listWorkspaceIdsOfUser', () => {
+  it('finds the workspaces of a user across tenants, only active memberships of live workspaces', async () => {
+    const userId = await fixtures.createUser('lookup')
+    const owned = (await fixtures.createWorkspaceOwnedBy(userId, 'Owned')).workspaceId
+    const guestOwner = await fixtures.createUser('lookup-owner')
+    const joined = (await fixtures.createWorkspaceOwnedBy(guestOwner, 'Joined')).workspaceId
+    const left = (await fixtures.createWorkspaceOwnedBy(guestOwner, 'Left')).workspaceId
+    const deleted = (await fixtures.createWorkspaceOwnedBy(userId, 'Deleted')).workspaceId
+    await fixtures.createWorkspaceOwnedBy(guestOwner, 'Foreign')
+    await insertMembershipWithRole(joined, userId, 'member')
+    const leftMembership = await insertMembershipWithRole(left, userId, 'viewer')
+
+    await databases.owner
+      .update(memberships)
+      .set({ deletedAt: new Date() })
+      .where(eq(memberships.id, leftMembership))
+    await databases.owner
+      .update(workspaces)
+      .set({ deletedAt: new Date() })
+      .where(eq(workspaces.id, deleted))
+
+    const found = await listWorkspaceIdsOfUser(databases.app, userId)
+    expect(found.sort()).toEqual([owned, joined].sort())
   })
 })

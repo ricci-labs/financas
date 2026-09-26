@@ -3,6 +3,7 @@ export {
   addMember,
   createInvitation,
   findActiveMembership,
+  listWorkspaceIdsOfUser,
 } from '@api/modules/members/members.service'
 export type {
   AcceptedInvitation,

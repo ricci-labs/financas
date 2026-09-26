@@ -134,7 +134,8 @@ One pending invitation per contact and workspace (partial unique indexes). RLS i
 **Flow** (`members` service):
 - `createInvitation()` generates the token, stores its hash, and returns the raw token for the link.
 - `acceptInvitation(token, userId)` hashes the token, finds the workspace with the SECURITY DEFINER
-  function `invitation_workspace_id()` (ADR 0019), then inside that workspace locks the invitation
+  function `invitation_workspace_id()` (ADR 0019; `user_workspace_ids()` is the other such
+  lookup, see `access-control.md`), then inside that workspace locks the invitation
   row (`FOR UPDATE`, so concurrent accepts of one token let exactly one user in), refuses revoked,
   accepted or expired invitations and existing members (`ConflictError` codes), adds the member with
   the invited role, and marks the invitation accepted.
