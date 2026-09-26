@@ -233,10 +233,20 @@ today until the next **fixed** income landing on it, or the end of the period if
 `{ lowestCents, lowestOn }`) fires when the lowest point is below zero.
 
 ### "Posso comprar?" (purchase simulation)
-Read-only. Given an amount, a card (or an account) and an installment count, it plans the postings
-with the same functions that record a real purchase (`planPostings`, billing cycle), adds them to
-the facts of each affected period, and answers the metrics before and after for each period
-(`free_to_spend`, `committed_ahead`). Nothing is written. The agent reuses it.
+Read-only: nothing is written. `simulatePurchase(facts, purchase)` (`packages/shared/src/simulation/`)
+adds a hypothetical purchase to the facts and recomputes the same metrics and insights:
+- **on a card:** the same invoices a real purchase would get (`invoicesForInstallments`, installments
+  from `splitInstallments`), each installment effective on its invoice's due date, added to that
+  invoice's total (or a new invoice);
+- **from an account** (1×): the expense on its date and the money out of the account (today or later).
+
+→ `{ period: { label, freeToSpend before/after, dailyAllowance before/after }, coming: [{ label,
+committed before/after, percentOfIncome before/after }], newInsights }`, where `newInsights` are only
+the alerts the purchase would bring (e.g. `period_heavily_committed`, `balance_going_negative`).
+
+| Route | Permission | Does |
+|---|---|---|
+| `GET /simulations/purchase?amountCents&installmentCount&cardAccountId\|paidFromAccountId&occurredOn` | `reports:view` | `reports.simulatePurchaseImpact` for the current period. A card **or** a money account; installments only on a card (`400 SIMULATION_QUERY_INVALID`); an unknown card or non-money account is `400 SIMULATION_CARD_INVALID` / `SIMULATION_ACCOUNT_INVALID` |
 
 ## `budget_lines`
 | Column | Notes |

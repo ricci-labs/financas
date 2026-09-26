@@ -6,7 +6,11 @@ import {
   replaceAllocationSteps,
   setBudget,
 } from '@api/modules/planning'
-import { getPeriodOverview, type PeriodOverview } from '@api/modules/reports'
+import {
+  getPeriodOverview,
+  type PeriodOverview,
+  simulatePurchaseImpact,
+} from '@api/modules/reports'
 import { changeWorkspaceSettings } from '@api/modules/workspaces'
 import { testAppDeps } from '@api/testing/app'
 import { connectTestDatabases } from '@api/testing/database'
@@ -260,6 +264,51 @@ describe('getPeriodOverview', () => {
   })
 })
 
+describe('simulatePurchaseImpact', () => {
+  it('answers "posso comprar?" with the same numbers as the overview', async () => {
+    const { workspaceId, card, checking } = await household()
+    const overview = await getPeriodOverview(databases.app, workspaceId, {}, MID_OCTOBER)
+    const impact = await simulatePurchaseImpact(
+      databases.app,
+      workspaceId,
+      { amountCents: 240_000, installmentCount: 4, cardAccountId: card },
+      MID_OCTOBER,
+    )
+    expect(impact.period.freeToSpendBefore).toBe(overview.metrics.freeToSpend)
+    expect(
+      impact.coming.slice(0, 4).map((period) => period.committedAfter - period.committedBefore),
+    ).toEqual([60_000, 60_000, 60_000, 60_000])
+
+    const debit = await simulatePurchaseImpact(
+      databases.app,
+      workspaceId,
+      { amountCents: 50_000, installmentCount: 1, paidFromAccountId: checking },
+      MID_OCTOBER,
+    )
+    expect(debit.period.freeToSpendAfter).toBe(overview.metrics.freeToSpend - 50_000)
+  })
+
+  it('refuses a card or an account that cannot pay', async () => {
+    const { workspaceId, groceries } = await household()
+    await expect(
+      simulatePurchaseImpact(
+        databases.app,
+        workspaceId,
+        { amountCents: 1, installmentCount: 1, cardAccountId: groceries },
+        MID_OCTOBER,
+      ),
+    ).rejects.toMatchObject({ code: 'SIMULATION_CARD_INVALID' })
+    await expect(
+      simulatePurchaseImpact(
+        databases.app,
+        workspaceId,
+        { amountCents: 1, installmentCount: 1, paidFromAccountId: groceries },
+        MID_OCTOBER,
+      ),
+    ).rejects.toMatchObject({ code: 'SIMULATION_ACCOUNT_INVALID' })
+  })
+})
+
 describe('balanceForecast', () => {
   it('pays the card invoice from its payment account on the due date', async () => {
     const { workspaceId, checking } = await household()
@@ -367,5 +416,10 @@ describe('GET /overview', () => {
 
     const invalid = await viewer.get(`/api/workspaces/${workspaceId}/overview?period=2027-1`)
     expect(invalid.status).toBe(400)
+
+    const noCardNorAccount = await viewer.get(
+      `/api/workspaces/${workspaceId}/simulations/purchase?amountCents=1000`,
+    )
+    expect(noCardNorAccount.status).toBe(400)
   })
 })
