@@ -5,9 +5,13 @@ import { authorize, currentWorkspace } from '@api/modules/access'
 import {
   archiveAccount,
   changeAccount,
+  changeCard,
   createAccount,
+  createCard,
   deleteAccount,
   listAccounts,
+  listCards,
+  listInvoiceTotals,
   restoreAccount,
   unarchiveAccount,
 } from '@api/modules/ledger/ledger.service'
@@ -15,17 +19,23 @@ import type { LedgerRouteDeps } from '@api/modules/ledger/ledger.types'
 import {
   accountChangeSchema,
   accountParamsSchema,
+  cardChangeSchema,
+  cardParamsSchema,
   deletionRequestSchema,
   newAccountSchema,
+  newCardSchema,
 } from '@financas/shared'
 import { Hono } from 'hono'
 
 const CREATED = 201
 const NO_CONTENT = 204
 const ACCOUNT_NOT_FOUND = 'ACCOUNT_NOT_FOUND'
+const CARD_NOT_FOUND = 'CARD_NOT_FOUND'
 
 export function ledgerRoutes(deps: LedgerRouteDeps) {
-  return new Hono<AppEnv>().route('/accounts', accountRoutes(deps))
+  return new Hono<AppEnv>()
+    .route('/accounts', accountRoutes(deps))
+    .route('/cards', cardRoutes(deps))
 }
 
 function accountRoutes({ db }: LedgerRouteDeps) {
@@ -86,5 +96,37 @@ function accountRoutes({ db }: LedgerRouteDeps) {
       const { workspaceId } = currentWorkspace(c)
       await restoreAccount(db, { workspaceId, accountId: c.req.valid('param').accountId })
       return c.body(null, NO_CONTENT)
+    })
+}
+
+function cardRoutes({ db }: LedgerRouteDeps) {
+  const card = pathParams(cardParamsSchema, CARD_NOT_FOUND)
+
+  return new Hono<AppEnv>()
+    .get('/', authorize('cards', 'view'), async (c) => {
+      return c.json(await listCards(db, currentWorkspace(c).workspaceId))
+    })
+    .post('/', authorize('cards', 'create'), jsonBody(newCardSchema, 'CARD_INVALID'), async (c) => {
+      const { workspaceId } = currentWorkspace(c)
+      const { userId } = currentSession(c)
+      const created = await createCard(db, { workspaceId, userId }, c.req.valid('json'))
+      return c.json(created, CREATED)
+    })
+    .patch(
+      '/:cardId',
+      authorize('cards', 'update'),
+      card,
+      jsonBody(cardChangeSchema, 'CARD_INVALID'),
+      async (c) => {
+        const { workspaceId } = currentWorkspace(c)
+        const cardAccountId = c.req.valid('param').cardId
+        await changeCard(db, { workspaceId, cardAccountId }, c.req.valid('json'))
+        return c.body(null, NO_CONTENT)
+      },
+    )
+    .get('/:cardId/invoices', authorize('cards', 'view'), card, async (c) => {
+      const { workspaceId } = currentWorkspace(c)
+      const cardAccountId = c.req.valid('param').cardId
+      return c.json(await listInvoiceTotals(db, { workspaceId, cardAccountId }))
     })
 }

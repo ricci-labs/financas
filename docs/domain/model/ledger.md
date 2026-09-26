@@ -211,8 +211,15 @@ A malformed or unknown id, or one from another workspace, is `404 ACCOUNT_NOT_FO
 | `POST /accounts/:accountId/archive`, `/unarchive` | `accounts:update` | `archiveAccount`, `unarchiveAccount` → `204` |
 | `DELETE /accounts/:accountId` (optional `{ reason }`) | `accounts:delete` | `deleteAccount` → `204` |
 | `POST /accounts/:accountId/restore` | `accounts:delete` | `restoreAccount` → `204` |
+| `GET /cards` | `cards:view` | `listCards`: active card accounts with their cycle, limit, holder and payment account |
+| `POST /cards` | `cards:create` | `createCard` → `201 { accountId }` |
+| `PATCH /cards/:cardId` | `cards:update` | `changeCard` (cycle, limit, holder, payment account) → `204` |
+| `GET /cards/:cardId/invoices` | `cards:view` | `listInvoiceTotals`: invoices with total, paid and due, by reference month |
 
-Cards, entries and balances follow in the next PRs.
+A card is a ledger account, so renaming, archiving, deleting and restoring it go through
+`/accounts` with `accounts` permissions. `/cards/:cardId` only reaches `card_details`, so an id
+that isn't a card is `404 CARD_NOT_FOUND`: the `cards` permission can't touch other accounts.
+Entries and balances follow in the next PRs.
 
 ## Worked examples
 Placeholders only: Card X, Member A, Contact J, Contact M.

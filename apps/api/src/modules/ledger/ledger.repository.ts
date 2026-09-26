@@ -295,3 +295,25 @@ export function selectActiveAccounts(tx: WorkspaceTransaction) {
     .where(isNull(ledgerAccounts.deletedAt))
     .orderBy(asc(ledgerAccounts.sortOrder), asc(ledgerAccounts.name))
 }
+
+export function selectActiveCards(tx: WorkspaceTransaction) {
+  return tx
+    .select({
+      accountId: ledgerAccounts.id,
+      name: ledgerAccounts.name,
+      color: ledgerAccounts.color,
+      icon: ledgerAccounts.icon,
+      sortOrder: ledgerAccounts.sortOrder,
+      archivedAt: ledgerAccounts.archivedAt,
+      closingDay: cardDetails.closingDay,
+      dueDay: cardDetails.dueDay,
+      purchaseOnClosingDayGoesNext: cardDetails.purchaseOnClosingDayGoesNext,
+      limitCents: cardDetails.limitCents,
+      holderUserId: cardDetails.holderUserId,
+      paymentAccountId: cardDetails.paymentAccountId,
+    })
+    .from(cardDetails)
+    .innerJoin(ledgerAccounts, eq(ledgerAccounts.id, cardDetails.accountId))
+    .where(isNull(ledgerAccounts.deletedAt))
+    .orderBy(asc(ledgerAccounts.sortOrder), asc(ledgerAccounts.name))
+}
