@@ -62,7 +62,7 @@
   },
   "overrides": [
     {
-      "includes": ["scripts/**"],
+      "includes": ["scripts/**", ".claude/hooks/**"],
       "linter": {
         "rules": {
           "suspicious": {

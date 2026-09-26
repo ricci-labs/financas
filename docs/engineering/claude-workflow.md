@@ -1,7 +1,7 @@
 ---
 summary: How Claude works in this repo — project skills, Claude Code hooks, and the standard loop for a change.
 read_when: Starting any development task, creating or editing a skill or hook, or when unsure which procedure to follow.
-updated: 2026-09-22
+updated: 2026-09-25
 ---
 
 # Claude workflow
@@ -33,12 +33,18 @@ Rules for skills:
 - A skill links to docs for background instead of copying them.
 - A skill that's outdated is worse than none, so update it in the same PR that changes the procedure.
 
-## Claude Code hooks (`.claude/settings.json`), planned for scaffold
-| Event | Hook | Why |
+## Claude Code hooks (`.claude/settings.json`, scripts in `.claude/hooks/`)
+The conventions are checked while Claude works, not only at commit or in CI, so a broken pattern
+is fixed in the same step that introduced it.
+
+| Event | Hook | What it does |
 |---|---|---|
-| `PostToolUse` (Edit/Write on `*.ts, *.tsx, *.json`) | `biome check --write <file>` | Code stays formatted without a separate step |
-| `PreToolUse` (Edit/Write) | Block `.env*` and applied files in `apps/api/drizzle/` | Secrets and applied migrations are never touched |
-| `PreToolUse` (Bash) | Block `git push --force` to `main` and `--no-verify` | Protects history and hooks |
+| `PostToolUse` (Edit/Write/MultiEdit) | `check-edited-file.mjs` | For a `.ts`/`.tsx` file under `apps/` or `packages/`: formats it with Biome, then runs the no-comments and file-roles checks on it. A problem blocks with exit 2, and Claude gets the report to fix now. |
+| `Stop` | `check-changed-files.mjs` | Runs the same checks on every `.ts`/`.tsx` file changed since `origin/main`, including files written through Bash, which the edit hook can't see. A problem stops Claude from finishing the turn until it's fixed (one retry, then it reports). |
+| `PreToolUse` (Edit/Write/MultiEdit) | `guard.mjs` | Denies edits to `.env` files (`.env.example` is fine) and to committed migrations in `apps/api/drizzle/`. |
+| `PreToolUse` (Bash) | `guard.mjs` | Denies `--no-verify` and `git commit -n` (hooks can't be skipped), and a force push to `main`. |
+
+Hooks load when a session starts. After changing them, open `/hooks` once or restart Claude Code.
 
 ## What Claude may do without asking
 - Read anything in the repo, run tests, lint, typecheck and build locally.

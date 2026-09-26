@@ -1,0 +1,41 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PATH=\"$HOME/.local/share/pnpm/bin:$PATH\" node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard.mjs\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PATH=\"$HOME/.local/share/pnpm/bin:$PATH\" node \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-edited-file.mjs\"",
+            "timeout": 30,
+            "statusMessage": "Checking project conventions"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PATH=\"$HOME/.local/share/pnpm/bin:$PATH\" node \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-changed-files.mjs\"",
+            "timeout": 60,
+            "statusMessage": "Checking conventions in changed files"
+          }
+        ]
+      }
+    ]
+  }
+}
