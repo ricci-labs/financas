@@ -15,3 +15,7 @@ export function pathParams<T>(schema: z.ZodType<T>, notFoundCode: string) {
     return parsed.data
   })
 }
+
+export function queryParams<T>(schema: z.ZodType<T>, invalidCode: string) {
+  return validator('query', (value) => parseOrThrow(schema, value, invalidCode))
+}

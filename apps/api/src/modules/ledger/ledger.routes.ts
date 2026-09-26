@@ -1,41 +1,55 @@
 import type { AppEnv } from '@api/core/http/http.types'
 import { currentSession } from '@api/core/http/middleware/session'
-import { jsonBody, pathParams } from '@api/core/http/validation'
+import { jsonBody, pathParams, queryParams } from '@api/core/http/validation'
 import { authorize, currentWorkspace } from '@api/modules/access'
 import {
   archiveAccount,
   changeAccount,
   changeCard,
+  changeEntryDetails,
   createAccount,
   createCard,
   deleteAccount,
+  deleteEntry,
   listAccounts,
   listCards,
+  listEntries,
   listInvoiceTotals,
+  recordEntry,
+  replaceEntry,
   restoreAccount,
+  restoreEntry,
   unarchiveAccount,
 } from '@api/modules/ledger/ledger.service'
-import type { LedgerRouteDeps } from '@api/modules/ledger/ledger.types'
+import type { EntryContext, LedgerRouteDeps } from '@api/modules/ledger/ledger.types'
 import {
   accountChangeSchema,
   accountParamsSchema,
   cardChangeSchema,
   cardParamsSchema,
   deletionRequestSchema,
+  entryDetailsChangeSchema,
+  entryInputSchema,
+  entryListQuerySchema,
+  entryParamsSchema,
   newAccountSchema,
   newCardSchema,
 } from '@financas/shared'
-import { Hono } from 'hono'
+import { type Context, Hono } from 'hono'
 
 const CREATED = 201
 const NO_CONTENT = 204
 const ACCOUNT_NOT_FOUND = 'ACCOUNT_NOT_FOUND'
 const CARD_NOT_FOUND = 'CARD_NOT_FOUND'
+const ENTRY_NOT_FOUND = 'ENTRY_NOT_FOUND'
+const ENTRY_INVALID = 'ENTRY_INVALID'
+const WEB_SOURCE = 'web'
 
 export function ledgerRoutes(deps: LedgerRouteDeps) {
   return new Hono<AppEnv>()
     .route('/accounts', accountRoutes(deps))
     .route('/cards', cardRoutes(deps))
+    .route('/entries', entryRoutes(deps))
 }
 
 function accountRoutes({ db }: LedgerRouteDeps) {
@@ -129,4 +143,77 @@ function cardRoutes({ db }: LedgerRouteDeps) {
       const cardAccountId = c.req.valid('param').cardId
       return c.json(await listInvoiceTotals(db, { workspaceId, cardAccountId }))
     })
+}
+
+function entryRoutes({ db }: LedgerRouteDeps) {
+  const entry = pathParams(entryParamsSchema, ENTRY_NOT_FOUND)
+
+  return new Hono<AppEnv>()
+    .get(
+      '/',
+      authorize('entries', 'view'),
+      queryParams(entryListQuerySchema, 'ENTRY_QUERY_INVALID'),
+      async (c) => {
+        const { workspaceId } = currentWorkspace(c)
+        return c.json(await listEntries(db, workspaceId, c.req.valid('query')))
+      },
+    )
+    .post(
+      '/',
+      authorize('entries', 'create'),
+      jsonBody(entryInputSchema, ENTRY_INVALID),
+      async (c) => {
+        const context = entryContextOf(c)
+        return c.json(await recordEntry(db, context, c.req.valid('json')), CREATED)
+      },
+    )
+    .put(
+      '/:entryId',
+      authorize('entries', 'update'),
+      entry,
+      jsonBody(entryInputSchema, ENTRY_INVALID),
+      async (c) => {
+        const { entryId } = c.req.valid('param')
+        const replacement = await replaceEntry(db, entryContextOf(c), entryId, c.req.valid('json'))
+        return c.json(replacement, CREATED)
+      },
+    )
+    .patch(
+      '/:entryId',
+      authorize('entries', 'update'),
+      entry,
+      jsonBody(entryDetailsChangeSchema, ENTRY_INVALID),
+      async (c) => {
+        const { workspaceId } = currentWorkspace(c)
+        const { entryId } = c.req.valid('param')
+        await changeEntryDetails(db, { workspaceId, entryId }, c.req.valid('json'))
+        return c.body(null, NO_CONTENT)
+      },
+    )
+    .delete(
+      '/:entryId',
+      authorize('entries', 'delete'),
+      entry,
+      jsonBody(deletionRequestSchema, 'DELETION_INVALID'),
+      async (c) => {
+        const { workspaceId } = currentWorkspace(c)
+        const { userId } = currentSession(c)
+        const { entryId } = c.req.valid('param')
+        await deleteEntry(db, { workspaceId, entryId, userId, reason: c.req.valid('json').reason })
+        return c.body(null, NO_CONTENT)
+      },
+    )
+    .post('/:entryId/restore', authorize('entries', 'delete'), entry, async (c) => {
+      const { workspaceId } = currentWorkspace(c)
+      await restoreEntry(db, { workspaceId, entryId: c.req.valid('param').entryId })
+      return c.body(null, NO_CONTENT)
+    })
+}
+
+function entryContextOf(c: Context<AppEnv>): EntryContext {
+  return {
+    workspaceId: currentWorkspace(c).workspaceId,
+    userId: currentSession(c).userId,
+    source: WEB_SOURCE,
+  }
 }

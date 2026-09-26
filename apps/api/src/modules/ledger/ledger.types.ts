@@ -13,8 +13,10 @@ import type {
   CardCycle,
   EntryInput,
   EntrySource,
+  EntryType,
   IncomeNature,
   InvoiceStatus,
+  PaymentMethod,
 } from '@financas/shared'
 
 export type NewLedgerAccount = {
@@ -156,4 +158,29 @@ export type CardItem = {
   limitCents: number | null
   holderUserId: string | null
   paymentAccountId: string | null
+}
+
+export type PostingItem = {
+  lineNo: number
+  accountId: string
+  accountKind: AccountKind
+  amountCents: number
+  effectiveOn: string
+  invoiceId: string | null
+  installmentNo: number | null
+}
+
+export type EntryItem = {
+  id: string
+  entryType: EntryType
+  occurredOn: string
+  description: string
+  notes: string | null
+  paymentMethod: PaymentMethod | null
+  installmentCount: number
+  spentByUserId: string | null
+  createdByUserId: string
+  source: EntrySource
+  replacesEntryId: string | null
+  postings: PostingItem[]
 }

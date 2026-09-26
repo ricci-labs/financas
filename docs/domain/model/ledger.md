@@ -215,11 +215,17 @@ A malformed or unknown id, or one from another workspace, is `404 ACCOUNT_NOT_FO
 | `POST /cards` | `cards:create` | `createCard` → `201 { accountId }` |
 | `PATCH /cards/:cardId` | `cards:update` | `changeCard` (cycle, limit, holder, payment account) → `204` |
 | `GET /cards/:cardId/invoices` | `cards:view` | `listInvoiceTotals`: invoices with total, paid and due, by reference month |
+| `GET /entries?from&to&accountId&limit` | `entries:view` | `listEntries`: active entries with their postings, newest first; optional period (`YYYY-MM-DD`), account and `limit` (default 100, max 500) |
+| `POST /entries` | `entries:create` | `recordEntry` (any `entryType` of `entryInputSchema`, source `web`) → `201 { entryId }` |
+| `PUT /entries/:entryId` | `entries:update` | `replaceEntry`: the old entry goes to the trash, a new one points back to it → `201 { entryId }` |
+| `PATCH /entries/:entryId` | `entries:update` | `changeEntryDetails` (description, notes) → `204` |
+| `DELETE /entries/:entryId` (optional `{ reason }`) | `entries:delete` | `deleteEntry` → `204` |
+| `POST /entries/:entryId/restore` | `entries:delete` | `restoreEntry` → `204` |
 
 A card is a ledger account, so renaming, archiving, deleting and restoring it go through
 `/accounts` with `accounts` permissions. `/cards/:cardId` only reaches `card_details`, so an id
 that isn't a card is `404 CARD_NOT_FOUND`: the `cards` permission can't touch other accounts.
-Entries and balances follow in the next PRs.
+Balances follow in the next PR.
 
 ## Worked examples
 Placeholders only: Card X, Member A, Contact J, Contact M.

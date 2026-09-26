@@ -11,11 +11,14 @@ import {
   lockEntry,
   markEntryDeleted,
   markEntryRestored,
+  selectEntries,
+  selectPostingsOfEntries,
   updateEntryDetails,
 } from '@api/modules/ledger/ledger.repository'
 import type {
   DeleteEntryInput,
   EntryContext,
+  EntryItem,
   EntryRef,
   RecordedEntry,
 } from '@api/modules/ledger/ledger.types'
@@ -25,6 +28,7 @@ import { refusingBrokenRules } from '@api/modules/ledger/use-cases/rules'
 import { currentWorkspaceDefaults } from '@api/modules/workspaces'
 import {
   type EntryInput,
+  type EntryListQuery,
   type EntryPlan,
   entryDetailsChangeSchema,
   entryInputSchema,
@@ -83,6 +87,29 @@ async function recordParsedEntry(
     planned.postings.map((posting) => ({ ...posting, workspaceId: context.workspaceId, entryId })),
   )
   return entryId
+}
+
+export async function listEntries(
+  db: Database,
+  workspaceId: string,
+  query: EntryListQuery,
+): Promise<EntryItem[]> {
+  return withWorkspace(db, workspaceId, async (tx) => {
+    const entries = await selectEntries(tx, query)
+    if (entries.length === 0) {
+      return []
+    }
+    const postingRows = await selectPostingsOfEntries(
+      tx,
+      entries.map((entry) => entry.id),
+    )
+    return entries.map((entry) => ({
+      ...entry,
+      postings: postingRows
+        .filter((posting) => posting.entryId === entry.id)
+        .map(({ entryId: _entryId, ...posting }) => posting),
+    }))
+  })
 }
 
 export async function changeEntryDetails(
