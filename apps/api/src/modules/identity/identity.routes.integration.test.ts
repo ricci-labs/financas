@@ -1,6 +1,6 @@
 import { createApp } from '@api/app'
 import { sessionCookieSettings } from '@api/core/http/session-cookie'
-import { createUser } from '@api/modules/identity'
+import { createLoginLimits, createUser } from '@api/modules/identity'
 import { TEST_PUBLIC_URL, testAppDeps } from '@api/testing/app'
 import { connectTestDatabases } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
@@ -32,13 +32,20 @@ async function existingUser(label: string) {
   return { userId, email }
 }
 
-function postJson(app: ReturnType<typeof appFor>, path: string, body: unknown, cookie?: string) {
+function postJson(
+  app: ReturnType<typeof appFor>,
+  path: string,
+  body: unknown,
+  cookie?: string,
+  extraHeaders: Record<string, string> = {},
+) {
   return app.request(path, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Origin: TEST_PUBLIC_URL,
       ...(cookie ? { Cookie: cookie } : {}),
+      ...extraHeaders,
     },
     body: JSON.stringify(body),
   })
@@ -133,5 +140,70 @@ describe('GET /api/auth/config', () => {
     const open = await appFor({ isPublicSignupEnabled: true }).request('/api/auth/config')
     expect(await closed.json()).toEqual({ isSignupEnabled: false })
     expect(await open.json()).toEqual({ isSignupEnabled: true })
+  })
+})
+
+describe('login limits', () => {
+  function limitedApp() {
+    return appFor({
+      loginLimits: createLoginLimits({
+        maxFailuresPerEmail: 3,
+        maxFailuresPerClient: 4,
+        windowMinutes: 15,
+      }),
+      trustedProxyHops: 1,
+    })
+  }
+
+  function attempt(
+    app: ReturnType<typeof limitedApp>,
+    email: string,
+    password: string,
+    ip: string,
+  ) {
+    return postJson(app, '/api/auth/login', { email, password }, undefined, {
+      'X-Forwarded-For': ip,
+    })
+  }
+
+  it('locks an email after 3 failures, even for the right password, and says when to retry', async () => {
+    const { email } = await existingUser('limit-email')
+    const other = await existingUser('limit-other')
+    const app = limitedApp()
+    for (const ip of ['198.51.100.1', '198.51.100.2', '198.51.100.3']) {
+      expect((await attempt(app, email, 'wrong password!', ip)).status).toBe(401)
+    }
+
+    const locked = await attempt(app, email.toUpperCase(), PASSWORD, '198.51.100.4')
+    expect(locked.status).toBe(429)
+    expect(await locked.json()).toMatchObject({ error: { code: 'TOO_MANY_ATTEMPTS' } })
+    expect(Number(locked.headers.get('Retry-After'))).toBeGreaterThan(890)
+    expect(locked.headers.get('Set-Cookie')).toBeNull()
+
+    expect((await attempt(app, other.email, PASSWORD, '198.51.100.4')).status).toBe(200)
+  })
+
+  it('locks a client address after 4 failures across different emails', async () => {
+    const { email } = await existingUser('limit-client')
+    const app = limitedApp()
+    const noisyClient = '203.0.113.9'
+    for (let failure = 0; failure < 4; failure += 1) {
+      const response = await attempt(app, `guess-${failure}@example.test`, 'wrong!', noisyClient)
+      expect(response.status).toBe(401)
+    }
+
+    expect((await attempt(app, email, PASSWORD, noisyClient)).status).toBe(429)
+    expect((await attempt(app, email, PASSWORD, '203.0.113.10')).status).toBe(200)
+  })
+
+  it('forgets the failures of an email after a successful login', async () => {
+    const { email } = await existingUser('limit-reset')
+    const app = limitedApp()
+    await attempt(app, email, 'wrong password!', '192.0.2.1')
+    await attempt(app, email, 'wrong password!', '192.0.2.2')
+    expect((await attempt(app, email, PASSWORD, '192.0.2.3')).status).toBe(200)
+    await attempt(app, email, 'wrong password!', '192.0.2.4')
+    await attempt(app, email, 'wrong password!', '192.0.2.5')
+    expect((await attempt(app, email, PASSWORD, '192.0.2.6')).status).toBe(200)
   })
 })

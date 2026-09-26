@@ -4,6 +4,7 @@ import { createDatabase } from '@api/core/db/client'
 import { createMailer } from '@api/core/email/mailer'
 import { sessionCookieSettings } from '@api/core/http/session-cookie'
 import { createLogger } from '@api/core/observability/logger'
+import { createLoginLimits } from '@api/modules/identity'
 import { serve } from '@hono/node-server'
 
 const SHUTDOWN_TIMEOUT_MS = 10_000
@@ -25,6 +26,12 @@ const app = createApp({
   publicUrl: publicUrlOf(env),
   isPublicSignupEnabled: env.PUBLIC_SIGNUP_ENABLED,
   cookie: sessionCookieSettings(env.NODE_ENV),
+  loginLimits: createLoginLimits({
+    maxFailuresPerEmail: env.LOGIN_MAX_FAILURES_PER_EMAIL,
+    maxFailuresPerClient: env.LOGIN_MAX_FAILURES_PER_IP,
+    windowMinutes: env.LOGIN_FAILURE_WINDOW_MINUTES,
+  }),
+  trustedProxyHops: env.TRUSTED_PROXY_HOPS,
 })
 
 const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {

@@ -40,7 +40,7 @@ updated: 2026-09-25
   5b. [x] `identity`: forgot password and reset by email
   6. [x] HTTP core: error handler (`AppError` → status, error ref), request id, request logger
   7. [x] Auth routes: login, logout, me, config; session required by default; same-origin writes
-  7b. [ ] Login rate limit (per email and per client IP)
+  7b. [x] Login rate limit (per email and per client IP)
   7c. [ ] Routes for sign-up, verification and password reset (answer 202 without waiting), with limits
   8. [ ] `authorize(module, action)` middleware + workspace routes (`/api/workspaces/:workspaceId/...`)
      and a test that fails when a route has no permission

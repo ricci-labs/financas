@@ -1,4 +1,8 @@
-export { identityRoutes, PUBLIC_AUTH_ROUTES } from '@api/modules/identity/identity.routes'
+export {
+  createLoginLimits,
+  identityRoutes,
+  PUBLIC_AUTH_ROUTES,
+} from '@api/modules/identity/identity.routes'
 export {
   createUser,
   getAccount,
@@ -18,6 +22,7 @@ export type {
   IdentityDeps,
   IdentityRouteDeps,
   LoginInput,
+  LoginLimits,
   NewUserInput,
   ResetPasswordInput,
   SignUpDeps,

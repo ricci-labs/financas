@@ -3,6 +3,7 @@ import {
   ConflictError,
   ForbiddenError,
   NotFoundError,
+  TooManyRequestsError,
   UnauthorizedError,
   ValidationError,
 } from '@api/core/http/errors'
@@ -23,6 +24,7 @@ const STATUS_BY_ERROR_TYPE: ReadonlyArray<
   [ForbiddenError, 403],
   [NotFoundError, 404],
   [ConflictError, 409],
+  [TooManyRequestsError, 429],
 ]
 
 const CODE_BY_HTTP_STATUS: Record<number, string> = {

@@ -5,6 +5,7 @@ const DEFAULT_SMTP_PORT = 587
 const DEFAULT_EMAIL_FROM_NAME = 'Finanças'
 const DEFAULT_EMAIL_OUTBOX_DIR = '.private/outbox'
 const DEFAULT_PUBLIC_URL = 'http://localhost:5173'
+const MAX_PROXY_HOPS = 3
 const REQUIRED_IN_PRODUCTION = ['PUBLIC_URL', 'SMTP_HOST', 'EMAIL_FROM'] as const
 
 const envSchema = z
@@ -16,6 +17,10 @@ const envSchema = z
     DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
     PUBLIC_URL: z.url({ protocol: /^https?$/ }).optional(),
     PUBLIC_SIGNUP_ENABLED: z.stringbool().default(false),
+    TRUSTED_PROXY_HOPS: z.coerce.number().int().min(0).max(MAX_PROXY_HOPS).default(0),
+    LOGIN_MAX_FAILURES_PER_EMAIL: z.coerce.number().int().min(1).default(5),
+    LOGIN_MAX_FAILURES_PER_IP: z.coerce.number().int().min(1).default(30),
+    LOGIN_FAILURE_WINDOW_MINUTES: z.coerce.number().int().min(1).default(15),
     SMTP_HOST: z.string().min(1).optional(),
     SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(DEFAULT_SMTP_PORT),
     SMTP_SECURE: z.stringbool().optional(),
