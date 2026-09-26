@@ -99,7 +99,8 @@ src/
 │                             #   static SPA; exports AppType for the RPC client
 ├── core/                     # cross-cutting infrastructure; knows no domain
 │   ├── config/env.ts         # Zod-validated env, fails at boot
-│   ├── email/                # Mailer (ADR 0022): SMTP via Nodemailer, or .eml files in development
+│   ├── email/                # Mailer (ADR 0022): SMTP via Nodemailer, or .eml files in development;
+│   │                         #   layout.ts renders text + escaped HTML
 │   ├── db/
 │   │   ├── client.ts         # pg pool + Drizzle, readiness check
 │   │   ├── columns.ts        # primaryId, timestamps, softDelete helpers
@@ -175,7 +176,8 @@ modules/ledger/
   | `<module>.repository.ts` | Drizzle queries |
   | `<module>.service.ts` | Use cases |
   | `<module>.routes.ts` | Hono sub-app |
-  | `<module>.test.ts` / `<module>.integration.test.ts` | Unit / database tests, one `describe` per table or use case |
+  | `<module>.emails.ts` | Email templates: pure functions that return an `EmailMessage` (pt-BR text, rendered by `core/email/layout.ts`) |
+  | `<module>.test.ts` / `<module>.integration.test.ts` | Unit / database tests, one `describe` per table or use case. A big module may split them by area: `<module>.<area>.integration.test.ts` |
   | `index.ts` | Public surface |
 
 - If a module holds two concepts that feel separate, it is two modules (that's how `access` split from `workspaces`), not extra files inside one.
