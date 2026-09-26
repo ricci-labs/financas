@@ -117,3 +117,21 @@ export type OccurrenceRef = {
 export type LockedOccurrence = OccurrenceRow
 
 export type OccurrenceUpdate = Partial<Pick<NewOccurrenceRow, 'status' | 'amountCents'>>
+
+export type BudgetItem = {
+  categoryAccountId: string
+  limitCents: number
+  validFrom: string
+}
+
+export type BudgetRef = {
+  workspaceId: string
+  categoryAccountId: string
+}
+
+export type NewBudgetLine = {
+  workspaceId: string
+  categoryAccountId: string
+  validFrom: IsoDate
+  limitCents: number | null
+}

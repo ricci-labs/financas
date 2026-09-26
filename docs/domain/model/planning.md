@@ -169,12 +169,19 @@ the facts of each affected period, and answers the metrics before and after for 
 ## `budget_lines`
 | Column | Notes |
 |---|---|
-| `workspace_id`, `id`, `category_account_id` | Expense category (or a parent, to budget a whole group) |
-| `limit_cents` | bigint > 0 |
-| `valid_from_period` | `date` (period start label). The limit holds until a newer line exists for that category. |
+| `workspace_id`, `id`, `category_account_id` | Expense category (or a parent, to budget a whole group); composite FK, deferred |
+| `limit_cents` | bigint > 0, or null = **no budget from this period on** |
+| `valid_from` | `date`, the first day of the period's label month (CHECK). The limit holds until a newer line exists for that category |
+| soft delete, timestamps | |
 
-`unique (workspace_id, category_account_id, valid_from_period)`. "Mercado R$ 1.500 from 2026-10"
-stays valid every month until changed. There's no need to recreate budgets monthly.
+One active line per category and period (partial unique index). "Mercado R$ 1.500 from 2026-10"
+stays valid every month until changed; there's no need to recreate budgets monthly. Setting the same
+period again replaces its limit.
+
+| Route | Permission | Does |
+|---|---|---|
+| `GET /budgets?period=YYYY-MM` | `budgets:view` | `listBudgets`: for each category, the latest line on or before that period, unless it stopped the budget → `{ categoryAccountId, limitCents, validFrom: 'YYYY-MM' }[]` |
+| `PUT /budgets/:categoryId` | `budgets:update` | `setBudget` `{ limitCents \| null, fromPeriod: 'YYYY-MM' }` → `204`. The category must be a usable expense category (`400 BUDGET_CATEGORY_INVALID`) |
 
 ## `goals`
 `workspace_id`, `id`, `name`, `target_cents`, `target_on` (date null), `account_id` (the savings

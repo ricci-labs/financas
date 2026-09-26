@@ -1,12 +1,15 @@
 import type { WorkspaceTransaction } from '@api/core/db/db.types'
 import {
+  budgetLines,
   plannedOccurrences,
   recurrenceRules,
   workspaceHolidays,
 } from '@api/modules/planning/planning.table'
 import type {
+  BudgetItem,
   HolidayDeletion,
   LockedOccurrence,
+  NewBudgetLine,
   NewOccurrenceRow,
   NewRecurrenceRuleRow,
   NewWorkspaceHoliday,
@@ -17,7 +20,7 @@ import type {
   WorkspaceHoliday,
 } from '@api/modules/planning/planning.types'
 import type { IsoDate } from '@financas/shared'
-import { and, asc, between, eq, gte, isNull } from 'drizzle-orm'
+import { and, asc, between, desc, eq, gte, isNull, lte } from 'drizzle-orm'
 
 export function selectHolidaysBetween(
   tx: WorkspaceTransaction,
@@ -198,4 +201,36 @@ export async function updateOccurrence(
   change: OccurrenceUpdate,
 ): Promise<void> {
   await tx.update(plannedOccurrences).set(change).where(eq(plannedOccurrences.id, occurrenceId))
+}
+
+export async function selectBudgetsEffectiveOn(
+  tx: WorkspaceTransaction,
+  periodStart: IsoDate,
+): Promise<BudgetItem[]> {
+  const latest = await tx
+    .selectDistinctOn([budgetLines.categoryAccountId], {
+      categoryAccountId: budgetLines.categoryAccountId,
+      limitCents: budgetLines.limitCents,
+      validFrom: budgetLines.validFrom,
+    })
+    .from(budgetLines)
+    .where(and(isNull(budgetLines.deletedAt), lte(budgetLines.validFrom, periodStart)))
+    .orderBy(budgetLines.categoryAccountId, desc(budgetLines.validFrom))
+  return latest.flatMap(({ limitCents, ...line }) =>
+    limitCents === null ? [] : [{ ...line, limitCents }],
+  )
+}
+
+export async function upsertBudgetLine(
+  tx: WorkspaceTransaction,
+  line: NewBudgetLine,
+): Promise<void> {
+  await tx
+    .insert(budgetLines)
+    .values(line)
+    .onConflictDoUpdate({
+      target: [budgetLines.workspaceId, budgetLines.categoryAccountId, budgetLines.validFrom],
+      targetWhere: isNull(budgetLines.deletedAt),
+      set: { limitCents: line.limitCents },
+    })
 }
