@@ -358,6 +358,20 @@
       "when": 1790460406424,
       "tag": "0050_postings_contact_fk_deferred",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1790463453545,
+      "tag": "0051_charges",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1790463455375,
+      "tag": "0052_charges_triggers_and_fks",
+      "breakpoints": true
     }
   ]
 }

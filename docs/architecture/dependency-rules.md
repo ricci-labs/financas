@@ -59,7 +59,8 @@ routes / agent tools / jobs / channels
 | `planning` | `workspaces` | The workspace time zone, for "today" (`currentWorkspaceDefaults`) |
 | `reports` | `ledger`, `planning`, `workspaces` | Load the period facts for the metrics and insights (ADR 0024) |
 | `contacts` | `ledger` | Open receivable items for charges and balances (`readContactPostings`); record settlements |
-| `contacts` | `workspaces` | The workspace time zone, for "today" |
+| `contacts` | `workspaces` | The workspace time zone, for "today"; the Pix receiving settings |
+| `contacts` | `identity` | The requester's display name in the charge message |
 | `contacts` | `notifications` | Send charges and charge reminders |
 | `planning` | `notifications` | Bill and invoice reminders |
 | `reports` | `ledger`, `planning`, `contacts` | Read-only aggregates |

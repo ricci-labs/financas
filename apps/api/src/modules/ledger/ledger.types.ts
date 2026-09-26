@@ -11,6 +11,7 @@ import type {
   AccountKind,
   AccountRef,
   CardCycle,
+  ChargeableItem,
   EntryInput,
   EntrySource,
   EntryType,
@@ -212,3 +213,8 @@ export type Deletion = {
 export type TrashedAccount = LedgerAccountItem & Deletion
 
 export type TrashedEntry = EntryItem & Deletion
+
+export type ContactItems = {
+  items: ChargeableItem[]
+  paidCents: number
+}

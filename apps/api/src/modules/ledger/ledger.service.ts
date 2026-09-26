@@ -30,6 +30,7 @@ export {
   readAccountFacts,
   readBalanceFacts,
   readCardFacts,
+  readContactItems,
   readContactPostings,
   readInvoiceFacts,
   readPostingFacts,

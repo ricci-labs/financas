@@ -267,6 +267,7 @@ export const postings = pgTable(
   },
   (table) => [
     unique('postings_entry_line_unique').on(table.entryId, table.lineNo),
+    unique('postings_workspace_id_id_unique').on(table.workspaceId, table.id),
     foreignKey({
       name: 'postings_entry_fk',
       columns: [table.workspaceId, table.entryId],
