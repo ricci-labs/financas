@@ -51,6 +51,7 @@ export function requestsAs(app: TestApp, session: TestSession): SessionRequests 
     get: (path) => send('GET', path),
     post: (path, body) => send('POST', path, body),
     patch: (path, body) => send('PATCH', path, body),
+    put: (path, body) => send('PUT', path, body),
     del: (path, body) => send('DELETE', path, body),
   }
 }

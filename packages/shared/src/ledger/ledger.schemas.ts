@@ -97,6 +97,33 @@ export const entryDetailsChangeSchema = z
 
 export type EntryDetailsChange = z.infer<typeof entryDetailsChangeSchema>
 
+export const ENTRY_LIST_DEFAULT_LIMIT = 100
+
+export const ENTRY_LIST_MAX_LIMIT = 500
+
+export const entryParamsSchema = z.object({ entryId: z.uuid() })
+
+export type EntryParams = z.infer<typeof entryParamsSchema>
+
+export const entryListQuerySchema = z
+  .object({
+    from: isoDateSchema.optional(),
+    to: isoDateSchema.optional(),
+    accountId: z.uuid().optional(),
+    limit: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(ENTRY_LIST_MAX_LIMIT)
+      .default(ENTRY_LIST_DEFAULT_LIMIT),
+  })
+  .refine((query) => !query.from || !query.to || query.from <= query.to, {
+    message: 'from must not be after to',
+    path: ['from'],
+  })
+
+export type EntryListQuery = z.infer<typeof entryListQuerySchema>
+
 const accountNameSchema = z.string().trim().min(1).max(ACCOUNT_NAME_MAX_LENGTH)
 
 const accountPersonalizationSchema = z.object({

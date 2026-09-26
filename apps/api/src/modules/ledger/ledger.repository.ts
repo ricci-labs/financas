@@ -18,8 +18,8 @@ import type {
   NewLedgerAccount,
   NewPosting,
 } from '@api/modules/ledger/ledger.types'
-import type { InvoiceStatus, SystemAccountKind } from '@financas/shared'
-import { and, asc, eq, inArray, isNull, ne } from 'drizzle-orm'
+import type { EntryListQuery, InvoiceStatus, SystemAccountKind } from '@financas/shared'
+import { and, asc, desc, eq, gte, inArray, isNull, lte, ne } from 'drizzle-orm'
 
 export async function insertAccounts(tx: WorkspaceTransaction, accounts: NewLedgerAccount[]) {
   await tx.insert(ledgerAccounts).values(accounts)
@@ -316,4 +316,56 @@ export function selectActiveCards(tx: WorkspaceTransaction) {
     .innerJoin(ledgerAccounts, eq(ledgerAccounts.id, cardDetails.accountId))
     .where(isNull(ledgerAccounts.deletedAt))
     .orderBy(asc(ledgerAccounts.sortOrder), asc(ledgerAccounts.name))
+}
+
+export function selectEntries(tx: WorkspaceTransaction, query: EntryListQuery) {
+  const conditions = [isNull(journalEntries.deletedAt)]
+  if (query.from) {
+    conditions.push(gte(journalEntries.occurredOn, query.from))
+  }
+  if (query.to) {
+    conditions.push(lte(journalEntries.occurredOn, query.to))
+  }
+  if (query.accountId) {
+    const entriesOfAccount = tx
+      .select({ entryId: postings.entryId })
+      .from(postings)
+      .where(eq(postings.accountId, query.accountId))
+    conditions.push(inArray(journalEntries.id, entriesOfAccount))
+  }
+  return tx
+    .select({
+      id: journalEntries.id,
+      entryType: journalEntries.entryType,
+      occurredOn: journalEntries.occurredOn,
+      description: journalEntries.description,
+      notes: journalEntries.notes,
+      paymentMethod: journalEntries.paymentMethod,
+      installmentCount: journalEntries.installmentCount,
+      spentByUserId: journalEntries.spentByUserId,
+      createdByUserId: journalEntries.createdByUserId,
+      source: journalEntries.source,
+      replacesEntryId: journalEntries.replacesEntryId,
+    })
+    .from(journalEntries)
+    .where(and(...conditions))
+    .orderBy(desc(journalEntries.occurredOn), desc(journalEntries.id))
+    .limit(query.limit)
+}
+
+export function selectPostingsOfEntries(tx: WorkspaceTransaction, entryIds: string[]) {
+  return tx
+    .select({
+      entryId: postings.entryId,
+      lineNo: postings.lineNo,
+      accountId: postings.accountId,
+      accountKind: postings.accountKind,
+      amountCents: postings.amountCents,
+      effectiveOn: postings.effectiveOn,
+      invoiceId: postings.invoiceId,
+      installmentNo: postings.installmentNo,
+    })
+    .from(postings)
+    .where(inArray(postings.entryId, entryIds))
+    .orderBy(asc(postings.entryId), asc(postings.lineNo))
 }

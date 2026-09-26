@@ -13,6 +13,7 @@ export { changeCard, createCard, listCards } from '@api/modules/ledger/use-cases
 export {
   changeEntryDetails,
   deleteEntry,
+  listEntries,
   recordEntry,
   replaceEntry,
   restoreEntry,

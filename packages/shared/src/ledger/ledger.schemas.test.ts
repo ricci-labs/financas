@@ -3,6 +3,7 @@ import {
   cardChangeSchema,
   entryDetailsChangeSchema,
   entryInputSchema,
+  entryListQuerySchema,
   newAccountSchema,
   newCardSchema,
 } from '@shared/ledger/ledger.schemas'
@@ -194,5 +195,24 @@ describe('entryInputSchema for cards', () => {
       invoiceId: INVOICE,
     })
     expect(parsed.success).toBe(true)
+  })
+})
+
+describe('entryListQuerySchema', () => {
+  it('reads query strings and applies the default limit', () => {
+    expect(entryListQuerySchema.parse({ from: '2026-10-01', to: '2026-10-31' })).toEqual({
+      from: '2026-10-01',
+      to: '2026-10-31',
+      limit: 100,
+    })
+    expect(entryListQuerySchema.parse({ limit: '20' }).limit).toBe(20)
+  })
+
+  it('refuses a period that ends before it starts, a bad date and a limit above 500', () => {
+    expect(entryListQuerySchema.safeParse({ from: '2026-10-31', to: '2026-10-01' }).success).toBe(
+      false,
+    )
+    expect(entryListQuerySchema.safeParse({ from: '2026-02-30' }).success).toBe(false)
+    expect(entryListQuerySchema.safeParse({ limit: '501' }).success).toBe(false)
   })
 })

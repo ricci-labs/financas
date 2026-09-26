@@ -41,5 +41,6 @@ export type SessionRequests = {
   get: (path: string) => Promise<Response>
   post: (path: string, body?: unknown) => Promise<Response>
   patch: (path: string, body: unknown) => Promise<Response>
+  put: (path: string, body: unknown) => Promise<Response>
   del: (path: string, body?: unknown) => Promise<Response>
 }
