@@ -117,19 +117,19 @@ The amount due and "paid" are **derived** (`invoice_totals` view) from postings 
 | `amount_cents` | bigint `<> 0` | Signed (debit +, credit −) |
 | `effective_on` | date | The date this line counts in reports. Default `occurred_on`. For installments, a date in the installment's invoice month. |
 | `invoice_id` | FK card_invoices null | Set exactly on `credit_card` postings; composite FK `(workspace_id, invoice_id, account_id)` → the invoice of that same card |
-| `contact_id` | FK contacts null | |
+| `contact_id` | composite FK contacts null (deferred) | Who owes (or is owed) this line: set exactly on `receivable`/`payable` postings |
 | `installment_no` | smallint null | 1..N |
 | `memo` | text null | |
 
 ### Invariants enforced by the database
-Status: rows marked ✅ are implemented; row 4 comes with contacts.
+Status: all rows are implemented.
 
 | # | Rule | How |
 |---|---|---|
 | 1 ✅ | Postings of an entry sum to 0 | `DEFERRABLE INITIALLY DEFERRED` constraint triggers at commit, on `journal_entries` and `postings` insert, running as the owner (ADR 0020) |
 | 2 ✅ | An entry has ≥ 2 postings | Same trigger (an entry with no postings fails too) |
 | 3 ✅ | `credit_card` posting ⇔ `invoice_id` set, and the invoice belongs to the same card | CHECK `postings_invoice_exactly_on_cards` + composite FK `postings_invoice_of_the_card_fk` |
-| 4 | `receivable`/`payable` posting ⇔ `contact_id` set | CHECK on `account_kind`. **Until then, postings on `receivable`/`payable` are refused** (same CHECK) |
+| 4 ✅ | `receivable`/`payable` posting ⇔ `contact_id` set, a contact of the same workspace | CHECK `postings_contact_exactly_on_what_contacts_owe` + composite FK `postings_contact_fk` |
 | 5 ✅ | Nobody posts into an archived or deleted account, or into a `closed` invoice (except `adjustment`/`invoice_payment`/`refund` entries) | Trigger `postings_guard_insert` |
 | 6 ✅ | All rows share one `workspace_id` | Composite FKs. The posting → account FK also carries `account_kind`, so an account's kind can't change once it has postings. It is deferred, so erasing a workspace can remove accounts and postings in one statement |
 | 7 ✅ | Postings are immutable: no UPDATE, no DELETE, and no new posting on an entry recorded in an earlier transaction. An entry can change only `description` and `notes` in place (plus soft delete / restore); anything else is a replacement. No hard DELETE of entries | Triggers `postings_are_immutable`, `postings_guard_insert`, `journal_entries_guard_changes`. Hard deletes pass only while the whole workspace is being erased |

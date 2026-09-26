@@ -443,6 +443,7 @@ export function selectPostingsOfEntries(tx: WorkspaceTransaction, entryIds: stri
       effectiveOn: postings.effectiveOn,
       invoiceId: postings.invoiceId,
       installmentNo: postings.installmentNo,
+      contactId: postings.contactId,
     })
     .from(postings)
     .where(inArray(postings.entryId, entryIds))
