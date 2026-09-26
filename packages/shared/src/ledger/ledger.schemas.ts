@@ -33,6 +33,13 @@ const positiveCentsSchema = z.number().int().positive()
 
 const accountIdSchema = z.uuid()
 
+export const MAX_SHARES_PER_ENTRY = 10
+
+const sharesSchema = z
+  .array(z.strictObject({ contactId: z.uuid(), amountCents: positiveCentsSchema }))
+  .max(MAX_SHARES_PER_ENTRY)
+  .default([])
+
 const entryDetailsSchema = z.object({
   occurredOn: isoDateSchema,
   description: z.string().trim().min(1).max(ENTRY_DESCRIPTION_MAX_LENGTH),
@@ -47,6 +54,7 @@ export const entryInputSchema = z.discriminatedUnion('entryType', [
     amountCents: positiveCentsSchema,
     paidFromAccountId: accountIdSchema,
     categoryId: accountIdSchema,
+    shares: sharesSchema,
   }),
   entryDetailsSchema.extend({
     entryType: z.literal('income'),
@@ -67,6 +75,7 @@ export const entryInputSchema = z.discriminatedUnion('entryType', [
     firstInstallment: z.number().int().min(1).max(MAX_INSTALLMENTS).default(1),
     cardAccountId: accountIdSchema,
     categoryId: accountIdSchema,
+    shares: sharesSchema,
   }),
   entryDetailsSchema.extend({
     entryType: z.literal('invoice_payment'),

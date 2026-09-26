@@ -31,6 +31,8 @@ import { loadAccounts, pick } from '@api/modules/ledger/use-cases/lookups'
 import { refusingBrokenRules } from '@api/modules/ledger/use-cases/rules'
 import { currentWorkspaceDefaults } from '@api/modules/workspaces'
 import {
+  type AccountRef,
+  type ContactShare,
   type EntryInput,
   type EntryListQuery,
   type EntryPlan,
@@ -49,6 +51,8 @@ const ENTRY_INVALID = 'ENTRY_INVALID'
 
 const SPENDER_IS_MEMBER_CONSTRAINT = 'journal_entries_spender_is_member'
 
+const CONTACT_CONSTRAINT = 'postings_contact_fk'
+
 export async function recordEntry(
   db: Database,
   context: EntryContext,
@@ -56,9 +60,11 @@ export async function recordEntry(
   clock: Clock = systemClock,
 ): Promise<RecordedEntry> {
   const input = parseEntryInput(rawInput)
-  return withWorkspace(db, context.workspaceId, async (tx) => ({
-    entryId: await recordParsedEntry(tx, context, input, clock),
-  }))
+  return refusingUnknownContacts(() =>
+    withWorkspace(db, context.workspaceId, async (tx) => ({
+      entryId: await recordParsedEntry(tx, context, input, clock),
+    })),
+  )
 }
 
 async function recordParsedEntry(
@@ -205,15 +211,30 @@ export async function replaceEntry(
   clock: Clock = systemClock,
 ): Promise<RecordedEntry> {
   const input = parseEntryInput(rawInput)
-  return withWorkspace(db, context.workspaceId, async (tx) => {
-    await lockActiveEntry(tx, entryId)
-    await markEntryDeleted(tx, entryId, {
-      deletedAt: clock.now(),
-      deletedByUserId: context.userId,
-      deleteReason: null,
-    })
-    return { entryId: await recordParsedEntry(tx, context, input, clock, entryId) }
-  })
+  return refusingUnknownContacts(() =>
+    withWorkspace(db, context.workspaceId, async (tx) => {
+      await lockActiveEntry(tx, entryId)
+      await markEntryDeleted(tx, entryId, {
+        deletedAt: clock.now(),
+        deletedByUserId: context.userId,
+        deleteReason: null,
+      })
+      return { entryId: await recordParsedEntry(tx, context, input, clock, entryId) }
+    }),
+  )
+}
+
+async function refusingUnknownContacts<T>(work: () => Promise<T>): Promise<T> {
+  try {
+    return await work()
+  } catch (error) {
+    if (postgresConstraintName(error) === CONTACT_CONSTRAINT) {
+      throw new ValidationError('CONTACT_NOT_AVAILABLE', 'A share names an unknown contact', {
+        cause: error,
+      })
+    }
+    throw error
+  }
 }
 
 async function lockActiveEntry(tx: WorkspaceTransaction, entryId: string): Promise<void> {
@@ -269,6 +290,8 @@ async function toEntryPlan(
         amountCents: input.amountCents,
         paidFrom: pick(accounts, input.paidFromAccountId),
         category: pick(accounts, input.categoryId),
+        shares: input.shares,
+        receivable: await receivableFor(tx, input.shares),
       }
     }
     case 'income': {
@@ -302,6 +325,13 @@ async function toEntryPlan(
       }
     }
   }
+}
+
+async function receivableFor(
+  tx: WorkspaceTransaction,
+  shares: readonly ContactShare[],
+): Promise<AccountRef | null> {
+  return shares.length > 0 ? findSystemAccount(tx, 'receivable') : null
 }
 
 function defaultPaymentMethod(input: EntryInput): PaymentMethod | null {
