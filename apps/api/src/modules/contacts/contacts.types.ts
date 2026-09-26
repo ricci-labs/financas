@@ -1,5 +1,10 @@
 import type { Database } from '@api/core/db/db.types'
-import type { chargeItems, charges, contacts } from '@api/modules/contacts/contacts.table'
+import type {
+  chargeItems,
+  chargePayments,
+  charges,
+  contacts,
+} from '@api/modules/contacts/contacts.table'
 import type { ChargeStatus, ContactBalance } from '@financas/shared'
 
 export type ContactRow = typeof contacts.$inferSelect
@@ -72,6 +77,7 @@ export type ChargeView = {
   amountCents: number
   dueOn: string | null
   status: ChargeStatus
+  paidCents: number
   messageText: string
   pixPayload: string | null
   sentAt: Date | null
@@ -86,4 +92,16 @@ export type ChargeRef = {
 
 export type CreatedCharge = {
   chargeId: string
+}
+
+export type NewChargePaymentRow = typeof chargePayments.$inferInsert
+
+export type ChargePaymentRow = {
+  chargeId: string
+  entryId: string
+  amountCents: number
+}
+
+export type RecordedPayment = {
+  entryId: string
 }

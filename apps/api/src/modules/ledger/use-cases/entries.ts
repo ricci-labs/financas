@@ -67,6 +67,15 @@ export async function recordEntry(
   )
 }
 
+export function recordEntryInTransaction(
+  tx: WorkspaceTransaction,
+  context: EntryContext,
+  rawInput: unknown,
+  clock: Clock = systemClock,
+): Promise<string> {
+  return recordParsedEntry(tx, context, parseEntryInput(rawInput), clock)
+}
+
 async function recordParsedEntry(
   tx: WorkspaceTransaction,
   context: EntryContext,

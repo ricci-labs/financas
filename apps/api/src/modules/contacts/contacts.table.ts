@@ -125,3 +125,25 @@ export const chargeItems = pgTable(
     tenantIsolation('charge_items', table.workspaceId),
   ],
 ).enableRLS()
+
+export const chargePayments = pgTable(
+  'charge_payments',
+  {
+    workspaceId: uuid().notNull(),
+    id: primaryId(),
+    chargeId: uuid().notNull(),
+    entryId: uuid().notNull(),
+    amountCents: bigint({ mode: 'number' }).notNull(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    unique('charge_payments_entry_unique').on(table.entryId),
+    foreignKey({
+      name: 'charge_payments_charge_fk',
+      columns: [table.workspaceId, table.chargeId],
+      foreignColumns: [charges.workspaceId, charges.id],
+    }).onDelete('cascade'),
+    check('charge_payments_amount', sql`${table.amountCents} > 0`),
+    tenantIsolation('charge_payments', table.workspaceId),
+  ],
+).enableRLS()

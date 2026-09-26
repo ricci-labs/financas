@@ -8,6 +8,7 @@ export {
   listContactBalances,
   listContacts,
   markChargeSent,
+  payCharge,
 } from '@api/modules/contacts/contacts.service'
 export type {
   ChargeView,

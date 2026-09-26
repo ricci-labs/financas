@@ -372,6 +372,20 @@
       "when": 1790463455375,
       "tag": "0052_charges_triggers_and_fks",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1790464060408,
+      "tag": "0053_charge_payments",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1790464062133,
+      "tag": "0054_charge_payments_entry_fk",
+      "breakpoints": true
     }
   ]
 }

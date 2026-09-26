@@ -1,4 +1,4 @@
-import { chargeMessage, openItems } from '@shared/charges/charges'
+import { chargeMessage, chargeStatusOf, openItems } from '@shared/charges/charges'
 import type { ChargeableItem } from '@shared/charges/charges.types'
 import { describe, expect, it } from 'vitest'
 
@@ -87,5 +87,15 @@ describe('chargeMessage', () => {
     expect(message).toBe(
       'Oi, Contact M! Member B pediu para te lembrar do que está em aberto:\n• Jantar — R$ 50,00\nTotal: R$ 50,00',
     )
+  })
+})
+
+describe('chargeStatusOf', () => {
+  it('derives paid and partially paid from the payments, keeping cancelled and the lifecycle', () => {
+    expect(chargeStatusOf('sent', 10_000, 0)).toBe('sent')
+    expect(chargeStatusOf('sent', 10_000, 4_000)).toBe('partially_paid')
+    expect(chargeStatusOf('draft', 10_000, 10_000)).toBe('paid')
+    expect(chargeStatusOf('sent', 10_000, 12_000)).toBe('paid')
+    expect(chargeStatusOf('cancelled', 10_000, 10_000)).toBe('cancelled')
   })
 })

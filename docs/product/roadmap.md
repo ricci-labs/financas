@@ -94,7 +94,7 @@ updated: 2026-09-26
            invoices
      - [x] Charges: `charges` + `charge_items`, built from a contact's open items, pt-BR message,
            Pix copia-e-cola from the workspace key; mark sent; cancel
-     - [ ] Settlements pay charges (`charge_payments`, status kept by a trigger)
+     - [x] Settlements pay charges (`charge_payments`, paid / partially paid derived)
      - [ ] Insight: a contact with overdue items
   4. [ ] **Reminders:** notification outbox and its worker, email first
   5. [ ] **Attachments** on entries (`FileStorage`)

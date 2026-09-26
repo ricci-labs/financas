@@ -6,8 +6,9 @@ import {
   createContact,
   listCharges,
   markChargeSent,
+  payCharge,
 } from '@api/modules/contacts'
-import { createAccount, createCard, recordEntry } from '@api/modules/ledger'
+import { createAccount, createCard, deleteEntry, recordEntry } from '@api/modules/ledger'
 import { setPixReceiving } from '@api/modules/workspaces'
 import { testAppDeps } from '@api/testing/app'
 import { connectTestDatabases } from '@api/testing/database'
@@ -71,7 +72,7 @@ async function household() {
   const charge = (until?: string) =>
     createCharge(databases.app, ref, userId, until ? { until } : {}, MID_OCTOBER)
   const charges = () => listCharges(databases.app, workspaceId, contactId)
-  return { workspaceId, userId, contactId, charge, charges }
+  return { workspaceId, userId, contactId, checking, charge, charges }
 }
 
 function byId(charges: ChargeView[], chargeId: string): ChargeView | undefined {
@@ -134,6 +135,54 @@ describe('charge status', () => {
     await expect(cancelCharge(databases.app, ref)).rejects.toMatchObject({
       code: 'CHARGE_STATUS_REFUSED',
     })
+  })
+})
+
+describe('payCharge', () => {
+  it('records settlements against a charge, which becomes partially paid, then paid', async () => {
+    const { workspaceId, userId, checking, charge, charges } = await household()
+    const { chargeId } = await charge()
+    const ref = { workspaceId, chargeId }
+    const pay = (amountCents: number) =>
+      payCharge(
+        databases.app,
+        ref,
+        userId,
+        { amountCents, receivedInAccountId: checking, occurredOn: '2026-10-16' },
+        MID_OCTOBER,
+      )
+
+    await pay(1_000)
+    expect(byId(await charges(), chargeId)).toMatchObject({
+      status: 'partially_paid',
+      paidCents: 1_000,
+    })
+    await expect(cancelCharge(databases.app, ref)).rejects.toMatchObject({
+      code: 'CHARGE_STATUS_REFUSED',
+    })
+    const { entryId } = await pay(2_000)
+    expect(byId(await charges(), chargeId)).toMatchObject({ status: 'paid', paidCents: 3_000 })
+
+    await deleteEntry(databases.app, { workspaceId, entryId, userId })
+    expect(byId(await charges(), chargeId)).toMatchObject({
+      status: 'partially_paid',
+      paidCents: 1_000,
+    })
+  })
+
+  it('refuses paying a cancelled charge', async () => {
+    const { workspaceId, userId, checking, charge } = await household()
+    const { chargeId } = await charge()
+    await cancelCharge(databases.app, { workspaceId, chargeId })
+    await expect(
+      payCharge(
+        databases.app,
+        { workspaceId, chargeId },
+        userId,
+        { amountCents: 1_000, receivedInAccountId: checking, occurredOn: '2026-10-16' },
+        MID_OCTOBER,
+      ),
+    ).rejects.toMatchObject({ code: 'CHARGE_STATUS_REFUSED' })
   })
 })
 

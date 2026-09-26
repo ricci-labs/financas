@@ -1,12 +1,19 @@
 import type { WorkspaceTransaction } from '@api/core/db/db.types'
-import { chargeItems, charges, contacts } from '@api/modules/contacts/contacts.table'
+import {
+  chargeItems,
+  chargePayments,
+  charges,
+  contacts,
+} from '@api/modules/contacts/contacts.table'
 import type {
   ChargeItemRow,
+  ChargePaymentRow,
   ChargeRow,
   ChargeUpdate,
   ContactRow,
   ContactUpdate,
   NewChargeItemRow,
+  NewChargePaymentRow,
   NewChargeRow,
   NewContactRow,
 } from '@api/modules/contacts/contacts.types'
@@ -120,4 +127,25 @@ export function selectChargeItems(
     })
     .from(chargeItems)
     .where(inArray(chargeItems.chargeId, chargeIds))
+}
+
+export async function insertChargePayment(
+  tx: WorkspaceTransaction,
+  payment: NewChargePaymentRow,
+): Promise<void> {
+  await tx.insert(chargePayments).values(payment)
+}
+
+export function selectChargePayments(
+  tx: WorkspaceTransaction,
+  chargeIds: string[],
+): Promise<ChargePaymentRow[]> {
+  return tx
+    .select({
+      chargeId: chargePayments.chargeId,
+      entryId: chargePayments.entryId,
+      amountCents: chargePayments.amountCents,
+    })
+    .from(chargePayments)
+    .where(inArray(chargePayments.chargeId, chargeIds))
 }

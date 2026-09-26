@@ -1,4 +1,5 @@
 export {
+  activeEntryIdsOf,
   archiveAccount,
   changeAccount,
   changeCard,
@@ -27,6 +28,7 @@ export {
   readInvoiceFacts,
   readPostingFacts,
   recordEntry,
+  recordEntryInTransaction,
   replaceEntry,
   restoreAccount,
   restoreEntry,
