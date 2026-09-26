@@ -1,6 +1,7 @@
 import { clientIpOf } from '@api/core/http/client-ip'
 import { AppError, TooManyRequestsError, UnauthorizedError } from '@api/core/http/errors'
 import type { AppEnv } from '@api/core/http/http.types'
+import { currentSession } from '@api/core/http/middleware/session'
 import { createAttemptLimiter } from '@api/core/security/attempt-limiter'
 import type { AttemptLimiter } from '@api/core/security/security.types'
 import type {
@@ -20,6 +21,8 @@ const MS_PER_MINUTE = 60 * 1000
 const MS_PER_HOUR = 60 * MS_PER_MINUTE
 const RETRY_AFTER_HEADER = 'Retry-After'
 const INVALID_LINK_CODE = 'LINK_INVALID'
+const WRONG_CURRENT_PASSWORD_CODE = 'CURRENT_PASSWORD_WRONG'
+const USER_KEY_PREFIX = 'user:'
 
 export function createLoginLimits(settings: LoginLimitSettings): LoginLimits {
   const windowMs = settings.windowMinutes * MS_PER_MINUTE
@@ -81,6 +84,28 @@ export function limitInvalidLinks(
     const isInvalidLink = c.error instanceof AppError && invalidCodes.includes(c.error.code)
     if (isInvalidLink) {
       limiter.record(client)
+    }
+  })
+}
+
+export function limitWrongCurrentPasswords(deps: IdentityRouteDeps) {
+  return createMiddleware<AppEnv>(async (c, next) => {
+    const keys = {
+      email: `${USER_KEY_PREFIX}${currentSession(c).userId}`,
+      client: clientIpOf(c, deps.trustedProxyHops),
+    }
+    refuseWhileLimited(c, deps.loginLimits, keys, 'auth.password_change.rate_limited')
+    await next()
+
+    const isWrongPassword =
+      c.error instanceof AppError && c.error.code === WRONG_CURRENT_PASSWORD_CODE
+    if (isWrongPassword) {
+      deps.loginLimits.byEmail.record(keys.email)
+      deps.loginLimits.byClient.record(keys.client)
+      return
+    }
+    if (!c.error) {
+      deps.loginLimits.byEmail.clear(keys.email)
     }
   })
 }

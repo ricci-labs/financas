@@ -1,12 +1,13 @@
 import type { Database } from '@api/core/db/db.types'
-import { authTokens, sessions, users } from '@api/modules/identity/identity.table'
+import { authTokens, sessions, userPreferences, users } from '@api/modules/identity/identity.table'
 import type {
   AuthTokenPurpose,
   AuthTokenRow,
   SessionRow,
+  UserPreferencesUpdate,
   UserRow,
 } from '@api/modules/identity/identity.types'
-import { and, eq, gt, inArray, isNull, sql } from 'drizzle-orm'
+import { and, eq, gt, inArray, isNull, ne, sql } from 'drizzle-orm'
 
 export async function insertUser(db: Database, user: UserRow): Promise<string> {
   const [inserted] = await db.insert(users).values(user).returning({ id: users.id })
@@ -196,4 +197,56 @@ export function selectAccountsByIds(db: Database, userIds: string[]) {
     .select({ userId: users.id, email: users.email, displayName: users.displayName })
     .from(users)
     .where(inArray(users.id, userIds))
+}
+
+export async function findPasswordOwner(db: Database, userId: string) {
+  const [owner] = await db
+    .select({
+      userId: users.id,
+      email: users.email,
+      displayName: users.displayName,
+      passwordHash: users.passwordHash,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+  return owner
+}
+
+export async function deleteOtherSessions(
+  db: Database,
+  userId: string,
+  keptSessionId: string,
+): Promise<void> {
+  await db.delete(sessions).where(and(eq(sessions.userId, userId), ne(sessions.id, keptSessionId)))
+}
+
+export async function updateDisplayName(
+  db: Database,
+  userId: string,
+  displayName: string,
+): Promise<void> {
+  await db.update(users).set({ displayName }).where(eq(users.id, userId))
+}
+
+export async function selectUserPreferences(db: Database, userId: string) {
+  const [preferences] = await db
+    .select({
+      language: userPreferences.language,
+      quietHoursStart: userPreferences.quietHoursStart,
+      quietHoursEnd: userPreferences.quietHoursEnd,
+    })
+    .from(userPreferences)
+    .where(eq(userPreferences.userId, userId))
+  return preferences
+}
+
+export async function upsertUserPreferences(
+  db: Database,
+  userId: string,
+  change: UserPreferencesUpdate,
+): Promise<void> {
+  await db
+    .insert(userPreferences)
+    .values({ userId, ...change })
+    .onConflictDoUpdate({ target: userPreferences.userId, set: change })
 }

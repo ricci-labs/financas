@@ -171,6 +171,14 @@ An unknown token is `404 INVITATION_NOT_FOUND` and counts against the client's i
 They live in `onboarding` because they span `members`, `access`, `identity` and email, and because
 `members` can't import `access` (which already imports `members`) without a cycle.
 
+## My account routes (`identity.routes.ts`, session required)
+| Route | Behavior |
+|---|---|
+| `PATCH /api/auth/me` `{ displayName }` | rename → `204` |
+| `GET /api/auth/me/preferences` | language and quiet hours (`HH:MM`), defaults (`pt-BR`, none) until changed |
+| `PATCH /api/auth/me/preferences` | change them (upsert); quiet hours are set or cleared as a pair |
+| `POST /api/auth/password/change` `{ currentPassword, newPassword }` | checks the current password (`400 CURRENT_PASSWORD_WRONG`), stores the new hash, **ends every other session** (this one stays), and emails "your password was changed" in the background. Wrong guesses count per user and per client like logins (`429`), so a stolen session can't brute force the password |
+
 ## Workspace routes (`workspaces.routes.ts`)
 | Route | Access | Behavior |
 |---|---|---|
