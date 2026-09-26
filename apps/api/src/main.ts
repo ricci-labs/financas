@@ -1,6 +1,8 @@
 import { createApp } from '@api/app'
-import { loadEnv } from '@api/core/config/env'
+import { loadEnv, publicUrlOf } from '@api/core/config/env'
 import { createDatabase } from '@api/core/db/client'
+import { createMailer } from '@api/core/email/mailer'
+import { sessionCookieSettings } from '@api/core/http/session-cookie'
 import { createLogger } from '@api/core/observability/logger'
 import { serve } from '@hono/node-server'
 
@@ -18,6 +20,11 @@ const app = createApp({
   startedAt: Date.now(),
   isDatabaseReachable: database.isReachable,
   logger,
+  db: database.db,
+  mailer: createMailer(env, logger.child({ module: 'email' })),
+  publicUrl: publicUrlOf(env),
+  isPublicSignupEnabled: env.PUBLIC_SIGNUP_ENABLED,
+  cookie: sessionCookieSettings(env.NODE_ENV),
 })
 
 const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {

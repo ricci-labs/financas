@@ -1,5 +1,7 @@
 import type { Clock } from '@api/core/clock'
+import type { Database } from '@api/core/db/client'
 import type { Mailer } from '@api/core/email/email.types'
+import type { SessionCookieSettings } from '@api/core/http/session-cookie'
 import type { PasswordCost } from '@api/core/security/passwords'
 
 export type IdentityDeps = {
@@ -63,4 +65,12 @@ export type EmailRecipient = {
 export type ResetPasswordInput = {
   token: string
   password: string
+}
+
+export type IdentityRouteDeps = {
+  db: Database
+  mailer: Mailer
+  publicUrl: string
+  isPublicSignupEnabled: boolean
+  cookie: SessionCookieSettings
 }

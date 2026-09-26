@@ -4,10 +4,14 @@ import {
   postgresConstraintName,
   postgresErrorCode,
 } from '@api/core/db/errors'
-import { ConflictError, parseOrThrow } from '@api/core/http/errors'
+import { ConflictError, NotFoundError, parseOrThrow } from '@api/core/http/errors'
 import { hashPassword } from '@api/core/security/passwords'
-import { insertUser } from '@api/modules/identity/identity.repository'
-import type { IdentityDeps, NewUserInput } from '@api/modules/identity/identity.types'
+import { findAccountById, insertUser } from '@api/modules/identity/identity.repository'
+import type {
+  EmailRecipient,
+  IdentityDeps,
+  NewUserInput,
+} from '@api/modules/identity/identity.types'
 import { withDefaults } from '@api/modules/identity/use-cases/defaults'
 import { newUserSchema } from '@financas/shared'
 
@@ -30,6 +34,14 @@ export async function createUser(
       emailVerifiedAt: input.isEmailVerified ? clock.now() : null,
     }),
   )
+}
+
+export async function getAccount(db: Database, userId: string): Promise<EmailRecipient> {
+  const account = await findAccountById(db, userId)
+  if (!account) {
+    throw new NotFoundError('USER_NOT_FOUND', 'User not found')
+  }
+  return account
 }
 
 async function refusingTakenEmail<T>(work: () => Promise<T>): Promise<T> {

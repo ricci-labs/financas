@@ -1,5 +1,7 @@
+export { identityRoutes, PUBLIC_AUTH_ROUTES } from '@api/modules/identity/identity.routes'
 export {
   createUser,
+  getAccount,
   login,
   logout,
   requestEmailVerification,
@@ -14,6 +16,7 @@ export type {
   ActiveSession,
   EmailOnlyInput,
   IdentityDeps,
+  IdentityRouteDeps,
   LoginInput,
   NewUserInput,
   ResetPasswordInput,

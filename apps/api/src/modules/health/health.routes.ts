@@ -4,6 +4,8 @@ import { Hono } from 'hono'
 const MILLISECONDS_PER_SECOND = 1000
 const SERVICE_UNAVAILABLE = 503
 
+export const PUBLIC_HEALTH_ROUTES = ['GET /api/health/live', 'GET /api/health/ready'] as const
+
 export function healthRoutes({
   version,
   startedAt,

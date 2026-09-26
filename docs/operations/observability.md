@@ -54,7 +54,7 @@ Output: one JSON object per line to stdout. Docker keeps it (with rotation, see 
 | `app.started`, `app.stopping` | info |
 | `db.connection.lost` | warn |
 | `http.request.completed` | debug (off in production) |
-| `http.request.rejected` (4xx, with `route` pattern and `status`) | info |
+| `http.request.rejected` (4xx, with `route` pattern, `status` and the error `code`, e.g. `INVALID_CREDENTIALS`) | info |
 | `http.request.failed` (5xx, with `err`) | error |
 | `whatsapp.connection.opened` / `.closed` / `.logged_out` | info / warn / error |
 | `whatsapp.message.received` / `.ignored` / `.sent` / `.send_failed` | info / debug / info / error |
@@ -63,7 +63,8 @@ Output: one JSON object per line to stdout. Docker keeps it (with rotation, see 
 | `agent.pending_action.created` / `.confirmed` / `.cancelled` / `.expired` | info |
 | `entry.created` / `.replaced` / `.deleted` / `.restored` | info |
 | `authz.denied` | warn |
-| `auth.login.succeeded` / `.failed` / `.rate_limited` | info / info / warn |
+| `auth.login.succeeded` (with `userId`) | info |
+| `auth.login.rate_limited` | warn |
 | `email.sent` / `email.send_failed` | info / error |
 | `charge.created` / `.sent` / `.paid` | info |
 | `notification.sent` / `.failed` | info / warn |
