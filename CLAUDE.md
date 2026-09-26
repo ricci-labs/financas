@@ -32,7 +32,7 @@ Self-hosted on a small headless Debian homelab, deployed with Dokploy.
 
 ## Workflow
 - Git, commits and PRs: `docs/engineering/git-workflow.md` (Conventional Commits, branch → PR → squash merge). Commit, push or open PRs only when the user asks.
-- If a project skill in `.claude/skills/` matches the task, use it (`docs/engineering/claude-workflow.md`).
+- If a project skill in `.claude/skills/` matches the task, use it (`docs/engineering/claude-workflow.md`). Every PR goes through the `pr` skill; every new API module through `new-module`.
 - **Bug, error ref (`ref: xxxxxxxx`), alert or "not working":** follow `docs/operations/runbook.md` before reading code.
 - Log through the module's child logger with a catalog `event` name. Never `console.log` (`docs/operations/observability.md`).
 

@@ -12,7 +12,7 @@ updated: 2026-09-25
 3. If a matching project skill exists, follow it (table below).
 4. Domain rules go example-first: doc example → failing test → implementation (`domain-rule` skill).
 5. Update the docs in the same change and bump `updated:`.
-6. Run the local checks (`pnpm check`), then open the PR (`pr` skill) when the user asks.
+6. Follow the `pr` skill: checks, self-review, mutations, docs, PR, CI.
 
 ## Project skills (`.claude/skills/<name>/SKILL.md`)
 Skills encode repeatable procedures so they come out the same way every time.
@@ -20,11 +20,11 @@ Skills encode repeatable procedures so they come out the same way every time.
 | Skill | Status | What it does |
 |---|---|---|
 | `adr` | ✅ available | Writes a new ADR from the template and updates the index |
-| `new-module` | planned (needs scaffold) | Creates an API module with the standard anatomy, mounts its routes, updates dependency rules and docs |
+| `new-module` | ✅ available | Creates an API module with the fixed file set, schemas in shared, routes behind session and permission checks, dependency rules and docs |
 | `new-agent-tool` | planned (needs scaffold) | Zod schema in shared → tool file → registration → eval cases → table in `../integrations/ai-agent.md` |
 | `db-migration` | planned (needs scaffold) | Edit table → `drizzle-kit generate` → SQL review checklist → stop and ask on destructive changes |
 | `domain-rule` | planned (needs scaffold) | Example in the domain doc → failing test → implementation → docs |
-| `pr` | planned (needs scaffold) | Runs checks, writes a conventional title, fills the template, verifies docs were updated |
+| `pr` | ✅ available | Runs every check, reviews the diff against the conventions, proves new rules can fail, writes the PR from the template, waits for CI, merges when authorized |
 | `investigate` | planned (needs observability code) | The bug-investigation playbook from `../operations/runbook.md`, using the `ops:*` scripts |
 
 Rules for skills:
