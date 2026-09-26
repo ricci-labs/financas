@@ -126,6 +126,9 @@ src/
 │   ├── attachments/          # files + link tables, FileStorage interface
 │   ├── notifications/        # outbox, reminder scheduling, templates
 │   └── reports/              # read-only views: overview, balances, invoice totals
+├── ops/                      # operator commands, bundled into the image (dist/ops/*.mjs)
+│   ├── terminal.ts           # prompts; secrets are read without echo
+│   └── create-user.ts        # first user + first workspace (pnpm ops:create-user)
 ├── channels/whatsapp/        # non-HTTP entry point
 │   ├── connection.ts         # socket, reconnect with backoff
 │   ├── auth-state.ts         # Baileys auth state stored in Postgres
@@ -142,7 +145,8 @@ src/
 └── jobs/                     # croner schedules; each job calls services
 src/testing/                  # test helpers: database.ts (connections, Postgres error codes),
 │                             #   fixtures.ts (users/workspaces through the real services)
-scripts/ops/                  # ops:* scripts: Claude's stable debugging interface (runbook.md)
+scripts/ops/                  # ops:* debugging scripts: Claude's stable interface (runbook.md);
+                              #   commands that change data live in src/ops/ instead
 ```
 
 ### Module anatomy

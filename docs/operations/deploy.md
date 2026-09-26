@@ -53,6 +53,7 @@ The couple needs to reach the dashboard from their phones outside home, and GitH
 - [ ] `DATABASE_URL` (app role) and `DATABASE_MIGRATION_URL` (owner) set
 - [ ] Env vars set; the app boots and `/api/health/ready` is 200
 - [ ] Migrations applied (on boot, or as a one-off command; decide at scaffold)
+- [ ] First user created: `docker exec -it <container> node dist/ops/create-user.mjs` (asks e-mail, name, workspace and password; the password is typed without echo, never passed as an argument)
 - [ ] WhatsApp paired from the bot phone
 - [ ] Uptime Kuma monitors and push URLs created
 - [ ] Netdata scraping `:9464/metrics`
