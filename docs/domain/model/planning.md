@@ -54,14 +54,30 @@ holidays passed must cover the range plus `DAYS_A_DUE_DATE_MAY_SHIFT` (10). The 
 ## `planned_occurrences`
 | Column | Type | Notes |
 |---|---|---|
-| `workspace_id`, `id`, `rule_id` | | |
+| `workspace_id`, `id`, `rule_id` | | `rule_id` is a composite FK to `recurrence_rules` (deferred) |
 | `due_on` | date | `unique (rule_id, due_on)` |
-| `amount_cents` | bigint | Copied from the rule; editable for this occurrence only |
+| `amount_cents` | bigint > 0 | Copied from the rule; editable for this occurrence only |
 | `status` | enum `occurrence_status`: `pending`, `matched`, `skipped` | "Overdue" is derived: pending and `due_on` < today |
-| `matched_entry_id` | FK journal_entries null | Required when `matched` (CHECK) |
+| `matched_entry_id` | composite FK journal_entries null | Set exactly when `matched` (CHECK); one occurrence per entry |
+| timestamps | | No soft delete: occurrences are derived from the rule, and pending ones are rebuilt |
 
-A job materializes occurrences **6 months ahead** (setting) and on every rule change: future
-pending occurrences are regenerated, matched and skipped ones stay.
+**Planning** (`use-cases/occurrences.ts`), with "today" in the workspace time zone:
+- Occurrences exist from today (or `starts_on`, if later) up to the end of the month
+  **6 months ahead** (`OCCURRENCE_HORIZON_MONTHS`). The past is never planned.
+- Creating a rule plans it. Changing a rule deletes its pending occurrences from today on and plans
+  again. Deleting a rule deletes all its pending ones. Matched and skipped ones always stay, and
+  overdue pending ones stay on a change.
+- A due date is never planned within half a step of any occurrence the rule already has
+  (`withoutDatesNearKept`: 15 days for monthly, 3.5 for weekly, scaled by `interval`). So a moved
+  day, a new holiday or an unpaid month never gives the same month twice.
+- **Reading tops up the horizon:** `listOccurrences` first plans every active rule up to today's
+  horizon (idempotent). A cross-workspace job that does the same every night comes with the
+  reminders, which need occurrences even when nobody opens the app (it needs the jobs database role,
+  ADR 0012).
+
+| Route | Permission | Does |
+|---|---|---|
+| `GET /occurrences?from&to` | `planning:view` | `listOccurrences`: occurrences due in the range (at most a year), with the rule's description, type, accounts and `amountIsEstimate`, plus `isOverdue`; by date |
 
 ## Financial period
 Driven by `workspace_settings.period_anchor` (`tenancy.md`). Pure function in

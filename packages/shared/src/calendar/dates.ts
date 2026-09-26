@@ -4,6 +4,7 @@ import type { DateParts, IsoDate, YearMonth } from '@shared/calendar/calendar.ty
 const ISO_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/
 const SUNDAY = 0
 const SATURDAY = 6
+const MS_PER_DAY = 24 * 60 * 60 * 1000
 const STEP_OF_WEEKEND_RULE: Record<WeekendRule, number> = {
   keep: 0,
   previous_business_day: -1,
@@ -57,6 +58,10 @@ export function addDays(date: IsoDate, count: number): IsoDate {
   const { year, month, day } = parseIsoDate(date)
   const shifted = new Date(Date.UTC(year, month - 1, day + count))
   return toIsoDate(shifted.getUTCFullYear(), shifted.getUTCMonth() + 1, shifted.getUTCDate())
+}
+
+export function daysBetween(from: IsoDate, to: IsoDate): number {
+  return Math.round((utcTime(to) - utcTime(from)) / MS_PER_DAY)
 }
 
 export function dayOfWeek(date: IsoDate): number {
@@ -126,4 +131,9 @@ export function todayIn(timeZone: string, instant: Date): IsoDate {
   const part = (type: Intl.DateTimeFormatPartTypes) =>
     Number(parts.find((candidate) => candidate.type === type)?.value)
   return toIsoDate(part('year'), part('month'), part('day'))
+}
+
+function utcTime(date: IsoDate): number {
+  const { year, month, day } = parseIsoDate(date)
+  return Date.UTC(year, month - 1, day)
 }

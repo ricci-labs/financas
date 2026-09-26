@@ -6,12 +6,14 @@ export {
   deleteRecurrenceRule,
   holidayDatesOf,
   listHolidays,
+  listOccurrences,
   listRecurrenceRules,
 } from '@api/modules/planning/planning.service'
 export type {
   AddedHoliday,
   CreatedRecurrenceRule,
   HolidaysOfYear,
+  OccurrenceItem,
   PlanningContext,
   PlanningRouteDeps,
   RecurrenceRuleItem,

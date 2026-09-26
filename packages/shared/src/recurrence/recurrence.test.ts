@@ -1,6 +1,9 @@
 import { holidayDatesBetween } from '@shared/calendar/holidays'
-import { dueDatesBetween } from '@shared/recurrence/recurrence'
-import { recurrenceScheduleSchema } from '@shared/recurrence/recurrence.schemas'
+import { dueDatesBetween, withoutDatesNearKept } from '@shared/recurrence/recurrence'
+import {
+  occurrenceListQuerySchema,
+  recurrenceScheduleSchema,
+} from '@shared/recurrence/recurrence.schemas'
 import type { RecurrenceSchedule } from '@shared/recurrence/recurrence.types'
 import { describe, expect, it } from 'vitest'
 
@@ -123,5 +126,40 @@ describe('recurrenceScheduleSchema', () => {
     for (const input of invalid) {
       expect(recurrenceScheduleSchema.safeParse(input).success).toBe(false)
     }
+  })
+})
+
+describe('withoutDatesNearKept', () => {
+  it('drops a new due date in the same step as a paid or skipped one, keeps the others', () => {
+    const monthly = { frequency: 'monthly' as const, interval: 1 }
+    expect(
+      withoutDatesNearKept(['2026-10-15', '2026-11-15', '2026-12-15'], ['2026-10-10'], monthly),
+    ).toEqual(['2026-11-15', '2026-12-15'])
+    expect(withoutDatesNearKept(['2026-11-09'], ['2026-10-10'], monthly)).toEqual(['2026-11-09'])
+  })
+
+  it('scales the window with the frequency and the interval', () => {
+    const weekly = { frequency: 'weekly' as const, interval: 1 }
+    expect(withoutDatesNearKept(['2026-10-08', '2026-10-12'], ['2026-10-05'], weekly)).toEqual([
+      '2026-10-12',
+    ])
+    const quarterly = { frequency: 'monthly' as const, interval: 3 }
+    expect(withoutDatesNearKept(['2026-11-10', '2026-12-20'], ['2026-10-01'], quarterly)).toEqual([
+      '2026-12-20',
+    ])
+  })
+})
+
+describe('occurrenceListQuerySchema', () => {
+  it('takes a range of up to a year, in order', () => {
+    expect(
+      occurrenceListQuerySchema.safeParse({ from: '2026-10-01', to: '2027-09-30' }).success,
+    ).toBe(true)
+    expect(
+      occurrenceListQuerySchema.safeParse({ from: '2026-10-01', to: '2027-10-02' }).success,
+    ).toBe(false)
+    expect(
+      occurrenceListQuerySchema.safeParse({ from: '2026-10-02', to: '2026-10-01' }).success,
+    ).toBe(false)
   })
 })

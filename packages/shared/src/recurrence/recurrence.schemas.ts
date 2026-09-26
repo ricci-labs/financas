@@ -1,6 +1,8 @@
 import { WEEKEND_RULES } from '@shared/calendar/calendar.constants'
+import { daysBetween } from '@shared/calendar/dates'
 import { isoDateSchema } from '@shared/ledger/ledger.schemas'
 import {
+  MAX_OCCURRENCE_LIST_DAYS,
   MAX_RECURRENCE_BUSINESS_DAY,
   MAX_RECURRENCE_INTERVAL,
   MAX_REMIND_DAYS_BEFORE,
@@ -74,3 +76,16 @@ export const recurrenceRuleChangeSchema = z
 export type RecurrenceRuleChange = z.infer<typeof recurrenceRuleChangeSchema>
 
 export const recurrenceRuleParamsSchema = z.object({ ruleId: z.uuid() })
+
+export const occurrenceListQuerySchema = z
+  .object({ from: isoDateSchema, to: isoDateSchema })
+  .refine((range) => range.from <= range.to, {
+    message: 'from must not be after to',
+    path: ['from'],
+  })
+  .refine((range) => daysBetween(range.from, range.to) < MAX_OCCURRENCE_LIST_DAYS, {
+    message: 'The range is too long',
+    path: ['to'],
+  })
+
+export type OccurrenceListQuery = z.infer<typeof occurrenceListQuerySchema>

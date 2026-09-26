@@ -3,6 +3,7 @@ import {
   addMonths,
   clampedDate,
   dayOfWeek,
+  daysBetween,
   daysInMonth,
   isBusinessDay,
   nthBusinessDay,
@@ -98,5 +99,13 @@ describe('shiftToBusinessDay', () => {
     expect(shiftToBusinessDay('2026-10-10', 'next_business_day', holidays)).toBe('2026-10-13')
     expect(shiftToBusinessDay('2026-10-12', 'previous_business_day', holidays)).toBe('2026-10-09')
     expect(shiftToBusinessDay('2026-10-11', 'keep', holidays)).toBe('2026-10-11')
+  })
+})
+
+describe('daysBetween', () => {
+  it('counts calendar days across months, years and backwards', () => {
+    expect(daysBetween('2026-10-30', '2026-11-02')).toBe(3)
+    expect(daysBetween('2026-12-31', '2027-01-01')).toBe(1)
+    expect(daysBetween('2026-03-01', '2026-02-27')).toBe(-2)
   })
 })

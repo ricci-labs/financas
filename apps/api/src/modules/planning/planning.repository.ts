@@ -1,15 +1,21 @@
 import type { WorkspaceTransaction } from '@api/core/db/db.types'
-import { recurrenceRules, workspaceHolidays } from '@api/modules/planning/planning.table'
+import {
+  plannedOccurrences,
+  recurrenceRules,
+  workspaceHolidays,
+} from '@api/modules/planning/planning.table'
 import type {
   HolidayDeletion,
+  NewOccurrenceRow,
   NewRecurrenceRuleRow,
   NewWorkspaceHoliday,
+  OccurrenceRow,
   RecurrenceRuleRow,
   RecurrenceRuleUpdate,
   WorkspaceHoliday,
 } from '@api/modules/planning/planning.types'
 import type { IsoDate } from '@financas/shared'
-import { and, asc, between, eq, isNull } from 'drizzle-orm'
+import { and, asc, between, eq, gte, isNull } from 'drizzle-orm'
 
 export function selectHolidaysBetween(
   tx: WorkspaceTransaction,
@@ -94,4 +100,64 @@ export async function updateRule(
   update: RecurrenceRuleUpdate,
 ): Promise<void> {
   await tx.update(recurrenceRules).set(update).where(eq(recurrenceRules.id, ruleId))
+}
+
+export async function selectPlannedDueDates(
+  tx: WorkspaceTransaction,
+  ruleId: string,
+): Promise<IsoDate[]> {
+  const planned = await tx
+    .select({ dueOn: plannedOccurrences.dueOn })
+    .from(plannedOccurrences)
+    .where(eq(plannedOccurrences.ruleId, ruleId))
+  return planned.map((occurrence) => occurrence.dueOn)
+}
+
+export async function deletePendingOccurrences(
+  tx: WorkspaceTransaction,
+  ruleId: string,
+  fromDate: IsoDate | null,
+): Promise<void> {
+  const pendingOfRule = and(
+    eq(plannedOccurrences.ruleId, ruleId),
+    eq(plannedOccurrences.status, 'pending'),
+  )
+  await tx
+    .delete(plannedOccurrences)
+    .where(fromDate ? and(pendingOfRule, gte(plannedOccurrences.dueOn, fromDate)) : pendingOfRule)
+}
+
+export async function insertOccurrencesIfMissing(
+  tx: WorkspaceTransaction,
+  occurrences: NewOccurrenceRow[],
+): Promise<void> {
+  await tx
+    .insert(plannedOccurrences)
+    .values(occurrences)
+    .onConflictDoNothing({ target: [plannedOccurrences.ruleId, plannedOccurrences.dueOn] })
+}
+
+export function selectOccurrencesBetween(
+  tx: WorkspaceTransaction,
+  from: IsoDate,
+  to: IsoDate,
+): Promise<OccurrenceRow[]> {
+  return tx
+    .select({
+      id: plannedOccurrences.id,
+      ruleId: plannedOccurrences.ruleId,
+      description: recurrenceRules.description,
+      entryType: recurrenceRules.entryType,
+      sourceAccountId: recurrenceRules.sourceAccountId,
+      categoryAccountId: recurrenceRules.categoryAccountId,
+      dueOn: plannedOccurrences.dueOn,
+      amountCents: plannedOccurrences.amountCents,
+      amountIsEstimate: recurrenceRules.amountIsEstimate,
+      status: plannedOccurrences.status,
+      matchedEntryId: plannedOccurrences.matchedEntryId,
+    })
+    .from(plannedOccurrences)
+    .innerJoin(recurrenceRules, eq(recurrenceRules.id, plannedOccurrences.ruleId))
+    .where(between(plannedOccurrences.dueOn, from, to))
+    .orderBy(asc(plannedOccurrences.dueOn), asc(recurrenceRules.description))
 }

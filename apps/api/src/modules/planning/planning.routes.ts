@@ -9,6 +9,7 @@ import {
   deleteHoliday,
   deleteRecurrenceRule,
   listHolidays,
+  listOccurrences,
   listRecurrenceRules,
 } from '@api/modules/planning/planning.service'
 import type { PlanningRouteDeps } from '@api/modules/planning/planning.types'
@@ -18,6 +19,7 @@ import {
   holidayParamsSchema,
   newHolidaySchema,
   newRecurrenceRuleSchema,
+  occurrenceListQuerySchema,
   recurrenceRuleChangeSchema,
   recurrenceRuleParamsSchema,
 } from '@financas/shared'
@@ -30,6 +32,7 @@ export function planningRoutes(deps: PlanningRouteDeps) {
   return new Hono<AppEnv>()
     .route('/holidays', holidayRoutes(deps))
     .route('/recurrences', recurrenceRoutes(deps))
+    .route('/occurrences', occurrenceRoutes(deps))
 }
 
 function holidayRoutes({ db }: PlanningRouteDeps) {
@@ -121,4 +124,16 @@ function recurrenceRoutes({ db }: PlanningRouteDeps) {
         return c.body(null, NO_CONTENT)
       },
     )
+}
+
+function occurrenceRoutes({ db }: PlanningRouteDeps) {
+  return new Hono<AppEnv>().get(
+    '/',
+    authorize('planning', 'view'),
+    queryParams(occurrenceListQuerySchema, 'OCCURRENCE_QUERY_INVALID'),
+    async (c) => {
+      const { workspaceId } = currentWorkspace(c)
+      return c.json(await listOccurrences(db, workspaceId, c.req.valid('query')))
+    },
+  )
 }

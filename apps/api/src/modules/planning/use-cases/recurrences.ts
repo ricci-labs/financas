@@ -19,8 +19,13 @@ import type {
   RecurrenceRuleRow,
 } from '@api/modules/planning/planning.types'
 import {
+  dropPendingOccurrences,
+  replanRuleOccurrences,
+  scheduleOf,
+  workspaceToday,
+} from '@api/modules/planning/use-cases/occurrences'
+import {
   newRecurrenceRuleSchema,
-  type RecurrenceSchedule,
   type RecurringEntryType,
   recurrenceRuleChangeSchema,
   recurringAccountsFit,
@@ -39,11 +44,18 @@ export async function createRecurrenceRule(
   db: Database,
   { workspaceId }: PlanningContext,
   rawInput: unknown,
+  clock: Clock = systemClock,
 ): Promise<CreatedRecurrenceRule> {
   const { schedule, ...rule } = parseOrThrow(newRecurrenceRuleSchema, rawInput, RULE_INVALID)
   return withWorkspace(db, workspaceId, async (tx) => {
     await assertAccountsFit(tx, rule.entryType, rule.sourceAccountId, rule.categoryAccountId)
-    return { ruleId: await insertRule(tx, { workspaceId, ...rule, ...schedule }) }
+    const ruleId = await insertRule(tx, { workspaceId, ...rule, ...schedule })
+    await replanRuleOccurrences(
+      tx,
+      await lockExistingRule(tx, ruleId),
+      await workspaceToday(tx, clock),
+    )
+    return { ruleId }
   })
 }
 
@@ -51,6 +63,7 @@ export async function changeRecurrenceRule(
   db: Database,
   { workspaceId, ruleId }: RecurrenceRuleRef,
   rawChange: unknown,
+  clock: Clock = systemClock,
 ): Promise<void> {
   const { schedule, ...change } = parseOrThrow(recurrenceRuleChangeSchema, rawChange, RULE_INVALID)
   await withWorkspace(db, workspaceId, async (tx) => {
@@ -62,6 +75,11 @@ export async function changeRecurrenceRule(
       change.categoryAccountId ?? current.categoryAccountId,
     )
     await updateRule(tx, ruleId, { ...change, ...schedule })
+    await replanRuleOccurrences(
+      tx,
+      await lockExistingRule(tx, ruleId),
+      await workspaceToday(tx, clock),
+    )
   })
 }
 
@@ -77,6 +95,7 @@ export async function deleteRecurrenceRule(
       deletedByUserId: userId,
       deleteReason: reason ?? null,
     })
+    await dropPendingOccurrences(tx, ruleId)
   })
 }
 
@@ -109,15 +128,6 @@ async function assertAccountsFit(
 }
 
 function itemOf(row: RecurrenceRuleRow): RecurrenceRuleItem {
-  const schedule: RecurrenceSchedule = {
-    frequency: row.frequency,
-    interval: row.interval,
-    dayOfMonth: row.dayOfMonth,
-    nthBusinessDay: row.nthBusinessDay,
-    weekendRule: row.weekendRule,
-    startsOn: row.startsOn,
-    endsOn: row.endsOn,
-  }
   return {
     id: row.id,
     description: row.description,
@@ -126,7 +136,7 @@ function itemOf(row: RecurrenceRuleRow): RecurrenceRuleItem {
     amountIsEstimate: row.amountIsEstimate,
     sourceAccountId: row.sourceAccountId,
     categoryAccountId: row.categoryAccountId,
-    schedule,
+    schedule: scheduleOf(row),
     remindDaysBefore: row.remindDaysBefore,
     autoRecord: row.autoRecord,
   }

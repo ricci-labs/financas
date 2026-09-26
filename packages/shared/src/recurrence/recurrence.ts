@@ -3,11 +3,15 @@ import {
   addDays,
   addMonths,
   clampedDate,
+  daysBetween,
   nthBusinessDay,
   parseIsoDate,
   shiftToBusinessDay,
 } from '@shared/calendar/dates'
-import { DAYS_A_DUE_DATE_MAY_SHIFT } from '@shared/recurrence/recurrence.constants'
+import {
+  APPROXIMATE_DAYS_PER_STEP,
+  DAYS_A_DUE_DATE_MAY_SHIFT,
+} from '@shared/recurrence/recurrence.constants'
 import type { DateRange, RecurrenceSchedule } from '@shared/recurrence/recurrence.types'
 
 const DAYS_PER_WEEK = 7
@@ -30,6 +34,17 @@ export function dueDatesBetween(
       dueDates.push(due)
     }
   }
+}
+
+export function withoutDatesNearKept(
+  dueDates: readonly IsoDate[],
+  keptDates: readonly IsoDate[],
+  schedule: Pick<RecurrenceSchedule, 'frequency' | 'interval'>,
+): IsoDate[] {
+  const halfStep = (APPROXIMATE_DAYS_PER_STEP[schedule.frequency] * schedule.interval) / 2
+  const isNearAKeptDate = (due: IsoDate) =>
+    keptDates.some((kept) => Math.abs(daysBetween(kept, due)) < halfStep)
+  return dueDates.filter((due) => !isNearAKeptDate(due))
 }
 
 function lastNominalDate(schedule: RecurrenceSchedule, to: IsoDate): IsoDate {

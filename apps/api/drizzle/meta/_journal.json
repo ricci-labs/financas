@@ -267,6 +267,20 @@
       "when": 1790450048443,
       "tag": "0037_recurrence_rules_triggers_and_deferred_fks",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1790450624110,
+      "tag": "0038_planned_occurrences",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1790450625689,
+      "tag": "0039_planned_occurrences_triggers_and_deferred_fks",
+      "breakpoints": true
     }
   ]
 }
