@@ -5,6 +5,7 @@ export {
   createSystemAccounts,
   deleteAccount,
   listAccounts,
+  listTrashedAccounts,
   restoreAccount,
   unarchiveAccount,
 } from '@api/modules/ledger/use-cases/accounts'
@@ -18,6 +19,7 @@ export {
   changeEntryDetails,
   deleteEntry,
   listEntries,
+  listTrashedEntries,
   recordEntry,
   replaceEntry,
   restoreEntry,

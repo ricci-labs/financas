@@ -14,6 +14,8 @@ export {
   listEntries,
   listInvoiceLines,
   listInvoiceTotals,
+  listTrashedAccounts,
+  listTrashedEntries,
   recordEntry,
   replaceEntry,
   restoreAccount,
@@ -36,6 +38,8 @@ export type {
   LedgerRouteDeps,
   NewLedgerAccount,
   RecordedEntry,
+  TrashedAccount,
+  TrashedEntry,
   WorkspaceAccount,
   WorkspaceCard,
 } from '@api/modules/ledger/ledger.types'

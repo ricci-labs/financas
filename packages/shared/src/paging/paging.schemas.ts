@@ -1,4 +1,9 @@
-import { PAGE_CURSOR_MAX_LENGTH, PAGE_CURSOR_SEPARATOR } from '@shared/paging/paging'
+import {
+  PAGE_CURSOR_MAX_LENGTH,
+  PAGE_CURSOR_SEPARATOR,
+  PAGE_DEFAULT_LIMIT,
+  PAGE_MAX_LIMIT,
+} from '@shared/paging/paging'
 import { z } from 'zod'
 
 export function pageCursorSchema(keySchema: z.ZodType<string, string>) {
@@ -11,3 +16,10 @@ export function pageCursorSchema(keySchema: z.ZodType<string, string>) {
     })
     .pipe(z.object({ key: keySchema, id: z.uuid() }))
 }
+
+export const pageLimitSchema = z.coerce
+  .number()
+  .int()
+  .min(1)
+  .max(PAGE_MAX_LIMIT)
+  .default(PAGE_DEFAULT_LIMIT)

@@ -198,3 +198,13 @@ export type InvoiceLine = {
 export type CardInvoiceRef = WorkspaceCard & {
   invoiceId: string
 }
+
+export type Deletion = {
+  deletedAt: Date
+  deletedByUserId: string | null
+  deleteReason: string | null
+}
+
+export type TrashedAccount = LedgerAccountItem & Deletion
+
+export type TrashedEntry = EntryItem & Deletion

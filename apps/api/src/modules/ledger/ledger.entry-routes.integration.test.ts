@@ -1,11 +1,13 @@
 import { createApp } from '@api/app'
-import type { EntryItem, InvoiceTotal } from '@api/modules/ledger'
+import type { EntryItem, InvoiceTotal, TrashedEntry } from '@api/modules/ledger'
+import { journalEntries } from '@api/modules/ledger/ledger.table'
 import { testAppDeps } from '@api/testing/app'
 import { connectTestDatabases } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
 import { addMemberWithSystemRole, loggedInUser, requestsAs } from '@api/testing/http'
 import type { SessionRequests } from '@api/testing/testing.types'
 import type { Page } from '@financas/shared'
+import { eq, sql } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const databases = connectTestDatabases()
@@ -24,6 +26,7 @@ let salaryId: string
 let cardId: string
 let foreignCategoryId: string
 let ownerId: string
+let memberId: string
 
 beforeAll(async () => {
   const ownerSession = await loggedInUser(app, databases.app, fixtures.runId, 'entries-owner')
@@ -40,6 +43,7 @@ beforeAll(async () => {
   owner = requestsAs(app, ownerSession)
   ownerId = ownerSession.userId
   member = requestsAs(app, memberSession)
+  memberId = memberSession.userId
   viewer = requestsAs(app, viewerSession)
   workspacePath = `/api/workspaces/${workspaceId}`
   entriesPath = `${workspacePath}/entries`
@@ -98,6 +102,10 @@ async function listed(query = ''): Promise<EntryItem[]> {
 
 async function pageAt(path: string, as = viewer): Promise<Page<EntryItem>> {
   return (await (await as.get(path)).json()) as Page<EntryItem>
+}
+
+async function trashAt(path: string, as = member): Promise<Page<TrashedEntry>> {
+  return (await (await as.get(path)).json()) as Page<TrashedEntry>
 }
 
 async function codeOf(response: Response): Promise<string> {
@@ -275,3 +283,89 @@ describe('DELETE and restore /entries/:entryId', () => {
     }
   })
 })
+
+describe('GET /entries/trash', () => {
+  it('shows deleted entries with who and why, never the old versions of an edit', async () => {
+    const deletedId = await created(owner.post(entriesPath, expense('Cinema')))
+    await member.del(`${entriesPath}/${deletedId}`, { reason: 'Cancelado' })
+    const editedId = await created(owner.post(entriesPath, expense('Pizza')))
+    await owner.put(`${entriesPath}/${editedId}`, expense('Pizza grande'))
+
+    expect((await viewer.get(`${entriesPath}/trash`)).status).toBe(403)
+    const trash = await trashAt(`${entriesPath}/trash`)
+    expect(trash.items.find((item) => item.id === deletedId)).toMatchObject({
+      description: 'Cinema',
+      deletedByUserId: memberId,
+      deleteReason: 'Cancelado',
+      deletedAt: expect.any(String),
+      postings: expect.arrayContaining([expect.objectContaining({ amountCents: 8750 })]),
+    })
+    expect(trash.items.map((item) => item.id)).not.toContain(editedId)
+
+    await member.post(`${entriesPath}/${deletedId}/restore`)
+    const afterRestore = await trashAt(`${entriesPath}/trash`)
+    expect(afterRestore.items.map((item) => item.id)).not.toContain(deletedId)
+  })
+
+  it('pages the trash from the latest deletion, each entry once', async () => {
+    const { path, deletedInOrder } = await workspaceWithTrash('Trash paging')
+
+    expect(await walkTrash(path)).toEqual([...deletedInOrder].reverse())
+    const malformed = await owner.get(`${path}/trash?cursor=2026-10-01_${deletedInOrder[0]}`)
+    expect([malformed.status, await codeOf(malformed)]).toEqual([400, 'TRASH_QUERY_INVALID'])
+  })
+
+  it('pages deletions stamped finer than a millisecond without skipping any', async () => {
+    const { path, deletedInOrder } = await workspaceWithTrash('Trash microseconds')
+    const stamps = ['12:00:00.123300', '12:00:00.123400', '12:00:00.123456']
+    for (const [index, entryId] of deletedInOrder.entries()) {
+      await databases.owner
+        .update(journalEntries)
+        .set({ deletedAt: sql`${`2026-10-01 ${stamps[index]}+00`}::timestamptz` })
+        .where(eq(journalEntries.id, entryId))
+    }
+
+    expect([...(await walkTrash(path, 1))].sort()).toEqual([...deletedInOrder].sort())
+  })
+})
+
+async function workspaceWithTrash(name: string) {
+  const { workspaceId } = await fixtures.createWorkspaceOwnedBy(ownerId, name)
+  const path = `/api/workspaces/${workspaceId}/entries`
+  const bank = await created(
+    owner.post(`/api/workspaces/${workspaceId}/accounts`, { kind: 'checking', name: 'Conta Z' }),
+  )
+  const food = await created(
+    owner.post(`/api/workspaces/${workspaceId}/accounts`, {
+      kind: 'expense_category',
+      name: 'Lanches',
+    }),
+  )
+  const deletedInOrder: string[] = []
+  for (const description of ['A', 'B', 'C']) {
+    const entryId = await created(
+      owner.post(path, {
+        entryType: 'expense',
+        occurredOn: '2026-10-01',
+        description,
+        amountCents: 1000,
+        paidFromAccountId: bank,
+        categoryId: food,
+      }),
+    )
+    await owner.del(`${path}/${entryId}`)
+    deletedInOrder.push(entryId)
+  }
+  return { path, deletedInOrder }
+}
+
+async function walkTrash(path: string, limit = 2): Promise<string[]> {
+  const walked: string[] = []
+  let page = await trashAt(`${path}/trash?limit=${limit}`, owner)
+  walked.push(...page.items.map((item) => item.id))
+  while (page.nextCursor) {
+    page = await trashAt(`${path}/trash?limit=${limit}&cursor=${page.nextCursor}`, owner)
+    walked.push(...page.items.map((item) => item.id))
+  }
+  return walked
+}

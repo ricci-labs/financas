@@ -13,6 +13,7 @@ import {
   markEntryRestored,
   selectEntries,
   selectPostingsOfEntries,
+  selectTrashedEntries,
   updateEntryDetails,
 } from '@api/modules/ledger/ledger.repository'
 import type {
@@ -20,7 +21,9 @@ import type {
   EntryContext,
   EntryItem,
   EntryRef,
+  PostingItem,
   RecordedEntry,
+  TrashedEntry,
 } from '@api/modules/ledger/ledger.types'
 import { planCardPurchase, planInvoicePayment } from '@api/modules/ledger/use-cases/card-entries'
 import { loadAccounts, pick } from '@api/modules/ledger/use-cases/lookups'
@@ -37,6 +40,7 @@ import {
   type PaymentMethod,
   pageOf,
   planPostings,
+  type TrashQuery,
   todayIn,
 } from '@financas/shared'
 
@@ -105,10 +109,24 @@ export async function listEntries(
   })
 }
 
-async function withPostings(
+export async function listTrashedEntries(
+  db: Database,
+  workspaceId: string,
+  query: TrashQuery,
+): Promise<Page<TrashedEntry>> {
+  return withWorkspace(db, workspaceId, async (tx) => {
+    const page = pageOf(await selectTrashedEntries(tx, query), query.limit, (entry) => ({
+      key: entry.deletedAt.toISOString(),
+      id: entry.id,
+    }))
+    return { ...page, items: await withPostings(tx, page.items) }
+  })
+}
+
+async function withPostings<T extends { id: string }>(
   tx: WorkspaceTransaction,
-  entries: Omit<EntryItem, 'postings'>[],
-): Promise<EntryItem[]> {
+  entries: T[],
+): Promise<(T & { postings: PostingItem[] })[]> {
   if (entries.length === 0) {
     return []
   }

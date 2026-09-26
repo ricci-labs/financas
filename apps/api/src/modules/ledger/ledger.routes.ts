@@ -17,6 +17,8 @@ import {
   listEntries,
   listInvoiceLines,
   listInvoiceTotals,
+  listTrashedAccounts,
+  listTrashedEntries,
   recordEntry,
   replaceEntry,
   restoreAccount,
@@ -37,6 +39,7 @@ import {
   invoiceParamsSchema,
   newAccountSchema,
   newCardSchema,
+  trashQuerySchema,
 } from '@financas/shared'
 import { type Context, Hono } from 'hono'
 
@@ -62,6 +65,9 @@ function accountRoutes({ db }: LedgerRouteDeps) {
   return new Hono<AppEnv>()
     .get('/', authorize('accounts', 'view'), async (c) => {
       return c.json(await listAccounts(db, currentWorkspace(c).workspaceId))
+    })
+    .get('/trash', authorize('accounts', 'delete'), async (c) => {
+      return c.json(await listTrashedAccounts(db, currentWorkspace(c).workspaceId))
     })
     .post(
       '/',
@@ -170,6 +176,15 @@ function entryRoutes({ db }: LedgerRouteDeps) {
       async (c) => {
         const { workspaceId } = currentWorkspace(c)
         return c.json(await listEntries(db, workspaceId, c.req.valid('query')))
+      },
+    )
+    .get(
+      '/trash',
+      authorize('entries', 'delete'),
+      queryParams(trashQuerySchema, 'TRASH_QUERY_INVALID'),
+      async (c) => {
+        const { workspaceId } = currentWorkspace(c)
+        return c.json(await listTrashedEntries(db, workspaceId, c.req.valid('query')))
       },
     )
     .post(
