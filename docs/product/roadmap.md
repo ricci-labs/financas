@@ -65,7 +65,7 @@ updated: 2026-09-26
      - [x] My account: change password while logged in, display name, preferences
      - [x] Ledger reading: lines of an invoice, trash of accounts and entries, keyset paging of
            entries
-     - [ ] Maintenance job (croner): purge expired sessions and used or expired auth tokens
+     - [x] Maintenance job (croner): purge expired sessions and expired auth tokens, daily
   2. [ ] **Planning + dashboard:** recurrence rules, planned occurrences and matching, budgets,
          reserve goal, commission forecast, the period overview ("free to spend")
   3. [ ] **Contacts, charges and settlements**

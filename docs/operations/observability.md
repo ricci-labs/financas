@@ -69,7 +69,7 @@ Output: one JSON object per line to stdout. Docker keeps it (with rotation, see 
 | `email.sent` / `email.send_failed` | info / error |
 | `charge.created` / `.sent` / `.paid` | info |
 | `notification.sent` / `.failed` | info / warn |
-| `job.run.started` / `.completed` / `.failed` | info / info / error |
+| `job.run.started` / `.completed` / `.failed` (with `job`, `durationMs`; `result` counts on completion) | info / info / error |
 
 ### Redaction and privacy
 - Always redacted: `authorization`, cookies, API keys, tokens, passwords, Baileys credentials, phone numbers and JIDs. Email bodies and links are never logged.

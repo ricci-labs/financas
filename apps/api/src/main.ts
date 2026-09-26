@@ -1,10 +1,13 @@
 import { createApp } from '@api/app'
 import { createBackgroundTasks } from '@api/core/background-tasks'
+import { systemClock } from '@api/core/clock'
 import { loadEnv, publicUrlOf } from '@api/core/config/env'
 import { createDatabase } from '@api/core/db/client'
 import { createMailer } from '@api/core/email/mailer'
 import { sessionCookieSettings } from '@api/core/http/session-cookie'
 import { createLogger } from '@api/core/observability/logger'
+import { SCHEDULE_TIMEZONE, SCHEDULED_JOBS } from '@api/jobs/scheduled-jobs'
+import { startScheduler } from '@api/jobs/scheduler'
 import { createAccountEmailLimits, createLoginLimits } from '@api/modules/identity'
 import { serve } from '@hono/node-server'
 
@@ -42,6 +45,13 @@ const app = createApp({
   background,
 })
 
+const scheduler = startScheduler(SCHEDULED_JOBS, {
+  db: database.db,
+  clock: systemClock,
+  logger: logger.child({ module: 'jobs' }),
+  timezone: SCHEDULE_TIMEZONE,
+})
+
 const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
   logger.info({ event: 'app.started', port: info.port }, 'API listening')
 })
@@ -49,6 +59,7 @@ const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
 function shutdown(signal: NodeJS.Signals) {
   logger.info({ event: 'app.stopping', signal }, 'Shutting down')
   server.close(async () => {
+    await scheduler.stop()
     await background.idle()
     await database.close()
     process.exit(0)
