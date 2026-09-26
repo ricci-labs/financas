@@ -18,8 +18,52 @@ import type {
   NewLedgerAccount,
   NewPosting,
 } from '@api/modules/ledger/ledger.types'
-import type { EntryListQuery, InvoiceStatus, SystemAccountKind } from '@financas/shared'
-import { and, asc, desc, eq, gte, inArray, isNull, lte, ne, sql } from 'drizzle-orm'
+import type { EntryListQuery, InvoiceStatus, SystemAccountKind, TrashQuery } from '@financas/shared'
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  inArray,
+  isNotNull,
+  isNull,
+  lte,
+  ne,
+  notExists,
+  sql,
+} from 'drizzle-orm'
+import { alias } from 'drizzle-orm/pg-core'
+
+const ACCOUNT_COLUMNS = {
+  id: ledgerAccounts.id,
+  parentId: ledgerAccounts.parentId,
+  kind: ledgerAccounts.kind,
+  class: ledgerAccounts.class,
+  name: ledgerAccounts.name,
+  currency: ledgerAccounts.currency,
+  incomeNature: ledgerAccounts.incomeNature,
+  ownerUserId: ledgerAccounts.ownerUserId,
+  isSystem: ledgerAccounts.isSystem,
+  sortOrder: ledgerAccounts.sortOrder,
+  color: ledgerAccounts.color,
+  icon: ledgerAccounts.icon,
+  archivedAt: ledgerAccounts.archivedAt,
+}
+
+const ENTRY_COLUMNS = {
+  id: journalEntries.id,
+  entryType: journalEntries.entryType,
+  occurredOn: journalEntries.occurredOn,
+  description: journalEntries.description,
+  notes: journalEntries.notes,
+  paymentMethod: journalEntries.paymentMethod,
+  installmentCount: journalEntries.installmentCount,
+  spentByUserId: journalEntries.spentByUserId,
+  createdByUserId: journalEntries.createdByUserId,
+  source: journalEntries.source,
+  replacesEntryId: journalEntries.replacesEntryId,
+}
 
 export async function insertAccounts(tx: WorkspaceTransaction, accounts: NewLedgerAccount[]) {
   await tx.insert(ledgerAccounts).values(accounts)
@@ -276,21 +320,7 @@ export function selectInvoiceTotals(tx: WorkspaceTransaction, cardAccountId: str
 
 export function selectActiveAccounts(tx: WorkspaceTransaction) {
   return tx
-    .select({
-      id: ledgerAccounts.id,
-      parentId: ledgerAccounts.parentId,
-      kind: ledgerAccounts.kind,
-      class: ledgerAccounts.class,
-      name: ledgerAccounts.name,
-      currency: ledgerAccounts.currency,
-      incomeNature: ledgerAccounts.incomeNature,
-      ownerUserId: ledgerAccounts.ownerUserId,
-      isSystem: ledgerAccounts.isSystem,
-      sortOrder: ledgerAccounts.sortOrder,
-      color: ledgerAccounts.color,
-      icon: ledgerAccounts.icon,
-      archivedAt: ledgerAccounts.archivedAt,
-    })
+    .select(ACCOUNT_COLUMNS)
     .from(ledgerAccounts)
     .where(isNull(ledgerAccounts.deletedAt))
     .orderBy(asc(ledgerAccounts.sortOrder), asc(ledgerAccounts.name))
@@ -339,23 +369,51 @@ export function selectEntries(tx: WorkspaceTransaction, query: EntryListQuery) {
     )
   }
   return tx
-    .select({
-      id: journalEntries.id,
-      entryType: journalEntries.entryType,
-      occurredOn: journalEntries.occurredOn,
-      description: journalEntries.description,
-      notes: journalEntries.notes,
-      paymentMethod: journalEntries.paymentMethod,
-      installmentCount: journalEntries.installmentCount,
-      spentByUserId: journalEntries.spentByUserId,
-      createdByUserId: journalEntries.createdByUserId,
-      source: journalEntries.source,
-      replacesEntryId: journalEntries.replacesEntryId,
-    })
+    .select(ENTRY_COLUMNS)
     .from(journalEntries)
     .where(and(...conditions))
     .orderBy(desc(journalEntries.occurredOn), desc(journalEntries.id))
     .limit(query.limit + 1)
+}
+
+export function selectTrashedEntries(tx: WorkspaceTransaction, query: TrashQuery) {
+  const replacements = alias(journalEntries, 'replacements')
+  const replaced = tx
+    .select({ id: replacements.id })
+    .from(replacements)
+    .where(eq(replacements.replacesEntryId, journalEntries.id))
+  const conditions = [isNotNull(journalEntries.deletedAt), notExists(replaced)]
+  if (query.cursor) {
+    conditions.push(
+      sql`(${deletedAtToTheMillisecond(journalEntries)}, ${journalEntries.id}) < (${query.cursor.key}::timestamptz, ${query.cursor.id}::uuid)`,
+    )
+  }
+  return tx
+    .select({ ...ENTRY_COLUMNS, ...deletionColumns(journalEntries) })
+    .from(journalEntries)
+    .where(and(...conditions))
+    .orderBy(desc(deletedAtToTheMillisecond(journalEntries)), desc(journalEntries.id))
+    .limit(query.limit + 1)
+}
+
+export function selectTrashedAccounts(tx: WorkspaceTransaction) {
+  return tx
+    .select({ ...ACCOUNT_COLUMNS, ...deletionColumns(ledgerAccounts) })
+    .from(ledgerAccounts)
+    .where(isNotNull(ledgerAccounts.deletedAt))
+    .orderBy(desc(ledgerAccounts.deletedAt), desc(ledgerAccounts.id))
+}
+
+function deletedAtToTheMillisecond(table: typeof journalEntries | typeof ledgerAccounts) {
+  return sql`date_trunc('milliseconds', ${table.deletedAt})`
+}
+
+function deletionColumns(table: typeof journalEntries | typeof ledgerAccounts) {
+  return {
+    deletedAt: sql<Date>`${table.deletedAt}`.mapWith(table.deletedAt),
+    deletedByUserId: table.deletedByUserId,
+    deleteReason: table.deleteReason,
+  }
 }
 
 export function selectPostingsOfEntries(tx: WorkspaceTransaction, entryIds: string[]) {

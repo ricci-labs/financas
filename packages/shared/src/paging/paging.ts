@@ -4,6 +4,10 @@ export const PAGE_CURSOR_SEPARATOR = '_'
 
 export const PAGE_CURSOR_MAX_LENGTH = 100
 
+export const PAGE_DEFAULT_LIMIT = 100
+
+export const PAGE_MAX_LIMIT = 500
+
 export function encodePageCursor({ key, id }: PageCursor): string {
   return `${key}${PAGE_CURSOR_SEPARATOR}${id}`
 }

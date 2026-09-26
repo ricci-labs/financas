@@ -1,5 +1,5 @@
 import { encodePageCursor, pageOf } from '@shared/paging/paging'
-import { pageCursorSchema } from '@shared/paging/paging.schemas'
+import { pageCursorSchema, pageLimitSchema } from '@shared/paging/paging.schemas'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
@@ -41,5 +41,14 @@ describe('pageCursorSchema', () => {
     for (const cursor of [ID, `2026-13-01_${ID}`, '2026-10-02_nope', `${'9'.repeat(100)}_${ID}`]) {
       expect(schema.safeParse(cursor).success).toBe(false)
     }
+  })
+})
+
+describe('pageLimitSchema', () => {
+  it('reads the limit from a query string, defaults it and caps it', () => {
+    expect(pageLimitSchema.parse('20')).toBe(20)
+    expect(pageLimitSchema.parse(undefined)).toBe(100)
+    expect(pageLimitSchema.safeParse('501').success).toBe(false)
+    expect(pageLimitSchema.safeParse('0').success).toBe(false)
   })
 })

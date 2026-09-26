@@ -1,5 +1,5 @@
 import { createApp } from '@api/app'
-import type { LedgerAccountItem } from '@api/modules/ledger'
+import type { LedgerAccountItem, TrashedAccount } from '@api/modules/ledger'
 import { testAppDeps } from '@api/testing/app'
 import { connectTestDatabases } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
@@ -16,6 +16,7 @@ let member: ReturnType<typeof requestsAs>
 let viewer: ReturnType<typeof requestsAs>
 let accountsPath: string
 let foreignAccountsPath: string
+let ownerId: string
 
 beforeAll(async () => {
   const ownerSession = await loggedInUser(app, databases.app, fixtures.runId, 'accounts-owner')
@@ -38,6 +39,7 @@ beforeAll(async () => {
     'viewer',
   )
   owner = requestsAs(app, ownerSession)
+  ownerId = ownerSession.userId
   member = requestsAs(app, memberSession)
   viewer = requestsAs(app, viewerSession)
   accountsPath = `/api/workspaces/${workspaceId}/accounts`
@@ -152,6 +154,28 @@ describe('DELETE and restore', () => {
 
     expect((await owner.post(`${accountsPath}/${accountId}/restore`)).status).toBe(204)
     expect((await listed(owner)).map((account) => account.id)).toContain(accountId)
+  })
+
+  it('shows deleted accounts in the trash, with who and why, until restored', async () => {
+    const accountId = await createCategory('Streaming')
+    await owner.del(`${accountsPath}/${accountId}`, { reason: 'Cancelada' })
+
+    expect((await member.get(`${accountsPath}/trash`)).status).toBe(403)
+    const trash = (await (await owner.get(`${accountsPath}/trash`)).json()) as TrashedAccount[]
+    expect(trash.find((account) => account.id === accountId)).toMatchObject({
+      name: 'Streaming',
+      kind: 'expense_category',
+      deletedByUserId: ownerId,
+      deleteReason: 'Cancelada',
+      deletedAt: expect.any(String),
+    })
+    expect(trash.map((account) => account.id)).not.toContain(await createCategory('Ativa'))
+
+    await owner.post(`${accountsPath}/${accountId}/restore`)
+    const afterRestore = (await (
+      await owner.get(`${accountsPath}/trash`)
+    ).json()) as TrashedAccount[]
+    expect(afterRestore.map((account) => account.id)).not.toContain(accountId)
   })
 
   it('accepts a delete without a body', async () => {

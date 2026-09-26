@@ -211,6 +211,7 @@ A malformed or unknown id, or one from another workspace, is `404 ACCOUNT_NOT_FO
 | `POST /accounts/:accountId/archive`, `/unarchive` | `accounts:update` | `archiveAccount`, `unarchiveAccount` → `204` |
 | `DELETE /accounts/:accountId` (optional `{ reason }`) | `accounts:delete` | `deleteAccount` → `204` |
 | `POST /accounts/:accountId/restore` | `accounts:delete` | `restoreAccount` → `204` |
+| `GET /accounts/trash` | `accounts:delete` | `listTrashedAccounts`: deleted accounts (cards included) with `deletedAt`, `deletedByUserId` and `deleteReason`, latest deletion first |
 | `GET /cards` | `cards:view` | `listCards`: active card accounts with their cycle, limit, holder and payment account |
 | `POST /cards` | `cards:create` | `createCard` → `201 { accountId }` |
 | `PATCH /cards/:cardId` | `cards:update` | `changeCard` (cycle, limit, holder, payment account) → `204` |
@@ -222,6 +223,7 @@ A malformed or unknown id, or one from another workspace, is `404 ACCOUNT_NOT_FO
 | `PATCH /entries/:entryId` | `entries:update` | `changeEntryDetails` (description, notes) → `204` |
 | `DELETE /entries/:entryId` (optional `{ reason }`) | `entries:delete` | `deleteEntry` → `204` |
 | `POST /entries/:entryId/restore` | `entries:delete` | `restoreEntry` → `204` |
+| `GET /entries/trash?limit&cursor` | `entries:delete` | `listTrashedEntries`: one page `{ items, nextCursor }` of deleted entries with their postings and who, when and why, latest deletion first. An old version of an edited entry is history, not trash: it never shows here (its replacement does, once deleted). The cursor is `<deletedAt ISO>_<id>`, compared to the millisecond |
 | `GET /balances` | `accounts:view` | `listAccountBalances`: every account that isn't deleted, with `balanceCents` (signed) and `naturalBalanceCents` (as the UI shows it), from active entries |
 
 A card is a ledger account, so renaming, archiving, deleting and restoring it go through

@@ -35,7 +35,7 @@ the owner invariant are implemented in `members`. Route enforcement is implement
 | `attachments` | Files on entries and charges |
 | `settings` | Workspace settings |
 | `members` | Members, invitations, roles |
-| `audit` | Audit log, trash (view only) |
+| `audit` | Audit log (view only). A module's trash is seen with that module's `delete` (ADR 0016) |
 
 ## Tables
 ### `module_actions` (global, seeded by migration)

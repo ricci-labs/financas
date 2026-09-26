@@ -11,6 +11,7 @@ import {
   markAccountDeleted,
   markAccountRestored,
   selectActiveAccounts,
+  selectTrashedAccounts,
   updateAccount,
 } from '@api/modules/ledger/ledger.repository'
 import type {
@@ -18,6 +19,7 @@ import type {
   DeleteAccountInput,
   LedgerAccountItem,
   LedgerContext,
+  TrashedAccount,
   WorkspaceAccount,
 } from '@api/modules/ledger/ledger.types'
 import { refusingBrokenRules, refusingTakenAccountNames } from '@api/modules/ledger/use-cases/rules'
@@ -107,6 +109,10 @@ export async function archiveAccount(
 
 export function listAccounts(db: Database, workspaceId: string): Promise<LedgerAccountItem[]> {
   return withWorkspace(db, workspaceId, (tx) => selectActiveAccounts(tx))
+}
+
+export function listTrashedAccounts(db: Database, workspaceId: string): Promise<TrashedAccount[]> {
+  return withWorkspace(db, workspaceId, (tx) => selectTrashedAccounts(tx))
 }
 
 export async function unarchiveAccount(db: Database, ref: WorkspaceAccount) {
