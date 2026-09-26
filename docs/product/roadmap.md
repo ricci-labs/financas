@@ -72,8 +72,7 @@ updated: 2026-09-26
      - [x] Recurrence rules + planned occurrences, 6 months ahead (planned on rule changes and
            topped up on reading; the nightly cross-workspace job comes with the reminders)
      - [ ] Matching real entries to pending occurrences, suggested and confirmed (done: suggest,
-           match, unmatch); keep matches when entries are edited or deleted; skip / edit one
-           occurrence
+           match, unmatch, matches follow edited or deleted entries); skip / edit one occurrence
      - [ ] Budget lines and goals (reserve)
      - [ ] Period facts + first metrics + `GET /overview` (free to spend, per day, spent, committed)
      - [ ] More metrics: budget pace, committed ahead (6 periods), next invoice, variable income

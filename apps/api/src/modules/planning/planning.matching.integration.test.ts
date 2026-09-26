@@ -1,5 +1,5 @@
 import { withWorkspace } from '@api/core/db/tx'
-import { recordEntry } from '@api/modules/ledger'
+import { deleteEntry, recordEntry, replaceEntry } from '@api/modules/ledger'
 import { ledgerAccounts } from '@api/modules/ledger/ledger.table'
 import {
   createRecurrenceRule,
@@ -74,7 +74,7 @@ async function household(name: string) {
   }
   const october = async () =>
     listOccurrences(databases.app, workspaceId, OCTOBER, FIRST_OF_OCTOBER).then(([first]) => first)
-  return { workspaceId, groceries, pay, october }
+  return { workspaceId, checking, housing, groceries, pay, october }
 }
 
 function suggestionsFor(workspaceId: string, entryId: string) {
@@ -146,5 +146,48 @@ describe('matchOccurrence and unmatchOccurrence', () => {
     await expect(
       matchOccurrence(databases.app, { workspaceId, occurrenceId: november?.id ?? '' }, entryId),
     ).rejects.toMatchObject({ code: 'ENTRY_ALREADY_MATCHED' })
+  })
+})
+
+describe('a match follows its entry', () => {
+  it('moves to the new version when the entry is edited', async () => {
+    const { workspaceId, checking, housing, pay, october } = await household('Edited')
+    const entryId = await pay(200_000)
+    await matchOccurrence(
+      databases.app,
+      { workspaceId, occurrenceId: (await october())?.id ?? '' },
+      entryId,
+    )
+
+    const { entryId: editedId } = await replaceEntry(
+      databases.app,
+      { workspaceId, userId, source: 'web' },
+      entryId,
+      {
+        entryType: 'expense',
+        occurredOn: '2026-10-13',
+        description: 'Aluguel de outubro',
+        amountCents: 201_000,
+        paidFromAccountId: checking,
+        categoryId: housing,
+      },
+      FIRST_OF_OCTOBER,
+    )
+
+    expect(await october()).toMatchObject({ status: 'matched', matchedEntryId: editedId })
+  })
+
+  it('goes back to pending when the entry is deleted', async () => {
+    const { workspaceId, pay, october } = await household('Deleted entry')
+    const entryId = await pay(200_000)
+    await matchOccurrence(
+      databases.app,
+      { workspaceId, occurrenceId: (await october())?.id ?? '' },
+      entryId,
+    )
+
+    await deleteEntry(databases.app, { workspaceId, entryId, userId, reason: 'Duplicado' })
+
+    expect(await october()).toMatchObject({ status: 'pending', matchedEntryId: null })
   })
 })
