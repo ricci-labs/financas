@@ -21,7 +21,14 @@ import type {
 } from '@api/modules/contacts/contacts.types'
 import { readContactPostings } from '@api/modules/ledger'
 import { currentWorkspaceDefaults } from '@api/modules/workspaces'
-import { contactBalances, contactChangeSchema, newContactSchema, todayIn } from '@financas/shared'
+import {
+  type ContactBalance,
+  contactBalances,
+  contactChangeSchema,
+  type IsoDate,
+  newContactSchema,
+  todayIn,
+} from '@financas/shared'
 
 const CONTACT_INVALID = 'CONTACT_INVALID'
 
@@ -44,6 +51,16 @@ export function listContactBalances(
       .map((balance) => ({ ...balance, name: names.get(balance.contactId) ?? '' }))
       .sort((left, right) => left.name.localeCompare(right.name))
   })
+}
+
+export async function readContactBalanceFacts(
+  tx: WorkspaceTransaction,
+  today: IsoDate,
+): Promise<ContactBalance[]> {
+  const active = new Set((await selectActiveContacts(tx)).map((contact) => contact.id))
+  return contactBalances(await readContactPostings(tx), today).filter((balance) =>
+    active.has(balance.contactId),
+  )
 }
 
 export async function createContact(

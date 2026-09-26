@@ -11,4 +11,5 @@ export {
   deleteContact,
   listContactBalances,
   listContacts,
+  readContactBalanceFacts,
 } from '@api/modules/contacts/use-cases/contacts'

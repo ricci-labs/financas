@@ -1,5 +1,6 @@
 import type { IsoDate, Period } from '@shared/calendar/calendar.types'
 import type { CardCycle } from '@shared/cards/cards.types'
+import type { ContactBalance } from '@shared/contacts/contacts.types'
 import type { AccountClass, AccountKind, IncomeNature } from '@shared/ledger/ledger.constants'
 import type { OccurrenceStatus, RecurringEntryType } from '@shared/recurrence/recurrence.constants'
 import type { BudgetBase, InstallmentBudgetView } from '@shared/workspaces/workspaces.constants'
@@ -78,6 +79,7 @@ export type PeriodFacts = {
   invoices: readonly FactInvoice[]
   allocation: FactAllocation | null
   balances: readonly FactBalance[]
+  contactBalances: readonly ContactBalance[]
 }
 
 export type BudgetPace = {

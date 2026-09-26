@@ -200,6 +200,7 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
       },
     ],
     balances: [{ accountId: 'checking', balanceCents: 600_000 }],
+    contactBalances: [],
     budgets: [
       { categoryAccountId: 'food', limitCents: 20_000 },
       { categoryAccountId: 'housing', limitCents: 250_000 },

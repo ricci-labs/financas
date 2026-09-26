@@ -47,6 +47,7 @@ const FACTS: PeriodFacts = {
   invoices: [],
   allocation: null,
   balances: [],
+  contactBalances: [],
 }
 
 function metricsWith(overrides: Partial<PeriodMetrics>): PeriodMetrics {
@@ -238,6 +239,39 @@ describe('balance_going_negative', () => {
     })
     expect(codes(metrics).filter((code) => code.startsWith('balance'))).toEqual([
       'balance_going_negative checking',
+    ])
+  })
+})
+
+describe('contact_overdue', () => {
+  it('warns about each contact with something overdue', () => {
+    const facts: PeriodFacts = {
+      ...FACTS,
+      occurrences: [],
+      contactBalances: [
+        {
+          contactId: 'j',
+          owedCents: 30_000,
+          overdueCents: 10_000,
+          nextDueOn: null,
+          nextDueCents: 0,
+        },
+        {
+          contactId: 'm',
+          owedCents: 5_000,
+          overdueCents: 0,
+          nextDueOn: '2026-11-10',
+          nextDueCents: 5_000,
+        },
+      ],
+    }
+    expect(computeInsights(facts, computeMetrics(facts))).toEqual([
+      {
+        code: 'contact_overdue',
+        severity: 'warning',
+        subject: 'j',
+        values: { overdueCents: 10_000, owedCents: 30_000 },
+      },
     ])
   })
 })

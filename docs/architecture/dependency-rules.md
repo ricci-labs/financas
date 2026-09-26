@@ -63,7 +63,7 @@ routes / agent tools / jobs / channels
 | `contacts` | `identity` | The requester's display name in the charge message |
 | `contacts` | `notifications` | Send charges and charge reminders |
 | `planning` | `notifications` | Bill and invoice reminders |
-| `reports` | `ledger`, `planning`, `contacts` | Read-only aggregates |
+| `reports` | `ledger`, `planning`, `contacts` | Read-only aggregates; the contacts' balances for the `contact_overdue` insight |
 | every module | `workspaces` | Current workspace settings |
 | `onboarding` | `workspaces`, `ledger`, `access`, `members` | Creating a workspace: the workspace and its settings, the system accounts, the system roles, the creator as owner |
 | `onboarding` | `identity` | Registering an owner: the user, then their first workspace |

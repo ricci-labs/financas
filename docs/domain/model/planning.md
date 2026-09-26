@@ -187,6 +187,7 @@ the order of `INSIGHTS`.
 | `variable_income_to_split` | info | period label | with a waterfall configured: the period's commission minus what reached its destination accounts in the period (deposits only, never withdrawals) minus the overrun it covers (when a `cover_overspent` step exists) is still positive → `{ amountCents }` still to split |
 
 | `balance_going_negative` | alert | account | the balance forecast dips below zero → `{ lowestCents, lowestOn }` |
+| `contact_overdue` | warning | contact | a contact has items past due (`contacts.readContactBalanceFacts`) → `{ overdueCents, owedCents }` |
 
 ### Commission split (suggested, never automatic)
 `allocation_steps` holds the household's waterfall, in order. When variable income arrives, the pure

@@ -10,6 +10,7 @@ export const INSIGHT_CODES = [
   'period_heavily_committed',
   'variable_income_to_split',
   'balance_going_negative',
+  'contact_overdue',
 ] as const
 
 export type InsightCode = (typeof INSIGHT_CODES)[number]

@@ -1,4 +1,5 @@
 import { createApp } from '@api/app'
+import { createContact } from '@api/modules/contacts'
 import { createAccount, createCard, deleteEntry, recordEntry } from '@api/modules/ledger'
 import {
   createGoal,
@@ -353,6 +354,34 @@ describe('variable_income_to_split', () => {
     expect(alreadyInTheReserve.insights.map((insight) => insight.code)).not.toContain(
       'variable_income_to_split',
     )
+  })
+})
+
+describe('contact_overdue', () => {
+  it('warns about a contact with an item past due', async () => {
+    const { workspaceId, context, checking, groceries } = await household()
+    const { contactId } = await createContact(databases.app, context, { name: 'Contact Late' })
+    await recordEntry(
+      databases.app,
+      { ...context, source: 'web' },
+      {
+        entryType: 'expense',
+        occurredOn: '2026-10-02',
+        description: 'Ingressos',
+        amountCents: 20_000,
+        paidFromAccountId: checking,
+        categoryId: groceries,
+        shares: [{ contactId, amountCents: 10_000 }],
+      },
+      MID_OCTOBER,
+    )
+    const overview = await getPeriodOverview(databases.app, workspaceId, {}, MID_OCTOBER)
+    expect(overview.insights).toContainEqual({
+      code: 'contact_overdue',
+      severity: 'warning',
+      subject: contactId,
+      values: { overdueCents: 10_000, owedCents: 10_000 },
+    })
   })
 })
 
