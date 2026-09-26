@@ -5,6 +5,7 @@ import { hashToken } from '@api/core/security/tokens'
 import { passwordChangedMessage, passwordResetMessage } from '@api/modules/identity/identity.emails'
 import {
   findAccountByEmail,
+  isUsableAuthToken,
   resetPasswordWithToken,
 } from '@api/modules/identity/identity.repository'
 import type {
@@ -54,18 +55,21 @@ export async function resetPassword(
 ): Promise<void> {
   const { clock, passwordCost } = withDefaults(deps)
   const password = parseOrThrow(passwordSchema, input.password, 'PASSWORD_INVALID')
-  const passwordHash = await hashPassword(password, passwordCost)
+  const tokenHash = hashToken(input.token)
+  if (!(await isUsableAuthToken(db, tokenHash, 'password_reset', clock.now()))) {
+    throw invalidLink()
+  }
 
-  const changed = await resetPasswordWithToken(
-    db,
-    hashToken(input.token),
-    passwordHash,
-    clock.now(),
-  )
+  const passwordHash = await hashPassword(password, passwordCost)
+  const changed = await resetPasswordWithToken(db, tokenHash, passwordHash, clock.now())
   if (!changed) {
-    throw new ValidationError('LINK_INVALID', 'The link is invalid, already used or expired')
+    throw invalidLink()
   }
 
   const forgotPasswordLink = pageLink(deps.publicUrl, FORGOT_PASSWORD_PATH)
   await deps.mailer.send(passwordChangedMessage({ recipient: changed, forgotPasswordLink }))
+}
+
+function invalidLink(): ValidationError {
+  return new ValidationError('LINK_INVALID', 'The link is invalid, already used or expired')
 }

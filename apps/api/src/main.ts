@@ -36,6 +36,7 @@ const app = createApp({
   accountEmailLimits: createAccountEmailLimits({
     maxPerEmailPerHour: env.ACCOUNT_EMAILS_PER_ADDRESS_PER_HOUR,
     maxPerClientPerHour: env.ACCOUNT_EMAILS_PER_IP_PER_HOUR,
+    maxInvalidLinksPerClientPerHour: env.INVALID_LINKS_PER_IP_PER_HOUR,
   }),
   trustedProxyHops: env.TRUSTED_PROXY_HOPS,
   background,

@@ -84,11 +84,13 @@ export type IdentityRouteDeps = {
 export type AccountEmailLimits = {
   byEmail: AttemptLimiter
   byClient: AttemptLimiter
+  invalidLinksByClient: AttemptLimiter
 }
 
 export type AccountEmailLimitSettings = {
   maxPerEmailPerHour: number
   maxPerClientPerHour: number
+  maxInvalidLinksPerClientPerHour: number
 }
 
 export type LoginLimits = {

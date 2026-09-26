@@ -33,6 +33,7 @@ export function testAppDeps(overrides: Partial<AppDeps> = {}): AppDeps {
     accountEmailLimits: createAccountEmailLimits({
       maxPerEmailPerHour: 3,
       maxPerClientPerHour: 10,
+      maxInvalidLinksPerClientPerHour: 20,
     }),
     trustedProxyHops: 0,
     background: createBackgroundTasks(),

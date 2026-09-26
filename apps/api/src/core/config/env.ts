@@ -23,6 +23,7 @@ const envSchema = z
     LOGIN_FAILURE_WINDOW_MINUTES: z.coerce.number().int().min(1).default(15),
     ACCOUNT_EMAILS_PER_ADDRESS_PER_HOUR: z.coerce.number().int().min(1).default(3),
     ACCOUNT_EMAILS_PER_IP_PER_HOUR: z.coerce.number().int().min(1).default(10),
+    INVALID_LINKS_PER_IP_PER_HOUR: z.coerce.number().int().min(1).default(20),
     SMTP_HOST: z.string().min(1).optional(),
     SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(DEFAULT_SMTP_PORT),
     SMTP_SECURE: z.stringbool().optional(),
