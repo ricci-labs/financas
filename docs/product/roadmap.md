@@ -89,7 +89,8 @@ updated: 2026-09-26
   6. [ ] **Audit log**
   7. [ ] **Observability core and deploy:** OTel, metrics, error refs, ops scripts, Dockerfile,
          Dokploy workflow, backups (needs open questions 7, 8 and 10)
-  Then: **web foundation**, then **WhatsApp channel + agent**.
+  Then: **web foundation**, then **WhatsApp channel + agent**. The agent's tools include
+  `simulate_purchase` ("posso comprar?", built in #85, decided 2026-09-26), next to `period_overview`.
 - [ ] DB: contacts/charges, planning, support tables
 - [ ] Observability core (OTel register, metrics, error refs), Dockerfile, deploy workflow
 - [ ] Web foundation: TanStack Router/Query, shadcn/ui, layout
