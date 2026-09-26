@@ -16,7 +16,8 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "test:integration": "vitest run --config vitest.integration.config.ts"
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "ops:create-user": "tsx --env-file-if-exists=../../.env src/ops/create-user.ts"
   },
   "dependencies": {
     "@financas/shared": "workspace:*",

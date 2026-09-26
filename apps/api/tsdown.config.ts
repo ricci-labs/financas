@@ -1,7 +1,10 @@
 import { defineConfig } from 'tsdown'
 
 export default defineConfig({
-  entry: ['src/main.ts'],
+  entry: {
+    main: 'src/main.ts',
+    'ops/create-user': 'src/ops/create-user.ts',
+  },
   format: 'esm',
   platform: 'node',
   target: 'node24',

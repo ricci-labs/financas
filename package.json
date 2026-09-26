@@ -23,7 +23,8 @@
     "db:reset": "docker compose -f compose.dev.yml down --volumes && pnpm db:up",
     "db:generate": "pnpm --filter @financas/api db:generate",
     "db:migrate": "pnpm --filter @financas/api db:migrate",
-    "test:integration": "pnpm --filter @financas/api test:integration"
+    "test:integration": "pnpm --filter @financas/api test:integration",
+    "ops:create-user": "pnpm --filter @financas/api ops:create-user"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.14",
