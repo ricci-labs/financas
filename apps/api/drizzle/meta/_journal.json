@@ -239,6 +239,20 @@
       "when": 1790390944725,
       "tag": "0033_user_workspace_lookup",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1790449199793,
+      "tag": "0034_workspace_holidays",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1790449201390,
+      "tag": "0035_workspace_holidays_updated_at",
+      "breakpoints": true
     }
   ]
 }

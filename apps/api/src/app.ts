@@ -14,6 +14,7 @@ import {
   invitationRoutes,
   PUBLIC_INVITATION_ROUTES,
 } from '@api/modules/onboarding/onboarding.routes'
+import { planningRoutes } from '@api/modules/planning/planning.routes'
 import {
   workspaceCreationRoutes,
   workspaceSettingsRoutes,
@@ -51,6 +52,7 @@ function workspaceScopedRoutes(deps: AppDeps) {
     .route('/', accessRoutes(deps))
     .route('/', workspaceSettingsRoutes(deps))
     .route('/', ledgerRoutes(deps))
+    .route('/', planningRoutes(deps))
     .route('/invitations', invitationRoutes(deps))
 }
 
