@@ -1,7 +1,7 @@
 ---
 summary: Access control inside a workspace — roles (system templates + custom), a module × action permission matrix (view/create/update/delete), owner rules, and where permissions are enforced (routes, agent tools, UI).
 read_when: Adding a route, agent tool or screen; working on roles, members or invitations; any "who can do what" question.
-updated: 2026-09-24
+updated: 2026-09-25
 ---
 
 # Access control
@@ -88,7 +88,7 @@ Owner-only, outside the matrix: delete the workspace, transfer ownership, manage
 ## Enforcement
 | Where | How |
 |---|---|
-| HTTP routes | `authorize(module, action)` middleware on every route (from `modules/access`). A route without it fails a test that lists all routes. |
+| HTTP routes | First, a session on every `/api` route except the declared public ones (`requireSession`, a test walks every route). Then `authorize(module, action)` on every workspace route (from `modules/access`). A route without it fails a test that lists all routes. |
 | Agent tools | Each tool declares its `(module, action)`. Only tools the user is allowed to use are offered to Claude in that turn, and the tool re-checks on execution. |
 | Services | Receive an `actor` (user + workspace + permission set) and check again for operations reachable from several entry points (defense in depth). |
 | Web | Menus and buttons are hidden without permission. The API remains the authority. |

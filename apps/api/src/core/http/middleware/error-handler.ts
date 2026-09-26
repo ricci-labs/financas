@@ -63,6 +63,7 @@ function statusOf(error: AppError): ContentfulStatusCode {
 }
 
 function respond(c: Context<AppEnv>, status: ContentfulStatusCode, code: string, message: string) {
+  c.set('errorCode', code)
   const body: ErrorBody = { error: { code, message, ref: refOf(c.get('requestId')) } }
   return c.json(body, status)
 }

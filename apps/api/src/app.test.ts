@@ -1,18 +1,18 @@
 import { createApp } from '@api/app'
 import { loadEnv, publicUrlOf } from '@api/core/config/env'
-import { createCapturingLogger } from '@api/testing/logger'
+import { testAppDeps } from '@api/testing/app'
 import { describe, expect, it } from 'vitest'
 
 const FIVE_SECONDS_AGO = Date.now() - 5_000
 const LOCAL_DATABASE_URL = 'postgres://app:secret@localhost:5433/financas'
 
 function appWithDatabase(isUp: boolean) {
-  return createApp({
-    version: 'test-sha',
-    startedAt: FIVE_SECONDS_AGO,
-    isDatabaseReachable: async () => isUp,
-    logger: createCapturingLogger().logger,
-  })
+  return createApp(
+    testAppDeps({
+      startedAt: FIVE_SECONDS_AGO,
+      isDatabaseReachable: async () => isUp,
+    }),
+  )
 }
 
 describe('health routes', () => {

@@ -178,3 +178,11 @@ export async function resetPasswordWithToken(
   }
   return { userId: changed.user_id, email: changed.email, displayName: changed.display_name }
 }
+
+export async function findAccountById(db: Database, userId: string) {
+  const [account] = await db
+    .select({ userId: users.id, email: users.email, displayName: users.displayName })
+    .from(users)
+    .where(eq(users.id, userId))
+  return account
+}

@@ -99,6 +99,21 @@ without comments.
   authorization header at the top level and one level down (`core/observability/logger.ts`, with a
   test). Name fields so the censor catches them (`password`, `newPassword`, `token`, `tokenHash`).
 
+## HTTP routes and sessions (ADR 0021)
+- **Every `/api` route needs a session by default.** `requireSession` (`core/http/middleware/session.ts`)
+  runs before every route and answers `401 SESSION_REQUIRED` unless the route's `METHOD /path` is in
+  `PUBLIC_ROUTES` (`app.ts`), built from each module's `PUBLIC_*_ROUTES` export. A test walks every
+  registered route and fails if a non-public one answers without a session.
+- Handlers read the user with `currentSession(c)`, never from the body or the URL.
+- **Writes come only from the app's own pages:** every non-GET request under `/api` must carry
+  `Sec-Fetch-Site: same-origin` or `Origin` equal to `PUBLIC_URL`, or it gets
+  `403 CROSS_SITE_REQUEST` (`same-origin-writes.ts`). Together with the `SameSite=Lax` cookie, that's
+  two independent CSRF barriers. It's stricter than Hono's `csrf()`, which only checks form-like
+  content types.
+- The session cookie is `HttpOnly`, `SameSite=Lax`, `Path=/`, with the session expiry. In production
+  it's `__Host-session` and `Secure`, in development `session` (`core/http/session-cookie.ts`). A
+  cookie that doesn't resolve to a session is cleared.
+
 ## Validation and errors
 - Validate at every boundary with Zod: HTTP (`zValidator`), agent tool inputs, env, WhatsApp payloads.
 - Services throw typed `AppError` subclasses. The HTTP error handler (`core/http/middleware/error-handler.ts`) maps them to status codes; agent tools map them to `is_error` tool results.

@@ -25,6 +25,7 @@ export function requestContext(rootLogger: Logger) {
       method: c.req.method,
       route: routePath(c, LAST_MATCHED_ROUTE),
       status: c.res.status,
+      code: c.get('errorCode'),
       durationMs: Math.round(performance.now() - startedAt),
     })
   })
@@ -38,6 +39,7 @@ type Completion = {
   method: string
   route: string
   status: number
+  code: string | undefined
   durationMs: number
 }
 

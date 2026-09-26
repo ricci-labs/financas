@@ -8,4 +8,4 @@ export {
 } from '@api/modules/identity/use-cases/password-reset'
 export { login, logout, resolveSession } from '@api/modules/identity/use-cases/sessions'
 export { signUp } from '@api/modules/identity/use-cases/sign-up'
-export { createUser } from '@api/modules/identity/use-cases/users'
+export { createUser, getAccount } from '@api/modules/identity/use-cases/users'
