@@ -1,5 +1,5 @@
 import { planPostings } from '@shared/ledger/postings'
-import type { AccountRef, EntryPlan, PostingsPlan } from '@shared/ledger/postings.types'
+import type { AccountRef, EntryPlan, PlanOf, PostingsPlan } from '@shared/ledger/postings.types'
 import { describe, expect, it } from 'vitest'
 
 const DAY = '2026-10-05'
@@ -21,6 +21,8 @@ describe('planPostings (worked examples in docs/domain/model/ledger.md)', () => 
   it('1. an expense by Pix: R$ 87,50 at the grocery store', () => {
     const plan = planPostings({
       entryType: 'expense',
+      shares: [],
+      receivable: null,
       occurredOn: DAY,
       amountCents: 8750,
       paidFrom: checking,
@@ -93,6 +95,8 @@ describe('planPostings', () => {
   it('numbers the lines, keeps the account kinds and uses the day as effective date', () => {
     const plan = planPostings({
       entryType: 'expense',
+      shares: [],
+      receivable: null,
       occurredOn: DAY,
       amountCents: 100,
       paidFrom: checking,
@@ -109,6 +113,7 @@ describe('planPostings', () => {
           effectiveOn: DAY,
           invoiceId: null,
           installmentNo: null,
+          contactId: null,
         },
         {
           lineNo: 2,
@@ -118,6 +123,7 @@ describe('planPostings', () => {
           effectiveOn: DAY,
           invoiceId: null,
           installmentNo: null,
+          contactId: null,
         },
       ],
     })
@@ -127,6 +133,8 @@ describe('planPostings', () => {
     const plans: EntryPlan[] = [
       {
         entryType: 'expense',
+        shares: [],
+        receivable: null,
         occurredOn: DAY,
         amountCents: 1,
         paidFrom: savings,
@@ -155,6 +163,8 @@ describe('planPostings', () => {
       'a zero amount',
       {
         entryType: 'expense',
+        shares: [],
+        receivable: null,
         occurredOn: DAY,
         amountCents: 0,
         paidFrom: checking,
@@ -166,6 +176,8 @@ describe('planPostings', () => {
       'a fractional amount',
       {
         entryType: 'expense',
+        shares: [],
+        receivable: null,
         occurredOn: DAY,
         amountCents: 1.5,
         paidFrom: checking,
@@ -177,6 +189,8 @@ describe('planPostings', () => {
       'an expense paid from a category',
       {
         entryType: 'expense',
+        shares: [],
+        receivable: null,
         occurredOn: DAY,
         amountCents: 100,
         paidFrom: salary,
@@ -188,6 +202,8 @@ describe('planPostings', () => {
       'an expense paid with a card (card purchases come later)',
       {
         entryType: 'expense',
+        shares: [],
+        receivable: null,
         occurredOn: DAY,
         amountCents: 100,
         paidFrom: card,
@@ -199,6 +215,8 @@ describe('planPostings', () => {
       'an expense on an income category',
       {
         entryType: 'expense',
+        shares: [],
+        receivable: null,
         occurredOn: DAY,
         amountCents: 100,
         paidFrom: checking,
@@ -273,6 +291,8 @@ describe('planPostings for cards', () => {
   it('2. a TV for R$ 1.200,00 in 3x: one card line per invoice, expense per installment', () => {
     const plan = planPostings({
       entryType: 'card_purchase',
+      shares: [],
+      receivable: null,
       occurredOn: '2026-09-15',
       amountCents: 120000,
       card,
@@ -294,6 +314,8 @@ describe('planPostings for cards', () => {
   it('puts the rounding cents on the first installment (R$ 1.000,00 in 3x)', () => {
     const plan = planPostings({
       entryType: 'card_purchase',
+      shares: [],
+      receivable: null,
       occurredOn: '2026-09-15',
       amountCents: 100000,
       card,
@@ -311,6 +333,8 @@ describe('planPostings for cards', () => {
   it('records only the remaining installments of a purchase already in progress', () => {
     const plan = planPostings({
       entryType: 'card_purchase',
+      shares: [],
+      receivable: null,
       occurredOn: '2026-04-15',
       amountCents: 100000,
       card,
@@ -347,6 +371,8 @@ describe('planPostings for cards', () => {
       'a purchase on an account that is not a card',
       {
         entryType: 'card_purchase',
+        shares: [],
+        receivable: null,
         occurredOn: DAY,
         amountCents: 100,
         card: checking,
@@ -361,6 +387,8 @@ describe('planPostings for cards', () => {
       'a purchase without installments',
       {
         entryType: 'card_purchase',
+        shares: [],
+        receivable: null,
         occurredOn: DAY,
         amountCents: 100,
         card,
@@ -375,6 +403,8 @@ describe('planPostings for cards', () => {
       'more installments than cents',
       {
         entryType: 'card_purchase',
+        shares: [],
+        receivable: null,
         occurredOn: DAY,
         amountCents: 2,
         card,
@@ -389,6 +419,8 @@ describe('planPostings for cards', () => {
       'a purchase on an income category',
       {
         entryType: 'card_purchase',
+        shares: [],
+        receivable: null,
         occurredOn: DAY,
         amountCents: 100,
         card,
@@ -403,6 +435,8 @@ describe('planPostings for cards', () => {
       'a first installment after the last one',
       {
         entryType: 'card_purchase',
+        shares: [],
+        receivable: null,
         occurredOn: DAY,
         amountCents: 100,
         card,
@@ -417,6 +451,8 @@ describe('planPostings for cards', () => {
       'targets that do not match the remaining installments',
       {
         entryType: 'card_purchase',
+        shares: [],
+        receivable: null,
         occurredOn: DAY,
         amountCents: 100,
         card,
@@ -441,5 +477,150 @@ describe('planPostings for cards', () => {
     ],
   ] as [string, EntryPlan, string][])('refuses %s', (_case, plan, violation) => {
     expect(planPostings(plan)).toEqual({ ok: false, violation })
+  })
+})
+
+describe('planPostings with contacts (ledger.md examples 2 and 3)', () => {
+  const receivable: AccountRef = { id: 'receivable', kind: 'receivable' }
+  const dining: AccountRef = { id: 'dining', kind: 'expense_category' }
+  const electronics: AccountRef = { id: 'electronics', kind: 'expense_category' }
+  const installments = [
+    { invoiceId: 'inv-oct', effectiveOn: '2026-10-10' },
+    { invoiceId: 'inv-nov', effectiveOn: '2026-11-10' },
+    { invoiceId: 'inv-dec', effectiveOn: '2026-12-10' },
+  ]
+
+  function lines(plan: PostingsPlan) {
+    if (!plan.ok) {
+      throw new Error(`Unexpected violation ${plan.violation}`)
+    }
+    return plan.postings.map(({ accountId, amountCents, contactId, installmentNo }) => [
+      accountId,
+      amountCents,
+      contactId,
+      installmentNo,
+    ])
+  }
+
+  const dinner = (shares: { contactId: string; amountCents: number }[]): PlanOf<'expense'> => ({
+    entryType: 'expense',
+    occurredOn: DAY,
+    amountCents: 30_000,
+    paidFrom: checking,
+    category: dining,
+    shares,
+    receivable,
+  })
+
+  it('3. a dinner of R$ 300,00 where J and M owe R$ 100,00 each', () => {
+    const plan = planPostings(
+      dinner([
+        { contactId: 'j', amountCents: 10_000 },
+        { contactId: 'm', amountCents: 10_000 },
+      ]),
+    )
+    expect(lines(plan)).toEqual([
+      ['dining', 10_000, null, null],
+      ['receivable', 10_000, 'j', null],
+      ['receivable', 10_000, 'm', null],
+      ['checking', -30_000, null, null],
+    ])
+  })
+
+  it('leaves no own line when a contact owes it all', () => {
+    const plan = planPostings(dinner([{ contactId: 'j', amountCents: 30_000 }]))
+    expect(lines(plan)).toEqual([
+      ['receivable', 30_000, 'j', null],
+      ['checking', -30_000, null, null],
+    ])
+  })
+
+  it('2. a TV of R$ 1.200,00 in 3x where J owes R$ 300,00: each share spread over the installments', () => {
+    const plan = planPostings({
+      entryType: 'card_purchase',
+      occurredOn: '2026-09-15',
+      amountCents: 120_000,
+      card,
+      category: electronics,
+      installmentCount: 3,
+      firstInstallment: 1,
+      installments,
+      shares: [{ contactId: 'j', amountCents: 30_000 }],
+      receivable,
+    })
+    expect(lines(plan)).toEqual([
+      ['card', -40_000, null, 1],
+      ['card', -40_000, null, 2],
+      ['card', -40_000, null, 3],
+      ['electronics', 30_000, null, 1],
+      ['receivable', 10_000, 'j', 1],
+      ['electronics', 30_000, null, 2],
+      ['receivable', 10_000, 'j', 2],
+      ['electronics', 30_000, null, 3],
+      ['receivable', 10_000, 'j', 3],
+    ])
+  })
+
+  it('puts a card purchase that is all theirs on the contact only', () => {
+    const plan = planPostings({
+      entryType: 'card_purchase',
+      occurredOn: '2026-09-15',
+      amountCents: 60_000,
+      card,
+      category: electronics,
+      installmentCount: 2,
+      firstInstallment: 1,
+      installments: installments.slice(0, 2),
+      shares: [{ contactId: 'j', amountCents: 60_000 }],
+      receivable,
+    })
+    expect(lines(plan)).toEqual([
+      ['card', -30_000, null, 1],
+      ['card', -30_000, null, 2],
+      ['receivable', 30_000, 'j', 1],
+      ['receivable', 30_000, 'j', 2],
+    ])
+  })
+
+  it('keeps only the remaining installments of a purchase already in progress', () => {
+    const plan = planPostings({
+      entryType: 'card_purchase',
+      occurredOn: '2026-09-15',
+      amountCents: 120_000,
+      card,
+      category: electronics,
+      installmentCount: 3,
+      firstInstallment: 3,
+      installments: [installments[2] ?? { invoiceId: 'x', effectiveOn: DAY }],
+      shares: [{ contactId: 'j', amountCents: 30_000 }],
+      receivable,
+    })
+    expect(lines(plan)).toEqual([
+      ['card', -40_000, null, 3],
+      ['electronics', 30_000, null, 3],
+      ['receivable', 10_000, 'j', 3],
+    ])
+  })
+
+  it('refuses shares without the receivable account, not positive, twice the same contact or above the amount', () => {
+    const violation = (plan: EntryPlan) => {
+      const result = planPostings(plan)
+      return result.ok ? null : result.violation
+    }
+    expect(violation({ ...dinner([{ contactId: 'j', amountCents: 1 }]), receivable: null })).toBe(
+      'NOT_THE_RECEIVABLE_ACCOUNT',
+    )
+    expect(violation(dinner([{ contactId: 'j', amountCents: 0 }]))).toBe('SHARE_NOT_POSITIVE')
+    expect(
+      violation(
+        dinner([
+          { contactId: 'j', amountCents: 1 },
+          { contactId: 'j', amountCents: 1 },
+        ]),
+      ),
+    ).toBe('CONTACT_TWICE')
+    expect(violation(dinner([{ contactId: 'j', amountCents: 30_001 }]))).toBe(
+      'SHARES_EXCEED_AMOUNT',
+    )
   })
 })

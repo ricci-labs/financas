@@ -369,3 +369,71 @@ async function walkTrash(path: string, limit = 2): Promise<string[]> {
   }
   return walked
 }
+
+describe('entries shared with contacts', () => {
+  async function contact(name: string): Promise<string> {
+    const response = await member.post(`${workspacePath}/contacts`, { name })
+    return ((await response.json()) as { contactId: string }).contactId
+  }
+
+  it('records who owes what on a dinner, and spreads a share over card installments', async () => {
+    const j = await contact('Contact J')
+    const m = await contact('Contact M')
+    const dinnerId = await created(
+      member.post(entriesPath, {
+        ...expense('Jantar', '2026-10-06', 30_000),
+        shares: [
+          { contactId: j, amountCents: 10_000 },
+          { contactId: m, amountCents: 10_000 },
+        ],
+      }),
+    )
+    const dinner = (await listed()).find((item) => item.id === dinnerId)
+    expect(
+      dinner?.postings.map((posting) => [
+        posting.accountKind,
+        posting.amountCents,
+        posting.contactId,
+      ]),
+    ).toEqual([
+      ['expense_category', 10_000, null],
+      ['receivable', 10_000, j],
+      ['receivable', 10_000, m],
+      ['checking', -30_000, null],
+    ])
+
+    const tvId = await created(
+      member.post(entriesPath, {
+        entryType: 'card_purchase',
+        occurredOn: '2026-10-05',
+        description: 'TV',
+        amountCents: 120_000,
+        installmentCount: 3,
+        cardAccountId: cardId,
+        categoryId: groceriesId,
+        shares: [{ contactId: j, amountCents: 30_000 }],
+      }),
+    )
+    const tv = (await listed()).find((item) => item.id === tvId)
+    const owedByJ = tv?.postings.filter((posting) => posting.contactId === j) ?? []
+    expect(owedByJ.map((posting) => [posting.amountCents, posting.installmentNo])).toEqual([
+      [10_000, 1],
+      [10_000, 2],
+      [10_000, 3],
+    ])
+  })
+
+  it('refuses an unknown contact and shares above the amount', async () => {
+    const unknown = await member.post(entriesPath, {
+      ...expense('Pizza', '2026-10-06', 5_000),
+      shares: [{ contactId: UNKNOWN_ID, amountCents: 1_000 }],
+    })
+    expect([unknown.status, await codeOf(unknown)]).toEqual([400, 'CONTACT_NOT_AVAILABLE'])
+
+    const tooMuch = await member.post(entriesPath, {
+      ...expense('Pizza', '2026-10-06', 5_000),
+      shares: [{ contactId: await contact('Contact P'), amountCents: 5_001 }],
+    })
+    expect([tooMuch.status, await codeOf(tooMuch)]).toEqual([400, 'SHARES_EXCEED_AMOUNT'])
+  })
+})

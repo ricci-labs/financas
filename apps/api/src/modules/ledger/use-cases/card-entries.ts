@@ -3,6 +3,7 @@ import { ValidationError } from '@api/core/http/errors'
 import {
   findCardCycle,
   findInvoiceOfCard,
+  findSystemAccount,
   insertInvoicesIfMissing,
   selectInvoicesNotClosed,
   selectInvoicesOfMonths,
@@ -53,6 +54,8 @@ export async function planCardPurchase(
       input,
       today,
     ),
+    shares: input.shares,
+    receivable: input.shares.length > 0 ? await findSystemAccount(tx, 'receivable') : null,
   }
 }
 

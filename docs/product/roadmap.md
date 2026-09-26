@@ -88,7 +88,7 @@ updated: 2026-09-26
          4) and the channel; here a charge is built up to its message and Pix copia-e-cola:
      - [x] `contacts` module: table and routes (name, phone, notes, opt-out)
      - [x] `postings.contact_id`: receivable/payable lines carry their contact (CHECK row 4)
-     - [ ] Splitting expenses and card purchases with contacts (several, across installments)
+     - [x] Splitting expenses and card purchases with contacts (several, across installments)
      - [ ] `settlement` entries: a contact pays back
      - [ ] Contact balances (owed, overdue, next due) and own vs fronted on card invoices
      - [ ] Charges: `charges` + `charge_items`, built from a contact's open items, pt-BR message,

@@ -1,5 +1,5 @@
 import type { IsoDate } from '@shared/calendar/calendar.types'
-import { splitInstallments } from '@shared/installments/installments'
+import { allocateAcrossInstallments, splitInstallments } from '@shared/installments/installments'
 import {
   type AccountKind,
   MAX_INSTALLMENTS,
@@ -8,12 +8,14 @@ import {
 } from '@shared/ledger/ledger.constants'
 import type {
   AccountRef,
+  ContactShare,
   EntryPlan,
   PlanLine,
   PlanOf,
   PostingDraft,
   PostingsPlan,
   PostingsViolation,
+  SharingParty,
 } from '@shared/ledger/postings.types'
 import type { Cents } from '@shared/money/money.types'
 
@@ -50,7 +52,8 @@ function expenseViolation(plan: PlanOf<'expense'>): PostingsViolation | undefine
   return (
     positiveAmountViolation(plan.amountCents) ??
     moneyAccountViolation(plan.paidFrom) ??
-    kindViolation(plan.category, 'expense_category', 'NOT_AN_EXPENSE_CATEGORY')
+    kindViolation(plan.category, 'expense_category', 'NOT_AN_EXPENSE_CATEGORY') ??
+    sharesViolation(plan)
   )
 }
 
@@ -76,7 +79,8 @@ function cardPurchaseViolation(plan: PlanOf<'card_purchase'>): PostingsViolation
     positiveAmountViolation(plan.amountCents) ??
     kindViolation(plan.card, 'credit_card', 'NOT_A_CARD') ??
     kindViolation(plan.category, 'expense_category', 'NOT_AN_EXPENSE_CATEGORY') ??
-    installmentsViolation(plan)
+    installmentsViolation(plan) ??
+    sharesViolation(plan)
   )
 }
 
@@ -99,7 +103,7 @@ function openingBalanceViolation(plan: PlanOf<'opening_balance'>): PostingsViola
 function linesOf(plan: EntryPlan): PlanLine[] {
   switch (plan.entryType) {
     case 'expense':
-      return moneyMoves(plan.amountCents, plan.paidFrom, plan.category)
+      return expenseLines(plan)
     case 'income':
       return moneyMoves(plan.amountCents, plan.category, plan.receivedIn)
     case 'transfer':
@@ -116,11 +120,32 @@ function linesOf(plan: EntryPlan): PlanLine[] {
   }
 }
 
+function expenseLines(plan: PlanOf<'expense'>): PlanLine[] {
+  const ownCents = plan.amountCents - sharedCents(plan.shares)
+  const ownLine = ownCents > 0 ? [{ account: plan.category, amountCents: ownCents }] : []
+  const shareLines = plan.shares.map((share) => ({
+    account: receivableOf(plan),
+    amountCents: share.amountCents,
+    contactId: share.contactId,
+  }))
+  return [...ownLine, ...shareLines, { account: plan.paidFrom, amountCents: -plan.amountCents }]
+}
+
 function cardPurchaseLines(plan: PlanOf<'card_purchase'>): PlanLine[] {
   const amounts = splitInstallments(plan.amountCents, plan.installmentCount)
+  const parties = partiesOf(plan)
+  const allocation = allocateAcrossInstallments(
+    amounts,
+    parties.map((party) => party.amountCents),
+  )
   const perInstallment = plan.installments.map((target, index) => {
     const installmentNo = plan.firstInstallment + index
-    return { target, installmentNo, amountCents: amounts[installmentNo - 1] ?? 0 }
+    return {
+      target,
+      installmentNo,
+      amountCents: amounts[installmentNo - 1] ?? 0,
+      cells: allocation[installmentNo - 1] ?? [],
+    }
   })
   const cardLines = perInstallment.map(({ target, installmentNo, amountCents }) => ({
     account: plan.card,
@@ -129,13 +154,59 @@ function cardPurchaseLines(plan: PlanOf<'card_purchase'>): PlanLine[] {
     invoiceId: target.invoiceId,
     installmentNo,
   }))
-  const categoryLines = perInstallment.map(({ target, installmentNo, amountCents }) => ({
-    account: plan.category,
-    amountCents,
-    effectiveOn: target.effectiveOn,
-    installmentNo,
-  }))
-  return [...cardLines, ...categoryLines]
+  const partyLines = perInstallment.flatMap(({ target, installmentNo, cells }) =>
+    parties.flatMap((party, index) => {
+      const amountCents = cells[index] ?? 0
+      if (amountCents === 0) {
+        return []
+      }
+      return [
+        {
+          account: party.contactId ? receivableOf(plan) : plan.category,
+          amountCents,
+          effectiveOn: target.effectiveOn,
+          installmentNo,
+          ...(party.contactId ? { contactId: party.contactId } : {}),
+        },
+      ]
+    }),
+  )
+  return [...cardLines, ...partyLines]
+}
+
+function partiesOf(plan: PlanOf<'card_purchase'>): SharingParty[] {
+  const ownCents = plan.amountCents - sharedCents(plan.shares)
+  const own = ownCents > 0 ? [{ contactId: null, amountCents: ownCents }] : []
+  return [...own, ...plan.shares]
+}
+
+function receivableOf(plan: PlanOf<'expense' | 'card_purchase'>): AccountRef {
+  if (!plan.receivable) {
+    throw new Error('A shared entry needs the receivable account')
+  }
+  return plan.receivable
+}
+
+function sharedCents(shares: readonly ContactShare[]): Cents {
+  return shares.reduce((sum, share) => sum + share.amountCents, 0)
+}
+
+function sharesViolation(plan: PlanOf<'expense' | 'card_purchase'>): PostingsViolation | undefined {
+  if (plan.shares.length === 0) {
+    return undefined
+  }
+  if (plan.receivable?.kind !== 'receivable') {
+    return 'NOT_THE_RECEIVABLE_ACCOUNT'
+  }
+  if (
+    plan.shares.some((share) => !Number.isSafeInteger(share.amountCents) || share.amountCents <= 0)
+  ) {
+    return 'SHARE_NOT_POSITIVE'
+  }
+  if (new Set(plan.shares.map((share) => share.contactId)).size < plan.shares.length) {
+    return 'CONTACT_TWICE'
+  }
+  return sharedCents(plan.shares) > plan.amountCents ? 'SHARES_EXCEED_AMOUNT' : undefined
 }
 
 function moneyMoves(amountCents: Cents, from: AccountRef, to: AccountRef): PlanLine[] {
@@ -154,6 +225,7 @@ function toDrafts(lines: PlanLine[], occurredOn: IsoDate): PostingDraft[] {
     effectiveOn: line.effectiveOn ?? occurredOn,
     invoiceId: line.invoiceId ?? null,
     installmentNo: line.installmentNo ?? null,
+    contactId: line.contactId ?? null,
   }))
 }
 

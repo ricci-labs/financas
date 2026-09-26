@@ -14,6 +14,8 @@ export type EntryPlan =
       amountCents: Cents
       paidFrom: AccountRef
       category: AccountRef
+      shares: ContactShare[]
+      receivable: AccountRef | null
     }
   | {
       entryType: 'income'
@@ -38,6 +40,8 @@ export type EntryPlan =
       installmentCount: number
       firstInstallment: number
       installments: InstallmentTarget[]
+      shares: ContactShare[]
+      receivable: AccountRef | null
     }
   | {
       entryType: 'invoice_payment'
@@ -55,6 +59,16 @@ export type EntryPlan =
       openingBalanceAccount: AccountRef
     }
 
+export type ContactShare = {
+  contactId: string
+  amountCents: Cents
+}
+
+export type SharingParty = {
+  contactId: string | null
+  amountCents: Cents
+}
+
 export type InstallmentTarget = {
   invoiceId: string
   effectiveOn: IsoDate
@@ -68,6 +82,7 @@ export type PostingDraft = {
   effectiveOn: IsoDate
   invoiceId: string | null
   installmentNo: number | null
+  contactId: string | null
 }
 
 export type PostingsViolation =
@@ -83,6 +98,10 @@ export type PostingsViolation =
   | 'NOT_AN_INCOME_CATEGORY'
   | 'NOT_THE_OPENING_BALANCE_ACCOUNT'
   | 'SAME_ACCOUNT'
+  | 'NOT_THE_RECEIVABLE_ACCOUNT'
+  | 'SHARE_NOT_POSITIVE'
+  | 'CONTACT_TWICE'
+  | 'SHARES_EXCEED_AMOUNT'
 
 export type PostingsPlan =
   | { ok: true; postings: PostingDraft[] }
@@ -94,6 +113,7 @@ export type PlanLine = {
   effectiveOn?: IsoDate
   invoiceId?: string
   installmentNo?: number
+  contactId?: string
 }
 
 export type PlanOf<T extends EntryPlan['entryType']> = Extract<EntryPlan, { entryType: T }>

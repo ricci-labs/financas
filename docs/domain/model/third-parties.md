@@ -56,13 +56,22 @@ Sum of payments ≤ `charges.amount_cents` (trigger).
 
 ## Flows
 ### Splitting while recording
-"Jantar 300 no cartão X, 100 é do J e 100 da M": the service creates the entry with receivable
-lines for J and M (ledger example 3). If a contact doesn't exist yet, the agent offers to create
-it by name only.
+"Jantar 300 no cartão X, 100 é do J e 100 da M": `expense` and `card_purchase` inputs take
+`shares: [{ contactId, amountCents }]` (up to 10). `planPostings` gives the household's own part to
+the category and one `receivable` line per contact (ledger example 3). Refusals:
+- `SHARES_EXCEED_AMOUNT`: the shares add up to more than the amount;
+- `CONTACT_TWICE`: the same contact appears twice;
+- `SHARE_NOT_POSITIVE`: a share is zero or negative;
+- `CONTACT_NOT_AVAILABLE`: a contact of another workspace, or an unknown one.
+
+A contact may owe it all; then there is no own line. If a contact doesn't exist yet, the agent
+offers to create it by name only.
 
 ### Installments
 Each installment has its own receivable line (ledger example 2), so a monthly charge can include
-exactly "parcela 2/3 da TV". Monthly charges group all of a contact's items whose invoice is due
+exactly "parcela 2/3 da TV". The own part and each share are spread over the installments with
+`allocateAcrossInstallments` (`../billing-and-installments.md`). A purchase already in progress keeps
+the remaining installments of that same split. Monthly charges group all of a contact's items whose invoice is due
 that month.
 
 ### Sending a charge (direct, via the platform's WhatsApp)
