@@ -7,7 +7,7 @@ import type {
   UserPreferencesUpdate,
   UserRow,
 } from '@api/modules/identity/identity.types'
-import { and, eq, gt, inArray, isNull, ne, sql } from 'drizzle-orm'
+import { and, eq, gt, inArray, isNull, lte, ne, sql } from 'drizzle-orm'
 
 export async function insertUser(db: Database, user: UserRow): Promise<string> {
   const [inserted] = await db.insert(users).values(user).returning({ id: users.id })
@@ -249,4 +249,14 @@ export async function upsertUserPreferences(
     .insert(userPreferences)
     .values({ userId, ...change })
     .onConflictDoUpdate({ target: userPreferences.userId, set: change })
+}
+
+export async function deleteSessionsExpiredBy(db: Database, now: Date): Promise<number> {
+  const deleted = await db.delete(sessions).where(lte(sessions.expiresAt, now))
+  return deleted.rowCount ?? 0
+}
+
+export async function deleteAuthTokensExpiredBy(db: Database, now: Date): Promise<number> {
+  const deleted = await db.delete(authTokens).where(lte(authTokens.expiresAt, now))
+  return deleted.rowCount ?? 0
 }

@@ -93,9 +93,10 @@ module.exports = {
     {
       name: 'entry-points-use-services',
       severity: 'error',
-      comment: 'agent, channels and jobs never touch the DB directly (rule 4).',
+      comment:
+        'agent, channels and jobs never touch the DB directly; they only hand the Database type on (rule 4).',
       from: { path: '^apps/api/src/(agent|channels|jobs)' },
-      to: { path: '^apps/api/src/core/db' },
+      to: { path: '^apps/api/src/core/db', pathNot: '^apps/api/src/core/db/db\\.types\\.ts$' },
     },
     {
       name: 'web-features-isolated',

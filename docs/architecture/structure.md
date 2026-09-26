@@ -152,6 +152,11 @@ src/
 │   ├── memory.ts             # recent conversation per member
 │   └── pending-actions.ts    # proposed writes awaiting confirmation
 └── jobs/                     # croner schedules; each job calls services
+    ├── scheduler.ts          # startScheduler (one Cron per job, no overlap, stop waits for runs)
+    │                         #   and runJob (logs job.run.*; a failure never stops the schedule)
+    ├── scheduled-jobs.ts     # SCHEDULED_JOBS, the only list main.ts starts; schedule timezone
+    ├── jobs.types.ts
+    └── <job-name>.ts         # one ScheduledJob per file: name, cron pattern, run → one service
 src/testing/                  # test helpers: database.ts (connections, Postgres error codes),
 │                             #   fixtures.ts (users/workspaces through the real services),
 │                             #   mailer.ts (recording Mailer), logger.ts (capturing logger),

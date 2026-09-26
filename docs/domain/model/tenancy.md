@@ -57,6 +57,10 @@ Web sessions (ADR 0021). Global table: no `workspace_id`, no RLS, hard deleted. 
 - `resolveSession()` turns a cookie token into the user. It deletes expired sessions and sessions of
   disabled users, and renews `last_seen_at` / `expires_at` when the last renewal is an hour old.
 - `logout()` deletes the session. Doing it twice is harmless.
+- `purgeExpiredCredentials()` deletes every session and every auth token whose `expires_at` has
+  passed, used or not, and returns how many. The `purge-expired-credentials` job runs it daily at
+  03:17 (`jobs/`). A used token is kept until it expires, so a second click on a link still gets
+  `LINK_INVALID` from the same query.
 - `signUp()` is refused with `SIGNUP_DISABLED` unless `PUBLIC_SIGNUP_ENABLED`. It checks the input,
   hashes the password, creates an unverified user and emails a verification link. If the email
   already has an account, nothing changes: the owner gets a "you already have an account" email
@@ -81,7 +85,8 @@ Web sessions (ADR 0021). Global table: no `workspace_id`, no RLS, hard deleted. 
   (`POST /api/auth/signup`, `/verify-email/resend`, `/password/forgot`).
 
 ### `auth_tokens`
-Single-use email links (ADR 0021). Global table, no RLS, hard deleted once expired.
+Single-use email links (ADR 0021). Global table, no RLS, hard deleted once expired (by the daily
+purge job).
 
 | Column | Type | Notes |
 |---|---|---|

@@ -170,3 +170,8 @@ export type UserPreferences = {
 }
 
 export type UserPreferencesUpdate = Partial<UserPreferences>
+
+export type PurgedCredentials = {
+  sessions: number
+  authTokens: number
+}
