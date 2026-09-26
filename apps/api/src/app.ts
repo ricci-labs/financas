@@ -1,38 +1,12 @@
-import type { BackgroundTasks } from '@api/core/background-tasks'
-import type { Database } from '@api/core/db/client'
-import type { Mailer } from '@api/core/email/email.types'
+import type { AppDeps } from '@api/app.types'
 import { createBaseApp } from '@api/core/http/base-app'
 import type { AppEnv } from '@api/core/http/http.types'
 import { sameOriginWrites } from '@api/core/http/middleware/same-origin-writes'
 import { requireSession } from '@api/core/http/middleware/session'
-import type { SessionCookieSettings } from '@api/core/http/session-cookie'
-import type { Logger } from '@api/core/observability/logger'
 import { accessRoutes, workspaceAccess } from '@api/modules/access'
 import { healthRoutes, PUBLIC_HEALTH_ROUTES } from '@api/modules/health'
-import {
-  type AccountEmailLimits,
-  identityRoutes,
-  type LoginLimits,
-  PUBLIC_AUTH_ROUTES,
-  resolveSession,
-} from '@api/modules/identity'
+import { identityRoutes, PUBLIC_AUTH_ROUTES, resolveSession } from '@api/modules/identity'
 import { Hono } from 'hono'
-
-export type AppDeps = {
-  version: string
-  startedAt: number
-  isDatabaseReachable: () => Promise<boolean>
-  logger: Logger
-  db: Database
-  mailer: Mailer
-  publicUrl: string
-  isPublicSignupEnabled: boolean
-  cookie: SessionCookieSettings
-  loginLimits: LoginLimits
-  accountEmailLimits: AccountEmailLimits
-  trustedProxyHops: number
-  background: BackgroundTasks
-}
 
 export const PUBLIC_ROUTES: ReadonlySet<string> = new Set([
   ...PUBLIC_HEALTH_ROUTES,

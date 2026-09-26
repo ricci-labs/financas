@@ -1,9 +1,8 @@
 import { UnauthorizedError } from '@api/core/http/errors'
-import type { AppEnv } from '@api/core/http/http.types'
+import type { AppEnv, SessionGuardOptions } from '@api/core/http/http.types'
 import {
   clearSessionCookie,
   readSessionCookie,
-  type SessionCookieSettings,
   writeSessionCookie,
 } from '@api/core/http/session-cookie'
 import type { Context } from 'hono'
@@ -11,19 +10,6 @@ import { createMiddleware } from 'hono/factory'
 import { routePath } from 'hono/route'
 
 const LAST_MATCHED_ROUTE = -1
-
-export type ResolvedSession = {
-  sessionId: string
-  userId: string
-  expiresAt: Date
-  isRenewed: boolean
-}
-
-export type SessionGuardOptions = {
-  resolve: (token: string) => Promise<ResolvedSession | null>
-  publicRoutes: ReadonlySet<string>
-  cookie: SessionCookieSettings
-}
 
 export function requireSession({ resolve, publicRoutes, cookie }: SessionGuardOptions) {
   return createMiddleware<AppEnv>(async (c, next) => {

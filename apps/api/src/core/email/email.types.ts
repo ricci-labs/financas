@@ -1,4 +1,4 @@
-import type { Env } from '@api/core/config/env'
+import type { Env } from '@api/core/config/env.schemas'
 
 export type MailerEnv = Pick<
   Env,
@@ -26,4 +26,16 @@ export type SentEmail = {
 
 export type Mailer = {
   send: (message: EmailMessage) => Promise<SentEmail>
+}
+
+export type EmailContent = {
+  heading: string
+  paragraphs: string[]
+  action: { label: string; url: string }
+  notes: string[]
+}
+
+export type RenderedEmail = {
+  text: string
+  html: string
 }

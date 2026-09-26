@@ -1,4 +1,10 @@
-import type { AccountClass, AccountKind, EntrySource, InvoiceStatus } from '@financas/shared'
+import type {
+  AccountClass,
+  AccountKind,
+  AccountRef,
+  EntrySource,
+  InvoiceStatus,
+} from '@financas/shared'
 
 export type NewLedgerAccount = {
   workspaceId: string
@@ -69,3 +75,5 @@ export type InvoiceTotal = {
   paidCents: number
   dueCents: number
 }
+
+export type AccountsById = ReadonlyMap<string, AccountRef>

@@ -1,10 +1,9 @@
-import type { BackgroundTasks } from '@api/core/background-tasks'
-import type { Clock } from '@api/core/clock'
+import type { BackgroundTasks } from '@api/core/background-tasks.types'
+import type { Clock } from '@api/core/clock.types'
 import type { Database } from '@api/core/db/client'
 import type { Mailer } from '@api/core/email/email.types'
-import type { SessionCookieSettings } from '@api/core/http/session-cookie'
-import type { AttemptLimiter } from '@api/core/security/attempt-limiter'
-import type { PasswordCost } from '@api/core/security/passwords'
+import type { SessionCookieSettings } from '@api/core/http/http.types'
+import type { AttemptLimiter, PasswordCost } from '@api/core/security/security.types'
 
 export type IdentityDeps = {
   clock: Clock

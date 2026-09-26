@@ -24,7 +24,7 @@ financas/
 ├── .github/                 # workflows (ci, deploy), PR template, dependabot
 ├── .claude/                 # project skills and Claude Code hooks (engineering/claude-workflow.md)
 ├── compose.dev.yml          # local Postgres 18 (dev and CI), roles from docker/postgres/init
-├── scripts/                 # repo checks: no-comments, docs frontmatter/links
+├── scripts/                 # repo checks: no-comments, file roles, docs frontmatter/links
 ├── lefthook.yml             # git hooks
 ├── commitlint.config.ts
 ├── pnpm-workspace.yaml

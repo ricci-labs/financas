@@ -1,9 +1,5 @@
+import type { BackgroundTasks } from '@api/core/background-tasks.types'
 import type { Logger } from '@api/core/observability/logger'
-
-export type BackgroundTasks = {
-  run: (logger: Logger, task: string, work: () => Promise<unknown>) => void
-  idle: () => Promise<void>
-}
 
 export function createBackgroundTasks(): BackgroundTasks {
   const pending = new Set<Promise<void>>()

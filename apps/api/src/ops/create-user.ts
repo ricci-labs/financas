@@ -2,7 +2,8 @@ import { loadEnv } from '@api/core/config/env'
 import { createDatabase } from '@api/core/db/client'
 import { AppError } from '@api/core/http/errors'
 import { registerOwner } from '@api/modules/onboarding'
-import { openTerminal, type Terminal } from '@api/ops/terminal'
+import type { Terminal } from '@api/ops/ops.types'
+import { openTerminal } from '@api/ops/terminal'
 import { PASSWORD_MIN_LENGTH } from '@financas/shared'
 
 const FAILURE_EXIT_CODE = 1

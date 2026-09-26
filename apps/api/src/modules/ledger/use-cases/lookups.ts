@@ -1,9 +1,8 @@
 import type { WorkspaceTransaction } from '@api/core/db/tx'
 import { ValidationError } from '@api/core/http/errors'
 import { findUsableAccounts } from '@api/modules/ledger/ledger.repository'
+import type { AccountsById } from '@api/modules/ledger/ledger.types'
 import type { AccountRef } from '@financas/shared'
-
-export type AccountsById = ReadonlyMap<string, AccountRef>
 
 export async function loadAccounts(
   tx: WorkspaceTransaction,

@@ -15,7 +15,7 @@
     "format": "biome check --write .",
     "depcruise": "depcruise apps packages --config .dependency-cruiser.cjs",
     "docs:check": "node scripts/docs-check.mjs",
-    "check": "pnpm lint && pnpm lint:comments && pnpm typecheck && pnpm depcruise && pnpm test && pnpm docs:check",
+    "check": "pnpm lint && pnpm lint:comments && pnpm lint:file-roles && pnpm typecheck && pnpm depcruise && pnpm test && pnpm docs:check",
     "prepare": "lefthook install || true",
     "lint:comments": "node scripts/check-no-comments.mjs",
     "db:up": "docker compose -f compose.dev.yml up -d --wait",
@@ -24,7 +24,8 @@
     "db:generate": "pnpm --filter @financas/api db:generate",
     "db:migrate": "pnpm --filter @financas/api db:migrate",
     "test:integration": "pnpm --filter @financas/api test:integration",
-    "ops:create-user": "pnpm --filter @financas/api ops:create-user"
+    "ops:create-user": "pnpm --filter @financas/api ops:create-user",
+    "lint:file-roles": "node scripts/check-file-roles.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.14",

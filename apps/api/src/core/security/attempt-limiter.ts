@@ -1,20 +1,8 @@
-export type AttemptLimiterOptions = {
-  maxAttempts: number
-  windowMs: number
-  maxTrackedKeys?: number
-  now?: () => number
-}
-
-export type AttemptCheck = {
-  isBlocked: boolean
-  retryAfterSeconds: number
-}
-
-export type AttemptLimiter = {
-  check: (key: string) => AttemptCheck
-  record: (key: string) => void
-  clear: (key: string) => void
-}
+import type {
+  AttemptCheck,
+  AttemptLimiter,
+  AttemptLimiterOptions,
+} from '@api/core/security/security.types'
 
 type Window = {
   attempts: number

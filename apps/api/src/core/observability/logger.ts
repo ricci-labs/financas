@@ -1,4 +1,4 @@
-import type { Env } from '@api/core/config/env'
+import type { Env } from '@api/core/config/env.schemas'
 import { type DestinationStream, pino } from 'pino'
 
 type LoggerEnv = Pick<Env, 'LOG_LEVEL' | 'NODE_ENV' | 'APP_VERSION'>
