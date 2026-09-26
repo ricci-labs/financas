@@ -69,6 +69,12 @@ src/
 │   ├── insights.types.ts     # Insight { code, severity, subject, values }
 │   ├── <insight-name>.ts     # + <insight-name>.test.ts
 │   └── insights.ts           # INSIGHTS
+├── recurrence/
+│   ├── recurrence.constants.ts # frequencies, interval and business-day limits
+│   ├── recurrence.types.ts   # RecurrenceSchedule, DateRange
+│   ├── recurrence.schemas.ts # recurrenceScheduleSchema
+│   ├── recurrence.ts         # dueDatesBetween: due dates of a schedule in a range
+│   └── recurrence.test.ts
 ├── identity/
 │   ├── identity.schemas.ts   # email, password (12–128), display name, credentials
 │   └── identity.schemas.test.ts
