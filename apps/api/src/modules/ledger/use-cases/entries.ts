@@ -2,7 +2,7 @@ import { type Clock, systemClock } from '@api/core/clock'
 import type { Database } from '@api/core/db/client'
 import { postgresConstraintName } from '@api/core/db/errors'
 import { type WorkspaceTransaction, withWorkspace } from '@api/core/db/tx'
-import { ConflictError, NotFoundError, ValidationError } from '@api/core/http/errors'
+import { ConflictError, NotFoundError, parseOrThrow, ValidationError } from '@api/core/http/errors'
 import {
   findSystemAccount,
   insertEntry,
@@ -20,7 +20,7 @@ import type {
 } from '@api/modules/ledger/ledger.types'
 import { planCardPurchase, planInvoicePayment } from '@api/modules/ledger/use-cases/card-entries'
 import { loadAccounts, pick } from '@api/modules/ledger/use-cases/lookups'
-import { parseOrThrow, refusingBrokenRules } from '@api/modules/ledger/use-cases/rules'
+import { refusingBrokenRules } from '@api/modules/ledger/use-cases/rules'
 import { currentWorkspaceDefaults } from '@api/modules/workspaces'
 import {
   type EntryInput,

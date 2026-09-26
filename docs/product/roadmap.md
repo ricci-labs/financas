@@ -33,7 +33,8 @@ updated: 2026-09-25
 - [ ] **HTTP API + web auth** (chosen 2026-09-25; password login, ADR 0021). Small PRs, in order:
   1. [x] ADRs 0021 (auth) and 0022 (email), and this plan
   2. [x] `identity`: `sessions` and `auth_tokens` tables, password hashing (scrypt)
-  3. [ ] `identity`: create user, login, resolve session, logout services + `ops:create-user`
+  3. [x] `identity`: create user, login, resolve session, logout services
+  3b. [ ] `ops:create-user` script (first user + first workspace, password typed without echo)
   4. [ ] Email: `core/email` `Mailer` with Nodemailer (ADR 0022), `.eml` outbox in development
   5. [ ] `identity`: sign-up (behind `PUBLIC_SIGNUP_ENABLED`), email verification, password reset
   6. [ ] HTTP core: error handler (`AppError` → status, error ref), request id, request logger

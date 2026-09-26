@@ -58,6 +58,9 @@ src/
 │   ├── cards.types.ts        # CardCycle, InvoiceRef
 │   ├── billing-cycle.ts      # which invoice a purchase / installment falls into; invoice status
 │   └── billing-cycle.test.ts
+├── identity/
+│   ├── identity.schemas.ts   # email, password (12–128), display name, credentials
+│   └── identity.schemas.test.ts
 ├── installments/
 │   ├── installments.ts       # split + multi-party allocation
 │   └── installments.test.ts
@@ -103,11 +106,12 @@ src/
 │   │   ├── tenancy.ts        # app role + current workspace for RLS policies
 │   │   └── tx.ts             # withWorkspace(): sets app.workspace_id per transaction
 │   ├── http/middleware/      # auth, request id, error handler
-│   ├── http/errors.ts        # AppError hierarchy → HTTP status
+│   ├── http/errors.ts        # AppError hierarchy → HTTP status; parseOrThrow(schema, input, code)
 │   ├── observability/        # OTel register, pino logger, metrics registry, spans, errors
 │   │                         #   (see docs/operations/observability.md)
 │   ├── security/tokens.ts    # random tokens and their SHA-256 hashes
 │   ├── security/passwords.ts # scrypt password hashing and verification (ADR 0021)
+│   ├── concurrency.ts        # createConcurrencyLimit(): at most N async tasks at once
 │   └── clock.ts              # injectable "now" (Clock, systemClock)
 ├── modules/                  # one folder per domain (see "Module anatomy")
 │   ├── identity/             # users, sessions, channel identities (WhatsApp numbers)

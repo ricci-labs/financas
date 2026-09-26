@@ -44,7 +44,19 @@ Web sessions (ADR 0021). Global table: no `workspace_id`, no RLS, hard deleted. 
 | `token_hash` | text unique | SHA-256 of the cookie token. The raw token exists only in the cookie |
 | `expires_at` | timestamptz | 30 days after the last use |
 | `last_seen_at` | timestamptz | Refreshed at most once per hour, together with `expires_at` |
-| `user_agent` | text null | Shown in a future "active sessions" list |
+| `user_agent` | text null | Shown in a future "active sessions" list (cut to 512 characters) |
+
+**Flow** (`identity` service; rules in `@financas/shared` `identity.schemas.ts`):
+- `createUser()` trims and lowercases the email, checks the name and the password (12–128
+  characters), hashes it and inserts the user, verified or not. A taken email (any case) is
+  `EMAIL_TAKEN`.
+- `login()` answers `INVALID_CREDENTIALS` for a wrong password, an unknown email, a disabled user or
+  a malformed input, always after the same scrypt work. A correct password on an unverified email is
+  `EMAIL_NOT_VERIFIED`. On success it rehashes an outdated password and starts a 30-day session,
+  returning the raw token once.
+- `resolveSession()` turns a cookie token into the user. It deletes expired sessions and sessions of
+  disabled users, and renews `last_seen_at` / `expires_at` when the last renewal is an hour old.
+- `logout()` deletes the session. Doing it twice is harmless.
 
 ### `auth_tokens`
 Single-use email links (ADR 0021). Global table, no RLS, hard deleted once expired.
