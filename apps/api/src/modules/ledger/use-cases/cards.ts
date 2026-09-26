@@ -6,9 +6,15 @@ import {
   insertAccount,
   insertCardDetails,
   lockCardDetails,
+  selectActiveCards,
   updateCardDetails,
 } from '@api/modules/ledger/ledger.repository'
-import type { CreatedAccount, LedgerContext, WorkspaceCard } from '@api/modules/ledger/ledger.types'
+import type {
+  CardItem,
+  CreatedAccount,
+  LedgerContext,
+  WorkspaceCard,
+} from '@api/modules/ledger/ledger.types'
 import { refusingTakenAccountNames } from '@api/modules/ledger/use-cases/rules'
 import { currentWorkspaceDefaults } from '@api/modules/workspaces'
 import { cardChangeSchema, isMoneyAccountKind, newCardSchema } from '@financas/shared'
@@ -49,6 +55,10 @@ export async function createCard(
       return { accountId }
     }),
   )
+}
+
+export function listCards(db: Database, workspaceId: string): Promise<CardItem[]> {
+  return withWorkspace(db, workspaceId, (tx) => selectActiveCards(tx))
 }
 
 export async function changeCard(

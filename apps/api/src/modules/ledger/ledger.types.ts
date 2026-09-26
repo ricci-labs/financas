@@ -142,3 +142,18 @@ export type LedgerAccountItem = {
 export type LedgerRouteDeps = {
   db: Database
 }
+
+export type CardItem = {
+  accountId: string
+  name: string
+  color: string | null
+  icon: string | null
+  sortOrder: number
+  archivedAt: Date | null
+  closingDay: number
+  dueDay: number
+  purchaseOnClosingDayGoesNext: boolean
+  limitCents: number | null
+  holderUserId: string | null
+  paymentAccountId: string | null
+}
