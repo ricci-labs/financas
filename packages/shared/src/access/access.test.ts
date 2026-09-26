@@ -3,6 +3,7 @@ import {
   isValidPermission,
   MODULE_ACTIONS,
   missingViewPermissions,
+  permissionsBeyond,
   ROLE_TEMPLATES,
 } from '@shared/access/access'
 import type { SystemRoleKey } from '@shared/access/access.constants'
@@ -75,5 +76,25 @@ describe('missingViewPermissions', () => {
         { module: 'cards', action: 'update' },
       ]),
     ).toEqual([{ module: 'entries', action: 'view' }])
+  })
+})
+
+describe('permissionsBeyond', () => {
+  const held = [
+    { module: 'entries', action: 'view' },
+    { module: 'entries', action: 'create' },
+  ] as const
+
+  it('lists what would be granted beyond what the granter holds', () => {
+    expect(
+      permissionsBeyond(held, [
+        { module: 'entries', action: 'view' },
+        { module: 'members', action: 'delete' },
+      ]),
+    ).toEqual([{ module: 'members', action: 'delete' }])
+  })
+
+  it('is empty when every wanted permission is held', () => {
+    expect(permissionsBeyond(held, [{ module: 'entries', action: 'create' }])).toEqual([])
   })
 })

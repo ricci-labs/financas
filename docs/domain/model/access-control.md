@@ -129,6 +129,22 @@ permissions, so the web can hide what the user can't do.
 - `access` orchestrates it: it locks the membership through `members`, checks the roles, and reads
   names through `identity`, so `members` never imports `access`.
 
+### Roles (`access.routes.ts`, use cases in `access/use-cases/roles.ts`)
+| Route | Permission | Behavior |
+|---|---|---|
+| `GET /roles` | `members:view` | active roles (system ones first by creation) with their permissions |
+| `POST /roles` `{ name, description?, permissions }` | `members:create` | custom role → `201 { roleId }` |
+| `PATCH /roles/:roleId` `{ name?, description?, permissions? }` | `members:update` | the permission list replaces the old one. The **owner role can't be changed** (`403 OWNER_ROLE_LOCKED`); the other system roles can |
+| `DELETE /roles/:roleId` (optional `{ reason }`) | `members:delete` | soft delete of a custom role. System roles → `409 SYSTEM_ROLE`; a role used by a member or a pending invitation → `409 ROLE_IN_USE` (DB trigger) |
+
+Permissions are validated by the shared `newRoleSchema`: valid `(module, action)` pairs, `view` on
+every module with an action, duplicates dropped. A taken name (any case) → `409 ROLE_NAME_TAKEN`.
+
+**No privilege escalation:** nobody can grant permissions they don't hold themselves (shared
+`permissionsBeyond`). It applies when creating or editing a role, when giving a member a role, and
+when inviting with a role → `403 PERMISSION_ESCALATION`. An owner holds the whole matrix, so owners
+are never limited by it.
+
 `GET /api/workspaces` lists the caller's workspaces (name, archived flag, role), sorted by name. RLS
 hides other tenants' memberships, so the ids come from the SECURITY DEFINER function
 `user_workspace_ids(user_id)` (ADR 0019): active memberships of workspaces that aren't deleted,

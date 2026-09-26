@@ -1,5 +1,5 @@
 import type { Database } from '@api/core/db/db.types'
-import type { Permission, SystemRoleKey } from '@financas/shared'
+import type { NewRole, Permission, RoleChange, SystemRoleKey } from '@financas/shared'
 
 export type SystemRoleIds = Record<SystemRoleKey, string>
 
@@ -56,6 +56,7 @@ export type MemberActor = {
   workspaceId: string
   userId: string
   roleKey: SystemRoleKey | null
+  permissions: readonly Permission[]
 }
 
 export type ChangeMemberRoleInput = {
@@ -67,5 +68,38 @@ export type ChangeMemberRoleInput = {
 export type RemoveMemberInput = {
   actor: MemberActor
   membershipId: string
+  reason?: string
+}
+
+export type RoleItem = WorkspaceRole & {
+  description: string | null
+  permissions: Permission[]
+}
+
+export type RoleDetails = {
+  name?: string
+  description?: string | null
+}
+
+export type RoleDeletion = {
+  deletedAt: Date
+  deletedByUserId: string
+  deleteReason: string | null
+}
+
+export type CreateRoleInput = {
+  actor: MemberActor
+  role: NewRole
+}
+
+export type ChangeRoleInput = {
+  actor: MemberActor
+  roleId: string
+  change: RoleChange
+}
+
+export type DeleteRoleInput = {
+  actor: MemberActor
+  roleId: string
   reason?: string
 }

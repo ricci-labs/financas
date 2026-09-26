@@ -2,7 +2,7 @@ import type { BackgroundTasks } from '@api/core/background-tasks.types'
 import type { Database } from '@api/core/db/db.types'
 import type { Mailer } from '@api/core/email/email.types'
 import type { AccountEmailDeps, LinkLimitDeps } from '@api/modules/identity'
-import type { InvitationRequest, SystemRoleKey } from '@financas/shared'
+import type { InvitationRequest, Permission, SystemRoleKey } from '@financas/shared'
 
 export type CreateWorkspaceInput = {
   name: string
@@ -30,6 +30,7 @@ export type InviteMemberInput = {
   workspaceId: string
   inviterUserId: string
   inviterRoleKey: SystemRoleKey | null
+  inviterPermissions: readonly Permission[]
   request: InvitationRequest
 }
 

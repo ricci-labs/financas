@@ -8,16 +8,30 @@ import {
 } from '@api/modules/access/access.middleware'
 import {
   changeMemberRole,
+  changeRole,
+  createRole,
+  deleteRole,
   listMembers,
+  listRoles,
   listWorkspacesOfUser,
   loadWorkspaceAccess,
   removeMember,
 } from '@api/modules/access/access.service'
 import type { AccessRouteDeps, MemberActor } from '@api/modules/access/access.types'
-import { memberParamsSchema, memberRemovalSchema, memberRoleChangeSchema } from '@financas/shared'
+import {
+  deletionRequestSchema,
+  memberParamsSchema,
+  memberRemovalSchema,
+  memberRoleChangeSchema,
+  newRoleSchema,
+  roleChangeSchema,
+  roleParamsSchema,
+} from '@financas/shared'
 import { type Context, Hono } from 'hono'
 
+const CREATED = 201
 const NO_CONTENT = 204
+const ROLE_INVALID = 'ROLE_INVALID'
 
 export function accessRoutes({ db }: AccessRouteDeps) {
   const member = pathParams(memberParamsSchema, 'MEMBER_NOT_FOUND')
@@ -66,6 +80,47 @@ export function accessRoutes({ db }: AccessRouteDeps) {
       await removeMember(db, { actor: actorOf(c), membershipId: currentWorkspace(c).membershipId })
       return c.body(null, NO_CONTENT)
     })
+    .route('/roles', roleRoutes({ db }))
+}
+
+function roleRoutes({ db }: AccessRouteDeps) {
+  const role = pathParams(roleParamsSchema, 'ROLE_NOT_FOUND')
+
+  return new Hono<AppEnv>()
+    .get('/', authorize('members', 'view'), async (c) => {
+      return c.json(await listRoles(db, currentWorkspace(c).workspaceId))
+    })
+    .post('/', authorize('members', 'create'), jsonBody(newRoleSchema, ROLE_INVALID), async (c) => {
+      return c.json(await createRole(db, { actor: actorOf(c), role: c.req.valid('json') }), CREATED)
+    })
+    .patch(
+      '/:roleId',
+      authorize('members', 'update'),
+      role,
+      jsonBody(roleChangeSchema, ROLE_INVALID),
+      async (c) => {
+        await changeRole(db, {
+          actor: actorOf(c),
+          roleId: c.req.valid('param').roleId,
+          change: c.req.valid('json'),
+        })
+        return c.body(null, NO_CONTENT)
+      },
+    )
+    .delete(
+      '/:roleId',
+      authorize('members', 'delete'),
+      role,
+      jsonBody(deletionRequestSchema, 'DELETION_INVALID'),
+      async (c) => {
+        await deleteRole(db, {
+          actor: actorOf(c),
+          roleId: c.req.valid('param').roleId,
+          reason: c.req.valid('json').reason,
+        })
+        return c.body(null, NO_CONTENT)
+      },
+    )
 }
 
 export function workspaceListRoutes({ db }: AccessRouteDeps) {
@@ -76,6 +131,6 @@ export function workspaceListRoutes({ db }: AccessRouteDeps) {
 }
 
 function actorOf(c: Context<AppEnv>): MemberActor {
-  const { workspaceId, roleKey } = currentWorkspace(c)
-  return { workspaceId, roleKey, userId: currentSession(c).userId }
+  const { workspaceId, roleKey, permissions } = currentWorkspace(c)
+  return { workspaceId, roleKey, permissions, userId: currentSession(c).userId }
 }
