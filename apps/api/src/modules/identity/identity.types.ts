@@ -1,4 +1,5 @@
 import type { Clock } from '@api/core/clock'
+import type { Mailer } from '@api/core/email/email.types'
 import type { PasswordCost } from '@api/core/security/passwords'
 
 export type IdentityDeps = {
@@ -30,4 +31,31 @@ export type ActiveSession = {
   userId: string
   expiresAt: Date
   isRenewed: boolean
+}
+
+export type AuthTokenPurpose = 'email_verification' | 'password_reset'
+
+export type AccountEmailDeps = Partial<IdentityDeps> & {
+  mailer: Mailer
+  publicUrl: string
+}
+
+export type SignUpDeps = AccountEmailDeps & {
+  isPublicSignupEnabled: boolean
+}
+
+export type SignUpInput = {
+  email: string
+  displayName: string
+  password: string
+}
+
+export type EmailOnlyInput = {
+  email: string
+}
+
+export type EmailRecipient = {
+  userId: string
+  email: string
+  displayName: string
 }

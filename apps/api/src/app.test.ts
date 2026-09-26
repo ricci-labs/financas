@@ -1,5 +1,5 @@
 import { createApp } from '@api/app'
-import { loadEnv } from '@api/core/config/env'
+import { loadEnv, publicUrlOf } from '@api/core/config/env'
 import { describe, expect, it } from 'vitest'
 
 const FIVE_SECONDS_AGO = Date.now() - 5_000
@@ -46,6 +46,7 @@ describe('loadEnv', () => {
       LOG_LEVEL: 'info',
       APP_VERSION: 'dev',
       DATABASE_URL: LOCAL_DATABASE_URL,
+      PUBLIC_SIGNUP_ENABLED: false,
       SMTP_PORT: 587,
       EMAIL_FROM_NAME: 'Finanças',
       EMAIL_OUTBOX_DIR: '.private/outbox',
@@ -77,18 +78,30 @@ describe('loadEnv', () => {
     expect(() => loadEnv(onlyPassword)).not.toThrow(/smtp-secret-value/)
   })
 
-  it('requires SMTP_HOST and EMAIL_FROM in production only', () => {
+  it('requires PUBLIC_URL, SMTP_HOST and EMAIL_FROM in production only', () => {
     const production = { DATABASE_URL: LOCAL_DATABASE_URL, NODE_ENV: 'production' }
     expect(() => loadEnv(production)).toThrow(
-      /SMTP_HOST: required in production; EMAIL_FROM: required in production/,
+      /PUBLIC_URL: required in production; SMTP_HOST: required in production; EMAIL_FROM: required in production/,
     )
-    expect(() =>
-      loadEnv({
-        ...production,
-        SMTP_HOST: 'smtp.example.test',
-        EMAIL_FROM: 'no-reply@example.test',
-      }),
-    ).not.toThrow()
+    const complete = {
+      ...production,
+      PUBLIC_URL: 'https://financas.example.test',
+      SMTP_HOST: 'smtp.example.test',
+      EMAIL_FROM: 'no-reply@example.test',
+    }
+    expect(() => loadEnv(complete)).not.toThrow()
+  })
+
+  it('turns public sign-up on only when asked', () => {
+    expect(loadEnv({ DATABASE_URL: LOCAL_DATABASE_URL }).PUBLIC_SIGNUP_ENABLED).toBe(false)
+    const enabled = { DATABASE_URL: LOCAL_DATABASE_URL, PUBLIC_SIGNUP_ENABLED: 'true' }
+    expect(loadEnv(enabled).PUBLIC_SIGNUP_ENABLED).toBe(true)
+  })
+
+  it('uses the local web address as the public URL in development', () => {
+    expect(publicUrlOf(loadEnv({ DATABASE_URL: LOCAL_DATABASE_URL }))).toBe('http://localhost:5173')
+    const notWeb = { DATABASE_URL: LOCAL_DATABASE_URL, PUBLIC_URL: 'ftp://files.example.test' }
+    expect(() => loadEnv(notWeb)).toThrow(/PUBLIC_URL/)
   })
 
   it('requires a postgres DATABASE_URL', () => {

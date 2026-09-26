@@ -57,6 +57,19 @@ Web sessions (ADR 0021). Global table: no `workspace_id`, no RLS, hard deleted. 
 - `resolveSession()` turns a cookie token into the user. It deletes expired sessions and sessions of
   disabled users, and renews `last_seen_at` / `expires_at` when the last renewal is an hour old.
 - `logout()` deletes the session. Doing it twice is harmless.
+- `signUp()` is refused with `SIGNUP_DISABLED` unless `PUBLIC_SIGNUP_ENABLED`. It checks the input,
+  hashes the password, creates an unverified user and emails a verification link. If the email
+  already has an account, nothing changes: the owner gets a "you already have an account" email
+  with their stored name (never the name typed in the form) and a link to reset the password.
+- `requestEmailVerification()` emails a new link to an unverified, active user and retires the
+  old one. For anyone else it silently does nothing.
+- `verifyEmail()` uses the token in one statement: it marks the token used and the email verified
+  only if the token is an unused `email_verification` token that hasn't expired. Anything else is
+  `LINK_INVALID`.
+- Email links carry the token in the URL fragment (`/verify-email#token=...`), which browsers never
+  send to a server or put in a `Referer`. The web page reads it and posts it to the API.
+- The routes for sign-up, verification requests and forgotten passwords must answer `202` without
+  waiting for the work, so the response time doesn't reveal which branch ran (PR 7).
 
 ### `auth_tokens`
 Single-use email links (ADR 0021). Global table, no RLS, hard deleted once expired.

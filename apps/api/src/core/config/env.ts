@@ -4,7 +4,8 @@ const LOG_LEVELS = ['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'
 const DEFAULT_SMTP_PORT = 587
 const DEFAULT_EMAIL_FROM_NAME = 'Finanças'
 const DEFAULT_EMAIL_OUTBOX_DIR = '.private/outbox'
-const REQUIRED_IN_PRODUCTION = ['SMTP_HOST', 'EMAIL_FROM'] as const
+const DEFAULT_PUBLIC_URL = 'http://localhost:5173'
+const REQUIRED_IN_PRODUCTION = ['PUBLIC_URL', 'SMTP_HOST', 'EMAIL_FROM'] as const
 
 const envSchema = z
   .object({
@@ -13,6 +14,8 @@ const envSchema = z
     LOG_LEVEL: z.enum(LOG_LEVELS).default('info'),
     APP_VERSION: z.string().min(1).default('dev'),
     DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
+    PUBLIC_URL: z.url({ protocol: /^https?$/ }).optional(),
+    PUBLIC_SIGNUP_ENABLED: z.stringbool().default(false),
     SMTP_HOST: z.string().min(1).optional(),
     SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(DEFAULT_SMTP_PORT),
     SMTP_SECURE: z.stringbool().optional(),
@@ -43,6 +46,10 @@ const envSchema = z
   })
 
 export type Env = z.infer<typeof envSchema>
+
+export function publicUrlOf(env: Pick<Env, 'PUBLIC_URL'>): string {
+  return env.PUBLIC_URL ?? DEFAULT_PUBLIC_URL
+}
 
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
   const result = envSchema.safeParse(source)

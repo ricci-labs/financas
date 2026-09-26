@@ -20,7 +20,7 @@ Pipeline: `../engineering/ci-cd.md`. Decision: `../decisions/0010-deploy-ghcr-do
 | `DATABASE_URL` | App connection as `financas_app` (RLS applies) |
 | `DATABASE_MIGRATION_URL` | Owner connection as `financas_owner`, used only to run migrations |
 | `ANTHROPIC_API_KEY` | Agent |
-| `PUBLIC_URL` | Base URL of the dashboard, used in email links |
+| `PUBLIC_URL` | Base URL of the dashboard, used in email links. Required in production (development: `http://localhost:5173`) |
 | `PUBLIC_SIGNUP_ENABLED` | `true` opens public sign-up; default `false` (ADR 0021) |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE` | Email provider (ADR 0022). `SMTP_HOST` is required in production. Port `587` = STARTTLS, `465` = implicit TLS; TLS 1.2+ is always required |
 | `SMTP_USER`, `SMTP_PASSWORD` | SMTP login, as a pair |

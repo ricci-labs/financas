@@ -1,12 +1,21 @@
 import type { Database } from '@api/core/db/client'
-import { sessions, users } from '@api/modules/identity/identity.table'
-import { eq, sql } from 'drizzle-orm'
+import { authTokens, sessions, users } from '@api/modules/identity/identity.table'
+import type { AuthTokenPurpose } from '@api/modules/identity/identity.types'
+import { and, eq, isNull, sql } from 'drizzle-orm'
 
 type UserRow = {
   email: string
   displayName: string
   passwordHash: string
   emailVerifiedAt: Date | null
+}
+
+type AuthTokenRow = {
+  userId: string
+  purpose: AuthTokenPurpose
+  tokenHash: string
+  createdAt: Date
+  expiresAt: Date
 }
 
 type SessionRow = {
@@ -80,4 +89,58 @@ export async function deleteSession(db: Database, sessionId: string): Promise<vo
 
 export async function deleteSessionByTokenHash(db: Database, tokenHash: string): Promise<void> {
   await db.delete(sessions).where(eq(sessions.tokenHash, tokenHash))
+}
+
+export async function findAccountByEmail(db: Database, email: string) {
+  const [account] = await db
+    .select({
+      userId: users.id,
+      email: users.email,
+      displayName: users.displayName,
+      emailVerifiedAt: users.emailVerifiedAt,
+      disabledAt: users.disabledAt,
+    })
+    .from(users)
+    .where(eq(sql`lower(${users.email})`, email.toLowerCase()))
+  return account
+}
+
+export async function deleteOpenAuthTokens(
+  db: Database,
+  userId: string,
+  purpose: AuthTokenPurpose,
+): Promise<void> {
+  await db
+    .delete(authTokens)
+    .where(
+      and(
+        eq(authTokens.userId, userId),
+        eq(authTokens.purpose, purpose),
+        isNull(authTokens.usedAt),
+      ),
+    )
+}
+
+export async function insertAuthToken(db: Database, token: AuthTokenRow): Promise<void> {
+  await db.insert(authTokens).values(token)
+}
+
+export async function verifyEmailWithToken(
+  db: Database,
+  tokenHash: string,
+  now: Date,
+): Promise<string | undefined> {
+  const result = await db.execute<{ id: string }>(sql`
+    with used_token as (
+      update auth_tokens set used_at = ${now}
+      where token_hash = ${tokenHash}
+        and purpose = 'email_verification'
+        and used_at is null
+        and expires_at > ${now}
+      returning user_id
+    )
+    update users set email_verified_at = coalesce(email_verified_at, ${now})
+    where id in (select user_id from used_token)
+    returning id`)
+  return result.rows[0]?.id
 }
