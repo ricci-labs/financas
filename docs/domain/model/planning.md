@@ -23,6 +23,10 @@ member confirms.
   first, then closest amount.
 - A confirmed match sets `matched` + `matched_entry_id`; an entry pays one occurrence at most
   (`ENTRY_ALREADY_MATCHED`). Undoing it puts the occurrence back to `pending`.
+- **A match follows its entry** (deferred trigger `planned_occurrences_follow_deleted_entry`, run at
+  commit as the owner, scoped to the entry's workspace, ADR 0020). When an entry is edited (replaced),
+  the match moves to the new version. When it is deleted, the occurrence goes back to `pending`.
+  Restoring the entry later doesn't match it again: a member confirms it, like any match.
 
 ## `recurrence_rules`
 | Column | Type | Notes |
