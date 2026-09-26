@@ -87,8 +87,7 @@ holidays passed must cover the range plus `DAYS_A_DUE_DATE_MAY_SHIFT` (10). The 
   day, a new holiday or an unpaid month never gives the same month twice.
 - **Reading tops up the horizon:** `listOccurrences` first plans every active rule up to today's
   horizon (idempotent). A cross-workspace job that does the same every night comes with the
-  reminders, which need occurrences even when nobody opens the app (it needs the jobs database role,
-  ADR 0012).
+  reminders, which need occurrences even when nobody opens the app (ADR 0025).
 
 | Route | Permission | Does |
 |---|---|---|
