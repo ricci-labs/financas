@@ -78,7 +78,8 @@ updated: 2026-09-26
      - [x] More metrics: budget pace, committed ahead (6 periods), next invoice, variable income
            average, reserve coverage
      - [x] Insights (first set) in the overview
-     - [ ] Commission split: allocation steps + suggested transfers
+     - [ ] Commission split: allocation steps + suggested transfers (done: steps and suggestion;
+           next: insight for commission not yet split)
      - [ ] Balance forecast per account
      - [ ] "Posso comprar?" purchase simulation
   3. [ ] **Contacts, charges and settlements**

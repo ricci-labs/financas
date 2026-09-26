@@ -61,6 +61,7 @@ src/
 │   ├── cards.types.ts        # CardCycle, InvoiceRef
 │   ├── billing-cycle.ts      # which invoice a purchase / installment falls into; invoice status
 │   └── billing-cycle.test.ts
+├── allocation/               # commission waterfall: steps (types, schemas) + splitVariableIncome
 ├── metrics/                  # ADR 0024: one dashboard number per file, (facts) → value
 │   ├── metrics.types.ts      # PeriodFacts and its parts
 │   ├── facts.ts              # helpers over the facts (postings counted by the budget view…)

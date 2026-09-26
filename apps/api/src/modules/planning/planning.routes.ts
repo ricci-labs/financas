@@ -12,12 +12,14 @@ import {
   deleteGoal,
   deleteHoliday,
   deleteRecurrenceRule,
+  listAllocationSteps,
   listBudgets,
   listGoals,
   listHolidays,
   listOccurrences,
   listRecurrenceRules,
   matchOccurrence,
+  replaceAllocationSteps,
   setBudget,
   skipOccurrence,
   suggestOccurrencesForEntry,
@@ -26,6 +28,7 @@ import {
 } from '@api/modules/planning/planning.service'
 import type { PlanningRouteDeps } from '@api/modules/planning/planning.types'
 import {
+  allocationStepsSchema,
   budgetChangeSchema,
   budgetListQuerySchema,
   budgetParamsSchema,
@@ -57,6 +60,7 @@ export function planningRoutes(deps: PlanningRouteDeps) {
     .route('/occurrences', occurrenceRoutes(deps))
     .route('/budgets', budgetRoutes(deps))
     .route('/goals', goalRoutes(deps))
+    .route('/allocation-steps', allocationStepRoutes(deps))
 }
 
 function holidayRoutes({ db }: PlanningRouteDeps) {
@@ -281,6 +285,24 @@ function goalRoutes({ db }: PlanningRouteDeps) {
         const { userId } = currentSession(c)
         const { goalId } = c.req.valid('param')
         await deleteGoal(db, { workspaceId, goalId, userId, reason: c.req.valid('json').reason })
+        return c.body(null, NO_CONTENT)
+      },
+    )
+}
+
+function allocationStepRoutes({ db }: PlanningRouteDeps) {
+  return new Hono<AppEnv>()
+    .get('/', authorize('planning', 'view'), async (c) => {
+      return c.json(await listAllocationSteps(db, currentWorkspace(c).workspaceId))
+    })
+    .put(
+      '/',
+      authorize('planning', 'update'),
+      jsonBody(allocationStepsSchema, 'ALLOCATION_INVALID'),
+      async (c) => {
+        const { workspaceId } = currentWorkspace(c)
+        const { userId } = currentSession(c)
+        await replaceAllocationSteps(db, { workspaceId, userId }, c.req.valid('json'))
         return c.body(null, NO_CONTENT)
       },
     )
