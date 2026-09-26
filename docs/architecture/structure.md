@@ -107,6 +107,7 @@ src/
 │   ├── observability/        # OTel register, pino logger, metrics registry, spans, errors
 │   │                         #   (see docs/operations/observability.md)
 │   ├── security/tokens.ts    # random tokens and their SHA-256 hashes
+│   ├── security/passwords.ts # scrypt password hashing and verification (ADR 0021)
 │   └── clock.ts              # injectable "now" (Clock, systemClock)
 ├── modules/                  # one folder per domain (see "Module anatomy")
 │   ├── identity/             # users, sessions, channel identities (WhatsApp numbers)

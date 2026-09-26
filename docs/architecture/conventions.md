@@ -79,6 +79,23 @@ without comments.
 - Settings a user changes from the app belong in the database (`workspace_settings`,
   `user_preferences`), not in env.
 
+## Passwords and secrets (ADR 0021)
+- Hash and verify only through `core/security/passwords.ts`: scrypt at the OWASP cost, a random
+  salt per password, constant-time comparison, NFKC normalization.
+- At most two derivations run at once (about 256 MB); the rest wait in line. A stored hash with a
+  cost above the accepted maximum is refused before any memory is allocated.
+- A login for an unknown user or a user without a password calls `verifyPassword(input, null)`,
+  which does the same work as a real check. Every failure gives the same answer.
+- After a successful login, if `passwordNeedsRehash()` is true, store a new hash at the current cost.
+- `password_hash` is read only by the identity repository, to hand it to `verifyPassword()`.
+  Queries select explicit columns, and no API response, agent tool result or log ever carries it.
+- Password length is 12 to 128 characters, checked by the shared schema before hashing.
+- Raw tokens (session cookie, email links) exist only on the user's side. The database stores
+  their SHA-256, and lookups go by that hash.
+- Never log a request body. The logger censors passwords, hashes, tokens, cookies and the
+  authorization header at the top level and one level down (`core/observability/logger.ts`, with a
+  test). Name fields so the censor catches them (`password`, `newPassword`, `token`, `tokenHash`).
+
 ## Validation and errors
 - Validate at every boundary with Zod: HTTP (`zValidator`), agent tool inputs, env, WhatsApp payloads.
 - Services throw typed `AppError` subclasses (`NotFoundError`, `ValidationError`, `ConflictError`). The HTTP error middleware maps them to status codes. Agent tools map them to `is_error` tool results.
