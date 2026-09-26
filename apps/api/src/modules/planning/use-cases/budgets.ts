@@ -1,4 +1,4 @@
-import type { Database } from '@api/core/db/db.types'
+import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { withWorkspace } from '@api/core/db/tx'
 import { parseOrThrow, ValidationError } from '@api/core/http/errors'
 import { loadUsableAccounts } from '@api/modules/ledger'
@@ -7,7 +7,7 @@ import {
   upsertBudgetLine,
 } from '@api/modules/planning/planning.repository'
 import type { BudgetItem, BudgetRef } from '@api/modules/planning/planning.types'
-import { budgetChangeSchema } from '@financas/shared'
+import { budgetChangeSchema, type FactBudget } from '@financas/shared'
 
 const YEAR_MONTH_LENGTH = 7
 
@@ -21,6 +21,15 @@ export function listBudgets(
       ...line,
       validFrom: line.validFrom.slice(0, YEAR_MONTH_LENGTH),
     })),
+  )
+}
+
+export async function readBudgetFacts(
+  tx: WorkspaceTransaction,
+  periodLabel: string,
+): Promise<FactBudget[]> {
+  return (await selectBudgetsEffectiveOn(tx, firstDayOf(periodLabel))).map(
+    ({ categoryAccountId, limitCents }) => ({ categoryAccountId, limitCents }),
   )
 }
 

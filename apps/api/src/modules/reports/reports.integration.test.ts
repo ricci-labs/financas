@@ -1,6 +1,6 @@
 import { createApp } from '@api/app'
 import { createAccount, createCard, deleteEntry, recordEntry } from '@api/modules/ledger'
-import { createRecurrenceRule } from '@api/modules/planning'
+import { createRecurrenceRule, setBudget } from '@api/modules/planning'
 import { getPeriodOverview, type PeriodOverview } from '@api/modules/reports'
 import { changeWorkspaceSettings } from '@api/modules/workspaces'
 import { testAppDeps } from '@api/testing/app'
@@ -99,12 +99,17 @@ async function household() {
     categoryAccountId: housing,
     schedule: { frequency: 'monthly', dayOfMonth: 25, startsOn: '2026-10-25' },
   })
-  return { workspaceId, userId }
+  await setBudget(
+    databases.app,
+    { workspaceId, categoryAccountId: groceries },
+    { limitCents: 100_000, fromPeriod: '2026-10' },
+  )
+  return { workspaceId, userId, groceries }
 }
 
 describe('getPeriodOverview', () => {
   it('puts the ledger, the plan and the settings together for the current period', async () => {
-    const { workspaceId } = await household()
+    const { workspaceId, groceries } = await household()
     const overview = await getPeriodOverview(databases.app, workspaceId, {}, MID_OCTOBER)
 
     expect(overview.today).toBe('2026-10-15')
@@ -118,6 +123,13 @@ describe('getPeriodOverview', () => {
     const { spent, freeToSpend, dailyAllowance } = overview.metrics
     expect(freeToSpend).toBe(900_000 - spent - 200_000)
     expect(dailyAllowance).toBe(Math.floor(freeToSpend / 17))
+    expect(overview.metrics.budgetPace).toEqual([
+      expect.objectContaining({
+        categoryAccountId: groceries,
+        limitCents: 100_000,
+        spentCents: spent,
+      }),
+    ])
   })
 
   it('follows the budget view and the financial period of the workspace', async () => {

@@ -141,7 +141,9 @@ free_to_spend     = budget_income − spent − committed
 daily_allowance   = max(free_to_spend, 0) ÷ days left, today included (the whole period before it
                     starts, null after it ends). Planned items of the remaining days are already
                     out, through `committed`, as the household chose
-budget_pace       = per budget line: spent ÷ limit vs share of the period elapsed
+budget_pace       = per budget in force (`planning.readBudgetFacts`): spent on the category and every
+                    category below it; expected = limit × days elapsed ÷ days in the period (today
+                    included); `over` past the limit, `ahead` past the expected, else `within`
 committed_ahead   = for each of the next 6 periods: installments + fixed expense occurrences,
                     in cents and as % of that period's fixed income
 next_invoice      = per card: posted on the open invoice + pending recurring card charges before closing
