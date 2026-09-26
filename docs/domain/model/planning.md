@@ -18,7 +18,7 @@ When a real entry is recorded, the service tries to **match** it to a pending oc
 |---|---|---|
 | `workspace_id`, `id` | | |
 | `description` | text | "Aluguel", "Salário Member A", "Streaming" |
-| `entry_type` | enum | `expense`, `income`, `card_purchase`, `transfer` |
+| `entry_type` | enum `recurring_entry_type`: `expense`, `income`, `card_purchase`, `transfer` | Fixed at creation |
 | `amount_cents` | bigint > 0 | Expected amount |
 | `amount_is_estimate` | bool | True for variable bills (energy) and commission |
 | `frequency` | enum `recurrence_frequency`: `weekly`, `monthly`, `yearly` | |
@@ -27,12 +27,22 @@ When a real entry is recorded, the service tries to **match** it to a pending oc
 | `nth_business_day` | smallint null | Alternative to `day_of_month` (e.g. salary on the 5th business day, 1–10). Never both; neither for `weekly`, which repeats the weekday of `starts_on`. Without either, the day of `starts_on` |
 | `weekend_rule` | enum: `keep`, `previous_business_day`, `next_business_day` | Due dates that fall on non-business days |
 | `starts_on`, `ends_on` | date, date null | `ends_on` null = open-ended |
-| `source_account_id` | FK ledger_accounts null | Where the money leaves from or arrives (checking, card) |
-| `category_account_id` | FK ledger_accounts null | Expense or income category |
-| `contact_id` | FK contacts null | E.g. a monthly charge to a contact |
-| `remind_days_before` | smallint null | Overrides the member preference |
-| `auto_record` | bool default false | If true, a job records the entry on the due date (auto-debit bills, card subscriptions) |
-| `active` | bool | |
+| `source_account_id` | composite FK ledger_accounts | Where the money leaves or arrives: a money account (checking, savings, cash, investment), or the card for `card_purchase` |
+| `category_account_id` | composite FK ledger_accounts | The expense category (`expense`, `card_purchase`), the income category (`income`), or the destination money account (`transfer`). Never the source |
+| `remind_days_before` | smallint null | 0–30. Overrides the member preference |
+| `auto_record` | bool default false | Stored now; recording on the due date is phase 2 (auto-debit bills, card subscriptions) |
+| soft delete, timestamps | | A rule stops by `ends_on` or by deletion. Contacts get their column with the contacts step |
+
+`recurringAccountsFit(entryType, source, category)` (shared) holds the account rules above; the service
+checks it with the accounts that are still usable (not archived nor deleted), else
+`400 RECURRENCE_ACCOUNTS_INVALID`. The table repeats the schedule rules as CHECKs.
+
+| Route | Permission | Does |
+|---|---|---|
+| `GET /recurrences` | `planning:view` | `listRecurrenceRules`: rules not deleted, by description, each with its `schedule` object |
+| `POST /recurrences` | `planning:create` | `createRecurrenceRule` `{ description, entryType, amountCents, amountIsEstimate?, sourceAccountId, categoryAccountId, schedule, remindDaysBefore?, autoRecord? }` → `201 { ruleId }` |
+| `PATCH /recurrences/:ruleId` | `planning:update` | `changeRecurrenceRule`: only the fields sent (a `schedule` is replaced whole); never `entryType` → `204` |
+| `DELETE /recurrences/:ruleId` | `planning:delete` | `deleteRecurrenceRule` (soft, optional `reason`) → `204` |
 
 **Due dates** come from the pure `dueDatesBetween(schedule, { from, to }, holidays)` in
 `packages/shared/src/recurrence/`: the nominal date of each step (day clamped to shorter months,

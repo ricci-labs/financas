@@ -1,10 +1,33 @@
 import { primaryId, softDelete, timestamps } from '@api/core/db/columns'
 import { tenantIsolation } from '@api/core/db/tenancy'
 import { users } from '@api/modules/identity/identity.table'
+import { ledgerAccounts } from '@api/modules/ledger/ledger.table'
 import { workspaces } from '@api/modules/workspaces/workspaces.table'
-import { HOLIDAY_NAME_MAX_LENGTH } from '@financas/shared'
+import {
+  HOLIDAY_NAME_MAX_LENGTH,
+  MAX_RECURRENCE_BUSINESS_DAY,
+  MAX_RECURRENCE_INTERVAL,
+  MAX_REMIND_DAYS_BEFORE,
+  RECURRENCE_DESCRIPTION_MAX_LENGTH,
+  RECURRENCE_FREQUENCIES,
+  RECURRING_ENTRY_TYPES,
+  WEEKEND_RULES,
+} from '@financas/shared'
 import { sql } from 'drizzle-orm'
-import { check, date, pgTable, text, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
+import {
+  bigint,
+  boolean,
+  check,
+  date,
+  foreignKey,
+  pgEnum,
+  pgTable,
+  smallint,
+  text,
+  unique,
+  uniqueIndex,
+  uuid,
+} from 'drizzle-orm/pg-core'
 
 export const workspaceHolidays = pgTable(
   'workspace_holidays',
@@ -28,5 +51,91 @@ export const workspaceHolidays = pgTable(
       sql`length(trim(${table.name})) between 1 and ${sql.raw(String(HOLIDAY_NAME_MAX_LENGTH))}`,
     ),
     tenantIsolation('workspace_holidays', table.workspaceId),
+  ],
+).enableRLS()
+
+export const recurrenceFrequency = pgEnum('recurrence_frequency', RECURRENCE_FREQUENCIES)
+
+export const recurringEntryType = pgEnum('recurring_entry_type', RECURRING_ENTRY_TYPES)
+
+export const weekendRule = pgEnum('weekend_rule', WEEKEND_RULES)
+
+const limit = (value: number) => sql.raw(String(value))
+
+export const recurrenceRules = pgTable(
+  'recurrence_rules',
+  {
+    workspaceId: uuid()
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    id: primaryId(),
+    description: text().notNull(),
+    entryType: recurringEntryType().notNull(),
+    amountCents: bigint({ mode: 'number' }).notNull(),
+    amountIsEstimate: boolean().notNull().default(false),
+    frequency: recurrenceFrequency().notNull(),
+    interval: smallint().notNull().default(1),
+    dayOfMonth: smallint(),
+    nthBusinessDay: smallint(),
+    weekendRule: weekendRule().notNull().default('keep'),
+    startsOn: date().notNull(),
+    endsOn: date(),
+    sourceAccountId: uuid().notNull(),
+    categoryAccountId: uuid().notNull(),
+    remindDaysBefore: smallint(),
+    autoRecord: boolean().notNull().default(false),
+    ...softDelete(() => users.id),
+    ...timestamps(),
+  },
+  (table) => [
+    unique('recurrence_rules_workspace_id_id_unique').on(table.workspaceId, table.id),
+    foreignKey({
+      name: 'recurrence_rules_source_account_fk',
+      columns: [table.workspaceId, table.sourceAccountId],
+      foreignColumns: [ledgerAccounts.workspaceId, ledgerAccounts.id],
+    }),
+    foreignKey({
+      name: 'recurrence_rules_category_account_fk',
+      columns: [table.workspaceId, table.categoryAccountId],
+      foreignColumns: [ledgerAccounts.workspaceId, ledgerAccounts.id],
+    }),
+    check(
+      'recurrence_rules_description',
+      sql`length(trim(${table.description})) between 1 and ${limit(RECURRENCE_DESCRIPTION_MAX_LENGTH)}`,
+    ),
+    check('recurrence_rules_amount', sql`${table.amountCents} > 0`),
+    check(
+      'recurrence_rules_interval',
+      sql`${table.interval} between 1 and ${limit(MAX_RECURRENCE_INTERVAL)}`,
+    ),
+    check(
+      'recurrence_rules_day_of_month',
+      sql`${table.dayOfMonth} is null or ${table.dayOfMonth} between 1 and 31`,
+    ),
+    check(
+      'recurrence_rules_nth_business_day',
+      sql`${table.nthBusinessDay} is null or ${table.nthBusinessDay} between 1 and ${limit(MAX_RECURRENCE_BUSINESS_DAY)}`,
+    ),
+    check(
+      'recurrence_rules_one_day_choice',
+      sql`${table.dayOfMonth} is null or ${table.nthBusinessDay} is null`,
+    ),
+    check(
+      'recurrence_rules_weekly_repeats_weekday',
+      sql`${table.frequency} <> 'weekly' or (${table.dayOfMonth} is null and ${table.nthBusinessDay} is null)`,
+    ),
+    check(
+      'recurrence_rules_ends_after_start',
+      sql`${table.endsOn} is null or ${table.endsOn} >= ${table.startsOn}`,
+    ),
+    check(
+      'recurrence_rules_remind_days_before',
+      sql`${table.remindDaysBefore} is null or ${table.remindDaysBefore} between 0 and ${limit(MAX_REMIND_DAYS_BEFORE)}`,
+    ),
+    check(
+      'recurrence_rules_two_accounts',
+      sql`${table.sourceAccountId} <> ${table.categoryAccountId}`,
+    ),
+    tenantIsolation('recurrence_rules', table.workspaceId),
   ],
 ).enableRLS()

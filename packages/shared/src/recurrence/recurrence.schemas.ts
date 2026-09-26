@@ -3,7 +3,10 @@ import { isoDateSchema } from '@shared/ledger/ledger.schemas'
 import {
   MAX_RECURRENCE_BUSINESS_DAY,
   MAX_RECURRENCE_INTERVAL,
+  MAX_REMIND_DAYS_BEFORE,
+  RECURRENCE_DESCRIPTION_MAX_LENGTH,
   RECURRENCE_FREQUENCIES,
+  RECURRING_ENTRY_TYPES,
 } from '@shared/recurrence/recurrence.constants'
 import { z } from 'zod'
 
@@ -41,3 +44,33 @@ export const recurrenceScheduleSchema = z
   })
 
 export type RecurrenceScheduleInput = z.input<typeof recurrenceScheduleSchema>
+
+const recurrenceRuleFields = {
+  description: z.string().trim().min(1).max(RECURRENCE_DESCRIPTION_MAX_LENGTH),
+  amountCents: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+  amountIsEstimate: z.boolean(),
+  sourceAccountId: z.uuid(),
+  categoryAccountId: z.uuid(),
+  schedule: recurrenceScheduleSchema,
+  remindDaysBefore: z.number().int().min(0).max(MAX_REMIND_DAYS_BEFORE).nullable(),
+  autoRecord: z.boolean(),
+}
+
+export const newRecurrenceRuleSchema = z.strictObject({
+  ...recurrenceRuleFields,
+  entryType: z.enum(RECURRING_ENTRY_TYPES),
+  amountIsEstimate: recurrenceRuleFields.amountIsEstimate.default(false),
+  remindDaysBefore: recurrenceRuleFields.remindDaysBefore.default(null),
+  autoRecord: recurrenceRuleFields.autoRecord.default(false),
+})
+
+export type NewRecurrenceRule = z.infer<typeof newRecurrenceRuleSchema>
+
+export const recurrenceRuleChangeSchema = z
+  .strictObject(recurrenceRuleFields)
+  .partial()
+  .refine((change) => Object.keys(change).length > 0, { message: 'Nothing to change' })
+
+export type RecurrenceRuleChange = z.infer<typeof recurrenceRuleChangeSchema>
+
+export const recurrenceRuleParamsSchema = z.object({ ruleId: z.uuid() })

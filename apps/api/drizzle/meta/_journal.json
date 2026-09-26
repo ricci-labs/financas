@@ -253,6 +253,20 @@
       "when": 1790449201390,
       "tag": "0035_workspace_holidays_updated_at",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1790450046809,
+      "tag": "0036_recurrence_rules",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1790450048443,
+      "tag": "0037_recurrence_rules_triggers_and_deferred_fks",
+      "breakpoints": true
     }
   ]
 }

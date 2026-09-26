@@ -24,3 +24,4 @@ export {
   replaceEntry,
   restoreEntry,
 } from '@api/modules/ledger/use-cases/entries'
+export { loadAccounts as loadUsableAccounts } from '@api/modules/ledger/use-cases/lookups'
