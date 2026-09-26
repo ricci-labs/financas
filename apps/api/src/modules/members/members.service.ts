@@ -13,6 +13,7 @@ import {
   lockInvitationByTokenHash,
   markInvitationAccepted,
   selectActiveMembershipOfUser,
+  selectWorkspaceIdsOfUser,
 } from '@api/modules/members/members.repository'
 import type {
   AcceptedInvitation,
@@ -95,4 +96,8 @@ export function findActiveMembership(
   userId: string,
 ): Promise<ActiveMembership | undefined> {
   return selectActiveMembershipOfUser(tx, userId)
+}
+
+export function listWorkspaceIdsOfUser(db: Database, userId: string): Promise<string[]> {
+  return selectWorkspaceIdsOfUser(db, userId)
 }

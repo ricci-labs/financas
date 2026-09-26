@@ -112,6 +112,11 @@ The permission set is loaded once per request/turn and cached on the context. Ro
 `GET /api/workspaces/:workspaceId` returns the workspace, the caller's membership, role and
 permissions, so the web can hide what the user can't do.
 
+`GET /api/workspaces` lists the caller's workspaces (name, archived flag, role), sorted by name. RLS
+hides other tenants' memberships, so the ids come from the SECURITY DEFINER function
+`user_workspace_ids(user_id)` (ADR 0019): active memberships of workspaces that aren't deleted,
+workspace ids only. Each workspace is then read inside its own `withWorkspace()`.
+
 ## Examples
 - A friend added as **Viewer** sees the dashboard and entries but can't record anything. The agent offers them only read tools.
 - A custom role **"Lançador"** with `entries: VC` and `attachments: VC` records expenses and receipts but can't edit or delete.

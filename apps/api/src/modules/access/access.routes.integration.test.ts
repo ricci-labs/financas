@@ -171,3 +171,67 @@ describe('authorize', () => {
     expect(response.status).toBe(404)
   })
 })
+
+describe('GET /api/workspaces', () => {
+  it('lists every workspace of the caller with their role, by name, and nothing else', async () => {
+    const { app } = testApp()
+    const member = await userWithSession(app, 'list-member')
+    const someoneElse = await userWithSession(app, 'list-other')
+    const own = await workspaceOwnedBy(member.userId, 'Beta')
+    const shared = await workspaceOwnedBy(someoneElse.userId, 'Alfa')
+    await workspaceOwnedBy(someoneElse.userId, 'Gama')
+    await addViewer(shared.workspaceId, member.userId)
+
+    const response = await get(app, '/api/workspaces', member.cookie)
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual([
+      expect.objectContaining({
+        workspaceId: shared.workspaceId,
+        name: `Alfa ${fixtures.runId}`,
+        isArchived: false,
+        role: expect.objectContaining({ systemKey: 'viewer' }),
+      }),
+      expect.objectContaining({
+        workspaceId: own.workspaceId,
+        name: `Beta ${fixtures.runId}`,
+        role: expect.objectContaining({ systemKey: 'owner' }),
+      }),
+    ])
+  })
+
+  it('leaves out workspaces the caller left or that were deleted', async () => {
+    const { app } = testApp()
+    const member = await userWithSession(app, 'list-leaving')
+    const owner = await userWithSession(app, 'list-owner')
+    const left = await workspaceOwnedBy(owner.userId, 'Left')
+    const deleted = await workspaceOwnedBy(member.userId, 'Deleted')
+    const kept = await workspaceOwnedBy(member.userId, 'Kept')
+    const leftMembershipId = await addViewer(left.workspaceId, member.userId)
+
+    await databases.owner
+      .update(memberships)
+      .set({ deletedAt: new Date() })
+      .where(eq(memberships.id, leftMembershipId))
+    await databases.owner
+      .update(workspaces)
+      .set({ deletedAt: new Date() })
+      .where(eq(workspaces.id, deleted.workspaceId))
+
+    const response = await get(app, '/api/workspaces', member.cookie)
+    const listed = (await response.json()) as { workspaceId: string }[]
+    expect(listed.map((item) => item.workspaceId)).toEqual([kept.workspaceId])
+  })
+
+  it('answers an empty list to a user without workspaces', async () => {
+    const { app } = testApp()
+    const loner = await userWithSession(app, 'list-loner')
+    const response = await get(app, '/api/workspaces', loner.cookie)
+    expect(await response.json()).toEqual([])
+  })
+
+  it('asks for a session', async () => {
+    const { app } = testApp()
+    expect((await app.request('/api/workspaces')).status).toBe(401)
+  })
+})

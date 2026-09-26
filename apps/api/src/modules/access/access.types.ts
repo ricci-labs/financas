@@ -30,3 +30,10 @@ export type NewSystemRole = {
   name: string
   systemKey: SystemRoleKey
 }
+
+export type WorkspaceListItem = {
+  workspaceId: string
+  name: string
+  isArchived: boolean
+  role: WorkspaceRole
+}

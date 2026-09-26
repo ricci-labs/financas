@@ -5,10 +5,15 @@ export {
   isPermissionCheck,
   workspaceAccess,
 } from '@api/modules/access/access.middleware'
-export { accessRoutes } from '@api/modules/access/access.routes'
-export { createSystemRoles, loadWorkspaceAccess } from '@api/modules/access/access.service'
+export { accessRoutes, workspaceListRoutes } from '@api/modules/access/access.routes'
+export {
+  createSystemRoles,
+  listWorkspacesOfUser,
+  loadWorkspaceAccess,
+} from '@api/modules/access/access.service'
 export type {
   AccessRouteDeps,
   SystemRoleIds,
   WorkspaceAccess,
+  WorkspaceListItem,
 } from '@api/modules/access/access.types'

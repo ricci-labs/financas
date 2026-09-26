@@ -3,7 +3,7 @@ import { createBaseApp } from '@api/core/http/base-app'
 import type { AppEnv } from '@api/core/http/http.types'
 import { sameOriginWrites } from '@api/core/http/middleware/same-origin-writes'
 import { requireSession } from '@api/core/http/middleware/session'
-import { accessRoutes, workspaceAccess } from '@api/modules/access'
+import { accessRoutes, workspaceAccess, workspaceListRoutes } from '@api/modules/access'
 import { healthRoutes, PUBLIC_HEALTH_ROUTES } from '@api/modules/health'
 import { identityRoutes, PUBLIC_AUTH_ROUTES, resolveSession } from '@api/modules/identity'
 import { Hono } from 'hono'
@@ -26,6 +26,7 @@ export function createApp(deps: AppDeps) {
     )
     .route('/api/health', healthRoutes(deps))
     .route('/api/auth', identityRoutes(deps))
+    .route('/api/workspaces', workspaceListRoutes(deps))
     .route('/api/workspaces/:workspaceId', workspaceScopedRoutes(deps))
 }
 

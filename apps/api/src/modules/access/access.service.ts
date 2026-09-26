@@ -10,8 +10,9 @@ import type {
   SystemRoleIds,
   WorkspaceAccess,
   WorkspaceAccessInput,
+  WorkspaceListItem,
 } from '@api/modules/access/access.types'
-import { findActiveMembership } from '@api/modules/members'
+import { findActiveMembership, listWorkspaceIdsOfUser } from '@api/modules/members'
 import { findCurrentWorkspace } from '@api/modules/workspaces'
 import { ROLE_TEMPLATES } from '@financas/shared'
 
@@ -47,4 +48,18 @@ export function loadWorkspaceAccess(
     const permissions = await selectRolePermissions(tx, role.roleId)
     return { workspace, membershipId: membership.membershipId, role, permissions }
   })
+}
+
+export async function listWorkspacesOfUser(
+  db: Database,
+  userId: string,
+): Promise<WorkspaceListItem[]> {
+  const items: WorkspaceListItem[] = []
+  for (const workspaceId of await listWorkspaceIdsOfUser(db, userId)) {
+    const access = await loadWorkspaceAccess(db, { workspaceId, userId })
+    if (access) {
+      items.push({ ...access.workspace, role: access.role })
+    }
+  }
+  return items.sort((first, second) => first.name.localeCompare(second.name, 'pt-BR'))
 }
