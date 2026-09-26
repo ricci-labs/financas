@@ -58,7 +58,7 @@ updated: 2026-09-26
   frontend; the web comes next, and the WhatsApp channel with the agent comes last, reusing the
   services. Small PRs, in order:
   1. [ ] **Gaps in what exists** (tables already exist):
-     - [ ] Workspaces: create through the API, rename, settings (financial period, currency,
+     - [x] Workspaces: create through the API, rename, settings (financial period, currency,
            installment view, budget base…)
      - [ ] Members: list, change role, remove; custom roles and their permission matrix
      - [ ] My account: change password while logged in, display name, preferences
