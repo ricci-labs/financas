@@ -1,10 +1,12 @@
 import type { Database } from '@api/core/db/db.types'
 import type {
+  allocationSteps,
   goals,
   plannedOccurrences,
   recurrenceRules,
 } from '@api/modules/planning/planning.table'
 import type {
+  AllocationStep,
   IsoDate,
   NationalHoliday,
   OccurrenceStatus,
@@ -168,4 +170,15 @@ export type DeleteGoalInput = GoalRef & {
 
 export type CreatedGoal = {
   goalId: string
+}
+
+export type NewAllocationStepRow = typeof allocationSteps.$inferInsert
+
+export type AllocationStepItem = AllocationStep & {
+  position: number
+}
+
+export type StepsDeletion = {
+  deletedAt: Date
+  deletedByUserId: string
 }

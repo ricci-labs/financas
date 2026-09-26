@@ -10,7 +10,9 @@ import {
 } from '@api/modules/ledger'
 import {
   holidayDatesOf,
+  readAllocationSteps,
   readBudgetFacts,
+  readGoalFacts,
   readOccurrenceFacts,
   readReserveFact,
   workspaceToday,
@@ -18,6 +20,7 @@ import {
 import type { PeriodOverview, PeriodTimeline } from '@api/modules/reports/reports.types'
 import { currentWorkspaceSettings } from '@api/modules/workspaces'
 import {
+  type AllocationSplit,
   addDays,
   addMonths,
   clampedDate,
@@ -31,6 +34,7 @@ import {
   periodOf,
   periodSettingsOf,
   periodStartingIn,
+  splitVariableIncome,
 } from '@financas/shared'
 
 const LAST_DAY = 31
@@ -53,6 +57,22 @@ export function getPeriodOverview(
       metrics,
       insights: computeInsights(facts, metrics),
     }
+  })
+}
+
+export function suggestAllocation(
+  db: Database,
+  workspaceId: string,
+  amountCents: number,
+  clock: Clock = systemClock,
+): Promise<AllocationSplit> {
+  return withWorkspace(db, workspaceId, async (tx) => {
+    const facts = await loadPeriodFacts(tx, undefined, clock)
+    const steps = (await readAllocationSteps(tx)).map(({ position: _position, ...step }) => step)
+    return splitVariableIncome(amountCents, steps, {
+      goals: await readGoalFacts(tx),
+      overspentCents: Math.max(-computeMetrics(facts).freeToSpend, 0),
+    })
   })
 }
 

@@ -316,6 +316,20 @@
       "when": 1790453472258,
       "tag": "0044_goals_triggers_and_deferred_fks",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1790456992229,
+      "tag": "0045_allocation_steps",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1790456993869,
+      "tag": "0046_allocation_steps_triggers_and_deferred_fks",
+      "breakpoints": true
     }
   ]
 }

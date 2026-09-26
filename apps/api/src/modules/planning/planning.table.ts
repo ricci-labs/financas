@@ -4,8 +4,10 @@ import { users } from '@api/modules/identity/identity.table'
 import { journalEntries, ledgerAccounts } from '@api/modules/ledger/ledger.table'
 import { workspaces } from '@api/modules/workspaces/workspaces.table'
 import {
+  ALLOCATION_STEP_KINDS,
   GOAL_NAME_MAX_LENGTH,
   HOLIDAY_NAME_MAX_LENGTH,
+  MAX_ALLOCATION_PERCENT,
   MAX_RECURRENCE_BUSINESS_DAY,
   MAX_RECURRENCE_INTERVAL,
   MAX_REMIND_DAYS_BEFORE,
@@ -246,5 +248,59 @@ export const goals = pgTable(
     ),
     check('goals_target', sql`${table.targetCents} > 0`),
     tenantIsolation('goals', table.workspaceId),
+  ],
+).enableRLS()
+
+export const allocationStepKind = pgEnum('allocation_step_kind', ALLOCATION_STEP_KINDS)
+
+export const allocationSteps = pgTable(
+  'allocation_steps',
+  {
+    workspaceId: uuid()
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    id: primaryId(),
+    position: smallint().notNull(),
+    kind: allocationStepKind().notNull(),
+    goalId: uuid(),
+    accountId: uuid(),
+    percent: smallint(),
+    amountCents: bigint({ mode: 'number' }),
+    ...softDelete(() => users.id),
+    ...timestamps(),
+  },
+  (table) => [
+    unique('allocation_steps_workspace_id_id_unique').on(table.workspaceId, table.id),
+    uniqueIndex('allocation_steps_one_per_position')
+      .on(table.workspaceId, table.position)
+      .where(sql`${table.deletedAt} is null`),
+    foreignKey({
+      name: 'allocation_steps_goal_fk',
+      columns: [table.workspaceId, table.goalId],
+      foreignColumns: [goals.workspaceId, goals.id],
+    }),
+    foreignKey({
+      name: 'allocation_steps_account_fk',
+      columns: [table.workspaceId, table.accountId],
+      foreignColumns: [ledgerAccounts.workspaceId, ledgerAccounts.id],
+    }),
+    check('allocation_steps_position', sql`${table.position} >= 1`),
+    check(
+      'allocation_steps_goal_only_to_fill',
+      sql`(${table.kind} = 'fill_goal') = (${table.goalId} is not null)`,
+    ),
+    check(
+      'allocation_steps_account_where_money_moves',
+      sql`(${table.kind} in ('percent', 'fixed_amount', 'rest')) = (${table.accountId} is not null)`,
+    ),
+    check(
+      'allocation_steps_percent',
+      sql`(${table.kind} = 'percent') = (${table.percent} is not null) and (${table.percent} is null or ${table.percent} between 1 and ${limit(MAX_ALLOCATION_PERCENT)})`,
+    ),
+    check(
+      'allocation_steps_amount',
+      sql`(${table.kind} = 'fixed_amount') = (${table.amountCents} is not null) and (${table.amountCents} is null or ${table.amountCents} > 0)`,
+    ),
+    tenantIsolation('allocation_steps', table.workspaceId),
   ],
 ).enableRLS()

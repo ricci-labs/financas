@@ -188,16 +188,33 @@ Still to come with their features: a commission arrived with a suggested split; 
 forecast goes negative.
 
 ### Commission split (suggested, never automatic)
-`income_allocation_steps` holds the household's waterfall, in order. When variable income arrives,
-the pure function `splitVariableIncome(amount, steps, goals)` suggests transfers; the members
-confirm them (they are recorded as ordinary `transfer` entries). Automatic recording stays in phase 2.
+`allocation_steps` holds the household's waterfall, in order. When variable income arrives, the pure
+function `splitVariableIncome(amount, steps, { goals, overspentCents })` (`packages/shared/src/allocation/`)
+suggests the parts, and the members confirm them as ordinary `transfer` entries. Automatic recording
+stays in phase 2. Each step takes what it wants, capped by what is left, and a step with nothing to
+take is skipped; what no step takes is `leftoverCents`.
+
+| `kind` | Takes | Goes to |
+|---|---|---|
+| `fill_goal` | what the goal still lacks (target − its account's balance) | the goal's account |
+| `cover_overspent` | the current period's overrun (−free to spend, when negative) | stays where it is (`toAccountId: null`) |
+| `percent` | a whole percent (1–100) of the **whole commission** | an account |
+| `fixed_amount` | a fixed amount | an account |
+| `rest` | everything left; only as the last step | an account |
 
 | Column | Notes |
 |---|---|
-| `workspace_id`, `id`, `position` | `unique (workspace_id, position)` |
-| `kind` | enum: `fill_goal` (up to the goal's target), `percent`, `fixed_amount`, `rest` |
-| `goal_id` / `account_id` | Where the money goes: a goal (its account) or an account |
-| `percent` / `amount_cents` | Set for `percent` / `fixed_amount` only (CHECK) |
+| `workspace_id`, `id`, `position` | One active step per position (1…) |
+| `kind` | enum `allocation_step_kind` |
+| `goal_id` / `account_id` | Composite FKs, deferred. `goal_id` exactly for `fill_goal`; `account_id` exactly for `percent`, `fixed_amount`, `rest` (CHECKs). The account must be a usable money account |
+| `percent` / `amount_cents` | Exactly for `percent` / `fixed_amount` (CHECKs) |
+| soft delete, timestamps | A new waterfall soft-deletes the old steps |
+
+| Route | Permission | Does |
+|---|---|---|
+| `GET /allocation-steps` | `planning:view` | `listAllocationSteps`, in order |
+| `PUT /allocation-steps` | `planning:update` | `replaceAllocationSteps` `{ steps: [...] }` (at most 10; `[]` clears) → `204`. Refused: `ALLOCATION_INVALID`, `ALLOCATION_ACCOUNT_INVALID`, `ALLOCATION_GOAL_INVALID` |
+| `GET /allocation/suggestion?amountCents=` | `reports:view` | `reports.suggestAllocation` → `{ parts: [{ position, kind, toAccountId, amountCents }], leftoverCents }` with today's goals and the current period's overrun |
 
 ### Balance forecast
 Per liquid account (checking, savings, cash), day by day from today to the next fixed-income

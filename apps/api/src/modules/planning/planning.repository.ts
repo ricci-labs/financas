@@ -1,5 +1,6 @@
 import type { WorkspaceTransaction } from '@api/core/db/db.types'
 import {
+  allocationSteps,
   budgetLines,
   goals,
   plannedOccurrences,
@@ -7,11 +8,13 @@ import {
   workspaceHolidays,
 } from '@api/modules/planning/planning.table'
 import type {
+  AllocationStepItem,
   BudgetItem,
   GoalRow,
   GoalUpdate,
   HolidayDeletion,
   LockedOccurrence,
+  NewAllocationStepRow,
   NewBudgetLine,
   NewGoalRow,
   NewOccurrenceRow,
@@ -21,6 +24,7 @@ import type {
   OccurrenceUpdate,
   RecurrenceRuleRow,
   RecurrenceRuleUpdate,
+  StepsDeletion,
   WorkspaceHoliday,
 } from '@api/modules/planning/planning.types'
 import type { IsoDate } from '@financas/shared'
@@ -273,4 +277,33 @@ export async function updateGoal(
   update: GoalUpdate,
 ): Promise<void> {
   await tx.update(goals).set(update).where(eq(goals.id, goalId))
+}
+
+export function selectAllocationSteps(tx: WorkspaceTransaction): Promise<AllocationStepItem[]> {
+  return tx
+    .select({
+      position: allocationSteps.position,
+      kind: allocationSteps.kind,
+      goalId: allocationSteps.goalId,
+      accountId: allocationSteps.accountId,
+      percent: allocationSteps.percent,
+      amountCents: allocationSteps.amountCents,
+    })
+    .from(allocationSteps)
+    .where(isNull(allocationSteps.deletedAt))
+    .orderBy(asc(allocationSteps.position))
+}
+
+export async function markAllocationStepsDeleted(
+  tx: WorkspaceTransaction,
+  deletion: StepsDeletion,
+): Promise<void> {
+  await tx.update(allocationSteps).set(deletion).where(isNull(allocationSteps.deletedAt))
+}
+
+export async function insertAllocationSteps(
+  tx: WorkspaceTransaction,
+  steps: NewAllocationStepRow[],
+): Promise<void> {
+  await tx.insert(allocationSteps).values(steps)
 }

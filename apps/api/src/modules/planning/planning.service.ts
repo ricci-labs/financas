@@ -1,4 +1,9 @@
 export {
+  listAllocationSteps,
+  readAllocationSteps,
+  replaceAllocationSteps,
+} from '@api/modules/planning/use-cases/allocation'
+export {
   listBudgets,
   readBudgetFacts,
   setBudget,
@@ -8,6 +13,7 @@ export {
   createGoal,
   deleteGoal,
   listGoals,
+  readGoalFacts,
   readReserveFact,
 } from '@api/modules/planning/use-cases/goals'
 export {
