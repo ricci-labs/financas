@@ -85,6 +85,12 @@ export const entryInputSchema = z.discriminatedUnion('entryType', [
     paidFromAccountId: accountIdSchema.nullish(),
   }),
   entryDetailsSchema.extend({
+    entryType: z.literal('settlement'),
+    amountCents: positiveCentsSchema,
+    contactId: z.uuid(),
+    receivedInAccountId: accountIdSchema,
+  }),
+  entryDetailsSchema.extend({
     entryType: z.literal('opening_balance'),
     balanceCents: z
       .number()
