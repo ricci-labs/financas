@@ -8,6 +8,7 @@ export {
   createGoal,
   deleteGoal,
   listGoals,
+  readReserveFact,
 } from '@api/modules/planning/use-cases/goals'
 export {
   addHoliday,

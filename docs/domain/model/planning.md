@@ -121,10 +121,12 @@ in `packages/shared/src/metrics/`, and every alert one in `packages/shared/src/i
 number or alert is one file, one line in `METRICS` / `INSIGHTS`, and a test.
 
 **The facts** (`PeriodFacts`, `metrics/metrics.types.ts`), loaded by `reports.getPeriodOverview`:
-today (workspace time zone), the period (from the settings and the holidays), the budget view and
-base, the accounts (`ledger.readAccountFacts`), the postings of active entries that fall in the
+today (workspace time zone), the period (from the settings and the holidays), the 6 periods
+before it, the budget view and base, the accounts (`ledger.readAccountFacts`), the postings of active entries that fall in the
 period by `effective_on` or by the entry's `occurred_on` (`ledger.readPostingFacts`), and the
-occurrences due in the period (`planning.readOccurrenceFacts`, which tops up the horizon first).
+occurrences due in the period (`planning.readOccurrenceFacts`, which tops up the horizon first),
+the budgets in force (`planning.readBudgetFacts`) and the reserve (`planning.readReserveFact`).
+Postings are loaded from the start of the oldest previous period.
 
 **Metrics of the period** (a posting counts by `effective_on`, or by `occurred_on` under
 `installment_budget_view = purchase_month`; amounts in cents):
@@ -147,9 +149,12 @@ budget_pace       = per budget in force (`planning.readBudgetFacts`): spent on t
 committed_ahead   = for each of the next 6 periods: installments + fixed expense occurrences,
                     in cents and as % of that period's fixed income
 next_invoice      = per card: posted on the open invoice + pending recurring card charges before closing
-variable_average  = variable income averaged over the last 6 periods (information only: never
-                    part of the budget, household policy)
-reserve_months    = reserve goal balance ÷ average fixed expenses of the last 3 periods
+variable_average  = variable income averaged over the 6 previous periods that have any posting
+                    (a new household isn't averaged with empty months); null without history.
+                    Information only: never part of the budget, household policy
+reserve_coverage  = the reserve goal's balance and target, the average spending of the last 3
+                    previous periods (idle ones left out) and how many months the reserve covers
+                    (one decimal); null without a reserve, months null without spending history
 ```
 
 | Route | Permission | Does |

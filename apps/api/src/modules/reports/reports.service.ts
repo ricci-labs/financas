@@ -7,9 +7,10 @@ import {
   holidayDatesOf,
   readBudgetFacts,
   readOccurrenceFacts,
+  readReserveFact,
   workspaceToday,
 } from '@api/modules/planning'
-import type { PeriodOverview } from '@api/modules/reports/reports.types'
+import type { PeriodOverview, PeriodTimeline } from '@api/modules/reports/reports.types'
 import { currentWorkspaceSettings } from '@api/modules/workspaces'
 import {
   addMonths,
@@ -17,7 +18,6 @@ import {
   computeMetrics,
   type IsoDate,
   type OverviewQuery,
-  type Period,
   type PeriodFacts,
   type PeriodSettings,
   parseIsoDate,
@@ -27,6 +27,7 @@ import {
 } from '@financas/shared'
 
 const LAST_DAY = 31
+const RECENT_PERIODS = 6
 
 export function getPeriodOverview(
   db: Database,
@@ -47,35 +48,45 @@ async function loadPeriodFacts(
 ): Promise<PeriodFacts> {
   const settings = await currentWorkspaceSettings(tx)
   const today = await workspaceToday(tx, clock)
-  const period = await resolvePeriod(
+  const { period, recentPeriods } = await resolvePeriods(
     tx,
     label,
     today,
     periodSettingsOf(settings.periodAnchor, settings.periodAnchorValue),
   )
+  const earliest = recentPeriods[0]?.start ?? period.start
   return {
     today,
     period,
+    recentPeriods,
     installmentBudgetView: settings.installmentBudgetView,
     budgetBase: settings.budgetBase,
     accounts: await readAccountFacts(tx),
-    postings: await readPostingFacts(tx, period.start, period.end),
+    postings: await readPostingFacts(tx, earliest, period.end),
     occurrences: await readOccurrenceFacts(tx, { from: period.start, to: period.end }, today),
     budgets: await readBudgetFacts(tx, period.label),
+    reserve: await readReserveFact(tx),
   }
 }
 
-async function resolvePeriod(
+async function resolvePeriods(
   tx: WorkspaceTransaction,
   label: string | undefined,
   today: IsoDate,
   settings: PeriodSettings,
-): Promise<Period> {
-  const month = parseIsoDate(label ? `${label}-01` : today)
+): Promise<PeriodTimeline> {
+  const reference = parseIsoDate(label ? `${label}-01` : today)
   const holidays = await holidayDatesOf(
     tx,
-    clampedDate(addMonths(month, -1), 1),
-    clampedDate(addMonths(month, 1), LAST_DAY),
+    clampedDate(addMonths(reference, -(RECENT_PERIODS + 1)), 1),
+    clampedDate(addMonths(reference, 1), LAST_DAY),
   )
-  return label ? periodStartingIn(month, settings, holidays) : periodOf(today, settings, holidays)
+  const period = label
+    ? periodStartingIn(reference, settings, holidays)
+    : periodOf(today, settings, holidays)
+  const labelMonth = parseIsoDate(`${period.label}-01`)
+  const recentPeriods = Array.from({ length: RECENT_PERIODS }, (_, index) =>
+    periodStartingIn(addMonths(labelMonth, index - RECENT_PERIODS), settings, holidays),
+  )
+  return { period, recentPeriods }
 }
