@@ -59,3 +59,8 @@ export type EmailRecipient = {
   email: string
   displayName: string
 }
+
+export type ResetPasswordInput = {
+  token: string
+  password: string
+}

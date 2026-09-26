@@ -144,3 +144,37 @@ export async function verifyEmailWithToken(
     returning id`)
   return result.rows[0]?.id
 }
+
+export async function resetPasswordWithToken(
+  db: Database,
+  tokenHash: string,
+  passwordHash: string,
+  now: Date,
+) {
+  const result = await db.execute<{ user_id: string; email: string; display_name: string }>(sql`
+    with used_token as (
+      update auth_tokens set used_at = ${now}
+      where token_hash = ${tokenHash}
+        and purpose = 'password_reset'
+        and used_at is null
+        and expires_at > ${now}
+      returning user_id
+    ),
+    changed_user as (
+      update users
+      set password_hash = ${passwordHash},
+          email_verified_at = coalesce(email_verified_at, ${now})
+      where id in (select user_id from used_token)
+        and disabled_at is null
+      returning id, email, display_name
+    ),
+    ended_sessions as (
+      delete from sessions where user_id in (select id from changed_user)
+    )
+    select id as user_id, email, display_name from changed_user`)
+  const changed = result.rows[0]
+  if (!changed) {
+    return undefined
+  }
+  return { userId: changed.user_id, email: changed.email, displayName: changed.display_name }
+}

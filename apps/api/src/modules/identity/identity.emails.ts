@@ -7,6 +7,16 @@ type VerificationEmail = {
   verifyLink: string
 }
 
+type PasswordResetEmail = {
+  recipient: EmailRecipient
+  resetLink: string
+}
+
+type PasswordChangedEmail = {
+  recipient: EmailRecipient
+  forgotPasswordLink: string
+}
+
 type AccountExistsEmail = {
   recipient: EmailRecipient
   loginLink: string
@@ -52,6 +62,45 @@ export function accountAlreadyExistsMessage({
     template: 'account_already_exists',
     to: recipient.email,
     subject: 'Você já tem uma conta',
+    ...rendered,
+  }
+}
+
+export function passwordResetMessage({ recipient, resetLink }: PasswordResetEmail): EmailMessage {
+  const rendered = renderEmail({
+    heading: `Olá, ${recipient.displayName}`,
+    paragraphs: ['Recebemos um pedido para trocar a senha da sua conta no Finanças.'],
+    action: { label: 'Criar nova senha', url: resetLink },
+    notes: [
+      'O link vale por 1 hora e só pode ser usado uma vez.',
+      'Se você não pediu, ignore este e-mail. Sua senha continua a mesma.',
+    ],
+  })
+  return {
+    template: 'password_reset',
+    to: recipient.email,
+    subject: 'Troque sua senha',
+    ...rendered,
+  }
+}
+
+export function passwordChangedMessage({
+  recipient,
+  forgotPasswordLink,
+}: PasswordChangedEmail): EmailMessage {
+  const rendered = renderEmail({
+    heading: `Olá, ${recipient.displayName}`,
+    paragraphs: [
+      'A senha da sua conta no Finanças foi trocada, e todas as sessões abertas foram encerradas.',
+      'Se foi você, está tudo certo.',
+    ],
+    action: { label: 'Não fui eu: trocar a senha', url: forgotPasswordLink },
+    notes: ['Se não foi você, troque a senha agora pelo link acima.'],
+  })
+  return {
+    template: 'password_changed',
+    to: recipient.email,
+    subject: 'Sua senha foi trocada',
     ...rendered,
   }
 }

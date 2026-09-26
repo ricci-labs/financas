@@ -37,7 +37,7 @@ updated: 2026-09-25
   3b. [x] `ops:create-user` script (first user + first workspace, password typed without echo)
   4. [x] Email: `core/email` `Mailer` with Nodemailer (ADR 0022), `.eml` outbox in development
   5. [x] `identity`: sign-up (behind `PUBLIC_SIGNUP_ENABLED`), email verification
-  5b. [ ] `identity`: forgot password and reset by email
+  5b. [x] `identity`: forgot password and reset by email
   6. [ ] HTTP core: error handler (`AppError` → status, error ref), request id, request logger
   7. [ ] Auth routes (login, logout, me, config, sign-up, verify, forgot and reset password),
      session middleware, CSRF, rate limits
