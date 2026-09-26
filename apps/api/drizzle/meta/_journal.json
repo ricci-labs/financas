@@ -225,6 +225,13 @@
       "when": 1790349830564,
       "tag": "0031_balance_views",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1790383305795,
+      "tag": "0032_sessions_and_auth_tokens",
+      "breakpoints": true
     }
   ]
 }

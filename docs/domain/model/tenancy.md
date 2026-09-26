@@ -34,7 +34,8 @@ updated: 2026-09-25
 The WhatsApp agent looks up `channel_identities` → `user` → the workspace (`user_preferences.default_workspace_id`, switchable by message).
 
 ### `sessions`
-Web sessions (ADR 0021). Global table: no `workspace_id`, no RLS, hard deleted.
+Web sessions (ADR 0021). Global table: no `workspace_id`, no RLS, hard deleted. Implemented in
+`modules/identity`; passwords are hashed by `core/security/passwords.ts`.
 
 | Column | Type | Notes |
 |---|---|---|
