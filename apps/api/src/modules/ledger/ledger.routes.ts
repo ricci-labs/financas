@@ -15,6 +15,7 @@ import {
   listAccounts,
   listCards,
   listEntries,
+  listInvoiceLines,
   listInvoiceTotals,
   recordEntry,
   replaceEntry,
@@ -33,6 +34,7 @@ import {
   entryInputSchema,
   entryListQuerySchema,
   entryParamsSchema,
+  invoiceParamsSchema,
   newAccountSchema,
   newCardSchema,
 } from '@financas/shared'
@@ -145,6 +147,16 @@ function cardRoutes({ db }: LedgerRouteDeps) {
       const cardAccountId = c.req.valid('param').cardId
       return c.json(await listInvoiceTotals(db, { workspaceId, cardAccountId }))
     })
+    .get(
+      '/:cardId/invoices/:invoiceId/lines',
+      authorize('cards', 'view'),
+      pathParams(invoiceParamsSchema, 'INVOICE_NOT_FOUND'),
+      async (c) => {
+        const { workspaceId } = currentWorkspace(c)
+        const { cardId, invoiceId } = c.req.valid('param')
+        return c.json(await listInvoiceLines(db, { workspaceId, cardAccountId: cardId, invoiceId }))
+      },
+    )
 }
 
 function entryRoutes({ db }: LedgerRouteDeps) {

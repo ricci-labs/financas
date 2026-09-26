@@ -369,3 +369,30 @@ export function selectPostingsOfEntries(tx: WorkspaceTransaction, entryIds: stri
     .where(inArray(postings.entryId, entryIds))
     .orderBy(asc(postings.entryId), asc(postings.lineNo))
 }
+
+export function selectInvoiceLines(
+  tx: WorkspaceTransaction,
+  cardAccountId: string,
+  invoiceId: string,
+) {
+  return tx
+    .select({
+      entryId: journalEntries.id,
+      entryType: journalEntries.entryType,
+      occurredOn: journalEntries.occurredOn,
+      description: journalEntries.description,
+      installmentNo: postings.installmentNo,
+      installmentCount: journalEntries.installmentCount,
+      cardAmountCents: postings.amountCents,
+    })
+    .from(postings)
+    .innerJoin(journalEntries, eq(journalEntries.id, postings.entryId))
+    .where(
+      and(
+        eq(postings.invoiceId, invoiceId),
+        eq(postings.accountId, cardAccountId),
+        isNull(journalEntries.deletedAt),
+      ),
+    )
+    .orderBy(asc(journalEntries.occurredOn), asc(journalEntries.id))
+}
