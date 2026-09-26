@@ -1,4 +1,8 @@
-export { listBudgets, setBudget } from '@api/modules/planning/use-cases/budgets'
+export {
+  listBudgets,
+  readBudgetFacts,
+  setBudget,
+} from '@api/modules/planning/use-cases/budgets'
 export {
   changeGoal,
   createGoal,

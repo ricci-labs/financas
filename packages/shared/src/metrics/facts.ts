@@ -1,9 +1,11 @@
+import { daysBetween } from '@shared/calendar/dates'
 import { isInPeriod } from '@shared/calendar/period'
 import type { AccountClass, IncomeNature } from '@shared/ledger/ledger.constants'
 import type {
   FactAccount,
   FactOccurrence,
   FactPosting,
+  PeriodDays,
   PeriodFacts,
 } from '@shared/metrics/metrics.types'
 import type { RecurringEntryType } from '@shared/recurrence/recurrence.constants'
@@ -33,6 +35,33 @@ export function pendingInPeriod(
 
 export function incomeNatureOf(facts: PeriodFacts, accountId: string): IncomeNature | null {
   return accountsById(facts).get(accountId)?.incomeNature ?? null
+}
+
+export function accountWithDescendants(facts: PeriodFacts, accountId: string): ReadonlySet<string> {
+  const covered = new Set([accountId])
+  let grew = true
+  while (grew) {
+    const before = covered.size
+    for (const account of facts.accounts) {
+      if (account.parentId && covered.has(account.parentId)) {
+        covered.add(account.id)
+      }
+    }
+    grew = covered.size > before
+  }
+  return covered
+}
+
+export function periodDays({ today, period }: PeriodFacts): PeriodDays {
+  const total = daysBetween(period.start, period.end) + 1
+  if (today < period.start) {
+    return { total, elapsed: 0, left: total }
+  }
+  if (today > period.end) {
+    return { total, elapsed: total, left: 0 }
+  }
+  const elapsed = daysBetween(period.start, today) + 1
+  return { total, elapsed, left: total - elapsed + 1 }
 }
 
 export function sumCents(values: readonly number[]): number {

@@ -5,6 +5,7 @@ import type { FactAccount, FactPosting, IsoDate } from '@financas/shared'
 export async function readAccountFacts(tx: WorkspaceTransaction): Promise<FactAccount[]> {
   return (await selectActiveAccounts(tx)).map((account) => ({
     id: account.id,
+    parentId: account.parentId,
     kind: account.kind,
     class: account.class,
     incomeNature: account.incomeNature,

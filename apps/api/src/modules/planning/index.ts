@@ -15,6 +15,7 @@ export {
   listOccurrences,
   listRecurrenceRules,
   matchOccurrence,
+  readBudgetFacts,
   readOccurrenceFacts,
   setBudget,
   skipOccurrence,

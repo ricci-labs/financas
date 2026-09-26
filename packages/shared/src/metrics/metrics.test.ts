@@ -20,14 +20,57 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
     installmentBudgetView: 'per_installment',
     budgetBase: 'fixed_income',
     accounts: [
-      { id: 'checking', kind: 'checking', class: 'asset', incomeNature: null },
-      { id: 'salary-a', kind: 'income_category', class: 'income', incomeNature: 'fixed' },
-      { id: 'salary-b', kind: 'income_category', class: 'income', incomeNature: 'fixed' },
-      { id: 'commission', kind: 'income_category', class: 'income', incomeNature: 'variable' },
-      { id: 'groceries', kind: 'expense_category', class: 'expense', incomeNature: null },
-      { id: 'housing', kind: 'expense_category', class: 'expense', incomeNature: null },
-      { id: 'electronics', kind: 'expense_category', class: 'expense', incomeNature: null },
-      { id: 'card', kind: 'credit_card', class: 'liability', incomeNature: null },
+      { id: 'checking', parentId: null, kind: 'checking', class: 'asset', incomeNature: null },
+      {
+        id: 'salary-a',
+        parentId: null,
+        kind: 'income_category',
+        class: 'income',
+        incomeNature: 'fixed',
+      },
+      {
+        id: 'salary-b',
+        parentId: null,
+        kind: 'income_category',
+        class: 'income',
+        incomeNature: 'fixed',
+      },
+      {
+        id: 'commission',
+        parentId: null,
+        kind: 'income_category',
+        class: 'income',
+        incomeNature: 'variable',
+      },
+      {
+        id: 'food',
+        parentId: null,
+        kind: 'expense_category',
+        class: 'expense',
+        incomeNature: null,
+      },
+      {
+        id: 'groceries',
+        parentId: 'food',
+        kind: 'expense_category',
+        class: 'expense',
+        incomeNature: null,
+      },
+      {
+        id: 'housing',
+        parentId: null,
+        kind: 'expense_category',
+        class: 'expense',
+        incomeNature: null,
+      },
+      {
+        id: 'electronics',
+        parentId: null,
+        kind: 'expense_category',
+        class: 'expense',
+        incomeNature: null,
+      },
+      { id: 'card', parentId: null, kind: 'credit_card', class: 'liability', incomeNature: null },
     ],
     postings: [
       moved('checking', 500_000, '2026-10-05'),
@@ -92,13 +135,18 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
         categoryAccountId: 'housing',
       },
     ],
+    budgets: [
+      { categoryAccountId: 'food', limitCents: 20_000 },
+      { categoryAccountId: 'housing', limitCents: 250_000 },
+      { categoryAccountId: 'electronics', limitCents: 40_000 },
+    ],
     ...overrides,
   }
 }
 
 describe('computeMetrics', () => {
   it('answers how much is still free to spend, per installment', () => {
-    expect(computeMetrics(household())).toEqual({
+    expect(computeMetrics(household())).toMatchObject({
       fixedIncome: 900_000,
       variableIncome: 120_000,
       budgetIncome: 900_000,
@@ -132,5 +180,59 @@ describe('computeMetrics', () => {
     })
     expect(computeMetrics(overspent).freeToSpend).toBe(-364_000)
     expect(computeMetrics(overspent).dailyAllowance).toBe(0)
+  })
+})
+
+describe('budgetPace', () => {
+  it('compares what each budget spent with the share of the period gone, a parent covering its children', () => {
+    expect(computeMetrics(household()).budgetPace).toEqual([
+      {
+        categoryAccountId: 'food',
+        limitCents: 20_000,
+        spentCents: 30_000,
+        expectedCents: 9_677,
+        status: 'over',
+      },
+      {
+        categoryAccountId: 'housing',
+        limitCents: 250_000,
+        spentCents: 0,
+        expectedCents: 120_968,
+        status: 'within',
+      },
+      {
+        categoryAccountId: 'electronics',
+        limitCents: 40_000,
+        spentCents: 30_000,
+        expectedCents: 19_355,
+        status: 'ahead',
+      },
+    ])
+  })
+
+  it('covers every level below the budgeted category', () => {
+    const base = household()
+    const withGrandchild = household({
+      accounts: [
+        {
+          id: 'snacks',
+          parentId: 'groceries',
+          kind: 'expense_category',
+          class: 'expense',
+          incomeNature: null,
+        },
+        ...base.accounts,
+      ],
+      postings: [...base.postings, moved('snacks', 5_000, '2026-10-03')],
+      budgets: [{ categoryAccountId: 'food', limitCents: 20_000 }],
+    })
+    expect(computeMetrics(withGrandchild).budgetPace[0]?.spentCents).toBe(35_000)
+  })
+
+  it('expects nothing before the period and the whole limit after it', () => {
+    const expected = (today: string) =>
+      computeMetrics(household({ today })).budgetPace.map((line) => line.expectedCents)
+    expect(expected('2026-09-30')).toEqual([0, 0, 0])
+    expect(expected('2026-11-01')).toEqual([20_000, 250_000, 40_000])
   })
 })

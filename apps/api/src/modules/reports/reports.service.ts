@@ -3,7 +3,12 @@ import type { Clock } from '@api/core/clock.types'
 import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { withWorkspace } from '@api/core/db/tx'
 import { readAccountFacts, readPostingFacts } from '@api/modules/ledger'
-import { holidayDatesOf, readOccurrenceFacts, workspaceToday } from '@api/modules/planning'
+import {
+  holidayDatesOf,
+  readBudgetFacts,
+  readOccurrenceFacts,
+  workspaceToday,
+} from '@api/modules/planning'
 import type { PeriodOverview } from '@api/modules/reports/reports.types'
 import { currentWorkspaceSettings } from '@api/modules/workspaces'
 import {
@@ -56,6 +61,7 @@ async function loadPeriodFacts(
     accounts: await readAccountFacts(tx),
     postings: await readPostingFacts(tx, period.start, period.end),
     occurrences: await readOccurrenceFacts(tx, { from: period.start, to: period.end }, today),
+    budgets: await readBudgetFacts(tx, period.label),
   }
 }
 
