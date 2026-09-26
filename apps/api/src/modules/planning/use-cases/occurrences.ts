@@ -73,6 +73,16 @@ export function withOverdueFlag(occurrence: OccurrenceRow, today: IsoDate): Occu
   return { ...occurrence, isOverdue: occurrence.status === 'pending' && occurrence.dueOn < today }
 }
 
+export function refreshWorkspaceOccurrences(
+  db: Database,
+  workspaceId: string,
+  clock: Clock = systemClock,
+): Promise<void> {
+  return withWorkspace(db, workspaceId, async (tx) =>
+    refreshOccurrences(tx, await workspaceToday(tx, clock)),
+  )
+}
+
 export async function refreshOccurrences(tx: WorkspaceTransaction, today: IsoDate): Promise<void> {
   for (const rule of await selectActiveRules(tx)) {
     await planRuleOccurrences(tx, rule, today)

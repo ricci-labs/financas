@@ -8,6 +8,7 @@ import {
   insertWorkspace,
   selectCurrentSettings,
   selectCurrentWorkspace,
+  selectJobWorkspaceIds,
   selectSettings,
   updateSettings,
   updateWorkspaceName,
@@ -68,6 +69,10 @@ export async function renameWorkspace(
   if (!renamed) {
     throw new NotFoundError('WORKSPACE_NOT_FOUND', 'Workspace not found')
   }
+}
+
+export function listJobWorkspaceIds(db: Database): Promise<string[]> {
+  return selectJobWorkspaceIds(db)
 }
 
 export async function currentWorkspaceSettings(

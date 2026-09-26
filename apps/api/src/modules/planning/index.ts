@@ -21,6 +21,7 @@ export {
   readGoalFacts,
   readOccurrenceFacts,
   readReserveFact,
+  refreshWorkspaceOccurrences,
   replaceAllocationSteps,
   setBudget,
   skipOccurrence,

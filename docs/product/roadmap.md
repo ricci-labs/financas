@@ -98,7 +98,7 @@ updated: 2026-09-26
      - [x] Insight: a contact with overdue items
   4. [ ] **Reminders:** notification outbox and its worker, email first (started 2026-09-26; jobs
          across workspaces per ADR 0025, no bypass role):
-     - [ ] `job_workspace_ids()` + `forEachWorkspace`, and the nightly occurrence planning job
+     - [x] `job_workspace_ids()` + `forEachWorkspace`, and the nightly occurrence planning job
      - [ ] `notifications` module: `notification_outbox`, enqueue with a dedupe key, quiet hours
      - [ ] Worker job: claim due rows, render pt-BR emails, send, retry with backoff
      - [ ] Reminders of bills and card invoices, by each member's lead time

@@ -5,6 +5,7 @@ export {
   currentWorkspaceSettings,
   findCurrentWorkspace,
   getWorkspaceSettings,
+  listJobWorkspaceIds,
   renameWorkspace,
   reserveWorkspaceId,
   setPixReceiving,
