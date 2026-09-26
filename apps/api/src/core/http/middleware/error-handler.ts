@@ -7,7 +7,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '@api/core/http/errors'
-import type { AppEnv } from '@api/core/http/http.types'
+import type { AppEnv, ErrorBody } from '@api/core/http/http.types'
 import { refOf } from '@api/core/http/middleware/request-context'
 import type { Context, ErrorHandler, NotFoundHandler } from 'hono'
 import { HTTPException } from 'hono/http-exception'
@@ -34,10 +34,6 @@ const CODE_BY_HTTP_STATUS: Record<number, string> = {
   404: 'NOT_FOUND',
   413: 'PAYLOAD_TOO_LARGE',
   429: 'TOO_MANY_REQUESTS',
-}
-
-type ErrorBody = {
-  error: { code: string; message: string; ref: string }
 }
 
 export const handleError: ErrorHandler<AppEnv> = (error, c) => {

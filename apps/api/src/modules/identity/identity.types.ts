@@ -1,6 +1,6 @@
 import type { BackgroundTasks } from '@api/core/background-tasks.types'
 import type { Clock } from '@api/core/clock.types'
-import type { Database } from '@api/core/db/client'
+import type { Database } from '@api/core/db/db.types'
 import type { Mailer } from '@api/core/email/email.types'
 import type { SessionCookieSettings } from '@api/core/http/http.types'
 import type { AttemptLimiter, PasswordCost } from '@api/core/security/security.types'
@@ -101,4 +101,55 @@ export type LoginLimitSettings = {
   maxFailuresPerEmail: number
   maxFailuresPerClient: number
   windowMinutes: number
+}
+
+export type VerificationEmail = {
+  recipient: EmailRecipient
+  verifyLink: string
+}
+
+export type PasswordResetEmail = {
+  recipient: EmailRecipient
+  resetLink: string
+}
+
+export type PasswordChangedEmail = {
+  recipient: EmailRecipient
+  forgotPasswordLink: string
+}
+
+export type AccountExistsEmail = {
+  recipient: EmailRecipient
+  loginLink: string
+  forgotPasswordLink: string
+}
+
+export type EmailBody = { in: { json: { email: string } }; out: { json: { email: string } } }
+
+export type LimitKeys = {
+  email: string
+  client: string
+}
+
+export type UserRow = {
+  email: string
+  displayName: string
+  passwordHash: string
+  emailVerifiedAt: Date | null
+}
+
+export type AuthTokenRow = {
+  userId: string
+  purpose: AuthTokenPurpose
+  tokenHash: string
+  createdAt: Date
+  expiresAt: Date
+}
+
+export type SessionRow = {
+  userId: string
+  tokenHash: string
+  userAgent: string | null
+  createdAt: Date
+  expiresAt: Date
 }

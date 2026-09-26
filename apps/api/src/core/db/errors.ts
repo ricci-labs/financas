@@ -1,8 +1,7 @@
+import type { PostgresErrorField } from '@api/core/db/db.types'
 export const POSTGRES_CHECK_VIOLATION = '23514'
 
 export const POSTGRES_UNIQUE_VIOLATION = '23505'
-
-type PostgresErrorField = 'code' | 'constraint'
 
 export function postgresErrorCode(error: unknown): string | undefined {
   return findInErrorChain(error, 'code')

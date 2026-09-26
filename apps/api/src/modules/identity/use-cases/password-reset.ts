@@ -1,4 +1,4 @@
-import type { Database } from '@api/core/db/client'
+import type { Database } from '@api/core/db/db.types'
 import { parseOrThrow, ValidationError } from '@api/core/http/errors'
 import { hashPassword } from '@api/core/security/passwords'
 import { hashToken } from '@api/core/security/tokens'

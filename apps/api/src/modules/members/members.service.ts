@@ -1,7 +1,7 @@
 import { systemClock } from '@api/core/clock'
 import type { Clock } from '@api/core/clock.types'
-import type { Database } from '@api/core/db/client'
-import { type WorkspaceTransaction, withWorkspace } from '@api/core/db/tx'
+import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
+import { withWorkspace } from '@api/core/db/tx'
 import { ConflictError, NotFoundError } from '@api/core/http/errors'
 import { generateToken, hashToken } from '@api/core/security/tokens'
 import {
@@ -20,6 +20,7 @@ import type {
   ActiveMembership,
   CreatedInvitation,
   CreateInvitationInput,
+  InvitationState,
   NewMembership,
 } from '@api/modules/members/members.types'
 
@@ -75,12 +76,6 @@ export async function acceptInvitation(
     await markInvitationAccepted(tx, invitation.id, userId, now)
     return { workspaceId, membershipId }
   })
-}
-
-type InvitationState = {
-  deletedAt: Date | null
-  acceptedAt: Date | null
-  expiresAt: Date
 }
 
 function assertInvitationIsOpen(invitation: InvitationState, now: Date): void {

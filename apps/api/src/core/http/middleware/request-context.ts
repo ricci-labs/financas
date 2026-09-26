@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import type { AppEnv } from '@api/core/http/http.types'
+import type { AppEnv, Completion } from '@api/core/http/http.types'
 import type { Logger } from '@api/core/observability/logger'
 import { createMiddleware } from 'hono/factory'
 import { routePath } from 'hono/route'
@@ -33,14 +33,6 @@ export function requestContext(rootLogger: Logger) {
 
 export function refOf(requestId: string): string {
   return requestId.slice(0, REF_LENGTH)
-}
-
-type Completion = {
-  method: string
-  route: string
-  status: number
-  code: string | undefined
-  durationMs: number
 }
 
 function logCompletion(logger: Logger, completion: Completion): void {

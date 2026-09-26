@@ -33,19 +33,13 @@ import {
   switchWorkspaceMidTransaction,
 } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
-import {
-  ACCOUNT_CLASS_BY_KIND,
-  ACCOUNT_KINDS,
-  type AccountKind,
-  type SystemAccountKind,
-} from '@financas/shared'
+import type { NewAccount, NewEntry, NewInvoice, PostingLine } from '@api/testing/testing.types'
+import { ACCOUNT_CLASS_BY_KIND, ACCOUNT_KINDS, type SystemAccountKind } from '@financas/shared'
 import { and, asc, eq, inArray } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const databases = connectTestDatabases()
 const fixtures = createFixtures(databases.owner, databases.app)
-
-type NewAccount = Partial<typeof ledgerAccounts.$inferInsert> & { kind: AccountKind }
 
 let ownerUserId: string
 let workspaceA: string
@@ -306,16 +300,6 @@ describe('system accounts', () => {
     expect(await updateOutcome(receivable, { color: '#00aa00', sortOrder: 9 })).toBeUndefined()
   })
 })
-
-type NewEntry = Partial<typeof journalEntries.$inferInsert>
-
-type PostingLine = {
-  accountId: string
-  kind: AccountKind
-  amountCents: number
-  lineNo?: number
-  invoiceId?: string
-}
 
 const ENTRY_DATE = '2026-10-01'
 
@@ -1173,8 +1157,6 @@ describe('account services', () => {
     ).rejects.toMatchObject({ code: 'ACCOUNT_NOT_FOUND' })
   })
 })
-
-type NewInvoice = Partial<typeof cardInvoices.$inferInsert>
 
 async function insertCard(
   workspaceId = workspaceA,

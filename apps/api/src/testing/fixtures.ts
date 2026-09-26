@@ -1,4 +1,4 @@
-import type { Database } from '@api/core/db/client'
+import type { Database } from '@api/core/db/db.types'
 import { users } from '@api/modules/identity/identity.table'
 import { createWorkspace } from '@api/modules/onboarding'
 import { workspaces } from '@api/modules/workspaces/workspaces.table'

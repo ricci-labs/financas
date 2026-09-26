@@ -1,4 +1,4 @@
-import type { Database } from '@api/core/db/client'
+import type { Database } from '@api/core/db/db.types'
 import type { Permission, SystemRoleKey } from '@financas/shared'
 
 export type SystemRoleIds = Record<SystemRoleKey, string>
@@ -23,4 +23,10 @@ export type WorkspaceAccess = {
 
 export type AccessRouteDeps = {
   db: Database
+}
+
+export type NewSystemRole = {
+  workspaceId: string
+  name: string
+  systemKey: SystemRoleKey
 }

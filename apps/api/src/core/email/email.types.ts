@@ -39,3 +39,5 @@ export type RenderedEmail = {
   text: string
   html: string
 }
+
+export type Deliver = (message: EmailMessage) => Promise<SentEmail>

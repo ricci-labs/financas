@@ -1,27 +1,11 @@
 import type { EmailMessage } from '@api/core/email/email.types'
 import { renderEmail } from '@api/core/email/layout'
-import type { EmailRecipient } from '@api/modules/identity/identity.types'
-
-type VerificationEmail = {
-  recipient: EmailRecipient
-  verifyLink: string
-}
-
-type PasswordResetEmail = {
-  recipient: EmailRecipient
-  resetLink: string
-}
-
-type PasswordChangedEmail = {
-  recipient: EmailRecipient
-  forgotPasswordLink: string
-}
-
-type AccountExistsEmail = {
-  recipient: EmailRecipient
-  loginLink: string
-  forgotPasswordLink: string
-}
+import type {
+  AccountExistsEmail,
+  PasswordChangedEmail,
+  PasswordResetEmail,
+  VerificationEmail,
+} from '@api/modules/identity/identity.types'
 
 export function emailVerificationMessage({
   recipient,

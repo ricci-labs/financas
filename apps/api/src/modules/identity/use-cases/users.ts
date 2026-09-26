@@ -1,4 +1,4 @@
-import type { Database } from '@api/core/db/client'
+import type { Database } from '@api/core/db/db.types'
 import {
   POSTGRES_UNIQUE_VIOLATION,
   postgresConstraintName,

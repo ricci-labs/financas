@@ -1,5 +1,4 @@
-import type { Database } from '@api/core/db/client'
-import type { WorkspaceTransaction } from '@api/core/db/tx'
+import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { workspaceSettings, workspaces } from '@api/modules/workspaces/workspaces.table'
 import type { NewWorkspace } from '@api/modules/workspaces/workspaces.types'
 import { isNull, sql } from 'drizzle-orm'

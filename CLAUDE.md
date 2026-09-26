@@ -21,6 +21,7 @@ Self-hosted on a small headless Debian homelab, deployed with Dokploy.
 - **Double-entry ledger:** money moves only as balanced journal entries. Postings are immutable; edits replace the entry, and deletes are soft (`docs/domain/model/ledger.md`).
 - **Soft delete everywhere** (`deleted_at`); repositories filter it by default. Hard delete only for LGPD workspace erasure.
 - **Every route and agent tool declares its `(module, action)` permission** (`docs/domain/model/access-control.md`).
+- **Each file has one role, always.** Types (exported or not) only in `<concept>.types.ts`, Zod schemas only in `<concept>.schemas.ts` (request bodies in `@financas/shared`), module files named `<module>.<role>.ts`, routes thin (policies in `<module>.middleware.ts`). The only exception: `type X = ...typeof localValue...` next to that value. `pnpm lint:file-roles` enforces it (`docs/architecture/conventions.md` → File organization).
 - **No comments in code; it must read like prose.** Clear names, small functions, guard clauses, named constants, `@api/` `@web/` `@shared/` imports (`docs/architecture/conventions.md` → Code style, ADR 0017).
 - Money is an **integer number of cents** (`amountCents`). Never floats, never `numeric` → JS number.
 - Business rules live in pure functions (`packages/shared`, one folder per concept) and module services. Routes, the WhatsApp channel, the agent and jobs call services and hold no business logic.

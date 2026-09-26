@@ -2,12 +2,8 @@ import type {
   AttemptCheck,
   AttemptLimiter,
   AttemptLimiterOptions,
+  Window,
 } from '@api/core/security/security.types'
-
-type Window = {
-  attempts: number
-  startedAt: number
-}
 
 const DEFAULT_MAX_TRACKED_KEYS = 10_000
 const MS_PER_SECOND = 1000

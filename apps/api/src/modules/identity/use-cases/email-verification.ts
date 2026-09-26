@@ -1,4 +1,4 @@
-import type { Database } from '@api/core/db/client'
+import type { Database } from '@api/core/db/db.types'
 import { ValidationError } from '@api/core/http/errors'
 import { hashToken } from '@api/core/security/tokens'
 import { emailVerificationMessage } from '@api/modules/identity/identity.emails'

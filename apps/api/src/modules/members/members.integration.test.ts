@@ -12,6 +12,7 @@ import {
   waitForBlockedQueries,
 } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
+import type { InvitationValues } from '@api/testing/testing.types'
 import type { SystemRoleKey } from '@financas/shared'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -330,7 +331,6 @@ describe('membership preferences', () => {
 })
 
 describe('invitations', () => {
-  type InvitationValues = Partial<typeof invitations.$inferInsert>
   const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000
 
   async function invite(values: InvitationValues, workspaceId = workspaceA) {

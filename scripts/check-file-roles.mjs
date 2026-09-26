@@ -7,13 +7,17 @@ const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx'])
 const IGNORED_DIRECTORIES = new Set(['node_modules', 'dist', 'drizzle'])
 const TYPES_FILE = /\.types\.ts$/
 const SCHEMAS_FILE = /\.schemas\.ts$/
-const TEST_FILE = /\.test\.tsx?$/
 const GENERATED_FILE = /\.gen\.ts$/
-const DERIVED_TYPE = /\btypeof\b|^(ReturnType|Parameters|Awaited|InstanceType)</
+const TYPEOF_REFERENCE = /\btypeof\s+([A-Za-z_$][\w$]*)/g
 const ZOD_VALUE = /^z\s*\./
+const TYPE_DECLARATIONS = new Set(['TSTypeAliasDeclaration', 'TSInterfaceDeclaration'])
+const MODULE_FILE = /^apps\/api\/src\/modules\/([^/]+)\/(.+)$/
+const MODULE_ROLES = ['table', 'types', 'repository', 'service', 'routes', 'middleware', 'emails']
+const USE_CASE_FILE = /^use-cases\/[a-z][a-z-]*\.ts$/
+const MODULE_TEST_FILE = /^[a-z][a-z-]*(\.[a-z][a-z-]*)?(\.integration)?\.test\.ts$/
 
 function isCheckedFile(path) {
-  return SOURCE_EXTENSIONS.has(extname(path)) && !TEST_FILE.test(path) && !GENERATED_FILE.test(path)
+  return SOURCE_EXTENSIONS.has(extname(path)) && !GENERATED_FILE.test(path)
 }
 
 function listSourceFiles(root) {
@@ -37,23 +41,56 @@ function declarationOf(statement) {
   return statement.type === 'ExportNamedDeclaration' ? statement.declaration : statement
 }
 
-function handWrittenExportedTypes(path, source, program) {
+function topLevelValueNames(program) {
+  const names = new Set()
+  for (const declaration of program.body.map(declarationOf)) {
+    if (declaration?.type === 'VariableDeclaration') {
+      for (const declarator of declaration.declarations) {
+        names.add(declarator.id.name)
+      }
+    }
+    if (declaration?.type === 'FunctionDeclaration' || declaration?.type === 'ClassDeclaration') {
+      names.add(declaration.id?.name)
+    }
+  }
+  return names
+}
+
+function isAstNode(value) {
+  return value !== null && typeof value === 'object' && typeof value.type === 'string'
+}
+
+function typeDeclarationsIn(node, found = []) {
+  if (TYPE_DECLARATIONS.has(node.type)) {
+    found.push(node)
+  }
+  for (const value of Object.values(node)) {
+    const children = Array.isArray(value) ? value : [value]
+    for (const child of children.filter(isAstNode)) {
+      typeDeclarationsIn(child, found)
+    }
+  }
+  return found
+}
+
+function isShapeOfLocalValue(source, declaration, localValues, topLevelDeclarations) {
+  if (declaration.type !== 'TSTypeAliasDeclaration' || !topLevelDeclarations.has(declaration)) {
+    return false
+  }
+  const references = [...textOf(source, declaration.typeAnnotation).matchAll(TYPEOF_REFERENCE)]
+  return references.length > 0 && references.every(([, name]) => localValues.has(name))
+}
+
+function typesOutsideTypeFiles(path, source, program) {
   if (TYPES_FILE.test(path)) {
     return []
   }
-  return program.body
-    .filter((statement) => statement.type === 'ExportNamedDeclaration')
-    .map((statement) => statement.declaration)
-    .filter((declaration) => declaration !== null && declaration !== undefined)
-    .filter((declaration) => {
-      if (declaration.type === 'TSInterfaceDeclaration') {
-        return true
-      }
-      if (declaration.type !== 'TSTypeAliasDeclaration') {
-        return false
-      }
-      return !DERIVED_TYPE.test(textOf(source, declaration.typeAnnotation))
-    })
+  const localValues = topLevelValueNames(program)
+  const topLevelDeclarations = new Set(program.body.map(declarationOf))
+  return typeDeclarationsIn(program)
+    .filter(
+      (declaration) => !isShapeOfLocalValue(source, declaration, localValues, topLevelDeclarations),
+    )
     .map((declaration) => ({
       line: lineOf(source, declaration.start),
       problem: `type ${declaration.id.name} belongs in a .types.ts file`,
@@ -75,12 +112,29 @@ function schemasOutsideSchemaFiles(path, source, program) {
     }))
 }
 
+function misnamedModuleFile(path) {
+  const match = relative(process.cwd(), path).match(MODULE_FILE)
+  if (!match) {
+    return []
+  }
+  const [, moduleName, fileName] = match
+  const isRoleFile = MODULE_ROLES.some((role) => fileName === `${moduleName}.${role}.ts`)
+  const isTestFile = fileName.startsWith(`${moduleName}.`) && MODULE_TEST_FILE.test(fileName)
+  const isKnown =
+    fileName === 'index.ts' || isRoleFile || isTestFile || USE_CASE_FILE.test(fileName)
+  if (isKnown) {
+    return []
+  }
+  return [{ line: 1, problem: `module files are named ${moduleName}.<role>.ts (structure.md)` }]
+}
+
 function findViolations(path) {
   const source = readFileSync(path, 'utf8')
   const { program } = parseSync(path, source)
   return [
-    ...handWrittenExportedTypes(path, source, program),
+    ...typesOutsideTypeFiles(path, source, program),
     ...schemasOutsideSchemaFiles(path, source, program),
+    ...misnamedModuleFile(path),
   ].map(({ line, problem }) => `${relative(process.cwd(), path)}:${line} ${problem}`)
 }
 

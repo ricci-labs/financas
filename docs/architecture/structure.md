@@ -62,6 +62,7 @@ src/
 │   ├── identity.schemas.ts   # email, password (12–128), display name, credentials
 │   └── identity.schemas.test.ts
 ├── installments/
+│   ├── installments.types.ts # ProportionalShare
 │   ├── installments.ts       # split + multi-party allocation
 │   └── installments.test.ts
 ├── access/
@@ -106,6 +107,7 @@ src/
 │   │   ├── columns.ts        # primaryId, timestamps, softDelete helpers
 │   │   ├── errors.ts         # postgresErrorCode(): read the SQLSTATE of a failed query
 │   │   ├── tenancy.ts        # app role + current workspace for RLS policies
+│   │   ├── db.types.ts       # Database, WorkspaceTransaction, options
 │   │   └── tx.ts             # withWorkspace(): sets app.workspace_id per transaction
 │   ├── http/
 │   │   ├── base-app.ts       # Hono app with the global middleware (request context, secure
@@ -152,7 +154,8 @@ src/
 └── jobs/                     # croner schedules; each job calls services
 src/testing/                  # test helpers: database.ts (connections, Postgres error codes),
 │                             #   fixtures.ts (users/workspaces through the real services),
-│                             #   mailer.ts (recording Mailer), logger.ts (capturing logger)
+│                             #   mailer.ts (recording Mailer), logger.ts (capturing logger),
+│                             #   app.ts (test AppDeps), testing.types.ts (test-only shapes)
 scripts/ops/                  # ops:* debugging scripts: Claude's stable interface (runbook.md);
                               #   commands that change data live in src/ops/ instead
 ```

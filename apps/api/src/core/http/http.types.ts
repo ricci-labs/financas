@@ -41,3 +41,19 @@ export type SessionGuardOptions = {
   publicRoutes: ReadonlySet<string>
   cookie: SessionCookieSettings
 }
+
+export type NodeBindings = {
+  incoming?: { socket?: { remoteAddress?: string } }
+}
+
+export type ErrorBody = {
+  error: { code: string; message: string; ref: string }
+}
+
+export type Completion = {
+  method: string
+  route: string
+  status: number
+  code: string | undefined
+  durationMs: number
+}

@@ -1,5 +1,5 @@
 import type { BackgroundTasks } from '@api/core/background-tasks.types'
-import type { Database } from '@api/core/db/client'
+import type { Database } from '@api/core/db/db.types'
 import type { Mailer } from '@api/core/email/email.types'
 import type { SessionCookieSettings } from '@api/core/http/http.types'
 import type { Logger } from '@api/core/observability/logger'

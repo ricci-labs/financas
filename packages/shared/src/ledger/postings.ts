@@ -9,19 +9,13 @@ import {
 import type {
   AccountRef,
   EntryPlan,
+  PlanLine,
+  PlanOf,
   PostingDraft,
   PostingsPlan,
   PostingsViolation,
 } from '@shared/ledger/postings.types'
 import type { Cents } from '@shared/money/money.types'
-
-type Line = {
-  account: AccountRef
-  amountCents: Cents
-  effectiveOn?: IsoDate
-  invoiceId?: string
-  installmentNo?: number
-}
 
 export function isMoneyAccountKind(kind: AccountKind): kind is MoneyAccountKind {
   return (MONEY_ACCOUNT_KINDS as readonly AccountKind[]).includes(kind)
@@ -34,8 +28,6 @@ export function planPostings(plan: EntryPlan): PostingsPlan {
   }
   return { ok: true, postings: toDrafts(linesOf(plan), plan.occurredOn) }
 }
-
-type PlanOf<T extends EntryPlan['entryType']> = Extract<EntryPlan, { entryType: T }>
 
 function findViolation(plan: EntryPlan): PostingsViolation | undefined {
   switch (plan.entryType) {
@@ -104,7 +96,7 @@ function openingBalanceViolation(plan: PlanOf<'opening_balance'>): PostingsViola
   )
 }
 
-function linesOf(plan: EntryPlan): Line[] {
+function linesOf(plan: EntryPlan): PlanLine[] {
   switch (plan.entryType) {
     case 'expense':
       return moneyMoves(plan.amountCents, plan.paidFrom, plan.category)
@@ -124,7 +116,7 @@ function linesOf(plan: EntryPlan): Line[] {
   }
 }
 
-function cardPurchaseLines(plan: PlanOf<'card_purchase'>): Line[] {
+function cardPurchaseLines(plan: PlanOf<'card_purchase'>): PlanLine[] {
   const amounts = splitInstallments(plan.amountCents, plan.installmentCount)
   const perInstallment = plan.installments.map((target, index) => {
     const installmentNo = plan.firstInstallment + index
@@ -146,14 +138,14 @@ function cardPurchaseLines(plan: PlanOf<'card_purchase'>): Line[] {
   return [...cardLines, ...categoryLines]
 }
 
-function moneyMoves(amountCents: Cents, from: AccountRef, to: AccountRef): Line[] {
+function moneyMoves(amountCents: Cents, from: AccountRef, to: AccountRef): PlanLine[] {
   return [
     { account: to, amountCents },
     { account: from, amountCents: -amountCents },
   ]
 }
 
-function toDrafts(lines: Line[], occurredOn: IsoDate): PostingDraft[] {
+function toDrafts(lines: PlanLine[], occurredOn: IsoDate): PostingDraft[] {
   return lines.map((line, index) => ({
     lineNo: index + 1,
     accountId: line.account.id,

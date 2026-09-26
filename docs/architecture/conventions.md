@@ -31,10 +31,20 @@ without comments.
 
 ## File organization
 - **One folder per concept** (a domain concept in `shared`, a module in the API, a feature in the web).
-- **Exported types live in `<concept>.types.ts`** in that folder. A type used only inside one file may stay in it, unexported. Types derived from a value (`z.infer<typeof schema>`, `ReturnType<typeof fn>`) stay next to that value. This holds in `core/` too (`core/http/http.types.ts`, `core/security/security.types.ts`, `core/clock.types.ts`...).
+- **Every type lives in a `<concept>.types.ts` file**, exported or not, in every folder, tests
+  included (`core/http/http.types.ts`, `core/db/db.types.ts`, `installments/installments.types.ts`,
+  `src/testing/testing.types.ts` for test-only shapes...). No `type` or `interface` in a service,
+  repository, route, middleware, helper or test file.
+- **The one exception:** a type that is the shape of a value declared in the same file, written with
+  `typeof` (`type Env = z.infer<typeof envSchema>` next to the schema,
+  `type AccountKind = (typeof ACCOUNT_KINDS)[number]` next to the constant). A `typeof` of something
+  imported doesn't count: `typeof invitations.$inferInsert` goes to a `.types.ts` file.
 - **Tests sit next to the code** they test: `money.ts` + `money.test.ts`. No separate test trees.
 - Zod schemas go in `<concept>.schemas.ts`. Tables in `<module>.table.ts`. Request body schemas are the API contract, so they live in `@financas/shared` (the web forms use the same ones), not in route files.
-- **Enforced:** `pnpm lint:file-roles` (`scripts/check-file-roles.mjs`, also in `pnpm check` and the pre-commit hook) fails on a hand-written exported type outside a `.types.ts` file, or a top-level Zod schema outside a `.schemas.ts` file.
+- **Enforced:** `pnpm lint:file-roles` (`scripts/check-file-roles.mjs`, in `pnpm check`, the
+  pre-commit hook and CI) fails on any type declared outside a `.types.ts` file (except the rule
+  above), a top-level Zod schema outside a `.schemas.ts` file, or a module file whose name isn't one
+  of the module roles (`structure.md` → Module anatomy).
 - **One purpose per file.** A routes file holds thin handlers; limits, guards and other request policies are middleware in `<module>.middleware.ts`.
 - Each folder exposes its public surface through the package or module `index.ts`.
 
