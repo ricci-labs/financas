@@ -64,7 +64,7 @@ Output: one JSON object per line to stdout. Docker keeps it (with rotation, see 
 | `entry.created` / `.replaced` / `.deleted` / `.restored` | info |
 | `authz.denied` | warn |
 | `auth.login.succeeded` (with `userId`) | info |
-| `auth.login.rate_limited`, `auth.account_email.rate_limited` | warn |
+| `auth.login.rate_limited`, `auth.account_email.rate_limited`, `auth.link.rate_limited` | warn |
 | `background.task.failed` (with `task`) | error |
 | `email.sent` / `email.send_failed` | info / error |
 | `charge.created` / `.sent` / `.paid` | info |

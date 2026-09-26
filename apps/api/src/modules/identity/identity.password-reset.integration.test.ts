@@ -151,6 +151,18 @@ describe('resetPassword', () => {
     expect(user?.emailVerifiedAt).toEqual(START)
   })
 
+  it('checks the link before hashing the new password', async () => {
+    const hashingWouldFail = { cpuMemoryCost: 3, blockSize: 8, parallelization: 1 }
+    const { deps } = setup()
+    await expect(
+      resetPassword(
+        databases.app,
+        { token: 'made-up-token', password: NEW_PASSWORD },
+        { ...deps, passwordCost: hashingWouldFail },
+      ),
+    ).rejects.toMatchObject({ code: 'LINK_INVALID' })
+  })
+
   it('works only once', async () => {
     const { email } = await existingUser('once')
     const token = await resetLinkFor(email)

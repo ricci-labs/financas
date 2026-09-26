@@ -1,13 +1,17 @@
 import { createApp } from '@api/app'
 import { createBackgroundTasks } from '@api/core/background-tasks'
 import type { Mailer } from '@api/core/email/email.types'
-import { createUser } from '@api/modules/identity'
+import {
+  type AccountEmailLimits,
+  createAccountEmailLimits,
+  createUser,
+} from '@api/modules/identity'
 import { users } from '@api/modules/identity/identity.table'
 import { TEST_PUBLIC_URL, testAppDeps } from '@api/testing/app'
 import { connectTestDatabases } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
 import { createCapturingLogger } from '@api/testing/logger'
-import { createRecordingMailer } from '@api/testing/mailer'
+import { createRecordingMailer, tokenFromEmail } from '@api/testing/mailer'
 import { eq } from 'drizzle-orm'
 import { afterAll, describe, expect, it } from 'vitest'
 
@@ -26,7 +30,13 @@ function emailFor(label: string): string {
   return `${label}-${crypto.randomUUID()}-${fixtures.runId}@example.test`
 }
 
-function setup(options: { isPublicSignupEnabled?: boolean; mailer?: Mailer } = {}) {
+type SetupOptions = {
+  isPublicSignupEnabled?: boolean
+  mailer?: Mailer
+  accountEmailLimits?: AccountEmailLimits
+}
+
+function setup(options: SetupOptions = {}) {
   const recording = createRecordingMailer()
   const background = createBackgroundTasks()
   const capture = createCapturingLogger()
@@ -37,6 +47,7 @@ function setup(options: { isPublicSignupEnabled?: boolean; mailer?: Mailer } = {
       isPublicSignupEnabled: options.isPublicSignupEnabled ?? true,
       background,
       logger: capture.logger,
+      ...(options.accountEmailLimits ? { accountEmailLimits: options.accountEmailLimits } : {}),
     }),
   )
   const post = (path: string, body: unknown) =>
@@ -45,7 +56,8 @@ function setup(options: { isPublicSignupEnabled?: boolean; mailer?: Mailer } = {
       headers: { 'Content-Type': 'application/json', Origin: TEST_PUBLIC_URL },
       body: JSON.stringify(body),
     })
-  return { post, sent: recording.sent, background, entries: capture.entries }
+  const login = (email: string, password: string) => post('/api/auth/login', { email, password })
+  return { post, login, sent: recording.sent, background, entries: capture.entries }
 }
 
 async function existingUser(label: string) {
@@ -180,5 +192,90 @@ describe('POST /api/auth/password/forgot and /api/auth/verify-email/resend', () 
         task: 'auth.password_reset_requested',
       }),
     )
+  })
+})
+
+describe('POST /api/auth/verify-email', () => {
+  it('verifies with the emailed link once, then refuses it', async () => {
+    const { post, login, sent, background } = setup()
+    const email = emailFor('route-verify')
+    await post('/api/auth/signup', { email, displayName: 'Member A', password: PASSWORD })
+    await background.idle()
+    const token = tokenFromEmail(sent[0])
+
+    expect((await login(email, PASSWORD)).status).toBe(403)
+    expect((await post('/api/auth/verify-email', { token })).status).toBe(204)
+    expect((await login(email, PASSWORD)).status).toBe(200)
+
+    const again = await post('/api/auth/verify-email', { token })
+    expect(again.status).toBe(400)
+    expect(await again.json()).toMatchObject({ error: { code: 'LINK_INVALID' } })
+  })
+})
+
+describe('POST /api/auth/password/reset', () => {
+  async function resetLink(label: string) {
+    const context = setup()
+    const email = await existingUser(label)
+    await context.post('/api/auth/password/forgot', { email })
+    await context.background.idle()
+    return { ...context, email, token: tokenFromEmail(context.sent[0]) }
+  }
+
+  it('sets the new password, clears the cookie and tells the owner', async () => {
+    const { post, login, sent, background, email, token } = await resetLink('route-reset')
+    const response = await post('/api/auth/password/reset', {
+      token,
+      password: 'the new long password',
+    })
+    await background.idle()
+
+    expect(response.status).toBe(204)
+    expect(response.headers.get('Set-Cookie')).toMatch(/^session=;.*Max-Age=0/)
+    expect((await login(email, PASSWORD)).status).toBe(401)
+    expect((await login(email, 'the new long password')).status).toBe(200)
+    expect(sent.map((message) => message.template)).toEqual(['password_reset', 'password_changed'])
+  })
+
+  it('refuses a short password and keeps the link usable', async () => {
+    const { post, token } = await resetLink('route-reset-short')
+    const short = await post('/api/auth/password/reset', { token, password: 'too short' })
+    expect(short.status).toBe(400)
+    expect(await short.json()).toMatchObject({ error: { code: 'PASSWORD_INVALID' } })
+    const good = await post('/api/auth/password/reset', {
+      token,
+      password: 'the new long password',
+    })
+    expect(good.status).toBe(204)
+  })
+})
+
+describe('invalid links', () => {
+  it('lock a client out after too many, even with a valid link', async () => {
+    const context = setup({
+      accountEmailLimits: createAccountEmailLimits({
+        maxPerEmailPerHour: 3,
+        maxPerClientPerHour: 10,
+        maxInvalidLinksPerClientPerHour: 2,
+      }),
+    })
+    const email = await existingUser('route-link-limit')
+    await context.post('/api/auth/password/forgot', { email })
+    await context.background.idle()
+    const token = tokenFromEmail(context.sent[0])
+
+    const statuses = []
+    for (const guess of ['guess-1', 'guess-2']) {
+      statuses.push((await context.post('/api/auth/verify-email', { token: guess })).status)
+    }
+    const locked = await context.post('/api/auth/password/reset', {
+      token,
+      password: 'the new long password',
+    })
+
+    expect(statuses).toEqual([400, 400])
+    expect(locked.status).toBe(429)
+    expect(Number(locked.headers.get('Retry-After'))).toBeGreaterThan(0)
+    expect((await context.login(email, PASSWORD)).status).toBe(200)
   })
 })

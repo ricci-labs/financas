@@ -68,7 +68,8 @@ Web sessions (ADR 0021). Global table: no `workspace_id`, no RLS, hard deleted. 
   `LINK_INVALID`.
 - `requestPasswordReset()` emails a 1-hour reset link to an active user (retiring the previous
   one). For anyone else it silently does nothing.
-- `resetPassword()` checks the new password first, so a bad one doesn't spend the link. Then one
+- `resetPassword()` checks the new password first, so a bad one doesn't spend the link, then checks
+  the link with a read-only query before hashing, so a fake link costs no scrypt work. Then one
   statement uses the token (unused, unexpired, `password_reset`, active user), stores the new hash,
   marks the email verified (the link proved the user reads it) and deletes every session. The owner
   gets a "your password was changed" email with a link to reset it again. Anything else is

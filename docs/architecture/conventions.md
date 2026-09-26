@@ -121,6 +121,12 @@ without comments.
   (`core/background-tasks.ts`). The response is the same whether the email exists or not, and its
   timing doesn't depend on it. A failed task is logged as `background.task.failed`; shutdown waits
   for pending tasks.
+- **Routes that use an email link** (`POST /api/auth/verify-email`, `/password/reset`) take the
+  token in the body (the web reads it from the URL fragment). Each `LINK_INVALID` counts against the
+  client (default 20 per hour); over the limit they answer `429` even for a valid link. A reset
+  checks the link with a read-only query **before** hashing the new password, so fake links can't
+  make the server spend scrypt memory and time. It also clears the caller's session cookie, since
+  every session of the user ends.
 - The client address is the socket address, or with `TRUSTED_PROXY_HOPS = n` the `X-Forwarded-For`
   entry `n` from the right (`core/http/client-ip.ts`). Entries a client writes further left are ignored.
 - The session cookie is `HttpOnly`, `SameSite=Lax`, `Path=/`, with the session expiry. In production

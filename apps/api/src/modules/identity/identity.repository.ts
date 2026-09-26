@@ -1,7 +1,7 @@
 import type { Database } from '@api/core/db/client'
 import { authTokens, sessions, users } from '@api/modules/identity/identity.table'
 import type { AuthTokenPurpose } from '@api/modules/identity/identity.types'
-import { and, eq, isNull, sql } from 'drizzle-orm'
+import { and, eq, gt, isNull, sql } from 'drizzle-orm'
 
 type UserRow = {
   email: string
@@ -185,4 +185,26 @@ export async function findAccountById(db: Database, userId: string) {
     .from(users)
     .where(eq(users.id, userId))
   return account
+}
+
+export async function isUsableAuthToken(
+  db: Database,
+  tokenHash: string,
+  purpose: AuthTokenPurpose,
+  now: Date,
+): Promise<boolean> {
+  const [usable] = await db
+    .select({ id: authTokens.id })
+    .from(authTokens)
+    .innerJoin(users, eq(users.id, authTokens.userId))
+    .where(
+      and(
+        eq(authTokens.tokenHash, tokenHash),
+        eq(authTokens.purpose, purpose),
+        isNull(authTokens.usedAt),
+        gt(authTokens.expiresAt, now),
+        isNull(users.disabledAt),
+      ),
+    )
+  return usable !== undefined
 }
