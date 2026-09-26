@@ -1,5 +1,5 @@
 ---
-summary: The API sends email with Nodemailer over SMTP (any provider, set by SMTP_URL), behind a small Mailer interface; auth emails are sent right away, and local development writes messages to .private/outbox instead of sending.
+summary: The API sends email with Nodemailer over SMTP (any provider, set by SMTP_* env vars), behind a small Mailer interface; auth emails are sent right away, and local development writes messages to .private/outbox instead of sending.
 read_when: Sending any email (verification, password reset, invitations, reminders), configuring SMTP, or testing code that sends email.
 updated: 2026-09-25
 ---
@@ -19,9 +19,20 @@ updated: 2026-09-25
 ## Decision
 - **Library:** `nodemailer`. It's the standard Node email library: no runtime dependencies, pure
   JavaScript, MIT-0, no extra process.
-- **Transport:** SMTP only, configured by `SMTP_URL` (`smtps://user:password@host:465`) and
-  `EMAIL_FROM` (`"Finanças <no-reply@example.com>"`). Any provider with SMTP works, so changing
-  provider is a config change.
+- **Transport:** SMTP only, configured entirely by env vars (ADR 0023), so whoever runs an
+  instance plugs in their own provider without touching code:
+
+  | Var | Example | Default |
+  |---|---|---|
+  | `SMTP_HOST` | `smtp.example.com` | none |
+  | `SMTP_PORT` | `587` | `587` |
+  | `SMTP_SECURE` | `true` for implicit TLS (port 465), `false` for STARTTLS | `true` when the port is 465 |
+  | `SMTP_USER` | `no-reply@example.com` | none (no auth) |
+  | `SMTP_PASSWORD` | provider password or app password | none |
+  | `EMAIL_FROM` | `no-reply@example.com` | none |
+  | `EMAIL_FROM_NAME` | `Finanças` | `Finanças` |
+
+  `SMTP_USER` and `SMTP_PASSWORD` come as a pair. The env schema checks all of it at boot.
 - **Boundary:** `core/email` exposes a `Mailer` (`send({ to, subject, text, html })`). Only
   `core/email` imports `nodemailer`. Services receive the `Mailer` as a dependency, like the
   `Clock`, so tests pass a fake that records messages.
@@ -31,23 +42,26 @@ updated: 2026-09-25
   away, because the user is waiting for them. A failure is logged (`email.send_failed`) and the user
   can ask again. Scheduled emails (reminders) go through `notification_outbox` later, and its
   worker uses the same `Mailer`.
-- **Local development:** without `SMTP_URL`, messages are written as `.eml` files to
+- **Local development:** without `SMTP_HOST`, messages are written as `.eml` files to
   `.private/outbox/` (gitignored) so links can be opened by hand. Production refuses to boot
-  without `SMTP_URL`.
+  without `SMTP_HOST` and `EMAIL_FROM`, with a message naming the missing vars.
 - **Privacy:** email bodies and links are never logged. Logs carry the template name and the
   message id.
 
 ## Alternatives considered
 - A provider's HTTP SDK (Resend, SES, Postmark): ties the code to one provider and adds its SDK.
   All of them also accept SMTP.
+- One `SMTP_URL` (`smtps://user:password@host:465`): shorter, but the password has to be
+  URL-encoded, which is an easy mistake for someone setting up their own instance.
 - Hand-written SMTP over `node:net`: TLS, auth, MIME and encoding are easy to get wrong.
 - React Email or MJML for templates: heavy for three short transactional emails.
 - Mailpit or MailHog in `compose.dev.yml`: one more container. The `.eml` files are enough for now.
 
 ## Consequences
 - A new outbound connection: the SMTP provider, next to Anthropic and WhatsApp.
-- New env vars: `SMTP_URL`, `EMAIL_FROM`, `PUBLIC_URL` (already listed), `PUBLIC_SIGNUP_ENABLED`
-  (ADR 0021).
+- New env vars: the `SMTP_*` and `EMAIL_FROM*` above, plus `PUBLIC_URL` (already listed) and
+  `PUBLIC_SIGNUP_ENABLED` (ADR 0021). All documented in `.env.example` and
+  `../operations/deploy.md`.
 - Deliverability depends on the provider and on SPF/DKIM for the sender domain. **Open question:**
   which provider and which sender domain (roadmap).
 - Tests never send email: unit and integration tests use the fake `Mailer`.

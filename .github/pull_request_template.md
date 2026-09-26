@@ -12,6 +12,7 @@
 - [ ] Migration included → reviewed SQL; destructive? ☐ no ☐ yes (explain)
 - [ ] Agent prompt/tools/model changed → evals run
 - [ ] New logs/metrics follow the event catalog (`docs/operations/observability.md`)
+- [ ] New env var → declared in `env.ts`, documented in `.env.example` and `docs/operations/deploy.md`
 - [ ] No new dependency/container/process, or it is justified below
 
 ## Screenshots

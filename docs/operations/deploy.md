@@ -22,8 +22,9 @@ Pipeline: `../engineering/ci-cd.md`. Decision: `../decisions/0010-deploy-ghcr-do
 | `ANTHROPIC_API_KEY` | Agent |
 | `PUBLIC_URL` | Base URL of the dashboard, used in email links |
 | `PUBLIC_SIGNUP_ENABLED` | `true` opens public sign-up; default `false` (ADR 0021) |
-| `SMTP_URL` | `smtps://user:password@host:465` of the email provider (ADR 0022). Required in production |
-| `EMAIL_FROM` | Sender, e.g. `"Finanças <no-reply@example.com>"` |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE` | Email provider (ADR 0022). `SMTP_HOST` is required in production |
+| `SMTP_USER`, `SMTP_PASSWORD` | SMTP login, as a pair |
+| `EMAIL_FROM`, `EMAIL_FROM_NAME` | Sender address (required in production) and display name |
 | `LOG_LEVEL` | `info` in prod |
 | `OTEL_SERVICE_NAME=financas-api`, `OTEL_METRICS_EXPORTER=prometheus`, `OTEL_TRACES_EXPORTER=none` | Observability Level 0 (`observability.md`) |
 | `UPTIME_KUMA_PUSH_URL_<JOB>` | Heartbeats (optional) |

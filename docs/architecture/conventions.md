@@ -64,6 +64,21 @@ without comments.
 ## IDs
 - UUID v7 (time-ordered), default `uuidv7()` in Postgres 18. The app may pass its own id when it needs it before the insert.
 
+## Configuration (ADR 0023)
+- Everything that changes from one instance to another comes from env vars: URLs, credentials,
+  providers, feature switches (`PUBLIC_SIGNUP_ENABLED`). Never hard-code a household's or an
+  operator's value.
+- Every var is declared in `core/config/env.ts` (Zod), with a default when a safe one exists, and
+  the app refuses to boot with a message naming each invalid or missing var.
+- A var that is required only in production is optional in the schema and checked by a production
+  rule, so local development works with the defaults.
+- The PR that adds a var also documents it in `.env.example` (with a comment line saying what it
+  does) and in `../operations/deploy.md`.
+- Code reads config only through the `Env` object passed down from `main.ts`, never
+  `process.env` directly.
+- Settings a user changes from the app belong in the database (`workspace_settings`,
+  `user_preferences`), not in env.
+
 ## Validation and errors
 - Validate at every boundary with Zod: HTTP (`zValidator`), agent tool inputs, env, WhatsApp payloads.
 - Services throw typed `AppError` subclasses (`NotFoundError`, `ValidationError`, `ConflictError`). The HTTP error middleware maps them to status codes. Agent tools map them to `is_error` tool results.

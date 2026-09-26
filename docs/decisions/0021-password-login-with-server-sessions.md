@@ -49,7 +49,7 @@ updated: 2026-09-25
   exists or not. They're rate limited like the login.
 
 **Where users come from**
-- **Public sign-up is a switch:** `PUBLIC_SIGNUP_ENABLED` (env, default `false`). When off, the
+- **Public sign-up is a switch:** `PUBLIC_SIGNUP_ENABLED` (env, default `false`, ADR 0023). When off, the
   sign-up route answers `403 SIGNUP_DISABLED` and the web hides the link (`GET /api/auth/config`
   tells it). It's an instance setting, not a workspace setting, because users are global.
 - Sign-up creates the user unverified and emails a verification link. Login is refused
