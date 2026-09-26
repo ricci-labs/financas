@@ -11,6 +11,7 @@ import type {
   NewRecurrenceRuleRow,
   NewWorkspaceHoliday,
   OccurrenceRow,
+  OccurrenceUpdate,
   RecurrenceRuleRow,
   RecurrenceRuleUpdate,
   WorkspaceHoliday,
@@ -189,4 +190,12 @@ export async function setOccurrenceMatch(
     .update(plannedOccurrences)
     .set({ status: matchedEntryId ? 'matched' : 'pending', matchedEntryId })
     .where(eq(plannedOccurrences.id, occurrenceId))
+}
+
+export async function updateOccurrence(
+  tx: WorkspaceTransaction,
+  occurrenceId: string,
+  change: OccurrenceUpdate,
+): Promise<void> {
+  await tx.update(plannedOccurrences).set(change).where(eq(plannedOccurrences.id, occurrenceId))
 }

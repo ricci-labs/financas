@@ -331,3 +331,26 @@ describe('matching occurrences over HTTP', () => {
     expect([unknownEntry.status, await codeOf(unknownEntry)]).toEqual([404, 'ENTRY_NOT_FOUND'])
   })
 })
+
+describe('changing one occurrence over HTTP', () => {
+  it('lets planning:update skip, bring back and change the amount of an occurrence', async () => {
+    const today = todayIn('America/Sao_Paulo', new Date())
+    const ruleId = await created(
+      member.post(
+        rulesPath,
+        rent({ description: 'Jardinagem', schedule: { frequency: 'weekly', startsOn: today } }),
+      ),
+    )
+    const listed = (await (
+      await viewer.get(`${occurrencesPath}?from=${today}&to=${addDays(today, 30)}`)
+    ).json()) as OccurrenceItem[]
+    const occurrencePath = `${occurrencesPath}/${listed.find((item) => item.ruleId === ruleId)?.id}`
+
+    expect((await viewer.post(`${occurrencePath}/skip`)).status).toBe(403)
+    expect((await member.post(`${occurrencePath}/skip`)).status).toBe(204)
+    expect((await member.post(`${occurrencePath}/unskip`)).status).toBe(204)
+    expect((await member.patch(occurrencePath, { amountCents: 12_345 })).status).toBe(204)
+    const invalid = await member.patch(occurrencePath, { amountCents: -1 })
+    expect([invalid.status, await codeOf(invalid)]).toEqual([400, 'OCCURRENCE_INVALID'])
+  })
+})

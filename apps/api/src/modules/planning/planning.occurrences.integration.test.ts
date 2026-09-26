@@ -1,10 +1,13 @@
 import { withWorkspace } from '@api/core/db/tx'
 import { ledgerAccounts } from '@api/modules/ledger/ledger.table'
 import {
+  changeOccurrenceAmount,
   changeRecurrenceRule,
   createRecurrenceRule,
   deleteRecurrenceRule,
   listOccurrences,
+  skipOccurrence,
+  unskipOccurrence,
 } from '@api/modules/planning'
 import { plannedOccurrences } from '@api/modules/planning/planning.table'
 import { connectTestDatabases } from '@api/testing/database'
@@ -223,5 +226,57 @@ describe('planned occurrences', () => {
     await deleteRecurrenceRule(databases.app, { workspaceId, ruleId, userId })
 
     expect(await dueDates(workspaceId)).toEqual(['2026-11-10 skipped'])
+  })
+})
+
+describe('one occurrence at a time', () => {
+  async function occurrenceOn(workspaceId: string, dueOn: string) {
+    const all = await listOccurrences(databases.app, workspaceId, WHOLE_PLAN, FIRST_OF_OCTOBER)
+    const found = all.find((occurrence) => occurrence.dueOn === dueOn)
+    return { ref: { workspaceId, occurrenceId: found?.id ?? '' }, occurrence: found }
+  }
+
+  it('can be skipped, which leaves it out of what is still due, and brought back', async () => {
+    const { workspaceId } = await workspaceWithRent('Skip one')
+    const { ref } = await occurrenceOn(workspaceId, '2026-11-10')
+
+    await skipOccurrence(databases.app, ref)
+    expect((await occurrenceOn(workspaceId, '2026-11-10')).occurrence?.status).toBe('skipped')
+    await expect(skipOccurrence(databases.app, ref)).rejects.toMatchObject({
+      code: 'OCCURRENCE_NOT_PENDING',
+    })
+
+    await unskipOccurrence(databases.app, ref)
+    expect((await occurrenceOn(workspaceId, '2026-11-10')).occurrence?.status).toBe('pending')
+    await expect(unskipOccurrence(databases.app, ref)).rejects.toMatchObject({
+      code: 'OCCURRENCE_NOT_SKIPPED',
+    })
+  })
+
+  it('can get its own amount while pending, until the rule itself changes', async () => {
+    const { workspaceId, ruleId } = await workspaceWithRent('Own amount')
+    const { ref } = await occurrenceOn(workspaceId, '2026-12-10')
+
+    await changeOccurrenceAmount(databases.app, ref, { amountCents: 250_000 })
+    expect((await occurrenceOn(workspaceId, '2026-12-10')).occurrence?.amountCents).toBe(250_000)
+    await expect(
+      changeOccurrenceAmount(databases.app, ref, { amountCents: 0 }),
+    ).rejects.toMatchObject({
+      code: 'OCCURRENCE_INVALID',
+    })
+
+    await changeRecurrenceRule(
+      databases.app,
+      { workspaceId, ruleId },
+      { description: 'Aluguel novo' },
+      FIRST_OF_OCTOBER,
+    )
+    expect((await occurrenceOn(workspaceId, '2026-12-10')).occurrence?.amountCents).toBe(200_000)
+
+    const skipped = await occurrenceOn(workspaceId, '2027-01-11')
+    await skipOccurrence(databases.app, skipped.ref)
+    await expect(
+      changeOccurrenceAmount(databases.app, skipped.ref, { amountCents: 1 }),
+    ).rejects.toMatchObject({ code: 'OCCURRENCE_NOT_PENDING' })
   })
 })

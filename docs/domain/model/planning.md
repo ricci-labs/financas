@@ -96,6 +96,9 @@ holidays passed must cover the range plus `DAYS_A_DUE_DATE_MAY_SHIFT` (10). The 
 | `GET /occurrences/suggestions?entryId=` | `planning:view` | `suggestOccurrencesForEntry`: pending occurrences the entry probably pays, best first (`404 ENTRY_NOT_FOUND`) |
 | `POST /occurrences/:occurrenceId/match` | `planning:update` | `matchOccurrence` `{ entryId }` → `204`. Refused: not pending (`409 OCCURRENCE_NOT_PENDING`), entry gone (`400 ENTRY_NOT_AVAILABLE`), other accounts (`400 OCCURRENCE_ENTRY_MISMATCH`), entry already used (`409 ENTRY_ALREADY_MATCHED`) |
 | `POST /occurrences/:occurrenceId/unmatch` | `planning:update` | `unmatchOccurrence` → `204`; `409 OCCURRENCE_NOT_MATCHED` otherwise |
+| `POST /occurrences/:occurrenceId/skip` | `planning:update` | `skipOccurrence`: this month doesn't happen (a pending one only, else `409 OCCURRENCE_NOT_PENDING`) → `204` |
+| `POST /occurrences/:occurrenceId/unskip` | `planning:update` | `unskipOccurrence`: back to pending (`409 OCCURRENCE_NOT_SKIPPED` otherwise) → `204` |
+| `PATCH /occurrences/:occurrenceId` | `planning:update` | `changeOccurrenceAmount` `{ amountCents }` for a pending one (this month's energy bill, a one-off raise). A later change to the rule plans future pending ones again, with the rule's amount |
 
 ## Financial period
 Driven by `workspace_settings.period_anchor` (`tenancy.md`). Pure function in

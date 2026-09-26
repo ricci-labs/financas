@@ -1,5 +1,6 @@
 export {
   addHoliday,
+  changeOccurrenceAmount,
   changeRecurrenceRule,
   createRecurrenceRule,
   deleteHoliday,
@@ -9,8 +10,10 @@ export {
   listOccurrences,
   listRecurrenceRules,
   matchOccurrence,
+  skipOccurrence,
   suggestOccurrencesForEntry,
   unmatchOccurrence,
+  unskipOccurrence,
 } from '@api/modules/planning/planning.service'
 export type {
   AddedHoliday,
