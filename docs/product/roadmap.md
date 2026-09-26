@@ -66,7 +66,8 @@ updated: 2026-09-26
      - [x] Ledger reading: lines of an invoice, trash of accounts and entries, keyset paging of
            entries
      - [x] Maintenance job (croner): purge expired sessions and expired auth tokens, daily
-  2. [ ] **Planning + dashboard** (decided 2026-09-26, ADR 0024; `../domain/model/planning.md`):
+  2. [x] **Planning + dashboard** (decided 2026-09-26, done 2026-09-26, #65–#85, ADR 0024;
+         `../domain/model/planning.md`):
      - [x] Plan: ADR 0024 (metrics and insights over period facts) and this list
      - [x] Holidays and business-day math: national bank holidays computed, workspace holidays
      - [x] Recurrence rules + planned occurrences, 6 months ahead (planned on rule changes and
@@ -81,7 +82,7 @@ updated: 2026-09-26
      - [x] Commission split: allocation steps, suggested transfers, insight for commission not
            yet split
      - [x] Balance forecast per account
-     - [ ] "Posso comprar?" purchase simulation
+     - [x] "Posso comprar?" purchase simulation
   3. [ ] **Contacts, charges and settlements**
   4. [ ] **Reminders:** notification outbox and its worker, email first
   5. [ ] **Attachments** on entries (`FileStorage`)

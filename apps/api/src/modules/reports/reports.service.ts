@@ -2,6 +2,7 @@ import { systemClock } from '@api/core/clock'
 import type { Clock } from '@api/core/clock.types'
 import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { withWorkspace } from '@api/core/db/tx'
+import { ValidationError } from '@api/core/http/errors'
 import {
   readAccountFacts,
   readBalanceFacts,
@@ -21,6 +22,7 @@ import {
 import type { PeriodOverview, PeriodTimeline } from '@api/modules/reports/reports.types'
 import { currentWorkspaceSettings } from '@api/modules/workspaces'
 import {
+  type AccountKind,
   type AllocationSplit,
   addDays,
   addMonths,
@@ -28,18 +30,24 @@ import {
   computeInsights,
   computeMetrics,
   type FactAllocation,
+  type FactCard,
   type IsoDate,
+  MONEY_ACCOUNT_KINDS,
   type OverviewQuery,
   type PeriodFacts,
   type PeriodSettings,
+  type PurchaseImpact,
+  type PurchaseSimulationQuery,
   parseIsoDate,
   periodOf,
   periodSettingsOf,
   periodStartingIn,
+  simulatePurchase,
   splitVariableIncome,
 } from '@financas/shared'
 
 const LAST_DAY = 31
+const MONEY_KINDS: ReadonlySet<AccountKind> = new Set(MONEY_ACCOUNT_KINDS)
 const RECENT_PERIODS = 6
 const UPCOMING_PERIODS = 6
 const DAYS_IN_A_CARD_CYCLE = 31
@@ -76,6 +84,45 @@ export function suggestAllocation(
       overspentCents: Math.max(-computeMetrics(facts).freeToSpend, 0),
     })
   })
+}
+
+export function simulatePurchaseImpact(
+  db: Database,
+  workspaceId: string,
+  query: PurchaseSimulationQuery,
+  clock: Clock = systemClock,
+): Promise<PurchaseImpact> {
+  return withWorkspace(db, workspaceId, async (tx) => {
+    const facts = await loadPeriodFacts(tx, undefined, clock)
+    return simulatePurchase(facts, {
+      amountCents: query.amountCents,
+      installmentCount: query.installmentCount,
+      occurredOn: query.occurredOn ?? facts.today,
+      card: query.cardAccountId ? simulatedCard(facts, query.cardAccountId) : null,
+      paidFromAccountId: query.paidFromAccountId
+        ? simulatedAccount(facts, query.paidFromAccountId)
+        : null,
+    })
+  })
+}
+
+function simulatedCard(facts: PeriodFacts, cardAccountId: string): FactCard {
+  const card = facts.cards.find((candidate) => candidate.accountId === cardAccountId)
+  if (!card) {
+    throw new ValidationError('SIMULATION_CARD_INVALID', `Card ${cardAccountId} is not available`)
+  }
+  return card
+}
+
+function simulatedAccount(facts: PeriodFacts, accountId: string): string {
+  const account = facts.accounts.find((candidate) => candidate.id === accountId)
+  if (!account || !MONEY_KINDS.has(account.kind)) {
+    throw new ValidationError(
+      'SIMULATION_ACCOUNT_INVALID',
+      'A purchase is paid from a money account',
+    )
+  }
+  return accountId
 }
 
 async function loadPeriodFacts(
