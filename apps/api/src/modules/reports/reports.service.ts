@@ -26,6 +26,7 @@ import {
   clampedDate,
   computeInsights,
   computeMetrics,
+  type FactAllocation,
   type IsoDate,
   type OverviewQuery,
   type PeriodFacts,
@@ -107,6 +108,25 @@ async function loadPeriodFacts(
     reserve: await readReserveFact(tx),
     cards: await readCardFacts(tx),
     invoices: await readInvoiceFacts(tx, cycleStart),
+    allocation: await loadAllocationFact(tx),
+  }
+}
+
+async function loadAllocationFact(tx: WorkspaceTransaction): Promise<FactAllocation | null> {
+  const steps = await readAllocationSteps(tx)
+  if (steps.length === 0) {
+    return null
+  }
+  const goalAccounts = new Map(
+    (await readGoalFacts(tx)).map((goal) => [goal.goalId, goal.accountId]),
+  )
+  const destinationAccountIds = steps.flatMap((step) => {
+    const accountId = step.accountId ?? goalAccounts.get(step.goalId ?? '')
+    return accountId ? [accountId] : []
+  })
+  return {
+    destinationAccountIds,
+    coversOverspent: steps.some((step) => step.kind === 'cover_overspent'),
   }
 }
 

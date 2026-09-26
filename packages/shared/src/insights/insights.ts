@@ -5,6 +5,7 @@ import type { Insight, InsightRule } from '@shared/insights/insights.types'
 import { occurrenceOverdue } from '@shared/insights/occurrence-overdue'
 import { periodHeavilyCommitted } from '@shared/insights/period-heavily-committed'
 import { periodOverspent } from '@shared/insights/period-overspent'
+import { variableIncomeToSplit } from '@shared/insights/variable-income-to-split'
 import type { PeriodMetrics } from '@shared/metrics/metrics'
 import type { PeriodFacts } from '@shared/metrics/metrics.types'
 
@@ -14,6 +15,7 @@ export const INSIGHTS: readonly InsightRule[] = [
   periodOverspent,
   budgetOver,
   periodHeavilyCommitted,
+  variableIncomeToSplit,
 ]
 
 export function computeInsights(facts: PeriodFacts, metrics: PeriodMetrics): Insight[] {

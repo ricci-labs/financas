@@ -173,6 +173,7 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
       },
     ],
     reserve: { targetCents: 3_000_000, savedCents: 1_200_000 },
+    allocation: null,
     cards: [{ accountId: 'card', closingDay: 3, dueDay: 10, purchaseOnClosingDayGoesNext: true }],
     invoices: [
       { cardAccountId: 'card', closingOn: '2026-10-03', totalCents: 30_000 },

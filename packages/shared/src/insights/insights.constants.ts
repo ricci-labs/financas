@@ -8,6 +8,7 @@ export const INSIGHT_CODES = [
   'budget_ahead',
   'occurrence_overdue',
   'period_heavily_committed',
+  'variable_income_to_split',
 ] as const
 
 export type InsightCode = (typeof INSIGHT_CODES)[number]
