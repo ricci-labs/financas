@@ -45,6 +45,7 @@ const FACTS: PeriodFacts = {
   reserve: null,
   cards: [],
   invoices: [],
+  allocation: null,
 }
 
 function metricsWith(overrides: Partial<PeriodMetrics>): PeriodMetrics {
@@ -144,5 +145,72 @@ describe('computeInsights', () => {
     expect(
       computeInsights({ ...FACTS, occurrences: [] }, computeMetrics({ ...FACTS, occurrences: [] })),
     ).toEqual([])
+  })
+})
+
+describe('variable_income_to_split', () => {
+  const commission = (amountCents: number) => ({
+    accountId: 'commission',
+    amountCents: -amountCents,
+    effectiveOn: '2026-10-10',
+    occurredOn: '2026-10-10',
+  })
+  const moved = (accountId: string, amountCents: number, effectiveOn = '2026-10-12') => ({
+    accountId,
+    amountCents,
+    effectiveOn,
+    occurredOn: effectiveOn,
+  })
+  const facts = (postings: PeriodFacts['postings'], coversOverspent = false): PeriodFacts => ({
+    ...FACTS,
+    occurrences: [],
+    accounts: [
+      {
+        id: 'commission',
+        parentId: null,
+        kind: 'income_category',
+        class: 'income',
+        incomeNature: 'variable',
+      },
+      { id: 'reserve', parentId: null, kind: 'savings', class: 'asset', incomeNature: null },
+    ],
+    postings,
+    allocation: { destinationAccountIds: ['reserve'], coversOverspent },
+  })
+  const toSplit = (periodFacts: PeriodFacts, freeToSpend = 0) =>
+    computeInsights(periodFacts, { ...computeMetrics(periodFacts), freeToSpend }).filter(
+      (insight) => insight.code === 'variable_income_to_split',
+    )
+
+  it('reminds of the commission not yet moved to the waterfall destinations', () => {
+    expect(toSplit(facts([commission(100_000), moved('reserve', 60_000)]))).toEqual([
+      {
+        code: 'variable_income_to_split',
+        severity: 'info',
+        subject: '2026-10',
+        values: { amountCents: 40_000 },
+      },
+    ])
+  })
+
+  it('counts only money moved in this period, never withdrawals, and the overrun it covers', () => {
+    const amountLeft = (periodFacts: PeriodFacts, freeToSpend = 0) =>
+      toSplit(periodFacts, freeToSpend)[0]?.values.amountCents
+    expect(amountLeft(facts([commission(100_000), moved('reserve', 60_000, '2026-09-30')]))).toBe(
+      100_000,
+    )
+    expect(
+      amountLeft(facts([commission(100_000), moved('reserve', 60_000), moved('reserve', -20_000)])),
+    ).toBe(40_000)
+    expect(toSplit(facts([commission(100_000), moved('reserve', 60_000)], true), -40_000)).toEqual(
+      [],
+    )
+    expect(toSplit(facts([commission(100_000), moved('reserve', 60_000)]), -40_000)).toHaveLength(1)
+  })
+
+  it('says nothing once all is moved, without commission, or without a waterfall', () => {
+    expect(toSplit(facts([commission(100_000), moved('reserve', 100_000)]))).toEqual([])
+    expect(toSplit(facts([moved('reserve', 5_000)]))).toEqual([])
+    expect(toSplit({ ...facts([commission(100_000)]), allocation: null })).toEqual([])
   })
 })

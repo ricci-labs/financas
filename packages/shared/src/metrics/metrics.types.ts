@@ -44,6 +44,11 @@ export type FactInvoice = {
   totalCents: number
 }
 
+export type FactAllocation = {
+  destinationAccountIds: readonly string[]
+  coversOverspent: boolean
+}
+
 export type FactReserve = {
   targetCents: number
   savedCents: number
@@ -63,6 +68,7 @@ export type PeriodFacts = {
   reserve: FactReserve | null
   cards: readonly FactCard[]
   invoices: readonly FactInvoice[]
+  allocation: FactAllocation | null
 }
 
 export type BudgetPace = {

@@ -1,6 +1,11 @@
 import { createApp } from '@api/app'
 import { createAccount, createCard, deleteEntry, recordEntry } from '@api/modules/ledger'
-import { createGoal, createRecurrenceRule, setBudget } from '@api/modules/planning'
+import {
+  createGoal,
+  createRecurrenceRule,
+  replaceAllocationSteps,
+  setBudget,
+} from '@api/modules/planning'
 import { getPeriodOverview, type PeriodOverview } from '@api/modules/reports'
 import { changeWorkspaceSettings } from '@api/modules/workspaces'
 import { testAppDeps } from '@api/testing/app'
@@ -89,7 +94,7 @@ async function household() {
     categoryId: housing,
   })
   const reserve = await account({ kind: 'savings', name: 'Reserva' })
-  await createGoal(databases.app, context, {
+  const { goalId: reserveGoalId } = await createGoal(databases.app, context, {
     name: 'Reserva',
     targetCents: 1_000_000,
     accountId: reserve,
@@ -143,7 +148,7 @@ async function household() {
     { workspaceId, categoryAccountId: groceries },
     { limitCents: 100_000, fromPeriod: '2026-10' },
   )
-  return { workspaceId, userId, groceries, card }
+  return { workspaceId, userId, groceries, card, context, account, reserveGoalId }
 }
 
 describe('getPeriodOverview', () => {
@@ -232,6 +237,37 @@ describe('getPeriodOverview', () => {
     )
     expect(next.period).toEqual({ label: '2026-10', start: '2026-10-20', end: '2026-11-19' })
     expect(next.metrics.committed).toBe(203_990)
+  })
+})
+
+describe('variable_income_to_split', () => {
+  it('reminds of a commission that has not reached the waterfall destinations yet', async () => {
+    const { workspaceId, context, account, reserveGoalId } = await household()
+    const noSplitYet = await getPeriodOverview(databases.app, workspaceId, {}, MID_OCTOBER)
+    expect(noSplitYet.insights.map((insight) => insight.code)).not.toContain(
+      'variable_income_to_split',
+    )
+
+    const trip = await account({ kind: 'savings', name: 'Viagem' })
+    await replaceAllocationSteps(databases.app, context, {
+      steps: [{ kind: 'rest', accountId: trip }],
+    })
+
+    const overview = await getPeriodOverview(databases.app, workspaceId, {}, MID_OCTOBER)
+    expect(overview.insights).toContainEqual({
+      code: 'variable_income_to_split',
+      severity: 'info',
+      subject: '2026-10',
+      values: { amountCents: 120_000 },
+    })
+
+    await replaceAllocationSteps(databases.app, context, {
+      steps: [{ kind: 'fill_goal', goalId: reserveGoalId }],
+    })
+    const alreadyInTheReserve = await getPeriodOverview(databases.app, workspaceId, {}, MID_OCTOBER)
+    expect(alreadyInTheReserve.insights.map((insight) => insight.code)).not.toContain(
+      'variable_income_to_split',
+    )
   })
 })
 

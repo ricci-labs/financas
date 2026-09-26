@@ -183,9 +183,9 @@ the order of `INSIGHTS`.
 | `budget_ahead` | warning | category | a budget past its expected pace |
 | `occurrence_overdue` | warning | occurrence | a pending bill or income past its due date |
 | `period_heavily_committed` | warning | period label | a coming period with ≥ 70% of its fixed income committed (`HEAVILY_COMMITTED_PERCENT`) |
+| `variable_income_to_split` | info | period label | with a waterfall configured: the period's commission minus what reached its destination accounts in the period (deposits only, never withdrawals) minus the overrun it covers (when a `cover_overspent` step exists) is still positive → `{ amountCents }` still to split |
 
-Still to come with their features: a commission arrived with a suggested split; the balance
-forecast goes negative.
+Still to come with its feature: the balance forecast goes negative.
 
 ### Commission split (suggested, never automatic)
 `allocation_steps` holds the household's waterfall, in order. When variable income arrives, the pure
