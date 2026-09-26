@@ -3,7 +3,12 @@ import { withWorkspace } from '@api/core/db/tx'
 import { pageLink } from '@api/core/email/links'
 import { ForbiddenError, NotFoundError, ValidationError } from '@api/core/http/errors'
 import { createSystemRoles, findRole } from '@api/modules/access'
-import { createUser, getAccount, type IdentityDeps } from '@api/modules/identity'
+import {
+  createUser,
+  getAccount,
+  type IdentityDeps,
+  requestEmailVerification,
+} from '@api/modules/identity'
 import { createSystemAccounts } from '@api/modules/ledger'
 import {
   type AcceptedInvitation,
@@ -22,8 +27,11 @@ import type {
   InvitationOutcome,
   InvitationPreview,
   InviteMemberInput,
+  JoinedThroughSignUp,
   RegisteredOwner,
   RegisterOwnerInput,
+  SignUpThroughInvitationDeps,
+  SignUpThroughInvitationInput,
 } from '@api/modules/onboarding/onboarding.types'
 import { addWorkspace, findCurrentWorkspace, reserveWorkspaceId } from '@api/modules/workspaces'
 import { workspaceNameSchema } from '@financas/shared'
@@ -153,6 +161,30 @@ export async function sendInvitationEmail(
       inviteLink,
     }),
   )
+}
+
+export async function signUpThroughInvitation(
+  db: Database,
+  input: SignUpThroughInvitationInput,
+  deps: SignUpThroughInvitationDeps,
+): Promise<JoinedThroughSignUp> {
+  const invitation = await describeInvitation(db, input.token, deps.clock)
+  const email = invitation.email ?? input.email
+  if (!email) {
+    throw new ValidationError('EMAIL_REQUIRED', 'A phone invitation needs an email for the account')
+  }
+
+  const isEmailVerified = invitation.email !== null
+  const userId = await createUser(
+    db,
+    { email, displayName: input.displayName, password: input.password, isEmailVerified },
+    deps,
+  )
+  const accepted = await acceptInvitation(db, { token: input.token, userId, userEmail: email })
+  if (!isEmailVerified) {
+    await requestEmailVerification(db, { email }, deps)
+  }
+  return { ...accepted, isEmailVerified }
 }
 
 function parseWorkspaceName(rawName: string): string {
