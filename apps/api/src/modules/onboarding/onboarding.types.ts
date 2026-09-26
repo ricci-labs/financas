@@ -1,6 +1,7 @@
 import type { BackgroundTasks } from '@api/core/background-tasks.types'
 import type { Database } from '@api/core/db/db.types'
 import type { Mailer } from '@api/core/email/email.types'
+import type { LinkLimitDeps } from '@api/modules/identity'
 import type { InvitationRequest, SystemRoleKey } from '@financas/shared'
 
 export type CreateWorkspaceInput = {
@@ -35,7 +36,26 @@ export type InviteMemberInput = {
 export type IssuedInvitation = {
   invitationId: string
   expiresAt: Date
-  inviteLink: string
+  shareableLink: string | null
+}
+
+export type InvitationOutcome = {
+  invitation: IssuedInvitation
+  emailToSend: InvitationEmailInput | null
+}
+
+export type InvitationPreview = {
+  workspaceName: string
+  inviterName: string
+  roleName: string
+  email: string | null
+  isPhoneInvitation: boolean
+  expiresAt: Date
+}
+
+export type AcceptAsUserInput = {
+  token: string
+  userId: string
 }
 
 export type InvitationEmailInput = {
@@ -57,7 +77,8 @@ export type InvitationDeps = {
   publicUrl: string
 }
 
-export type OnboardingRouteDeps = InvitationDeps & {
-  db: Database
-  background: BackgroundTasks
-}
+export type OnboardingRouteDeps = InvitationDeps &
+  LinkLimitDeps & {
+    db: Database
+    background: BackgroundTasks
+  }

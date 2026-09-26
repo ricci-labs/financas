@@ -1,4 +1,4 @@
-import { emailSchema } from '@shared/identity/identity.schemas'
+import { emailSchema, linkTokenSchema } from '@shared/identity/identity.schemas'
 import { z } from 'zod'
 
 export const phoneE164Schema = z.string().regex(/^\+[1-9]\d{7,14}$/, 'Use the +55... format')
@@ -10,5 +10,8 @@ export const invitationRequestSchema = z.union([
 
 export const invitationParamsSchema = z.object({ invitationId: z.uuid() })
 
+export const invitationTokenRequestSchema = z.object({ token: linkTokenSchema })
+
 export type InvitationRequest = z.infer<typeof invitationRequestSchema>
 export type InvitationParams = z.infer<typeof invitationParamsSchema>
+export type InvitationTokenRequest = z.infer<typeof invitationTokenRequestSchema>

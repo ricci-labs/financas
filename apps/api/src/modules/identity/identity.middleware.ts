@@ -9,6 +9,7 @@ import type {
   EmailBody,
   IdentityRouteDeps,
   LimitKeys,
+  LinkLimitDeps,
   LoginLimitSettings,
   LoginLimits,
 } from '@api/modules/identity/identity.types'
@@ -64,7 +65,10 @@ export function limitAccountEmails(deps: IdentityRouteDeps) {
   })
 }
 
-export function limitInvalidLinks(deps: IdentityRouteDeps) {
+export function limitInvalidLinks(
+  deps: LinkLimitDeps,
+  invalidCodes: readonly string[] = [INVALID_LINK_CODE],
+) {
   return createMiddleware<AppEnv>(async (c, next) => {
     const client = clientIpOf(c, deps.trustedProxyHops)
     const limiter = deps.accountEmailLimits.invalidLinksByClient
@@ -74,7 +78,7 @@ export function limitInvalidLinks(deps: IdentityRouteDeps) {
     }
     await next()
 
-    const isInvalidLink = c.error instanceof AppError && c.error.code === INVALID_LINK_CODE
+    const isInvalidLink = c.error instanceof AppError && invalidCodes.includes(c.error.code)
     if (isInvalidLink) {
       limiter.record(client)
     }

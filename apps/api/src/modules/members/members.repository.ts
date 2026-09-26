@@ -152,3 +152,11 @@ export async function markInvitationRevoked(
 ): Promise<void> {
   await tx.update(invitations).set(revocation).where(eq(invitations.id, invitationId))
 }
+
+export async function selectInvitationByTokenHash(tx: WorkspaceTransaction, tokenHash: string) {
+  const [invitation] = await tx
+    .select()
+    .from(invitations)
+    .where(eq(invitations.tokenHash, tokenHash))
+  return invitation
+}

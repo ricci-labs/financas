@@ -81,17 +81,17 @@ async function invitationIdOf(response: Response): Promise<string> {
 }
 
 describe('POST /invitations', () => {
-  it('invites by email: answers with the link and emails it', async () => {
+  it('invites by email: the link goes only to the inbox, never back to the inviter', async () => {
     const email = guestEmail('guest')
     const response = await admin.post(invitationsPath, { email, roleId: roleIds.member })
     expect(response.status).toBe(201)
-    const issued = (await response.json()) as { invitationId: string; inviteLink: string }
-    expect(issued.inviteLink).toMatch(/^http:\/\/localhost:5173\/invite#token=[\w-]{43}$/)
+    const issued = (await response.json()) as { invitationId: string; shareableLink: string | null }
+    expect(issued.shareableLink).toBeNull()
 
     await background.idle()
     const sent = recording.sent.find((message) => message.to === email)
     expect(sent).toMatchObject({ template: 'workspace_invitation' })
-    expect(sent?.text).toContain(issued.inviteLink)
+    expect(sent?.text).toMatch(/http:\/\/localhost:5173\/invite#token=[\w-]{43}/)
     expect(sent?.text).toContain(`Invites ${fixtures.runId}`)
 
     const pending = (await (await member.get(invitationsPath)).json()) as PendingInvitation[]
@@ -105,6 +105,8 @@ describe('POST /invitations', () => {
       roleId: roleIds.viewer,
     })
     expect(response.status).toBe(201)
+    const issued = (await response.json()) as { shareableLink: string | null }
+    expect(issued.shareableLink).toMatch(/^http:\/\/localhost:5173\/invite#token=[\w-]{43}$/)
     await background.idle()
     expect(recording.sent).toHaveLength(sentBefore)
   })

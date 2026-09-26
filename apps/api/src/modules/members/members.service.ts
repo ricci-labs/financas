@@ -7,7 +7,7 @@ import {
   postgresErrorCode,
 } from '@api/core/db/errors'
 import { withWorkspace } from '@api/core/db/tx'
-import { ConflictError, NotFoundError } from '@api/core/http/errors'
+import { ConflictError, ForbiddenError, NotFoundError } from '@api/core/http/errors'
 import { generateToken, hashToken } from '@api/core/security/tokens'
 import {
   findInvitationWorkspaceId,
@@ -21,6 +21,7 @@ import {
   markInvitationRevoked,
   retireExpiredInvitations,
   selectActiveMembershipOfUser,
+  selectInvitationByTokenHash,
   selectPendingInvitations,
   selectWorkspaceIdsOfUser,
 } from '@api/modules/members/members.repository'
@@ -31,6 +32,7 @@ import type {
   CreatedInvitation,
   CreateInvitationInput,
   InvitationContact,
+  InvitationDetails,
   InvitationState,
   NewMembership,
   PendingInvitation,
@@ -79,7 +81,7 @@ export async function createInvitation(
 
 export async function acceptInvitation(
   db: Database,
-  { token, userId }: AcceptInvitationInput,
+  { token, userId, userEmail }: AcceptInvitationInput,
   clock: Clock = systemClock,
 ): Promise<AcceptedInvitation> {
   const tokenHash = hashToken(token)
@@ -96,6 +98,7 @@ export async function acceptInvitation(
 
     const now = clock.now()
     assertInvitationIsOpen(invitation, now)
+    assertEmailMatches(invitation.email, userEmail)
     if (await hasActiveMembership(tx, userId)) {
       throw new ConflictError('ALREADY_MEMBER', 'User is already a member of this workspace')
     }
@@ -154,6 +157,41 @@ export async function revokeInvitation(
       deleteReason: REVOKED_REASON,
     })
   })
+}
+
+export async function describeInvitation(
+  db: Database,
+  token: string,
+  clock: Clock = systemClock,
+): Promise<InvitationDetails> {
+  const tokenHash = hashToken(token)
+  const workspaceId = await findInvitationWorkspaceId(db, tokenHash)
+  const invitation = workspaceId
+    ? await withWorkspace(db, workspaceId, (tx) => selectInvitationByTokenHash(tx, tokenHash))
+    : undefined
+  if (!workspaceId || !invitation) {
+    throw new NotFoundError('INVITATION_NOT_FOUND', 'Invitation not found')
+  }
+  assertInvitationIsOpen(invitation, clock.now())
+  return {
+    workspaceId,
+    email: invitation.email,
+    phoneE164: invitation.phoneE164,
+    roleId: invitation.roleId,
+    invitedByUserId: invitation.invitedByUserId,
+    expiresAt: invitation.expiresAt,
+  }
+}
+
+function assertEmailMatches(invitedEmail: string | null, userEmail: string): void {
+  const isForAnotherEmail =
+    invitedEmail !== null && invitedEmail.toLowerCase() !== userEmail.toLowerCase()
+  if (isForAnotherEmail) {
+    throw new ForbiddenError(
+      'INVITATION_FOR_ANOTHER_EMAIL',
+      'This invitation was sent to another email address',
+    )
+  }
 }
 
 function assertInvitationCanBeRevoked(invitation: RevocableInvitation): void {

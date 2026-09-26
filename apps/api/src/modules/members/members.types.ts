@@ -22,6 +22,7 @@ export type CreatedInvitation = {
 export type AcceptInvitationInput = {
   token: string
   userId: string
+  userEmail: string
 }
 
 export type AcceptedInvitation = {
@@ -68,3 +69,12 @@ export type InvitationRevocation = {
 }
 
 export type RevocableInvitation = Omit<InvitationState, 'expiresAt'>
+
+export type InvitationDetails = {
+  workspaceId: string
+  email: string | null
+  phoneE164: string | null
+  roleId: string
+  invitedByUserId: string
+  expiresAt: Date
+}

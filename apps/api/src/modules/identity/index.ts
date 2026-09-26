@@ -1,6 +1,7 @@
 export {
   createAccountEmailLimits,
   createLoginLimits,
+  limitInvalidLinks,
 } from '@api/modules/identity/identity.middleware'
 export { identityRoutes, PUBLIC_AUTH_ROUTES } from '@api/modules/identity/identity.routes'
 export {
@@ -22,6 +23,7 @@ export type {
   EmailOnlyInput,
   IdentityDeps,
   IdentityRouteDeps,
+  LinkLimitDeps,
   LoginInput,
   LoginLimits,
   NewUserInput,
