@@ -99,6 +99,7 @@ src/
 │                             #   static SPA; exports AppType for the RPC client
 ├── core/                     # cross-cutting infrastructure; knows no domain
 │   ├── config/env.ts         # Zod-validated env, fails at boot
+│   ├── email/                # Mailer (ADR 0022): SMTP via Nodemailer, or .eml files in development
 │   ├── db/
 │   │   ├── client.ts         # pg pool + Drizzle, readiness check
 │   │   ├── columns.ts        # primaryId, timestamps, softDelete helpers
