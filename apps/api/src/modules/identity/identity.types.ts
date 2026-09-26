@@ -2,6 +2,7 @@ import type { Clock } from '@api/core/clock'
 import type { Database } from '@api/core/db/client'
 import type { Mailer } from '@api/core/email/email.types'
 import type { SessionCookieSettings } from '@api/core/http/session-cookie'
+import type { AttemptLimiter } from '@api/core/security/attempt-limiter'
 import type { PasswordCost } from '@api/core/security/passwords'
 
 export type IdentityDeps = {
@@ -73,4 +74,17 @@ export type IdentityRouteDeps = {
   publicUrl: string
   isPublicSignupEnabled: boolean
   cookie: SessionCookieSettings
+  loginLimits: LoginLimits
+  trustedProxyHops: number
+}
+
+export type LoginLimits = {
+  byEmail: AttemptLimiter
+  byClient: AttemptLimiter
+}
+
+export type LoginLimitSettings = {
+  maxFailuresPerEmail: number
+  maxFailuresPerClient: number
+  windowMinutes: number
 }

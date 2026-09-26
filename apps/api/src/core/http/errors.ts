@@ -20,6 +20,8 @@ export class NotFoundError extends AppError {}
 
 export class ConflictError extends AppError {}
 
+export class TooManyRequestsError extends AppError {}
+
 export function parseOrThrow<T>(schema: z.ZodType<T>, rawInput: unknown, invalidCode: string): T {
   const parsed = schema.safeParse(rawInput)
   if (!parsed.success) {

@@ -6,7 +6,12 @@ import { requireSession } from '@api/core/http/middleware/session'
 import type { SessionCookieSettings } from '@api/core/http/session-cookie'
 import type { Logger } from '@api/core/observability/logger'
 import { healthRoutes, PUBLIC_HEALTH_ROUTES } from '@api/modules/health'
-import { identityRoutes, PUBLIC_AUTH_ROUTES, resolveSession } from '@api/modules/identity'
+import {
+  identityRoutes,
+  type LoginLimits,
+  PUBLIC_AUTH_ROUTES,
+  resolveSession,
+} from '@api/modules/identity'
 
 export type AppDeps = {
   version: string
@@ -18,6 +23,8 @@ export type AppDeps = {
   publicUrl: string
   isPublicSignupEnabled: boolean
   cookie: SessionCookieSettings
+  loginLimits: LoginLimits
+  trustedProxyHops: number
 }
 
 export const PUBLIC_ROUTES: ReadonlySet<string> = new Set([

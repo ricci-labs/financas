@@ -110,6 +110,13 @@ without comments.
   `403 CROSS_SITE_REQUEST` (`same-origin-writes.ts`). Together with the `SameSite=Lax` cookie, that's
   two independent CSRF barriers. It's stricter than Hono's `csrf()`, which only checks form-like
   content types.
+- **Login lockout** (`identity.routes.ts`, `core/security/attempt-limiter.ts`): failed logins are
+  counted per email and per client address in a fixed window (defaults 5 and 30 in 15 minutes, env).
+  While either is over the limit, login answers `429 TOO_MANY_ATTEMPTS` with `Retry-After`, before
+  any password hashing, even for the right password. Only wrong credentials count; a success clears
+  the email's count. Memory is capped (oldest keys dropped first).
+- The client address is the socket address, or with `TRUSTED_PROXY_HOPS = n` the `X-Forwarded-For`
+  entry `n` from the right (`core/http/client-ip.ts`). Entries a client writes further left are ignored.
 - The session cookie is `HttpOnly`, `SameSite=Lax`, `Path=/`, with the session expiry. In production
   it's `__Host-session` and `Secure`, in development `session` (`core/http/session-cookie.ts`). A
   cookie that doesn't resolve to a session is cleared.

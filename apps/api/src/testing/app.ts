@@ -1,6 +1,7 @@
 import type { AppDeps } from '@api/app'
 import { createDatabase } from '@api/core/db/client'
 import { sessionCookieSettings } from '@api/core/http/session-cookie'
+import { createLoginLimits } from '@api/modules/identity'
 import { createCapturingLogger } from '@api/testing/logger'
 import { createRecordingMailer } from '@api/testing/mailer'
 
@@ -23,6 +24,12 @@ export function testAppDeps(overrides: Partial<AppDeps> = {}): AppDeps {
     publicUrl: TEST_PUBLIC_URL,
     isPublicSignupEnabled: false,
     cookie: sessionCookieSettings('test'),
+    loginLimits: createLoginLimits({
+      maxFailuresPerEmail: 5,
+      maxFailuresPerClient: 30,
+      windowMinutes: 15,
+    }),
+    trustedProxyHops: 0,
     ...overrides,
   }
 }
