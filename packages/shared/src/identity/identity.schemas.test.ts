@@ -4,6 +4,7 @@ import {
   newUserSchema,
   PASSWORD_MAX_LENGTH,
   passwordSchema,
+  userPreferencesChangeSchema,
 } from '@shared/identity/identity.schemas'
 import { describe, expect, it } from 'vitest'
 
@@ -64,5 +65,31 @@ describe('credentialsSchema', () => {
   it('refuses a password above the maximum before any hashing', () => {
     const tooLong = { email: 'a@example.com', password: 'x'.repeat(PASSWORD_MAX_LENGTH + 1) }
     expect(credentialsSchema.safeParse(tooLong).success).toBe(false)
+  })
+})
+
+describe('userPreferencesChangeSchema', () => {
+  it('accepts a language and quiet hours set or cleared as a pair', () => {
+    const valid = [
+      { language: 'en-US' },
+      { quietHoursStart: '22:00', quietHoursEnd: '07:30' },
+      { quietHoursStart: null, quietHoursEnd: null },
+    ]
+    for (const change of valid) {
+      expect(userPreferencesChangeSchema.safeParse(change).success).toBe(true)
+    }
+  })
+
+  it('refuses half a quiet-hours pair, bad times, bad tags and empty changes', () => {
+    const invalid = [
+      { quietHoursStart: '22:00' },
+      { quietHoursStart: '22:00', quietHoursEnd: null },
+      { quietHoursStart: '24:00', quietHoursEnd: '07:00' },
+      { language: 'pt_BR' },
+      {},
+    ]
+    for (const change of invalid) {
+      expect(userPreferencesChangeSchema.safeParse(change).success).toBe(false)
+    }
   })
 })

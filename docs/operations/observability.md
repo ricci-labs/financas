@@ -1,7 +1,7 @@
 ---
 summary: Observability design — OpenTelemetry-ready instrumentation, structured logs, metrics, health checks, agent run records, alerts, and the staged upgrade path; built so Claude can investigate bugs quickly.
 read_when: Adding logs/metrics/spans, touching core/observability, wiring alerts, or planning an observability upgrade. For investigating a bug, go to runbook.md.
-updated: 2026-09-25
+updated: 2026-09-26
 ---
 
 # Observability
@@ -64,7 +64,7 @@ Output: one JSON object per line to stdout. Docker keeps it (with rotation, see 
 | `entry.created` / `.replaced` / `.deleted` / `.restored` | info |
 | `authz.denied` | warn |
 | `auth.login.succeeded` (with `userId`) | info |
-| `auth.login.rate_limited`, `auth.account_email.rate_limited`, `auth.link.rate_limited` | warn |
+| `auth.login.rate_limited`, `auth.account_email.rate_limited`, `auth.link.rate_limited`, `auth.password_change.rate_limited` | warn |
 | `background.task.failed` (with `task`) | error |
 | `email.sent` / `email.send_failed` | info / error |
 | `charge.created` / `.sent` / `.paid` | info |

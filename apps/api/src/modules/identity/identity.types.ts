@@ -155,3 +155,18 @@ export type SessionRow = {
   createdAt: Date
   expiresAt: Date
 }
+
+export type PasswordChangeInput = {
+  userId: string
+  sessionId: string
+  currentPassword: string
+  newPassword: string
+}
+
+export type UserPreferences = {
+  language: string
+  quietHoursStart: string | null
+  quietHoursEnd: string | null
+}
+
+export type UserPreferencesUpdate = Partial<UserPreferences>

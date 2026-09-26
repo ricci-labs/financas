@@ -11,14 +11,20 @@ import {
   limitAccountEmails,
   limitFailedLogins,
   limitInvalidLinks,
+  limitWrongCurrentPasswords,
 } from '@api/modules/identity/identity.middleware'
 import {
+  changeDisplayName,
+  changePassword,
+  changeUserPreferences,
   getAccount,
+  getUserPreferences,
   login,
   logout,
   requestEmailVerification,
   requestPasswordReset,
   resetPassword,
+  sendPasswordChangedEmail,
   signUp,
   verifyEmail,
 } from '@api/modules/identity/identity.service'
@@ -27,7 +33,10 @@ import {
   emailRequestSchema,
   loginRequestSchema,
   newUserSchema,
+  passwordChangeRequestSchema,
+  profileChangeSchema,
   resetPasswordRequestSchema,
+  userPreferencesChangeSchema,
   verifyEmailRequestSchema,
 } from '@financas/shared'
 import { Hono } from 'hono'
@@ -128,4 +137,36 @@ export function identityRoutes(deps: IdentityRouteDeps) {
       const { userId } = currentSession(c)
       return c.json(await getAccount(deps.db, userId))
     })
+    .patch('/me', jsonBody(profileChangeSchema, 'PROFILE_INVALID'), async (c) => {
+      await changeDisplayName(deps.db, currentSession(c).userId, c.req.valid('json').displayName)
+      return c.body(null, NO_CONTENT)
+    })
+    .get('/me/preferences', async (c) => {
+      return c.json(await getUserPreferences(deps.db, currentSession(c).userId))
+    })
+    .patch(
+      '/me/preferences',
+      jsonBody(userPreferencesChangeSchema, 'PREFERENCES_INVALID'),
+      async (c) => {
+        const { userId } = currentSession(c)
+        return c.json(await changeUserPreferences(deps.db, userId, c.req.valid('json')))
+      },
+    )
+    .post(
+      '/password/change',
+      jsonBody(passwordChangeRequestSchema, 'PASSWORD_INVALID'),
+      limitWrongCurrentPasswords(deps),
+      async (c) => {
+        const { userId, sessionId } = currentSession(c)
+        const recipient = await changePassword(deps.db, {
+          userId,
+          sessionId,
+          ...c.req.valid('json'),
+        })
+        deps.background.run(c.get('logger'), 'auth.password_changed_email', () =>
+          sendPasswordChangedEmail(recipient, deps),
+        )
+        return c.body(null, NO_CONTENT)
+      },
+    )
 }
