@@ -171,6 +171,17 @@ An unknown token is `404 INVITATION_NOT_FOUND` and counts against the client's i
 They live in `onboarding` because they span `members`, `access`, `identity` and email, and because
 `members` can't import `access` (which already imports `members`) without a cycle.
 
+## Workspace routes (`workspaces.routes.ts`)
+| Route | Access | Behavior |
+|---|---|---|
+| `POST /api/workspaces` `{ name }` | session | anyone creates workspaces they own (`onboarding.createWorkspace`) → `201 { workspaceId }` |
+| `PATCH /api/workspaces/:workspaceId` `{ name }` | `settings:update` | rename → `204` |
+| `GET /api/workspaces/:workspaceId/settings` | `settings:view` | every setting below |
+| `PATCH /api/workspaces/:workspaceId/settings` | `settings:update` | `workspaceSettingsChangeSchema` (shared): currency, time zone (IANA), locale, financial period (anchor and value together; `calendar_month` clears the value), installment view, budget base, week start → the updated settings. Pix and charge settings come with contacts. A value the DB rules refuse is `400 SETTINGS_INVALID` |
+
+The enum values (`PERIOD_ANCHORS`, `INSTALLMENT_BUDGET_VIEWS`, `BUDGET_BASES`) live in
+`@financas/shared` (`workspaces.constants.ts`), so the tables and the web use the same lists.
+
 ## Settings (typed 1:1 tables)
 ### `workspace_settings` (PK = `workspace_id`, module `workspaces`)
 Created with defaults by `createWorkspace()`. Every rule below is a CHECK constraint.

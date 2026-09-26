@@ -65,6 +65,7 @@ routes / agent tools / jobs / channels
 | `onboarding` | `identity` | Registering an owner: the user, then their first workspace |
 | `access` | `members` | Loading the caller's active membership to authorize a request |
 | every module's routes | `access` | `authorize()`, `currentWorkspace()` on workspace routes |
+| `workspaces` routes | `onboarding` | `POST /api/workspaces` creates a workspace through `createWorkspace` |
 
 `onboarding` only orchestrates flows that span modules (creating a workspace) and nothing depends on it, so every module can depend on `workspaces` without a cycle.
 

@@ -1,21 +1,15 @@
 import { primaryId, softDelete, timestamps } from '@api/core/db/columns'
 import { tenantIsolation } from '@api/core/db/tenancy'
 import { users } from '@api/modules/identity/identity.table'
+import { BUDGET_BASES, INSTALLMENT_BUDGET_VIEWS, PERIOD_ANCHORS } from '@financas/shared'
 import { sql } from 'drizzle-orm'
 import { char, check, pgEnum, pgTable, smallint, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 
-export const periodAnchor = pgEnum('period_anchor', [
-  'calendar_month',
-  'day_of_month',
-  'nth_business_day',
-])
+export const periodAnchor = pgEnum('period_anchor', PERIOD_ANCHORS)
 
-export const installmentBudgetView = pgEnum('installment_budget_view', [
-  'purchase_month',
-  'per_installment',
-])
+export const installmentBudgetView = pgEnum('installment_budget_view', INSTALLMENT_BUDGET_VIEWS)
 
-export const budgetBase = pgEnum('budget_base', ['fixed_income', 'all_income'])
+export const budgetBase = pgEnum('budget_base', BUDGET_BASES)
 
 export const workspaces = pgTable(
   'workspaces',

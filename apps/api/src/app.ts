@@ -14,6 +14,10 @@ import {
   invitationRoutes,
   PUBLIC_INVITATION_ROUTES,
 } from '@api/modules/onboarding/onboarding.routes'
+import {
+  workspaceCreationRoutes,
+  workspaceSettingsRoutes,
+} from '@api/modules/workspaces/workspaces.routes'
 import { Hono } from 'hono'
 
 export const PUBLIC_ROUTES: ReadonlySet<string> = new Set([
@@ -37,6 +41,7 @@ export function createApp(deps: AppDeps) {
     .route('/api/auth', identityRoutes(deps))
     .route('/api/invitations', invitationResponseRoutes(deps))
     .route('/api/workspaces', workspaceListRoutes(deps))
+    .route('/api/workspaces', workspaceCreationRoutes(deps))
     .route('/api/workspaces/:workspaceId', workspaceScopedRoutes(deps))
 }
 
@@ -44,6 +49,7 @@ function workspaceScopedRoutes(deps: AppDeps) {
   return new Hono<AppEnv>()
     .use(workspaceAccess(deps))
     .route('/', accessRoutes(deps))
+    .route('/', workspaceSettingsRoutes(deps))
     .route('/', ledgerRoutes(deps))
     .route('/invitations', invitationRoutes(deps))
 }
