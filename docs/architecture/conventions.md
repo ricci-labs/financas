@@ -1,7 +1,7 @@
 ---
 summary: Coding conventions — naming, money, dates, IDs, errors, validation, tests, migrations, commits.
 read_when: Writing or reviewing any code.
-updated: 2026-09-25
+updated: 2026-09-26
 ---
 
 # Conventions
@@ -162,7 +162,8 @@ without comments.
   | `ConflictError` | 409 |
   | anything else | 500 `INTERNAL_ERROR`, logged once as `http.request.failed`; the message never reaches the client |
 - Every error response has the same body: `{ "error": { "code", "message", "ref" } }`. The web shows pt-BR text chosen by `code`, plus the `ref`.
-- Routes validate bodies with `jsonBody(schema, 'X_INVALID')` (`core/http/validation.ts`, Hono's built-in validator + `parseOrThrow`), so validation errors take the same path. Bodies above 100 KB are refused with 413 before being read.
+- Routes validate ids in the URL with `pathParams(schema, 'X_NOT_FOUND')`: a malformed id is a `404`
+  before any query. Routes validate bodies with `jsonBody(schema, 'X_INVALID')` (`core/http/validation.ts`, Hono's built-in validator + `parseOrThrow`), so validation errors take the same path. Bodies above 100 KB are refused with 413 before being read.
 - Never swallow errors. Log with context using the pino child logger.
 
 ## Tests

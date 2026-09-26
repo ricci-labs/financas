@@ -10,11 +10,13 @@ import {
   lockAccount,
   markAccountDeleted,
   markAccountRestored,
+  selectActiveAccounts,
   updateAccount,
 } from '@api/modules/ledger/ledger.repository'
 import type {
   CreatedAccount,
   DeleteAccountInput,
+  LedgerAccountItem,
   LedgerContext,
   WorkspaceAccount,
 } from '@api/modules/ledger/ledger.types'
@@ -101,6 +103,10 @@ export async function archiveAccount(
   clock: Clock = systemClock,
 ) {
   await setArchived(db, ref, clock.now())
+}
+
+export function listAccounts(db: Database, workspaceId: string): Promise<LedgerAccountItem[]> {
+  return withWorkspace(db, workspaceId, (tx) => selectActiveAccounts(tx))
 }
 
 export async function unarchiveAccount(db: Database, ref: WorkspaceAccount) {

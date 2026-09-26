@@ -135,6 +135,10 @@ export const accountChangeSchema = accountPersonalizationSchema
 
 export type AccountChange = z.infer<typeof accountChangeSchema>
 
+export const accountParamsSchema = z.object({ accountId: z.uuid() })
+
+export type AccountParams = z.infer<typeof accountParamsSchema>
+
 const dayOfMonthSchema = z.number().int().min(1).max(31)
 
 const cardCycleFields = {

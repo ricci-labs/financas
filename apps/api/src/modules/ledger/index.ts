@@ -1,3 +1,4 @@
+export { ledgerRoutes } from '@api/modules/ledger/ledger.routes'
 export {
   archiveAccount,
   changeAccount,
@@ -9,6 +10,7 @@ export {
   deleteAccount,
   deleteEntry,
   listAccountBalances,
+  listAccounts,
   listInvoiceTotals,
   recordEntry,
   replaceEntry,
@@ -24,7 +26,9 @@ export type {
   EntryContext,
   EntryRef,
   InvoiceTotal,
+  LedgerAccountItem,
   LedgerContext,
+  LedgerRouteDeps,
   NewLedgerAccount,
   RecordedEntry,
   WorkspaceAccount,

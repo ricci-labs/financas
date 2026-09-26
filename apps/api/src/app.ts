@@ -6,6 +6,7 @@ import { requireSession } from '@api/core/http/middleware/session'
 import { accessRoutes, workspaceAccess, workspaceListRoutes } from '@api/modules/access'
 import { healthRoutes, PUBLIC_HEALTH_ROUTES } from '@api/modules/health'
 import { identityRoutes, PUBLIC_AUTH_ROUTES, resolveSession } from '@api/modules/identity'
+import { ledgerRoutes } from '@api/modules/ledger'
 import { Hono } from 'hono'
 
 export const PUBLIC_ROUTES: ReadonlySet<string> = new Set([
@@ -31,7 +32,10 @@ export function createApp(deps: AppDeps) {
 }
 
 function workspaceScopedRoutes(deps: AppDeps) {
-  return new Hono<AppEnv>().use(workspaceAccess(deps)).route('/', accessRoutes(deps))
+  return new Hono<AppEnv>()
+    .use(workspaceAccess(deps))
+    .route('/', accessRoutes(deps))
+    .route('/', ledgerRoutes(deps))
 }
 
 export type AppType = ReturnType<typeof createApp>
