@@ -1,6 +1,18 @@
-import type { WorkspaceTransaction } from '@api/core/db/tx'
-import { insertRolePermissions, insertSystemRole } from '@api/modules/access/access.repository'
-import type { SystemRoleIds } from '@api/modules/access/access.types'
+import type { Database } from '@api/core/db/client'
+import { type WorkspaceTransaction, withWorkspace } from '@api/core/db/tx'
+import {
+  insertRolePermissions,
+  insertSystemRole,
+  selectActiveRole,
+  selectRolePermissions,
+} from '@api/modules/access/access.repository'
+import type {
+  SystemRoleIds,
+  WorkspaceAccess,
+  WorkspaceAccessInput,
+} from '@api/modules/access/access.types'
+import { findActiveMembership } from '@api/modules/members'
+import { findCurrentWorkspace } from '@api/modules/workspaces'
 import { ROLE_TEMPLATES } from '@financas/shared'
 
 export async function createSystemRoles(
@@ -18,4 +30,21 @@ export async function createSystemRoles(
     createdRoles.push([template.key, roleId] as const)
   }
   return Object.fromEntries(createdRoles) as SystemRoleIds
+}
+
+export function loadWorkspaceAccess(
+  db: Database,
+  { workspaceId, userId }: WorkspaceAccessInput,
+): Promise<WorkspaceAccess | null> {
+  return withWorkspace(db, workspaceId, async (tx) => {
+    const workspace = await findCurrentWorkspace(tx)
+    const membership = workspace ? await findActiveMembership(tx, userId) : undefined
+    const role = membership ? await selectActiveRole(tx, membership.roleId) : undefined
+    if (!workspace || !membership || !role) {
+      return null
+    }
+
+    const permissions = await selectRolePermissions(tx, role.roleId)
+    return { workspace, membershipId: membership.membershipId, role, permissions }
+  })
 }

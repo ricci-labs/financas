@@ -5,8 +5,13 @@ import {
   insertDefaultSettings,
   insertWorkspace,
   selectCurrentSettings,
+  selectCurrentWorkspace,
 } from '@api/modules/workspaces/workspaces.repository'
-import type { NewWorkspace, WorkspaceDefaults } from '@api/modules/workspaces/workspaces.types'
+import type {
+  NewWorkspace,
+  WorkspaceDefaults,
+  WorkspaceSummary,
+} from '@api/modules/workspaces/workspaces.types'
 
 export function reserveWorkspaceId(db: Database): Promise<string> {
   return generateWorkspaceId(db)
@@ -22,4 +27,18 @@ export async function addWorkspace(
 
 export function currentWorkspaceDefaults(tx: WorkspaceTransaction): Promise<WorkspaceDefaults> {
   return selectCurrentSettings(tx)
+}
+
+export async function findCurrentWorkspace(
+  tx: WorkspaceTransaction,
+): Promise<WorkspaceSummary | undefined> {
+  const workspace = await selectCurrentWorkspace(tx)
+  if (!workspace) {
+    return undefined
+  }
+  return {
+    workspaceId: workspace.workspaceId,
+    name: workspace.name,
+    isArchived: workspace.archivedAt !== null,
+  }
 }

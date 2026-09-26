@@ -70,3 +70,11 @@ export async function markInvitationAccepted(
     .set({ acceptedAt, acceptedByUserId })
     .where(eq(invitations.id, invitationId))
 }
+
+export async function selectActiveMembershipOfUser(tx: WorkspaceTransaction, userId: string) {
+  const [membership] = await tx
+    .select({ membershipId: memberships.id, roleId: memberships.roleId })
+    .from(memberships)
+    .where(and(eq(memberships.userId, userId), isNull(memberships.deletedAt)))
+  return membership
+}

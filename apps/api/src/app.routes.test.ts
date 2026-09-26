@@ -1,4 +1,5 @@
 import { createApp, PUBLIC_ROUTES } from '@api/app'
+import { isPermissionCheck } from '@api/modules/access'
 import { TEST_PUBLIC_URL, testAppDeps } from '@api/testing/app'
 import { describe, expect, it } from 'vitest'
 
@@ -73,5 +74,37 @@ describe('writes from other sites', () => {
   it('do not affect reads', async () => {
     const response = await createApp(testAppDeps()).request('/api/auth/config')
     expect(response.status).toBe(200)
+  })
+})
+
+describe('workspace routes', () => {
+  const WORKSPACE_PREFIX = '/api/workspaces/'
+
+  function workspaceRoutesWithChecks(app: ReturnType<typeof createApp>) {
+    const entries = app.routes.filter(
+      (route) => route.path.startsWith(WORKSPACE_PREFIX) && route.method !== MIDDLEWARE_METHOD,
+    )
+    const routeKeys = new Set(entries.map((route) => `${route.method} ${route.path}`))
+    const checkedKeys = new Set(
+      entries
+        .filter((route) => isPermissionCheck(route.handler))
+        .map((route) => `${route.method} ${route.path}`),
+    )
+    return { routeKeys, checkedKeys }
+  }
+
+  it('declare a permission on every route', () => {
+    const { routeKeys, checkedKeys } = workspaceRoutesWithChecks(createApp(testAppDeps()))
+    expect(routeKeys.size).toBeGreaterThan(0)
+    expect([...routeKeys].filter((key) => !checkedKeys.has(key))).toEqual([])
+  })
+
+  it('are caught when one forgets its permission', () => {
+    const app = createApp(testAppDeps()).get('/api/workspaces/:workspaceId/forgetful', (c) =>
+      c.text('reached'),
+    )
+    const { routeKeys, checkedKeys } = workspaceRoutesWithChecks(app)
+    const unchecked = [...routeKeys].filter((key) => !checkedKeys.has(key))
+    expect(unchecked).toEqual(['GET /api/workspaces/:workspaceId/forgetful'])
   })
 })

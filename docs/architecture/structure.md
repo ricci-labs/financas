@@ -182,6 +182,7 @@ modules/ledger/
   | `<module>.repository.ts` | Drizzle queries |
   | `<module>.service.ts` | Use cases |
   | `<module>.routes.ts` | Hono sub-app |
+  | `<module>.middleware.ts` | Hono middleware the module offers to other routes (e.g. `access`: `workspaceAccess`, `authorize`) |
   | `<module>.emails.ts` | Email templates: pure functions that return an `EmailMessage` (pt-BR text, rendered by `core/email/layout.ts`) |
   | `<module>.test.ts` / `<module>.integration.test.ts` | Unit / database tests, one `describe` per table or use case. A big module may split them by area: `<module>.<area>.integration.test.ts` |
   | `index.ts` | Public surface |

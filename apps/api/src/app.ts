@@ -2,10 +2,12 @@ import type { BackgroundTasks } from '@api/core/background-tasks'
 import type { Database } from '@api/core/db/client'
 import type { Mailer } from '@api/core/email/email.types'
 import { createBaseApp } from '@api/core/http/base-app'
+import type { AppEnv } from '@api/core/http/http.types'
 import { sameOriginWrites } from '@api/core/http/middleware/same-origin-writes'
 import { requireSession } from '@api/core/http/middleware/session'
 import type { SessionCookieSettings } from '@api/core/http/session-cookie'
 import type { Logger } from '@api/core/observability/logger'
+import { accessRoutes, workspaceAccess } from '@api/modules/access'
 import { healthRoutes, PUBLIC_HEALTH_ROUTES } from '@api/modules/health'
 import {
   type AccountEmailLimits,
@@ -14,6 +16,7 @@ import {
   PUBLIC_AUTH_ROUTES,
   resolveSession,
 } from '@api/modules/identity'
+import { Hono } from 'hono'
 
 export type AppDeps = {
   version: string
@@ -49,6 +52,11 @@ export function createApp(deps: AppDeps) {
     )
     .route('/api/health', healthRoutes(deps))
     .route('/api/auth', identityRoutes(deps))
+    .route('/api/workspaces/:workspaceId', workspaceScopedRoutes(deps))
+}
+
+function workspaceScopedRoutes(deps: AppDeps) {
+  return new Hono<AppEnv>().use(workspaceAccess(deps)).route('/', accessRoutes(deps))
 }
 
 export type AppType = ReturnType<typeof createApp>
