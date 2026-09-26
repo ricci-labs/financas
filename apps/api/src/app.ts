@@ -5,7 +5,7 @@ import { sameOriginWrites } from '@api/core/http/middleware/same-origin-writes'
 import { requireSession } from '@api/core/http/middleware/session'
 import { workspaceAccess } from '@api/modules/access'
 import { accessRoutes, workspaceListRoutes } from '@api/modules/access/access.routes'
-import { contactRoutes } from '@api/modules/contacts/contacts.routes'
+import { chargeRoutes, contactRoutes } from '@api/modules/contacts/contacts.routes'
 import { healthRoutes, PUBLIC_HEALTH_ROUTES } from '@api/modules/health/health.routes'
 import { resolveSession } from '@api/modules/identity'
 import { identityRoutes, PUBLIC_AUTH_ROUTES } from '@api/modules/identity/identity.routes'
@@ -57,6 +57,7 @@ function workspaceScopedRoutes(deps: AppDeps) {
     .route('/', planningRoutes(deps))
     .route('/', reportRoutes(deps))
     .route('/contacts', contactRoutes(deps))
+    .route('/charges', chargeRoutes(deps))
     .route('/invitations', invitationRoutes(deps))
 }
 

@@ -92,8 +92,8 @@ updated: 2026-09-26
      - [x] `settlement` entries: a contact pays back
      - [x] Contact balances (owed, overdue, next due), archive when settled, own vs fronted on card
            invoices
-     - [ ] Charges: `charges` + `charge_items`, built from a contact's open items, pt-BR message,
-           Pix copia-e-cola from the workspace key; cancel (done: open items, message, Pix)
+     - [x] Charges: `charges` + `charge_items`, built from a contact's open items, pt-BR message,
+           Pix copia-e-cola from the workspace key; mark sent; cancel
      - [ ] Settlements pay charges (`charge_payments`, status kept by a trigger)
      - [ ] Insight: a contact with overdue items
   4. [ ] **Reminders:** notification outbox and its worker, email first

@@ -3,11 +3,14 @@ import {
   selectAccountBalances,
   selectActiveAccounts,
   selectActiveCards,
+  selectContactItems,
   selectContactPostings,
   selectInvoiceFacts,
   selectPostingFacts,
 } from '@api/modules/ledger/ledger.repository'
+import type { ContactItems } from '@api/modules/ledger/ledger.types'
 import type {
+  ChargeableItem,
   ContactPosting,
   FactAccount,
   FactBalance,
@@ -64,4 +67,16 @@ export function readContactPostings(
   contactId?: string,
 ): Promise<ContactPosting[]> {
   return selectContactPostings(tx, contactId)
+}
+
+export async function readContactItems(
+  tx: WorkspaceTransaction,
+  contactId: string,
+): Promise<ContactItems> {
+  const lines = await selectContactItems(tx, contactId)
+  const items: ChargeableItem[] = lines.filter((line) => line.amountCents > 0)
+  const paidCents = -lines
+    .filter((line) => line.amountCents < 0)
+    .reduce((sum, line) => sum + line.amountCents, 0)
+  return { items, paidCents }
 }

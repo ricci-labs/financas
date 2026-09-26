@@ -47,9 +47,16 @@ One active contact per phone (`409 CONTACT_PHONE_TAKEN`); deleting a contact fre
 | `sent_at`, `last_reminded_at` | timestamptz null | |
 | `created_by_user_id` | | |
 
+Implemented notes: `status` starts `draft`; `sent_at` is set whenever the charge left `draft`
+(CHECK, cancelled excepted); `due_on` is the latest due date of its items. Charges are never
+deleted, only cancelled. `contact_id` is a composite FK (deferred).
+
 ### `charge_items`: which receivable postings the charge covers
-`charge_id`, `posting_id` (a `receivable` posting of the same contact), `amount_cents`.
-`unique (posting_id)` among non-cancelled charges: a posting is charged once at a time.
+`charge_id`, `posting_id` (a `receivable` posting of the same contact), `amount_cents` (what was
+still open of it). A posting is charged once at a time among open charges (draft, sent, partially
+paid). The service guarantees it while holding the contact's row lock, so two charges of a contact
+never run together. The FK to `postings` is added in SQL (`0052`), not in the Drizzle schema, so the
+`contacts` and `ledger` table files don't import each other.
 
 ### `charge_payments`: settlements applied to a charge
 `charge_id`, `entry_id` (the `settlement` entry), `amount_cents`. Partial payments allowed.
@@ -85,6 +92,14 @@ that month.
 - **Pix copia e cola** (`pixCopiaECola`): a static BR Code (EMV) with the amount, the workspace's key,
   receiver name (≤ 25) and city (≤ 15) without accents, the charge as the transaction id, closed by
   its CRC-16/CCITT-FALSE.
+
+### Routes (charges)
+| Route | Permission | Does |
+|---|---|---|
+| `POST /contacts/:contactId/charges` | `contacts:create` | `createCharge` `{ until? }` (default today, workspace time zone): the contact's open items due up to that day → `201 { chargeId }` with the stored message and Pix copia e cola (when the workspace Pix is set). Nothing open is `409 NOTHING_TO_CHARGE` |
+| `GET /charges?contactId=` | `contacts:view` | `listCharges`: newest first, with items |
+| `POST /charges/:chargeId/sent` | `contacts:update` | `markChargeSent`: draft → sent (also when a member forwards the message by hand) |
+| `POST /charges/:chargeId/cancel` | `contacts:update` | `cancelCharge`: any open charge → cancelled; its items can be charged again. `409 CHARGE_STATUS_REFUSED` otherwise |
 
 ### Sending a charge (direct, via the platform's WhatsApp)
 1. The user asks ("cobra o J") or a scheduled monthly charge triggers.

@@ -546,3 +546,18 @@ function frontedOnTheSameInstallment() {
       and shares.installment_no is not distinct from ${postings.installmentNo}
   )`.mapWith(Number)
 }
+
+export function selectContactItems(tx: WorkspaceTransaction, contactId: string) {
+  return tx
+    .select({
+      postingId: postings.id,
+      description: journalEntries.description,
+      installmentNo: postings.installmentNo,
+      installmentCount: journalEntries.installmentCount,
+      effectiveOn: postings.effectiveOn,
+      amountCents: postings.amountCents,
+    })
+    .from(postings)
+    .innerJoin(journalEntries, eq(journalEntries.id, postings.entryId))
+    .where(and(eq(postings.contactId, contactId), isNull(journalEntries.deletedAt)))
+}

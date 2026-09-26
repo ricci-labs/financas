@@ -1,6 +1,6 @@
 import type { Database } from '@api/core/db/db.types'
-import type { contacts } from '@api/modules/contacts/contacts.table'
-import type { ContactBalance } from '@financas/shared'
+import type { chargeItems, charges, contacts } from '@api/modules/contacts/contacts.table'
+import type { ChargeStatus, ContactBalance } from '@financas/shared'
 
 export type ContactRow = typeof contacts.$inferSelect
 
@@ -45,4 +45,45 @@ export type ContactRouteDeps = {
 
 export type ContactBalanceItem = ContactBalance & {
   name: string
+}
+
+export type ChargeRow = typeof charges.$inferSelect
+
+export type NewChargeRow = typeof charges.$inferInsert
+
+export type NewChargeItemRow = typeof chargeItems.$inferInsert
+
+export type ChargeUpdate = Partial<
+  Pick<NewChargeRow, 'status' | 'sentAt' | 'messageText' | 'pixPayload'>
+>
+
+export type ChargeItemView = {
+  postingId: string
+  amountCents: number
+}
+
+export type ChargeItemRow = ChargeItemView & {
+  chargeId: string
+}
+
+export type ChargeView = {
+  id: string
+  contactId: string
+  amountCents: number
+  dueOn: string | null
+  status: ChargeStatus
+  messageText: string
+  pixPayload: string | null
+  sentAt: Date | null
+  createdAt: Date
+  items: ChargeItemView[]
+}
+
+export type ChargeRef = {
+  workspaceId: string
+  chargeId: string
+}
+
+export type CreatedCharge = {
+  chargeId: string
 }

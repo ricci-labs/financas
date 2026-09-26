@@ -1,11 +1,16 @@
 export {
+  cancelCharge,
   changeContact,
+  createCharge,
   createContact,
   deleteContact,
+  listCharges,
   listContactBalances,
   listContacts,
+  markChargeSent,
 } from '@api/modules/contacts/contacts.service'
 export type {
+  ChargeView,
   ContactBalanceItem,
   ContactItem,
   ContactRouteDeps,
