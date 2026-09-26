@@ -1,6 +1,6 @@
 import type { Database } from '@api/core/db/client'
 import { type WorkspaceTransaction, withWorkspace } from '@api/core/db/tx'
-import { NotFoundError, ValidationError } from '@api/core/http/errors'
+import { NotFoundError, parseOrThrow, ValidationError } from '@api/core/http/errors'
 import {
   findUsableAccounts,
   insertAccount,
@@ -9,7 +9,7 @@ import {
   updateCardDetails,
 } from '@api/modules/ledger/ledger.repository'
 import type { CreatedAccount, LedgerContext, WorkspaceCard } from '@api/modules/ledger/ledger.types'
-import { parseOrThrow, refusingTakenAccountNames } from '@api/modules/ledger/use-cases/rules'
+import { refusingTakenAccountNames } from '@api/modules/ledger/use-cases/rules'
 import { currentWorkspaceDefaults } from '@api/modules/workspaces'
 import { cardChangeSchema, isMoneyAccountKind, newCardSchema } from '@financas/shared'
 

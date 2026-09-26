@@ -1,7 +1,7 @@
 import { type Clock, systemClock } from '@api/core/clock'
 import type { Database } from '@api/core/db/client'
 import { type WorkspaceTransaction, withWorkspace } from '@api/core/db/tx'
-import { ConflictError, NotFoundError, ValidationError } from '@api/core/http/errors'
+import { ConflictError, NotFoundError, parseOrThrow, ValidationError } from '@api/core/http/errors'
 import {
   findAccountClass,
   insertAccount,
@@ -17,11 +17,7 @@ import type {
   LedgerContext,
   WorkspaceAccount,
 } from '@api/modules/ledger/ledger.types'
-import {
-  parseOrThrow,
-  refusingBrokenRules,
-  refusingTakenAccountNames,
-} from '@api/modules/ledger/use-cases/rules'
+import { refusingBrokenRules, refusingTakenAccountNames } from '@api/modules/ledger/use-cases/rules'
 import { currentWorkspaceDefaults } from '@api/modules/workspaces'
 import {
   type AccountClass,
