@@ -62,9 +62,11 @@ src/
 │   ├── billing-cycle.ts      # which invoice a purchase / installment falls into; invoice status
 │   └── billing-cycle.test.ts
 ├── metrics/                  # ADR 0024: one dashboard number per file, (facts) → value
-│   ├── metrics.types.ts      # PeriodFacts, Metric
-│   ├── <metric-name>.ts      # + <metric-name>.test.ts
-│   └── metrics.ts            # METRICS, the list the overview returns
+│   ├── metrics.types.ts      # PeriodFacts and its parts
+│   ├── facts.ts              # helpers over the facts (postings counted by the budget view…)
+│   ├── <metric-name>.ts      # one metric: (facts) → value
+│   ├── metrics.ts            # METRICS, computeMetrics, PeriodMetrics
+│   └── metrics.test.ts       # one scenario, a describe per behavior
 ├── insights/                 # ADR 0024: one alert per file, (facts, metrics) → Insight[]
 │   ├── insights.types.ts     # Insight { code, severity, subject, values }
 │   ├── <insight-name>.ts     # + <insight-name>.test.ts

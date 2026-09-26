@@ -66,6 +66,16 @@ export async function renameWorkspace(
   }
 }
 
+export async function currentWorkspaceSettings(
+  tx: WorkspaceTransaction,
+): Promise<WorkspaceSettings> {
+  const settings = await selectSettings(tx)
+  if (!settings) {
+    throw new Error('The current workspace has no settings')
+  }
+  return settings
+}
+
 export async function getWorkspaceSettings(
   db: Database,
   workspaceId: string,

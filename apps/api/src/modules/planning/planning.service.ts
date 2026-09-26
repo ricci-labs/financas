@@ -21,7 +21,11 @@ export {
   skipOccurrence,
   unskipOccurrence,
 } from '@api/modules/planning/use-cases/occurrence-changes'
-export { listOccurrences } from '@api/modules/planning/use-cases/occurrences'
+export {
+  listOccurrences,
+  readOccurrenceFacts,
+  workspaceToday,
+} from '@api/modules/planning/use-cases/occurrences'
 export {
   changeRecurrenceRule,
   createRecurrenceRule,

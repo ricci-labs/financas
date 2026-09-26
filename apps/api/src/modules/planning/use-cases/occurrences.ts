@@ -24,7 +24,9 @@ import {
   addMonths,
   clampedDate,
   DAYS_A_DUE_DATE_MAY_SHIFT,
+  type DateRange,
   dueDatesBetween,
+  type FactOccurrence,
   type IsoDate,
   OCCURRENCE_HORIZON_MONTHS,
   type OccurrenceListQuery,
@@ -48,6 +50,21 @@ export async function listOccurrences(
     const occurrences = await selectOccurrencesBetween(tx, from, to)
     return occurrences.map((occurrence) => withOverdueFlag(occurrence, today))
   })
+}
+
+export async function readOccurrenceFacts(
+  tx: WorkspaceTransaction,
+  { from, to }: DateRange,
+  today: IsoDate,
+): Promise<FactOccurrence[]> {
+  await refreshOccurrences(tx, today)
+  return (await selectOccurrencesBetween(tx, from, to)).map((occurrence) => ({
+    dueOn: occurrence.dueOn,
+    amountCents: occurrence.amountCents,
+    entryType: occurrence.entryType,
+    status: occurrence.status,
+    categoryAccountId: occurrence.categoryAccountId,
+  }))
 }
 
 export function withOverdueFlag(occurrence: OccurrenceRow, today: IsoDate): OccurrenceItem {

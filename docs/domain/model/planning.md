@@ -120,23 +120,39 @@ future invoices, budgets, goals, balances, settings, today). Every number below 
 in `packages/shared/src/metrics/`, and every alert one in `packages/shared/src/insights/`. A new
 number or alert is one file, one line in `METRICS` / `INSIGHTS`, and a test.
 
-**Metrics of the period** (installments count per `installment_budget_view`):
+**The facts** (`PeriodFacts`, `metrics/metrics.types.ts`), loaded by `reports.getPeriodOverview`:
+today (workspace time zone), the period (from the settings and the holidays), the budget view and
+base, the accounts (`ledger.readAccountFacts`), the postings of active entries that fall in the
+period by `effective_on` or by the entry's `occurred_on` (`ledger.readPostingFacts`), and the
+occurrences due in the period (`planning.readOccurrenceFacts`, which tops up the horizon first).
+
+**Metrics of the period** (a posting counts by `effective_on`, or by `occurred_on` under
+`installment_budget_view = purchase_month`; amounts in cents):
 ```
-fixed_income      = fixed-income postings in the period + pending fixed-income occurrences
-spent             = expense postings in the period
-committed         = pending expense occurrences in the period
-                    + card postings due in the period not yet counted
-free_to_spend     = fixed_income − spent − committed
-daily_allowance   = max(free_to_spend, 0) ÷ days left in the period (today included)
-                    (planned items of the remaining days are already out, through `committed`)
+fixed_income      = fixed-income postings in the period + pending income occurrences whose
+                    category is fixed
+variable_income   = variable-income postings in the period (never an occurrence: it's not
+                    guaranteed)
+budget_income     = fixed_income, or fixed + variable when budget_base = all_income
+spent             = expense postings in the period (refunds reduce it)
+committed         = pending expense and card-subscription occurrences due in the period, overdue
+                    ones included (installments are already postings, so they are in `spent`)
+free_to_spend     = budget_income − spent − committed
+daily_allowance   = max(free_to_spend, 0) ÷ days left, today included (the whole period before it
+                    starts, null after it ends). Planned items of the remaining days are already
+                    out, through `committed`, as the household chose
 budget_pace       = per budget line: spent ÷ limit vs share of the period elapsed
 committed_ahead   = for each of the next 6 periods: installments + fixed expense occurrences,
                     in cents and as % of that period's fixed income
 next_invoice      = per card: posted on the open invoice + pending recurring card charges before closing
-variable_income   = variable-income postings in the period, and its 6-period average (information
-                    only: never part of the budget, household policy)
+variable_average  = variable income averaged over the last 6 periods (information only: never
+                    part of the budget, household policy)
 reserve_months    = reserve goal balance ÷ average fixed expenses of the last 3 periods
 ```
+
+| Route | Permission | Does |
+|---|---|---|
+| `GET /overview?period=YYYY-MM` | `reports:view` | `getPeriodOverview`: `{ today, period, metrics }` for the current period, or the period labeled with that month |
 
 **Insights** (first set): budget line ahead of pace or over its limit; a future period with more than
 a configured share of its fixed income committed; a commission arrived and has a suggested split;

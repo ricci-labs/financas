@@ -15,11 +15,13 @@ export {
   listOccurrences,
   listRecurrenceRules,
   matchOccurrence,
+  readOccurrenceFacts,
   setBudget,
   skipOccurrence,
   suggestOccurrencesForEntry,
   unmatchOccurrence,
   unskipOccurrence,
+  workspaceToday,
 } from '@api/modules/planning/planning.service'
 export type {
   AddedHoliday,

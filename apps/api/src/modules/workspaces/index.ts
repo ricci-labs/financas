@@ -2,6 +2,7 @@ export {
   addWorkspace,
   changeWorkspaceSettings,
   currentWorkspaceDefaults,
+  currentWorkspaceSettings,
   findCurrentWorkspace,
   getWorkspaceSettings,
   renameWorkspace,
