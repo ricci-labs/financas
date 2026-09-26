@@ -1,3 +1,5 @@
+import type { NationalHolidayKey } from '@shared/calendar/calendar.constants'
+
 export type IsoDate = string
 
 export type YearMonth = {
@@ -18,4 +20,9 @@ export type Period = {
 
 export type DateParts = YearMonth & {
   day: number
+}
+
+export type NationalHoliday = {
+  on: IsoDate
+  key: NationalHolidayKey
 }

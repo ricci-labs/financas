@@ -22,7 +22,7 @@ Diagrams (Mermaid, rendered by GitHub): `diagrams.md`.
 | `tenancy.md` | `users`, `channel_identities`, `sessions`, `auth_tokens`, `workspaces`, `memberships`, `invitations`, `workspace_settings`, `user_preferences`, `membership_preferences` |
 | `access-control.md` | `roles`, `role_permissions`, `module_actions` (module `access`) |
 | `ledger.md` | `ledger_accounts`, `card_details`, `card_invoices`, `journal_entries`, `postings`, `institutions` |
-| `planning.md` | `recurrence_rules`, `planned_occurrences`, `budget_lines`, `goals`, `holidays` |
+| `planning.md` | `recurrence_rules`, `planned_occurrences`, `budget_lines`, `goals`, `workspace_holidays` |
 | `third-parties.md` | `contacts`, `charges`, `charge_items`, `charge_payments` |
 | `support.md` | `tags`, `entry_tags`, `files`, `entry_attachments`, `charge_attachments`, `notification_outbox`, `audit_log`, `agent_runs`, `agent_messages`, `pending_actions` |
 
@@ -85,7 +85,7 @@ Rule (ADR 0014): **a Postgres enum** when code branches on the value and users c
 
 | Postgres enums | Configuration tables |
 |---|---|
-| `app_module`, `permission_action`, `account_kind`, `entry_type`, `payment_method`, `entry_source`, `invoice_status`, `occurrence_status`, `charge_status`, `recurrence_frequency`, `period_anchor`, `notification_channel`, `notification_status`, `income_nature` | categories (as `ledger_accounts`), `tags`, `contacts`, `institutions`, `holidays`, `recurrence_rules`, `budget_lines`, `goals`, all `*_settings` / `*_preferences` |
+| `app_module`, `permission_action`, `account_kind`, `entry_type`, `payment_method`, `entry_source`, `invoice_status`, `occurrence_status`, `charge_status`, `recurrence_frequency`, `period_anchor`, `notification_channel`, `notification_status`, `income_nature` | categories (as `ledger_accounts`), `tags`, `contacts`, `institutions`, `workspace_holidays`, `recurrence_rules`, `budget_lines`, `goals`, all `*_settings` / `*_preferences` |
 
 Settings are **typed columns** in 1:1 tables (`workspace_settings`, `user_preferences`,
 `membership_preferences`), not key-value rows, so every setting has a type, a default and constraints.

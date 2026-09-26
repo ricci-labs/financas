@@ -49,8 +49,11 @@ src/
 │   ├── money.ts              # parse, format, sum, assertions
 │   └── money.test.ts
 ├── calendar/
-│   ├── calendar.types.ts     # IsoDate, YearMonth, PeriodSettings, Period
-│   ├── dates.ts              # calendar-date math, business days, todayIn(timeZone)
+│   ├── calendar.constants.ts # weekend rules, national holiday keys
+│   ├── calendar.types.ts     # IsoDate, YearMonth, PeriodSettings, Period, NationalHoliday
+│   ├── dates.ts              # calendar-date math, business days (shift by weekend rule), todayIn
+│   ├── holidays.ts           # Easter, national bank holidays, holiday dates in a range
+│   ├── holidays.test.ts
 │   ├── dates.test.ts
 │   ├── period.ts             # financial period (configurable anchor)
 │   └── period.test.ts

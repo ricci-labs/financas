@@ -67,8 +67,8 @@ updated: 2026-09-26
            entries
      - [x] Maintenance job (croner): purge expired sessions and expired auth tokens, daily
   2. [ ] **Planning + dashboard** (decided 2026-09-26, ADR 0024; `../domain/model/planning.md`):
-     - [ ] Plan: ADR 0024 (metrics and insights over period facts) and this list
-     - [ ] Holidays (national seed + workspace ones) and business-day math
+     - [x] Plan: ADR 0024 (metrics and insights over period facts) and this list
+     - [ ] Holidays and business-day math (done: national bank holidays computed; next: workspace ones)
      - [ ] Recurrence rules + planned occurrences (job materializes 6 months ahead)
      - [ ] Matching real entries to pending occurrences; skip / edit one occurrence
      - [ ] Budget lines and goals (reserve)

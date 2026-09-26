@@ -221,7 +221,7 @@ Created with defaults by `createWorkspace()`. Every rule below is a CHECK constr
 | `calendar_month` | — | 2026-10-01 → 2026-10-31 |
 | `day_of_month` | 5 | 2026-10-05 → 2026-11-04 |
 | `day_of_month` | 31 | 2026-10-31 → 2026-11-29 (a day missing in a month → last day of that month) |
-| `nth_business_day` | 5 | 5th business day of October → the day before the 5th business day of November (uses `holidays`) |
+| `nth_business_day` | 5 | 5th business day of October → the day before the 5th business day of November (uses the holidays, `planning.md`) |
 
 ### `user_preferences` (PK = `user_id`, module `identity`, global)
 `language` (tag like `pt-BR`), `quiet_hours_start` / `quiet_hours_end` (set as a pair; no

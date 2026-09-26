@@ -55,7 +55,7 @@ periodOf(date, settings, holidays) → { label: 'YYYY-MM', start: date, end: dat
 ```
 - `calendar_month`: 1st to last day.
 - `day_of_month(d)`: starts on day d (or the last day if the month is shorter), ends the day before the next start.
-- `nth_business_day(n)`: starts on the n-th business day (weekdays minus `holidays`), ends the day before the next start.
+- `nth_business_day(n)`: starts on the n-th business day (weekdays minus holidays, below), ends the day before the next start.
 - The label is the month in which the period **starts**.
 
 Every report ("this month") uses the period, never the calendar month directly.
@@ -126,11 +126,16 @@ stays valid every month until changed. There's no need to recreate budgets month
 `workspace_id`, `id`, `name`, `target_cents`, `target_on` (date null), `account_id` (the savings
 account that holds it; progress = its balance), `archived_at`.
 
-## `holidays`
-| Column | Notes |
-|---|---|
-| `id`, `on_date`, `name` | |
-| `scope` | enum: `national`, `workspace` |
-| `workspace_id` | null for national (seeded), set for custom ones |
+## Holidays
+Business days skip weekends and holidays. They drive `nth_business_day` periods, due dates
+(`weekend_rule`) and reminders.
 
-Used for business-day math (periods, due dates, reminders). National ones are seeded yearly by a job.
+- **National holidays are computed, not stored:** `nationalHolidays(year)` in
+  `packages/shared/src/calendar/holidays.ts`. It lists the **bank** holidays, because salaries and due
+  dates follow the banks: the fixed national dates (Black Consciousness Day from 2024), Good Friday,
+  and Carnival Monday/Tuesday and Corpus Christi (no bank business on those days). Movable dates come
+  from `easterSunday(year)`. Each holiday has a `key`; the web shows its pt-BR name. No seeding job.
+- **Workspace holidays** (a city holiday, a company day off) go in `workspace_holidays`
+  (`workspace_id`, `id`, `on_date`, `name`, soft delete), managed with `planning` permissions.
+- `holidayDatesBetween(start, end, workspaceDates)` joins both for the business-day math:
+  `isBusinessDay`, `nthBusinessDay`, `shiftToBusinessDay(date, weekendRule)`.
