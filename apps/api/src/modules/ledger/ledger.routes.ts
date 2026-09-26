@@ -11,6 +11,7 @@ import {
   createCard,
   deleteAccount,
   deleteEntry,
+  listAccountBalances,
   listAccounts,
   listCards,
   listEntries,
@@ -50,6 +51,7 @@ export function ledgerRoutes(deps: LedgerRouteDeps) {
     .route('/accounts', accountRoutes(deps))
     .route('/cards', cardRoutes(deps))
     .route('/entries', entryRoutes(deps))
+    .route('/balances', balanceRoutes(deps))
 }
 
 function accountRoutes({ db }: LedgerRouteDeps) {
@@ -216,4 +218,10 @@ function entryContextOf(c: Context<AppEnv>): EntryContext {
     userId: currentSession(c).userId,
     source: WEB_SOURCE,
   }
+}
+
+function balanceRoutes({ db }: LedgerRouteDeps) {
+  return new Hono<AppEnv>().get('/', authorize('accounts', 'view'), async (c) => {
+    return c.json(await listAccountBalances(db, currentWorkspace(c).workspaceId))
+  })
 }

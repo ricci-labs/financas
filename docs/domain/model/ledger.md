@@ -221,11 +221,11 @@ A malformed or unknown id, or one from another workspace, is `404 ACCOUNT_NOT_FO
 | `PATCH /entries/:entryId` | `entries:update` | `changeEntryDetails` (description, notes) → `204` |
 | `DELETE /entries/:entryId` (optional `{ reason }`) | `entries:delete` | `deleteEntry` → `204` |
 | `POST /entries/:entryId/restore` | `entries:delete` | `restoreEntry` → `204` |
+| `GET /balances` | `accounts:view` | `listAccountBalances`: every account that isn't deleted, with `balanceCents` (signed) and `naturalBalanceCents` (as the UI shows it), from active entries |
 
 A card is a ledger account, so renaming, archiving, deleting and restoring it go through
 `/accounts` with `accounts` permissions. `/cards/:cardId` only reaches `card_details`, so an id
 that isn't a card is `404 CARD_NOT_FOUND`: the `cards` permission can't touch other accounts.
-Balances follow in the next PR.
 
 ## Worked examples
 Placeholders only: Card X, Member A, Contact J, Contact M.

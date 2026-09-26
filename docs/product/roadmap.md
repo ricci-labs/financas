@@ -49,7 +49,7 @@ updated: 2026-09-26
   9. [x] Ledger routes: accounts
   9b. [x] Ledger routes: cards and invoices
   9c. [x] Ledger routes: entries
-  9d. [ ] Ledger routes: balances
+  9d. [x] Ledger routes: balances
   10. [ ] Invitation routes (create and email the link, accept with sign-up)
 - Later options, in the order proposed: contacts and charges, planning, deploy on the homelab.
 - [ ] DB: contacts/charges, planning, support tables
