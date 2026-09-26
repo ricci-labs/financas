@@ -100,6 +100,7 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
     ],
     occurrences: [
       {
+        id: 'occurrence-1',
         sourceAccountId: 'checking',
         dueOn: '2026-10-20',
         amountCents: 400_000,
@@ -108,6 +109,7 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
         categoryAccountId: 'salary-b',
       },
       {
+        id: 'occurrence-2',
         sourceAccountId: 'checking',
         dueOn: '2026-10-30',
         amountCents: 100_000,
@@ -116,6 +118,7 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
         categoryAccountId: 'commission',
       },
       {
+        id: 'occurrence-3',
         sourceAccountId: 'checking',
         dueOn: '2026-10-13',
         amountCents: 200_000,
@@ -124,6 +127,7 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
         categoryAccountId: 'housing',
       },
       {
+        id: 'occurrence-4',
         sourceAccountId: 'card',
         dueOn: '2026-10-25',
         amountCents: 4_000,
@@ -132,6 +136,7 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
         categoryAccountId: 'electronics',
       },
       {
+        id: 'occurrence-5',
         sourceAccountId: 'checking',
         dueOn: '2026-10-08',
         amountCents: 15_000,
@@ -140,6 +145,7 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
         categoryAccountId: 'housing',
       },
       {
+        id: 'occurrence-6',
         sourceAccountId: 'checking',
         dueOn: '2026-10-09',
         amountCents: 9_000,
@@ -148,6 +154,7 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
         categoryAccountId: 'housing',
       },
       {
+        id: 'occurrence-7',
         sourceAccountId: 'checking',
         dueOn: '2026-11-10',
         amountCents: 200_000,
@@ -156,6 +163,7 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
         categoryAccountId: 'housing',
       },
       {
+        id: 'occurrence-8',
         sourceAccountId: 'checking',
         dueOn: '2026-11-20',
         amountCents: 400_000,
@@ -360,6 +368,7 @@ describe('nextInvoice', () => {
       occurrences: [
         ...base.occurrences,
         {
+          id: 'extra-1',
           sourceAccountId: 'card',
           dueOn: '2026-11-05',
           amountCents: 7_000,
@@ -368,6 +377,7 @@ describe('nextInvoice', () => {
           categoryAccountId: 'electronics',
         },
         {
+          id: 'extra-2',
           sourceAccountId: 'card',
           dueOn: '2026-10-27',
           amountCents: 6_000,
@@ -376,6 +386,7 @@ describe('nextInvoice', () => {
           categoryAccountId: 'electronics',
         },
         {
+          id: 'extra-3',
           sourceAccountId: 'other-card',
           dueOn: '2026-10-26',
           amountCents: 5_000,

@@ -169,11 +169,23 @@ reserve_coverage  = the reserve goal's balance and target, the average spending 
 
 | Route | Permission | Does |
 |---|---|---|
-| `GET /overview?period=YYYY-MM` | `reports:view` | `getPeriodOverview`: `{ today, period, metrics }` for the current period, or the period labeled with that month |
+| `GET /overview?period=YYYY-MM` | `reports:view` | `getPeriodOverview`: `{ today, period, metrics, insights }` for the current period, or the period labeled with that month |
 
-**Insights** (first set): budget line ahead of pace or over its limit; a future period with more than
-a configured share of its fixed income committed; a commission arrived and has a suggested split;
-the balance forecast goes negative; an occurrence is overdue.
+**Insights** (`packages/shared/src/insights/`, one rule per file, in `INSIGHTS`): each is
+`{ code, severity, subject, values }`. There is no text: the web and the agent write pt-BR from the
+`code` and `values`, and notifications will reuse them. Alerts come before warnings, each group in
+the order of `INSIGHTS`.
+
+| Code | Severity | Subject | When |
+|---|---|---|---|
+| `period_overspent` | alert | period label | `free_to_spend` < 0: spending and bills exceed the budget income |
+| `budget_over` | alert | category | a budget past its limit |
+| `budget_ahead` | warning | category | a budget past its expected pace |
+| `occurrence_overdue` | warning | occurrence | a pending bill or income past its due date |
+| `period_heavily_committed` | warning | period label | a coming period with ≥ 70% of its fixed income committed (`HEAVILY_COMMITTED_PERCENT`) |
+
+Still to come with their features: a commission arrived with a suggested split; the balance
+forecast goes negative.
 
 ### Commission split (suggested, never automatic)
 `income_allocation_steps` holds the household's waterfall, in order. When variable income arrives,

@@ -20,6 +20,7 @@ export type FactPosting = {
 }
 
 export type FactOccurrence = {
+  id: string
   sourceAccountId: string
   dueOn: IsoDate
   amountCents: number

@@ -68,9 +68,11 @@ src/
 │   ├── metrics.ts            # METRICS, computeMetrics, PeriodMetrics
 │   └── metrics.test.ts       # one scenario, a describe per behavior
 ├── insights/                 # ADR 0024: one alert per file, (facts, metrics) → Insight[]
-│   ├── insights.types.ts     # Insight { code, severity, subject, values }
+│   ├── insights.constants.ts # codes, severities, thresholds
+│   ├── insights.types.ts     # Insight { code, severity, subject, values }, InsightRule
 │   ├── <insight-name>.ts     # + <insight-name>.test.ts
-│   └── insights.ts           # INSIGHTS
+│   ├── insights.ts           # INSIGHTS, computeInsights (alerts first)
+│   └── insights.test.ts
 ├── recurrence/
 │   ├── recurrence.constants.ts # frequencies, interval and business-day limits
 │   ├── recurrence.types.ts   # RecurrenceSchedule, DateRange

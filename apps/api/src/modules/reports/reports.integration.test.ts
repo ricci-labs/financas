@@ -205,12 +205,18 @@ describe('getPeriodOverview', () => {
   })
 
   it('follows the budget view and the financial period of the workspace', async () => {
-    const { workspaceId } = await household()
+    const { workspaceId, groceries } = await household()
     await changeWorkspaceSettings(databases.app, workspaceId, {
       installmentBudgetView: 'purchase_month',
     })
     const byPurchase = await getPeriodOverview(databases.app, workspaceId, {}, MID_OCTOBER)
     expect(byPurchase.metrics.spent).toBe(30_000 + 90_000)
+    expect(byPurchase.insights).toContainEqual({
+      code: 'budget_over',
+      severity: 'alert',
+      subject: groceries,
+      values: { limitCents: 100_000, spentCents: 120_000 },
+    })
 
     await changeWorkspaceSettings(databases.app, workspaceId, {
       periodAnchor: 'day_of_month',

@@ -1,0 +1,24 @@
+import { budgetAhead } from '@shared/insights/budget-ahead'
+import { budgetOver } from '@shared/insights/budget-over'
+import { INSIGHT_SEVERITIES } from '@shared/insights/insights.constants'
+import type { Insight, InsightRule } from '@shared/insights/insights.types'
+import { occurrenceOverdue } from '@shared/insights/occurrence-overdue'
+import { periodHeavilyCommitted } from '@shared/insights/period-heavily-committed'
+import { periodOverspent } from '@shared/insights/period-overspent'
+import type { PeriodMetrics } from '@shared/metrics/metrics'
+import type { PeriodFacts } from '@shared/metrics/metrics.types'
+
+export const INSIGHTS: readonly InsightRule[] = [
+  occurrenceOverdue,
+  budgetAhead,
+  periodOverspent,
+  budgetOver,
+  periodHeavilyCommitted,
+]
+
+export function computeInsights(facts: PeriodFacts, metrics: PeriodMetrics): Insight[] {
+  const severityRank = (insight: Insight) => INSIGHT_SEVERITIES.indexOf(insight.severity)
+  return INSIGHTS.flatMap((rule) => rule(facts, metrics)).sort(
+    (left, right) => severityRank(left) - severityRank(right),
+  )
+}
