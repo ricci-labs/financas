@@ -89,3 +89,9 @@ export const occurrenceListQuerySchema = z
   })
 
 export type OccurrenceListQuery = z.infer<typeof occurrenceListQuerySchema>
+
+export const occurrenceParamsSchema = z.object({ occurrenceId: z.uuid() })
+
+export const occurrenceSuggestionQuerySchema = z.object({ entryId: z.uuid() })
+
+export const occurrenceMatchSchema = z.strictObject({ entryId: z.uuid() })

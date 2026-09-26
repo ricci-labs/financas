@@ -18,6 +18,7 @@ let member: SessionRequests
 let viewer: SessionRequests
 let rulesPath: string
 let occurrencesPath: string
+let entriesPath: string
 let checkingId: string
 let housingId: string
 let salaryId: string
@@ -42,6 +43,7 @@ beforeAll(async () => {
   const workspacePath = `/api/workspaces/${workspaceId}`
   rulesPath = `${workspacePath}/recurrences`
   occurrencesPath = `${workspacePath}/occurrences`
+  entriesPath = `${workspacePath}/entries`
   checkingId = await created(
     owner.post(`${workspacePath}/accounts`, { kind: 'checking', name: 'Conta X' }),
   )
@@ -72,8 +74,12 @@ afterAll(async () => {
 })
 
 async function created(response: Promise<Response>): Promise<string> {
-  const body = (await (await response).json()) as { accountId?: string; ruleId?: string }
-  const id = body.accountId ?? body.ruleId
+  const body = (await (await response).json()) as {
+    accountId?: string
+    ruleId?: string
+    entryId?: string
+  }
+  const id = body.accountId ?? body.ruleId ?? body.entryId
   if (!id) {
     throw new Error(`Nothing was created: ${JSON.stringify(body)}`)
   }
@@ -278,5 +284,50 @@ describe('GET /occurrences', () => {
       const response = await viewer.get(`${occurrencesPath}${query}`)
       expect([response.status, await codeOf(response)]).toEqual([400, 'OCCURRENCE_QUERY_INVALID'])
     }
+  })
+})
+
+describe('matching occurrences over HTTP', () => {
+  it('suggests the occurrence for a payment, and lets planning:update confirm or undo it', async () => {
+    const today = todayIn('America/Sao_Paulo', new Date())
+    await created(
+      member.post(
+        rulesPath,
+        rent({
+          description: 'Faxina',
+          amountCents: 15_000,
+          schedule: { frequency: 'weekly', startsOn: today },
+        }),
+      ),
+    )
+    const entryId = await created(
+      member.post(entriesPath, {
+        entryType: 'expense',
+        occurredOn: today,
+        description: 'Faxina',
+        amountCents: 15_000,
+        paidFromAccountId: checkingId,
+        categoryId: housingId,
+      }),
+    )
+
+    const suggested = (await (
+      await viewer.get(`${occurrencesPath}/suggestions?entryId=${entryId}`)
+    ).json()) as OccurrenceItem[]
+    expect(suggested.map((occurrence) => [occurrence.description, occurrence.dueOn])).toEqual([
+      ['Faxina', today],
+    ])
+    const matchPath = `${occurrencesPath}/${suggested[0]?.id}/match`
+
+    expect((await viewer.post(matchPath, { entryId })).status).toBe(403)
+    expect((await member.post(matchPath, { entryId })).status).toBe(204)
+    expect((await member.post(`${occurrencesPath}/${suggested[0]?.id}/unmatch`)).status).toBe(204)
+  })
+
+  it('answers 404 for a malformed occurrence and an unknown entry', async () => {
+    const malformed = await member.post(`${occurrencesPath}/nope/match`, { entryId: UNKNOWN_ID })
+    expect([malformed.status, await codeOf(malformed)]).toEqual([404, 'OCCURRENCE_NOT_FOUND'])
+    const unknownEntry = await viewer.get(`${occurrencesPath}/suggestions?entryId=${UNKNOWN_ID}`)
+    expect([unknownEntry.status, await codeOf(unknownEntry)]).toEqual([404, 'ENTRY_NOT_FOUND'])
   })
 })

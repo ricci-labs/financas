@@ -11,6 +11,7 @@ import {
   lockEntry,
   markEntryDeleted,
   markEntryRestored,
+  selectActiveEntry,
   selectEntries,
   selectPostingsOfEntries,
   selectTrashedEntries,
@@ -107,6 +108,18 @@ export async function listEntries(
     }))
     return { ...page, items: await withPostings(tx, page.items) }
   })
+}
+
+export async function findActiveEntry(
+  tx: WorkspaceTransaction,
+  entryId: string,
+): Promise<EntryItem | undefined> {
+  const entry = await selectActiveEntry(tx, entryId)
+  if (!entry) {
+    return undefined
+  }
+  const [withItsPostings] = await withPostings(tx, [entry])
+  return withItsPostings
 }
 
 export async function listTrashedEntries(

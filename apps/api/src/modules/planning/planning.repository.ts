@@ -6,6 +6,7 @@ import {
 } from '@api/modules/planning/planning.table'
 import type {
   HolidayDeletion,
+  LockedOccurrence,
   NewOccurrenceRow,
   NewRecurrenceRuleRow,
   NewWorkspaceHoliday,
@@ -137,27 +138,55 @@ export async function insertOccurrencesIfMissing(
     .onConflictDoNothing({ target: [plannedOccurrences.ruleId, plannedOccurrences.dueOn] })
 }
 
+const OCCURRENCE_COLUMNS = {
+  id: plannedOccurrences.id,
+  ruleId: plannedOccurrences.ruleId,
+  description: recurrenceRules.description,
+  entryType: recurrenceRules.entryType,
+  sourceAccountId: recurrenceRules.sourceAccountId,
+  categoryAccountId: recurrenceRules.categoryAccountId,
+  dueOn: plannedOccurrences.dueOn,
+  amountCents: plannedOccurrences.amountCents,
+  amountIsEstimate: recurrenceRules.amountIsEstimate,
+  status: plannedOccurrences.status,
+  matchedEntryId: plannedOccurrences.matchedEntryId,
+  frequency: recurrenceRules.frequency,
+  interval: recurrenceRules.interval,
+}
+
 export function selectOccurrencesBetween(
   tx: WorkspaceTransaction,
   from: IsoDate,
   to: IsoDate,
 ): Promise<OccurrenceRow[]> {
   return tx
-    .select({
-      id: plannedOccurrences.id,
-      ruleId: plannedOccurrences.ruleId,
-      description: recurrenceRules.description,
-      entryType: recurrenceRules.entryType,
-      sourceAccountId: recurrenceRules.sourceAccountId,
-      categoryAccountId: recurrenceRules.categoryAccountId,
-      dueOn: plannedOccurrences.dueOn,
-      amountCents: plannedOccurrences.amountCents,
-      amountIsEstimate: recurrenceRules.amountIsEstimate,
-      status: plannedOccurrences.status,
-      matchedEntryId: plannedOccurrences.matchedEntryId,
-    })
+    .select(OCCURRENCE_COLUMNS)
     .from(plannedOccurrences)
     .innerJoin(recurrenceRules, eq(recurrenceRules.id, plannedOccurrences.ruleId))
     .where(between(plannedOccurrences.dueOn, from, to))
     .orderBy(asc(plannedOccurrences.dueOn), asc(recurrenceRules.description))
+}
+
+export async function lockOccurrence(
+  tx: WorkspaceTransaction,
+  occurrenceId: string,
+): Promise<LockedOccurrence | undefined> {
+  const [occurrence] = await tx
+    .select(OCCURRENCE_COLUMNS)
+    .from(plannedOccurrences)
+    .innerJoin(recurrenceRules, eq(recurrenceRules.id, plannedOccurrences.ruleId))
+    .where(eq(plannedOccurrences.id, occurrenceId))
+    .for('update', { of: plannedOccurrences })
+  return occurrence
+}
+
+export async function setOccurrenceMatch(
+  tx: WorkspaceTransaction,
+  occurrenceId: string,
+  matchedEntryId: string | null,
+): Promise<void> {
+  await tx
+    .update(plannedOccurrences)
+    .set({ status: matchedEntryId ? 'matched' : 'pending', matchedEntryId })
+    .where(eq(plannedOccurrences.id, occurrenceId))
 }

@@ -55,7 +55,7 @@ routes / agent tools / jobs / channels
 | Caller | Callee | Reason |
 |---|---|---|
 | `ledger` | `workspaces` | Settings (currency, timezone) |
-| `planning` | `ledger` | Check the accounts of a recurrence (`loadUsableAccounts`); match real entries to planned occurrences |
+| `planning` | `ledger` | Check the accounts of a recurrence (`loadUsableAccounts`); read the entry a member matches to a planned occurrence (`findActiveEntry`) |
 | `planning` | `workspaces` | The workspace time zone, for "today" (`currentWorkspaceDefaults`) |
 | `reports` | `ledger`, `planning`, `workspaces` | Load the period facts for the metrics and insights (ADR 0024) |
 | `contacts` | `ledger` | Open receivable items for charges; record settlements |

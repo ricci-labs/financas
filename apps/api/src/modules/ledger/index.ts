@@ -8,6 +8,7 @@ export {
   createSystemAccounts,
   deleteAccount,
   deleteEntry,
+  findActiveEntry,
   listAccountBalances,
   listAccounts,
   listCards,

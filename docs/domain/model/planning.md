@@ -11,7 +11,18 @@ updated: 2026-09-26
 - **Planned** = `planned_occurrences` generated from `recurrence_rules` (rent, salary, subscriptions, expected commission).
 - **Already-known future** = installment postings on future invoices. They are real postings, not planned occurrences.
 
-When a real entry is recorded, the service tries to **match** it to a pending occurrence (same rule/category, amount within tolerance, date within window). A match sets the occurrence to `matched` and links the entry, so the forecast doesn't count it twice.
+A real entry is **matched** to a pending occurrence so the forecast doesn't count it twice. The
+household decided (2026-09-26) that matching is **never automatic**: the app **suggests** and a
+member confirms.
+
+- **Fits** (`entryFitsOccurrence`, shared): same entry type as the rule, and the entry moves both the
+  rule's source account and its category (or destination) account. Required to confirm a match.
+- **Suggested** (`suggestedOccurrences`): fits, the amount on the category is within **5%** of the
+  occurrence (**20%** when the rule is an estimate, like energy), and the date is within **10 days**
+  of the due date (half a step for rules that repeat faster, e.g. 3.5 days weekly). Closest date
+  first, then closest amount.
+- A confirmed match sets `matched` + `matched_entry_id`; an entry pays one occurrence at most
+  (`ENTRY_ALREADY_MATCHED`). Undoing it puts the occurrence back to `pending`.
 
 ## `recurrence_rules`
 | Column | Type | Notes |
@@ -77,7 +88,10 @@ holidays passed must cover the range plus `DAYS_A_DUE_DATE_MAY_SHIFT` (10). The 
 
 | Route | Permission | Does |
 |---|---|---|
-| `GET /occurrences?from&to` | `planning:view` | `listOccurrences`: occurrences due in the range (at most a year), with the rule's description, type, accounts and `amountIsEstimate`, plus `isOverdue`; by date |
+| `GET /occurrences?from&to` | `planning:view` | `listOccurrences`: occurrences due in the range (at most a year), with the rule's description, type, accounts, frequency and `amountIsEstimate`, plus `isOverdue`; by date |
+| `GET /occurrences/suggestions?entryId=` | `planning:view` | `suggestOccurrencesForEntry`: pending occurrences the entry probably pays, best first (`404 ENTRY_NOT_FOUND`) |
+| `POST /occurrences/:occurrenceId/match` | `planning:update` | `matchOccurrence` `{ entryId }` → `204`. Refused: not pending (`409 OCCURRENCE_NOT_PENDING`), entry gone (`400 ENTRY_NOT_AVAILABLE`), other accounts (`400 OCCURRENCE_ENTRY_MISMATCH`), entry already used (`409 ENTRY_ALREADY_MATCHED`) |
+| `POST /occurrences/:occurrenceId/unmatch` | `planning:update` | `unmatchOccurrence` → `204`; `409 OCCURRENCE_NOT_MATCHED` otherwise |
 
 ## Financial period
 Driven by `workspace_settings.period_anchor` (`tenancy.md`). Pure function in
