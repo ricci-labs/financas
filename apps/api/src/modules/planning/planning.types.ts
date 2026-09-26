@@ -4,6 +4,7 @@ import type {
   IsoDate,
   NationalHoliday,
   OccurrenceStatus,
+  RecurrenceFrequency,
   RecurrenceSchedule,
   RecurringEntryType,
 } from '@financas/shared'
@@ -100,8 +101,17 @@ export type OccurrenceRow = {
   amountIsEstimate: boolean
   status: OccurrenceStatus
   matchedEntryId: string | null
+  frequency: RecurrenceFrequency
+  interval: number
 }
 
 export type OccurrenceItem = OccurrenceRow & {
   isOverdue: boolean
 }
+
+export type OccurrenceRef = {
+  workspaceId: string
+  occurrenceId: string
+}
+
+export type LockedOccurrence = OccurrenceRow

@@ -9,7 +9,11 @@ import {
   selectOccurrencesBetween,
   selectPlannedDueDates,
 } from '@api/modules/planning/planning.repository'
-import type { OccurrenceItem, RecurrenceRuleRow } from '@api/modules/planning/planning.types'
+import type {
+  OccurrenceItem,
+  OccurrenceRow,
+  RecurrenceRuleRow,
+} from '@api/modules/planning/planning.types'
 import { holidayDatesOf } from '@api/modules/planning/use-cases/holidays'
 import { currentWorkspaceDefaults } from '@api/modules/workspaces'
 import {
@@ -39,11 +43,12 @@ export async function listOccurrences(
     const today = await workspaceToday(tx, clock)
     await refreshOccurrences(tx, today)
     const occurrences = await selectOccurrencesBetween(tx, from, to)
-    return occurrences.map((occurrence) => ({
-      ...occurrence,
-      isOverdue: occurrence.status === 'pending' && occurrence.dueOn < today,
-    }))
+    return occurrences.map((occurrence) => withOverdueFlag(occurrence, today))
   })
+}
+
+export function withOverdueFlag(occurrence: OccurrenceRow, today: IsoDate): OccurrenceItem {
+  return { ...occurrence, isOverdue: occurrence.status === 'pending' && occurrence.dueOn < today }
 }
 
 export async function refreshOccurrences(tx: WorkspaceTransaction, today: IsoDate): Promise<void> {

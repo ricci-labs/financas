@@ -8,6 +8,9 @@ export {
   listHolidays,
   listOccurrences,
   listRecurrenceRules,
+  matchOccurrence,
+  suggestOccurrencesForEntry,
+  unmatchOccurrence,
 } from '@api/modules/planning/planning.service'
 export type {
   AddedHoliday,

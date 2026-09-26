@@ -11,6 +11,9 @@ import {
   listHolidays,
   listOccurrences,
   listRecurrenceRules,
+  matchOccurrence,
+  suggestOccurrencesForEntry,
+  unmatchOccurrence,
 } from '@api/modules/planning/planning.service'
 import type { PlanningRouteDeps } from '@api/modules/planning/planning.types'
 import {
@@ -20,6 +23,9 @@ import {
   newHolidaySchema,
   newRecurrenceRuleSchema,
   occurrenceListQuerySchema,
+  occurrenceMatchSchema,
+  occurrenceParamsSchema,
+  occurrenceSuggestionQuerySchema,
   recurrenceRuleChangeSchema,
   recurrenceRuleParamsSchema,
 } from '@financas/shared'
@@ -127,13 +133,43 @@ function recurrenceRoutes({ db }: PlanningRouteDeps) {
 }
 
 function occurrenceRoutes({ db }: PlanningRouteDeps) {
-  return new Hono<AppEnv>().get(
-    '/',
-    authorize('planning', 'view'),
-    queryParams(occurrenceListQuerySchema, 'OCCURRENCE_QUERY_INVALID'),
-    async (c) => {
+  const occurrence = pathParams(occurrenceParamsSchema, 'OCCURRENCE_NOT_FOUND')
+
+  return new Hono<AppEnv>()
+    .get(
+      '/',
+      authorize('planning', 'view'),
+      queryParams(occurrenceListQuerySchema, 'OCCURRENCE_QUERY_INVALID'),
+      async (c) => {
+        const { workspaceId } = currentWorkspace(c)
+        return c.json(await listOccurrences(db, workspaceId, c.req.valid('query')))
+      },
+    )
+    .get(
+      '/suggestions',
+      authorize('planning', 'view'),
+      queryParams(occurrenceSuggestionQuerySchema, 'OCCURRENCE_QUERY_INVALID'),
+      async (c) => {
+        const { workspaceId } = currentWorkspace(c)
+        const { entryId } = c.req.valid('query')
+        return c.json(await suggestOccurrencesForEntry(db, workspaceId, entryId))
+      },
+    )
+    .post(
+      '/:occurrenceId/match',
+      authorize('planning', 'update'),
+      occurrence,
+      jsonBody(occurrenceMatchSchema, 'OCCURRENCE_MATCH_INVALID'),
+      async (c) => {
+        const { workspaceId } = currentWorkspace(c)
+        const { occurrenceId } = c.req.valid('param')
+        await matchOccurrence(db, { workspaceId, occurrenceId }, c.req.valid('json').entryId)
+        return c.body(null, NO_CONTENT)
+      },
+    )
+    .post('/:occurrenceId/unmatch', authorize('planning', 'update'), occurrence, async (c) => {
       const { workspaceId } = currentWorkspace(c)
-      return c.json(await listOccurrences(db, workspaceId, c.req.valid('query')))
-    },
-  )
+      await unmatchOccurrence(db, { workspaceId, occurrenceId: c.req.valid('param').occurrenceId })
+      return c.body(null, NO_CONTENT)
+    })
 }

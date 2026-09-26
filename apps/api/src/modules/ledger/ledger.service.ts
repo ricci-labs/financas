@@ -18,6 +18,7 @@ export { changeCard, createCard, listCards } from '@api/modules/ledger/use-cases
 export {
   changeEntryDetails,
   deleteEntry,
+  findActiveEntry,
   listEntries,
   listTrashedEntries,
   recordEntry,

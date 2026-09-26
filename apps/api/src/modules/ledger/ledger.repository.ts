@@ -376,6 +376,14 @@ export function selectEntries(tx: WorkspaceTransaction, query: EntryListQuery) {
     .limit(query.limit + 1)
 }
 
+export async function selectActiveEntry(tx: WorkspaceTransaction, entryId: string) {
+  const [entry] = await tx
+    .select(ENTRY_COLUMNS)
+    .from(journalEntries)
+    .where(and(eq(journalEntries.id, entryId), isNull(journalEntries.deletedAt)))
+  return entry
+}
+
 export function selectTrashedEntries(tx: WorkspaceTransaction, query: TrashQuery) {
   const replacements = alias(journalEntries, 'replacements')
   const replaced = tx
