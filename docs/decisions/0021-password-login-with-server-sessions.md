@@ -1,6 +1,6 @@
 ---
-summary: Web login is email + password (scrypt from node:crypto) with opaque server-side sessions in Postgres, sent as an HttpOnly cookie; no public sign-up, users come from an ops script or an invitation.
-read_when: Working on login, logout, sessions, the auth middleware, user creation, password reset, or cookies.
+summary: Web login is email + password (scrypt from node:crypto) with opaque server-side sessions in Postgres, sent as an HttpOnly cookie; public sign-up is a config switch (off by default), with email verification and password reset by email.
+read_when: Working on login, logout, sign-up, sessions, the auth middleware, email verification, password reset, or cookies.
 updated: 2026-09-25
 ---
 
@@ -11,8 +11,10 @@ updated: 2026-09-25
 
 ## Context
 - The web needs a login before any route can be used. The users are the couple, later a few friends.
-- The app talks only to Anthropic and WhatsApp. There's no email sending, and the WhatsApp channel
-  doesn't exist yet.
+- The app will send email (ADR 0022), so verification and reset links can go by email. The
+  WhatsApp channel doesn't exist yet.
+- Today the users are the couple, but the app should be able to open to friends (roadmap phase 3)
+  without code changes.
 - The server is small (4 cores, ~5 GB free RAM), one Node process, no Redis.
 - The dashboard may be reached through a public URL (Cloudflare Tunnel, `../operations/deploy.md`),
   so the login must hold up on the open internet.
@@ -43,18 +45,35 @@ updated: 2026-09-25
 - Brute force: an in-memory limiter per email and per IP address on the login route. It resets on
   restart, which is fine for a single process.
 - Every failure answers the same `401 INVALID_CREDENTIALS`.
+- Sign-up and "forgot password" always answer the same "check your email", whether the email
+  exists or not. They're rate limited like the login.
 
 **Where users come from**
-- No public sign-up.
-- The first user is created by an ops script (`pnpm ops:create-user`), which also creates their
-  first workspace.
-- Everyone else joins through an invitation link: the accept page creates the user with a password
-  when the email doesn't exist yet, or asks them to log in first.
-- Password reset: an ops script for now. A code sent over WhatsApp comes when the channel exists.
+- **Public sign-up is a switch:** `PUBLIC_SIGNUP_ENABLED` (env, default `false`). When off, the
+  sign-up route answers `403 SIGNUP_DISABLED` and the web hides the link (`GET /api/auth/config`
+  tells it). It's an instance setting, not a workspace setting, because users are global.
+- Sign-up creates the user unverified and emails a verification link. Login is refused
+  (`403 EMAIL_NOT_VERIFIED`, only after a correct password) until the link is used. Signing up with an existing email sends that
+  address a "you already have an account" email instead, so nothing leaks.
+- Invitations work with sign-up on or off: the accept page creates the user when the email doesn't
+  exist yet, or asks them to log in first. Accepting an email invitation with that same email
+  counts as verifying it.
+- The first user can also be created by an ops script (`pnpm ops:create-user`, already verified),
+  so an instance with sign-up off can be bootstrapped.
+
+**Email tokens** (verification and password reset)
+- One global `auth_tokens` table: `user_id`, `purpose` (`email_verification`, `password_reset`),
+  `token_hash` (SHA-256), `expires_at`, `used_at`. Same token pattern as sessions and invitations.
+- Verification links last 24 hours, reset links 1 hour. Single use. A new request invalidates the
+  earlier unused tokens of the same purpose.
+- Resetting the password deletes every session of the user.
 
 ## Alternatives considered
-- Magic link by email: needs an email provider, a new outbound dependency and a new secret.
-- Code over WhatsApp: the channel isn't built yet. It stays the planned second factor and the reset path.
+- Magic link by email (no password): every login would depend on email delivery. Email is used
+  for the rare flows (verification, reset) instead.
+- Code over WhatsApp: the channel isn't built yet. It stays a possible second factor.
+- Sign-up always on or always off: the couple doesn't need it now, and opening to friends later
+  shouldn't need a deploy with new code.
 - argon2id: better against GPUs, but it needs a native dependency. scrypt at OWASP parameters is
   also memory-hard and ships with Node.
 - Signed stateless cookies or JWT: they can't be revoked one by one, and they need a
@@ -69,5 +88,8 @@ updated: 2026-09-25
   limiter caps the worst case.
 - The rate limit and the dummy hash make logins slow to brute force. A second factor is future
   work (WhatsApp code).
-- Follow-up: the `identity` module (sessions table, password hashing, login and logout services),
-  the auth middleware, the ops scripts, and the invitation accept page in the web.
+- Password reset depends on email delivery: if the SMTP provider is down, the ops script
+  (`pnpm ops:reset-password`) is the fallback.
+- Follow-up: the `identity` module (sessions, auth tokens, password hashing, sign-up, login, logout,
+  verification and reset services), the auth middleware, the ops scripts, and the sign-up,
+  reset and invitation pages in the web.

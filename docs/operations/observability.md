@@ -1,7 +1,7 @@
 ---
 summary: Observability design — OpenTelemetry-ready instrumentation, structured logs, metrics, health checks, agent run records, alerts, and the staged upgrade path; built so Claude can investigate bugs quickly.
 read_when: Adding logs/metrics/spans, touching core/observability, wiring alerts, or planning an observability upgrade. For investigating a bug, go to runbook.md.
-updated: 2026-09-22
+updated: 2026-09-25
 ---
 
 # Observability
@@ -61,12 +61,14 @@ Output: one JSON object per line to stdout. Docker keeps it (with rotation, see 
 | `agent.pending_action.created` / `.confirmed` / `.cancelled` / `.expired` | info |
 | `entry.created` / `.replaced` / `.deleted` / `.restored` | info |
 | `authz.denied` | warn |
+| `auth.login.succeeded` / `.failed` / `.rate_limited` | info / info / warn |
+| `email.sent` / `email.send_failed` | info / error |
 | `charge.created` / `.sent` / `.paid` | info |
 | `notification.sent` / `.failed` | info / warn |
 | `job.run.started` / `.completed` / `.failed` | info / info / error |
 
 ### Redaction and privacy
-- Always redacted: `authorization`, cookies, API keys, tokens, Baileys credentials, phone numbers and JIDs.
+- Always redacted: `authorization`, cookies, API keys, tokens, passwords, Baileys credentials, phone numbers and JIDs. Email bodies and links are never logged.
 - Message **text** is not logged. Log `messageId` and length instead. The full agent transcript lives in `agent_run` (below), in the household's own database.
 
 ## Errors

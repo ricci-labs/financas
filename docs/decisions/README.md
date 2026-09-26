@@ -29,6 +29,7 @@ updated: 2026-09-25
 | 0019 | [Narrow SECURITY DEFINER lookups for pre-workspace flows](0019-narrow-security-definer-lookups.md) | Accepted |
 | 0020 | [Invariant triggers run as the owner](0020-invariant-triggers-run-as-owner.md) | Accepted |
 | 0021 | [Password login with server-side sessions](0021-password-login-with-server-sessions.md) | Accepted |
+| 0022 | [Email via Nodemailer over SMTP](0022-email-via-nodemailer-smtp.md) | Accepted |
 
 ## Rules
 - ADRs are append-only. To change a decision, write a new ADR that supersedes the old one and set the old one to `Superseded by NNNN`.

@@ -1,7 +1,7 @@
 ---
 summary: Stack, runtime topology, and the main request flows (web, WhatsApp→agent, jobs).
 read_when: You need the big picture before a cross-cutting change, or you're new to the codebase.
-updated: 2026-09-22
+updated: 2026-09-25
 ---
 
 # Architecture overview
@@ -42,7 +42,7 @@ updated: 2026-09-22
 
 - **One Node process on purpose.** The server is small (4 cores, ~5 GB free RAM). The SPA is static files, so there's no separate frontend server.
 - The Postgres instance is separate from Dokploy's own Postgres.
-- Outbound calls: Anthropic API and WhatsApp servers. Nothing else.
+- Outbound calls: Anthropic API, WhatsApp servers and the SMTP provider (ADR 0022). Nothing else.
 
 ## Main flows
 

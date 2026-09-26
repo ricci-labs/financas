@@ -20,7 +20,10 @@ Pipeline: `../engineering/ci-cd.md`. Decision: `../decisions/0010-deploy-ghcr-do
 | `DATABASE_URL` | App connection as `financas_app` (RLS applies) |
 | `DATABASE_MIGRATION_URL` | Owner connection as `financas_owner`, used only to run migrations |
 | `ANTHROPIC_API_KEY` | Agent |
-| `PUBLIC_URL` | Base URL of the dashboard |
+| `PUBLIC_URL` | Base URL of the dashboard, used in email links |
+| `PUBLIC_SIGNUP_ENABLED` | `true` opens public sign-up; default `false` (ADR 0021) |
+| `SMTP_URL` | `smtps://user:password@host:465` of the email provider (ADR 0022). Required in production |
+| `EMAIL_FROM` | Sender, e.g. `"Finanças <no-reply@example.com>"` |
 | `LOG_LEVEL` | `info` in prod |
 | `OTEL_SERVICE_NAME=financas-api`, `OTEL_METRICS_EXPORTER=prometheus`, `OTEL_TRACES_EXPORTER=none` | Observability Level 0 (`observability.md`) |
 | `UPTIME_KUMA_PUSH_URL_<JOB>` | Heartbeats (optional) |

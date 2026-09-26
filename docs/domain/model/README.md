@@ -19,7 +19,7 @@ Diagrams (Mermaid, rendered by GitHub): `diagrams.md`.
 ## Areas
 | Doc | Tables |
 |---|---|
-| `tenancy.md` | `users`, `channel_identities`, `sessions`, `workspaces`, `memberships`, `invitations`, `workspace_settings`, `user_preferences`, `membership_preferences` |
+| `tenancy.md` | `users`, `channel_identities`, `sessions`, `auth_tokens`, `workspaces`, `memberships`, `invitations`, `workspace_settings`, `user_preferences`, `membership_preferences` |
 | `access-control.md` | `roles`, `role_permissions`, `module_actions` (module `access`) |
 | `ledger.md` | `ledger_accounts`, `card_details`, `card_invoices`, `journal_entries`, `postings`, `institutions` |
 | `planning.md` | `recurrence_rules`, `planned_occurrences`, `budget_lines`, `goals`, `holidays` |

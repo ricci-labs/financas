@@ -31,15 +31,18 @@ updated: 2026-09-25
 - [x] DB: balance views (`account_balances`, `invoice_totals`)
 - [x] **Ledger series done** (#19–#27): accounts, entries, cards, installments, invoices, balances
 - [ ] **HTTP API + web auth** (chosen 2026-09-25; password login, ADR 0021). Small PRs, in order:
-  1. [x] ADR 0021 and this plan
-  2. [ ] `identity`: `sessions` table, password hashing (scrypt)
+  1. [x] ADRs 0021 (auth) and 0022 (email), and this plan
+  2. [ ] `identity`: `sessions` and `auth_tokens` tables, password hashing (scrypt)
   3. [ ] `identity`: create user, login, resolve session, logout services + `ops:create-user`
-  4. [ ] HTTP core: error handler (`AppError` → status, error ref), request id, request logger
-  5. [ ] Auth routes (`/api/auth/login`, `/logout`, `/me`), session middleware, CSRF, login rate limit
-  6. [ ] `authorize(module, action)` middleware + workspace routes (`/api/workspaces/:workspaceId/...`)
+  4. [ ] Email: `core/email` `Mailer` with Nodemailer (ADR 0022), `.eml` outbox in development
+  5. [ ] `identity`: sign-up (behind `PUBLIC_SIGNUP_ENABLED`), email verification, password reset
+  6. [ ] HTTP core: error handler (`AppError` → status, error ref), request id, request logger
+  7. [ ] Auth routes (login, logout, me, config, sign-up, verify, forgot and reset password),
+     session middleware, CSRF, rate limits
+  8. [ ] `authorize(module, action)` middleware + workspace routes (`/api/workspaces/:workspaceId/...`)
      and a test that fails when a route has no permission
-  7. [ ] Ledger routes, one PR per area: accounts, cards and invoices, entries, balances
-  8. [ ] Invitation routes (create, accept with sign-up)
+  9. [ ] Ledger routes, one PR per area: accounts, cards and invoices, entries, balances
+  10. [ ] Invitation routes (create and email the link, accept with sign-up)
 - Later options, in the order proposed: contacts and charges, planning, deploy on the homelab.
 - [ ] DB: contacts/charges, planning, support tables
 - [ ] Observability core (OTel register, metrics, error refs), Dockerfile, deploy workflow
@@ -79,10 +82,11 @@ Goal: the couple records everything through WhatsApp and the web, and always kno
 ## Open questions
 1. Real data for the couple's setup (accounts, cards, closing/due days, pay days): collected at onboarding, stored only in the DB, never in the repo.
 2. Refund of installment purchases (`../domain/billing-and-installments.md`).
-3. ~~Web auth method~~: password with server-side sessions (ADR 0021). A WhatsApp code comes later as reset and second factor.
+3. ~~Web auth method~~: password with server-side sessions, sign-up switch, reset by email (ADR 0021, ADR 0022).
 4. Transcription for audio: local whisper.cpp vs external API.
 5. Model for the agent: default `claude-opus-5`; test cheaper models once real message samples exist.
 6. Alert channel (ntfy, Telegram, email). Must not be WhatsApp.
 7. Remote access to the dashboard and deploy trigger (Tailscale vs Cloudflare Tunnel), see `../operations/deploy.md`.
 8. Offsite backup destination.
 9. Anti-ban practices for charges sent to contacts.
+10. Email provider (SMTP) and sender domain with SPF/DKIM (ADR 0022). Needed before the first deploy.
