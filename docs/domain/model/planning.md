@@ -138,4 +138,14 @@ Business days skip weekends and holidays. They drive `nth_business_day` periods,
 - **Workspace holidays** (a city holiday, a company day off) go in `workspace_holidays`
   (`workspace_id`, `id`, `on_date`, `name`, soft delete), managed with `planning` permissions.
 - `holidayDatesBetween(start, end, workspaceDates)` joins both for the business-day math:
-  `isBusinessDay`, `nthBusinessDay`, `shiftToBusinessDay(date, weekendRule)`.
+  `isBusinessDay`, `nthBusinessDay`, `shiftToBusinessDay(date, weekendRule)`. Inside a workspace
+  transaction, `planning.holidayDatesOf(tx, start, end)` loads the active workspace holidays and
+  returns that set.
+- One active holiday per day (`workspace_holidays_one_per_day`, deleted ones free the day); a name of
+  1–80 characters.
+
+| Route | Permission | Does |
+|---|---|---|
+| `GET /holidays?year=` | `planning:view` | `listHolidays` → `{ national: { on, key }[], workspace: { id, onDate, name }[] }` of that year |
+| `POST /holidays` | `planning:create` | `addHoliday` `{ onDate, name }` → `201 { holidayId }`. A day already taken is `409 HOLIDAY_DATE_TAKEN`; a national holiday is `409 HOLIDAY_ALREADY_NATIONAL` |
+| `DELETE /holidays/:holidayId` | `planning:delete` | `deleteHoliday` (soft, optional `reason`) → `204`; gone or unknown is `404 HOLIDAY_NOT_FOUND` |
