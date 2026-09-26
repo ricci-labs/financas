@@ -1,5 +1,5 @@
-import type { Clock } from '@api/core/clock'
-import type { PasswordCost } from '@api/core/security/passwords'
+import type { Clock } from '@api/core/clock.types'
+import type { PasswordCost } from '@api/core/security/security.types'
 import { hashToken } from '@api/core/security/tokens'
 import {
   createUser,

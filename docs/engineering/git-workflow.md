@@ -66,7 +66,7 @@ Configured in `lefthook.yml`, installed by `pnpm install` (`prepare` script).
 
 | Hook | Runs | Why |
 |---|---|---|
-| `pre-commit` | `biome check --write` on staged files; no-comments check; `gitleaks` | Formatting, comments and secret leaks never reach history |
+| `pre-commit` | `biome check --write` on staged files; no-comments and file-roles checks; `gitleaks` | Formatting, comments, misplaced types/schemas and secret leaks never reach history |
 | `commit-msg` | `commitlint --edit` | Keeps the commit format |
 | `pre-push` | `pnpm typecheck` | Catches type errors before CI does |
 

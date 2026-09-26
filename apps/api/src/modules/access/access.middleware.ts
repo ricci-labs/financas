@@ -3,12 +3,10 @@ import type { AppEnv, RequestWorkspace } from '@api/core/http/http.types'
 import { currentSession } from '@api/core/http/middleware/session'
 import { loadWorkspaceAccess } from '@api/modules/access/access.service'
 import type { AccessRouteDeps } from '@api/modules/access/access.types'
-import { type AppModule, can, type PermissionAction } from '@financas/shared'
+import { type AppModule, can, type PermissionAction, workspaceIdSchema } from '@financas/shared'
 import type { Context, MiddlewareHandler } from 'hono'
 import { createMiddleware } from 'hono/factory'
-import { z } from 'zod'
 
-const workspaceIdSchema = z.uuid()
 const permissionChecks = new WeakSet<MiddlewareHandler>()
 
 export function workspaceAccess({ db }: AccessRouteDeps) {

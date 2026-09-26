@@ -29,6 +29,9 @@ jobs:
       - name: No comments in source code
         run: pnpm lint:comments
 
+      - name: Types and schemas in their own files
+        run: pnpm lint:file-roles
+
       - name: Type check
         run: pnpm typecheck
 

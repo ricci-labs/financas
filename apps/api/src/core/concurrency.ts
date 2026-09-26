@@ -1,4 +1,4 @@
-export type ConcurrencyLimit = <T>(work: () => Promise<T>) => Promise<T>
+import type { ConcurrencyLimit } from '@api/core/concurrency.types'
 
 export function createConcurrencyLimit(maxRunning: number): ConcurrencyLimit {
   let running = 0

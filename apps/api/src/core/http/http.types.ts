@@ -23,3 +23,21 @@ export type RequestVariables = {
 export type AppEnv = {
   Variables: RequestVariables
 }
+
+export type SessionCookieSettings = {
+  name: string
+  isSecure: boolean
+}
+
+export type ResolvedSession = {
+  sessionId: string
+  userId: string
+  expiresAt: Date
+  isRenewed: boolean
+}
+
+export type SessionGuardOptions = {
+  resolve: (token: string) => Promise<ResolvedSession | null>
+  publicRoutes: ReadonlySet<string>
+  cookie: SessionCookieSettings
+}

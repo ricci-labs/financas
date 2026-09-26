@@ -1,12 +1,6 @@
 import { createInterface } from 'node:readline'
 import { Writable } from 'node:stream'
-
-export type Terminal = {
-  ask: (question: string) => Promise<string>
-  askSecret: (question: string) => Promise<string>
-  say: (message: string) => void
-  close: () => void
-}
+import type { Terminal } from '@api/ops/ops.types'
 
 export function openTerminal(): Terminal {
   let isEchoMuted = false

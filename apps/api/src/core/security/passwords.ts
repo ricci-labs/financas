@@ -1,11 +1,6 @@
 import { randomBytes, type ScryptOptions, scrypt, timingSafeEqual } from 'node:crypto'
 import { createConcurrencyLimit } from '@api/core/concurrency'
-
-export type PasswordCost = {
-  cpuMemoryCost: number
-  blockSize: number
-  parallelization: number
-}
+import type { PasswordCost } from '@api/core/security/security.types'
 
 export const OWASP_PASSWORD_COST: PasswordCost = {
   cpuMemoryCost: 2 ** 17,

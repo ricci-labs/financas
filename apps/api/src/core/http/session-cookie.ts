@@ -1,11 +1,7 @@
-import type { Env } from '@api/core/config/env'
+import type { Env } from '@api/core/config/env.schemas'
+import type { SessionCookieSettings } from '@api/core/http/http.types'
 import type { Context } from 'hono'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
-
-export type SessionCookieSettings = {
-  name: string
-  isSecure: boolean
-}
 
 const PRODUCTION_COOKIE: SessionCookieSettings = { name: '__Host-session', isSecure: true }
 const DEVELOPMENT_COOKIE: SessionCookieSettings = { name: 'session', isSecure: false }

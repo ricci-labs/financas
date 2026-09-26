@@ -1,4 +1,4 @@
-import type { AppDeps } from '@api/app'
+import type { AppDeps } from '@api/app.types'
 import { createBackgroundTasks } from '@api/core/background-tasks'
 import { createDatabase } from '@api/core/db/client'
 import { sessionCookieSettings } from '@api/core/http/session-cookie'

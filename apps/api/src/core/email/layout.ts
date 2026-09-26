@@ -1,14 +1,4 @@
-export type EmailContent = {
-  heading: string
-  paragraphs: string[]
-  action: { label: string; url: string }
-  notes: string[]
-}
-
-export type RenderedEmail = {
-  text: string
-  html: string
-}
+import type { EmailContent, RenderedEmail } from '@api/core/email/email.types'
 
 const HTML_ESCAPES: Record<string, string> = {
   '&': '&amp;',

@@ -1,9 +1,5 @@
-import {
-  hashPassword,
-  type PasswordCost,
-  passwordNeedsRehash,
-  verifyPassword,
-} from '@api/core/security/passwords'
+import { hashPassword, passwordNeedsRehash, verifyPassword } from '@api/core/security/passwords'
+import type { PasswordCost } from '@api/core/security/security.types'
 import { describe, expect, it } from 'vitest'
 
 const FAST_TEST_COST: PasswordCost = { cpuMemoryCost: 2 ** 10, blockSize: 8, parallelization: 1 }
