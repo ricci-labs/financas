@@ -1,5 +1,6 @@
 import { primaryId, softDelete, timestamps } from '@api/core/db/columns'
 import { tenantIsolation } from '@api/core/db/tenancy'
+import { contacts } from '@api/modules/contacts/contacts.table'
 import { users } from '@api/modules/identity/identity.table'
 import { workspaces } from '@api/modules/workspaces/workspaces.table'
 import {
@@ -48,7 +49,7 @@ export const entrySource = pgEnum('entry_source', ENTRY_SOURCES)
 
 export const invoiceStatus = pgEnum('invoice_status', INVOICE_STATUSES)
 
-const ACCOUNT_KINDS_WAITING_FOR_THEIR_COLUMNS = ['receivable', 'payable'] as const
+const ACCOUNT_KINDS_OWED_BY_CONTACTS = ['receivable', 'payable'] as const
 
 const CARD_KIND = sql.raw(`'credit_card'`)
 
@@ -260,6 +261,7 @@ export const postings = pgTable(
     effectiveOn: date().notNull(),
     invoiceId: uuid(),
     installmentNo: smallint(),
+    contactId: uuid(),
     memo: text(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
@@ -290,9 +292,14 @@ export const postings = pgTable(
       'postings_installment_no',
       sql`${table.installmentNo} is null or ${table.installmentNo} >= 1`,
     ),
+    foreignKey({
+      name: 'postings_contact_fk',
+      columns: [table.workspaceId, table.contactId],
+      foreignColumns: [contacts.workspaceId, contacts.id],
+    }),
     check(
-      'postings_kinds_waiting_for_their_columns',
-      sql`${table.accountKind} not in (${quoted(ACCOUNT_KINDS_WAITING_FOR_THEIR_COLUMNS)})`,
+      'postings_contact_exactly_on_what_contacts_owe',
+      sql`(${table.accountKind} in (${quoted(ACCOUNT_KINDS_OWED_BY_CONTACTS)})) = (${table.contactId} is not null)`,
     ),
     tenantIsolation('postings', table.workspaceId),
   ],

@@ -168,6 +168,7 @@ export type PostingItem = {
   effectiveOn: string
   invoiceId: string | null
   installmentNo: number | null
+  contactId: string | null
 }
 
 export type EntryItem = {

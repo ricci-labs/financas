@@ -1,4 +1,5 @@
 import { withWorkspace } from '@api/core/db/tx'
+import { contacts } from '@api/modules/contacts/contacts.table'
 import {
   archiveAccount,
   changeAccount,
@@ -335,6 +336,7 @@ async function recordRaw(
           amountCents: line.amountCents,
           effectiveOn: ENTRY_DATE,
           invoiceId: line.invoiceId ?? null,
+          contactId: line.contactId ?? null,
         })),
       )
     }
@@ -1901,5 +1903,56 @@ describe('balances and invoice totals', () => {
     expect(seenFromA.some((balance) => balance.accountId === accounts.checking)).toBe(false)
     const withoutWorkspace = await databases.app.select().from(accountBalances)
     expect(withoutWorkspace).toEqual([])
+  })
+})
+
+describe('postings owed by contacts', () => {
+  let checking: string
+  let dining: string
+  let receivable: string
+  let contactId: string
+
+  beforeAll(async () => {
+    checking = await insertAccount({ kind: 'checking' })
+    dining = await insertAccount({ kind: 'expense_category' })
+    receivable = await systemAccountOf(workspaceA, 'receivable')
+    const [contact] = await withWorkspace(databases.app, workspaceA, (tx) =>
+      tx.insert(contacts).values({ workspaceId: workspaceA, name: 'Contact J' }).returning(),
+    )
+    contactId = contact?.id ?? ''
+  })
+
+  it('put the contact on the receivable line, and only there', async () => {
+    const shared = (contactOnReceivable: string | undefined, contactOnExpense?: string) =>
+      recordOutcome([
+        {
+          accountId: dining,
+          kind: 'expense_category',
+          amountCents: 10_000,
+          contactId: contactOnExpense,
+        },
+        {
+          accountId: receivable,
+          kind: 'receivable',
+          amountCents: 10_000,
+          contactId: contactOnReceivable,
+        },
+        { accountId: checking, kind: 'checking', amountCents: -20_000 },
+      ])
+    expect(await shared(contactId)).toBeUndefined()
+    expect(await shared(undefined)).toBe(POSTGRES_ERRORS.checkViolation)
+    expect(await shared(contactId, contactId)).toBe(POSTGRES_ERRORS.checkViolation)
+  })
+
+  it('refuse a contact of another workspace', async () => {
+    const other = await fixtures.createWorkspaceOwnedBy(ownerUserId, 'Other contacts')
+    const [foreign] = await withWorkspace(databases.app, other.workspaceId, (tx) =>
+      tx.insert(contacts).values({ workspaceId: other.workspaceId, name: 'Contact X' }).returning(),
+    )
+    const outcome = await recordOutcome([
+      { accountId: receivable, kind: 'receivable', amountCents: 5_000, contactId: foreign?.id },
+      { accountId: checking, kind: 'checking', amountCents: -5_000 },
+    ])
+    expect(outcome).toBe(POSTGRES_ERRORS.foreignKeyViolation)
   })
 })

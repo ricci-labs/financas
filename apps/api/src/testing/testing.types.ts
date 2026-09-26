@@ -22,6 +22,7 @@ export type PostingLine = {
   amountCents: number
   lineNo?: number
   invoiceId?: string
+  contactId?: string
 }
 
 export type NewInvoice = Partial<typeof cardInvoices.$inferInsert>
