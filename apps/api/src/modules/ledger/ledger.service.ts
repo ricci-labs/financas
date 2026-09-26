@@ -30,6 +30,7 @@ export {
   readAccountFacts,
   readBalanceFacts,
   readCardFacts,
+  readContactPostings,
   readInvoiceFacts,
   readPostingFacts,
 } from '@api/modules/ledger/use-cases/facts'

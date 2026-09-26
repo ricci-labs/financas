@@ -3,10 +3,12 @@ import {
   selectAccountBalances,
   selectActiveAccounts,
   selectActiveCards,
+  selectContactPostings,
   selectInvoiceFacts,
   selectPostingFacts,
 } from '@api/modules/ledger/ledger.repository'
 import type {
+  ContactPosting,
   FactAccount,
   FactBalance,
   FactCard,
@@ -55,4 +57,11 @@ export async function readBalanceFacts(tx: WorkspaceTransaction): Promise<FactBa
     accountId,
     balanceCents,
   }))
+}
+
+export function readContactPostings(
+  tx: WorkspaceTransaction,
+  contactId?: string,
+): Promise<ContactPosting[]> {
+  return selectContactPostings(tx, contactId)
 }

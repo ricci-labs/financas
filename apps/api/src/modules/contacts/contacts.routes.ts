@@ -6,6 +6,7 @@ import {
   changeContact,
   createContact,
   deleteContact,
+  listContactBalances,
   listContacts,
 } from '@api/modules/contacts/contacts.service'
 import type { ContactRouteDeps } from '@api/modules/contacts/contacts.types'
@@ -26,6 +27,9 @@ export function contactRoutes({ db }: ContactRouteDeps) {
   return new Hono<AppEnv>()
     .get('/', authorize('contacts', 'view'), async (c) => {
       return c.json(await listContacts(db, currentWorkspace(c).workspaceId))
+    })
+    .get('/balances', authorize('contacts', 'view'), async (c) => {
+      return c.json(await listContactBalances(db, currentWorkspace(c).workspaceId))
     })
     .post(
       '/',
