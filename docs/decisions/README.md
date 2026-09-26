@@ -1,7 +1,7 @@
 ---
 summary: Index of Architecture Decision Records (ADRs) and the template for new ones.
 read_when: Checking why something was chosen, before proposing to change a past choice, or when recording a new decision.
-updated: 2026-09-25
+updated: 2026-09-26
 ---
 
 # Decisions (ADRs)
@@ -31,6 +31,7 @@ updated: 2026-09-25
 | 0021 | [Password login with server-side sessions](0021-password-login-with-server-sessions.md) | Accepted |
 | 0022 | [Email via Nodemailer over SMTP](0022-email-via-nodemailer-smtp.md) | Accepted |
 | 0023 | [Instance configuration from the environment](0023-instance-configuration-from-env.md) | Accepted |
+| 0024 | [Metrics and insights over period facts](0024-metrics-and-insights-over-period-facts.md) | Accepted |
 
 ## Rules
 - ADRs are append-only. To change a decision, write a new ADR that supersedes the old one and set the old one to `Superseded by NNNN`.

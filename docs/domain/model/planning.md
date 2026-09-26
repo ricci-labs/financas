@@ -1,7 +1,7 @@
 ---
-summary: Planning tables — recurrence rules and planned occurrences (forecast, reminders, matching to real entries), financial period calculation, budgets, goals, holidays.
+summary: Planning tables — recurrence rules and planned occurrences (forecast, reminders, matching to real entries), financial period calculation, budgets, goals, holidays — and the dashboard metrics, insights, commission split, balance forecast and purchase simulation built on them.
 read_when: Working on projections, fixed bills, salaries/commission forecasts, reminders, budgets, goals, or the financial period.
-updated: 2026-09-22
+updated: 2026-09-26
 ---
 
 # Planning: forecast, periods, budgets, goals
@@ -60,18 +60,57 @@ periodOf(date, settings, holidays) → { label: 'YYYY-MM', start: date, end: dat
 
 Every report ("this month") uses the period, never the calendar month directly.
 
-## Period overview ("onde estou no mês")
-View `period_overview`, per period:
+## Dashboard: facts, metrics, insights (ADR 0024)
+`reports` loads the **period facts** once (actual postings, pending occurrences, installments on
+future invoices, budgets, goals, balances, settings, today). Every number below is a pure function
+in `packages/shared/src/metrics/`, and every alert one in `packages/shared/src/insights/`. A new
+number or alert is one file, one line in `METRICS` / `INSIGHTS`, and a test.
+
+**Metrics of the period** (installments count per `installment_budget_view`):
 ```
-fixed_income      = income postings in the period with income_nature = fixed
-                    (+ pending fixed-income occurrences not yet received)
-spent             = expense postings in the period (by installment_budget_view)
+fixed_income      = fixed-income postings in the period + pending fixed-income occurrences
+spent             = expense postings in the period
 committed         = pending expense occurrences in the period
-                    + installment/card postings due in the period not yet counted
+                    + card postings due in the period not yet counted
 free_to_spend     = fixed_income − spent − committed
-variable_income   = income postings with income_nature = variable
-variable_saved    = transfers into variable_income_target_account in the period
+daily_allowance   = max(free_to_spend, 0) ÷ days left in the period (today included)
+                    (planned items of the remaining days are already out, through `committed`)
+budget_pace       = per budget line: spent ÷ limit vs share of the period elapsed
+committed_ahead   = for each of the next 6 periods: installments + fixed expense occurrences,
+                    in cents and as % of that period's fixed income
+next_invoice      = per card: posted on the open invoice + pending recurring card charges before closing
+variable_income   = variable-income postings in the period, and its 6-period average (information
+                    only: never part of the budget, household policy)
+reserve_months    = reserve goal balance ÷ average fixed expenses of the last 3 periods
 ```
+
+**Insights** (first set): budget line ahead of pace or over its limit; a future period with more than
+a configured share of its fixed income committed; a commission arrived and has a suggested split;
+the balance forecast goes negative; an occurrence is overdue.
+
+### Commission split (suggested, never automatic)
+`income_allocation_steps` holds the household's waterfall, in order. When variable income arrives,
+the pure function `splitVariableIncome(amount, steps, goals)` suggests transfers; the members
+confirm them (they are recorded as ordinary `transfer` entries). Automatic recording stays in phase 2.
+
+| Column | Notes |
+|---|---|
+| `workspace_id`, `id`, `position` | `unique (workspace_id, position)` |
+| `kind` | enum: `fill_goal` (up to the goal's target), `percent`, `fixed_amount`, `rest` |
+| `goal_id` / `account_id` | Where the money goes: a goal (its account) or an account |
+| `percent` / `amount_cents` | Set for `percent` / `fixed_amount` only (CHECK) |
+
+### Balance forecast
+Per liquid account (checking, savings, cash), day by day from today to the next fixed-income
+occurrence landing there (at least to the end of the period): today's balance + pending
+occurrences on that account + card invoices due and paid from it. Returns the daily balances and
+the lowest point; an insight fires when it goes below zero.
+
+### "Posso comprar?" (purchase simulation)
+Read-only. Given an amount, a card (or an account) and an installment count, it plans the postings
+with the same functions that record a real purchase (`planPostings`, billing cycle), adds them to
+the facts of each affected period, and answers the metrics before and after for each period
+(`free_to_spend`, `committed_ahead`). Nothing is written. The agent reuses it.
 
 ## `budget_lines`
 | Column | Notes |

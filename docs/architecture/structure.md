@@ -58,6 +58,14 @@ src/
 │   ├── cards.types.ts        # CardCycle, InvoiceRef
 │   ├── billing-cycle.ts      # which invoice a purchase / installment falls into; invoice status
 │   └── billing-cycle.test.ts
+├── metrics/                  # ADR 0024: one dashboard number per file, (facts) → value
+│   ├── metrics.types.ts      # PeriodFacts, Metric
+│   ├── <metric-name>.ts      # + <metric-name>.test.ts
+│   └── metrics.ts            # METRICS, the list the overview returns
+├── insights/                 # ADR 0024: one alert per file, (facts, metrics) → Insight[]
+│   ├── insights.types.ts     # Insight { code, severity, subject, values }
+│   ├── <insight-name>.ts     # + <insight-name>.test.ts
+│   └── insights.ts           # INSIGHTS
 ├── identity/
 │   ├── identity.schemas.ts   # email, password (12–128), display name, credentials
 │   └── identity.schemas.test.ts
@@ -134,7 +142,7 @@ src/
 │   ├── planning/             # recurrence rules, occurrences, periods, budgets, goals, holidays
 │   ├── attachments/          # files + link tables, FileStorage interface
 │   ├── notifications/        # outbox, reminder scheduling, templates
-│   └── reports/              # read-only views: overview, balances, invoice totals
+│   └── reports/              # read-only: period facts → metrics and insights (ADR 0024)
 ├── ops/                      # operator commands, bundled into the image (dist/ops/*.mjs)
 │   ├── terminal.ts           # prompts; secrets are read without echo
 │   └── create-user.ts        # first user + first workspace (pnpm ops:create-user)
@@ -180,7 +188,7 @@ modules/ledger/
 
 - Handlers stay inline in the routes file. Separate "controller" files break Hono's type inference and the RPC types.
 - When a service passes ~300 lines, split it into `use-cases/<concept>.ts` (the use cases of one concept, e.g. `accounts.ts`, `entries.ts`; shared helpers in `use-cases/rules.ts`) and keep `*.service.ts` as a thin facade of re-exports. `modules/ledger` is the first example.
-- `reports/` is read-only: it has aggregate queries and no tables of its own.
+- `reports/` is read-only and has no tables: it loads the period facts through the `ledger`, `planning` and `workspaces` services and runs the shared metrics and insights over them (ADR 0024).
 - **Every module has the same fixed file set**, created only when needed and always with these names:
 
   | File | Holds |

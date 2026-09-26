@@ -1,7 +1,7 @@
 ---
 summary: Design of the Claude agent — responsibilities, tools, confirmation flow, context/prompt caching, model choice, cost tracking, safety, evals.
 read_when: Working on apps/api/src/agent, adding a tool, changing prompts, or changing the model.
-updated: 2026-09-22
+updated: 2026-09-26
 ---
 
 # AI agent
@@ -31,7 +31,8 @@ One file per tool in `agent/tools/`. Each tool has a Zod input schema from `pack
 | `send_charge` | write → pending | `contacts.previewCharge` ("cobra o J") |
 | `confirm_pending` / `cancel_pending` | write | `agent.pendingActions` → the target service |
 | `undo_last` | write → pending | `ledger.previewDelete` (soft delete of the user's last entry) |
-| `period_overview` | read | `reports.getPeriodOverview` ("quanto ainda posso gastar?") |
+| `period_overview` | read | `reports.getPeriodOverview` ("quanto ainda posso gastar?"): the same metrics and insights as the dashboard (ADR 0024) |
+| `simulate_purchase` | read | `reports.simulatePurchase` ("posso comprar uma TV de 3 mil em 10x?") |
 | `invoice_summary` | read | `reports.getInvoiceSummary` (own vs fronted for others) |
 | `contact_balance` | read | `reports.getContactBalances` |
 | `upcoming_bills` | read | `planning.listUpcoming` |
