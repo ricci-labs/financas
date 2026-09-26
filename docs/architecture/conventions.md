@@ -105,6 +105,10 @@ without comments.
   `PUBLIC_ROUTES` (`app.ts`), built from each module's `PUBLIC_*_ROUTES` export. A test walks every
   registered route and fails if a non-public one answers without a session.
 - Handlers read the user with `currentSession(c)`, never from the body or the URL.
+- **Workspace routes** live under `/api/workspaces/:workspaceId/...`, mounted in `app.ts` behind
+  `workspaceAccess`. Every route declares `authorize(module, action)` or `authorizeAnyMember()` from
+  `@api/modules/access` (checked by a test), and reads the workspace with `currentWorkspace(c)`
+  (`../domain/model/access-control.md` → HTTP).
 - **Writes come only from the app's own pages:** every non-GET request under `/api` must carry
   `Sec-Fetch-Site: same-origin` or `Origin` equal to `PUBLIC_URL`, or it gets
   `403 CROSS_SITE_REQUEST` (`same-origin-writes.ts`). Together with the `SameSite=Lax` cookie, that's

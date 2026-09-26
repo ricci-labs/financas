@@ -27,3 +27,8 @@ export type AcceptedInvitation = {
   workspaceId: string
   membershipId: string
 }
+
+export type ActiveMembership = {
+  membershipId: string
+  roleId: string
+}

@@ -1,7 +1,13 @@
-export { acceptInvitation, addMember, createInvitation } from '@api/modules/members/members.service'
+export {
+  acceptInvitation,
+  addMember,
+  createInvitation,
+  findActiveMembership,
+} from '@api/modules/members/members.service'
 export type {
   AcceptedInvitation,
   AcceptInvitationInput,
+  ActiveMembership,
   CreatedInvitation,
   CreateInvitationInput,
   NewMembership,

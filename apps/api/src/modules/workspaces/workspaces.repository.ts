@@ -2,7 +2,7 @@ import type { Database } from '@api/core/db/client'
 import type { WorkspaceTransaction } from '@api/core/db/tx'
 import { workspaceSettings, workspaces } from '@api/modules/workspaces/workspaces.table'
 import type { NewWorkspace } from '@api/modules/workspaces/workspaces.types'
-import { sql } from 'drizzle-orm'
+import { isNull, sql } from 'drizzle-orm'
 
 export async function generateWorkspaceId(db: Database): Promise<string> {
   const result = await db.execute<{ id: string }>(sql`select uuidv7() as id`)
@@ -36,4 +36,16 @@ export async function selectCurrentSettings(tx: WorkspaceTransaction) {
     throw new Error('The current workspace has no settings')
   }
   return settings
+}
+
+export async function selectCurrentWorkspace(tx: WorkspaceTransaction) {
+  const [workspace] = await tx
+    .select({
+      workspaceId: workspaces.id,
+      name: workspaces.name,
+      archivedAt: workspaces.archivedAt,
+    })
+    .from(workspaces)
+    .where(isNull(workspaces.deletedAt))
+  return workspace
 }

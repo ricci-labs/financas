@@ -10,7 +10,8 @@ Decision: `../../decisions/0015-module-permissions.md`.
 
 Status: tables implemented in the `access` module (`module_actions`, `roles`, `role_permissions`). The matrix lives in
 `packages/shared/src/access` (single source for API, web and the DB seed). Memberships and
-the owner invariant are implemented in `members`. Route middleware and agent tool gating come later.
+the owner invariant are implemented in `members`. Route enforcement is implemented
+(`access.middleware.ts`); agent tool gating comes with the agent.
 
 ## Model
 - **Tenant isolation** (which workspace you can see at all) is handled by membership + RLS (`tenancy.md`).
@@ -95,6 +96,21 @@ Owner-only, outside the matrix: delete the workspace, transfer ownership, manage
 | Database | RLS isolates tenants. Module permissions are **not** in RLS (kept simple, tested at the API layer). |
 
 The permission set is loaded once per request/turn and cached on the context. Role changes apply on the next request.
+
+### HTTP, in order
+1. `requireSession` (every `/api` route that isn't public): `401 SESSION_REQUIRED`.
+2. `workspaceAccess` (everything under `/api/workspaces/:workspaceId`): loads the workspace (not
+   deleted), the user's active membership and its active role with its permissions in one
+   workspace transaction (`loadWorkspaceAccess`). Not a member, a deleted workspace or membership,
+   an unknown id or one that isn't a UUID all give the same `404 WORKSPACE_NOT_FOUND`, so a stranger
+   can't learn that a workspace exists.
+3. `authorize(module, action)` on the route: `403 PERMISSION_DENIED`, logged as `authz.denied` with
+   module, action, workspace and user. Routes every member may use declare `authorizeAnyMember()`.
+4. A test (`app.routes.test.ts`) walks every route under `/api/workspaces/` and fails if one has no
+   permission check. Another proves a forgotten one is caught.
+
+`GET /api/workspaces/:workspaceId` returns the workspace, the caller's membership, role and
+permissions, so the web can hide what the user can't do.
 
 ## Examples
 - A friend added as **Viewer** sees the dashboard and entries but can't record anything. The agent offers them only read tools.

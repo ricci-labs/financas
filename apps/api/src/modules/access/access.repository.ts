@@ -1,6 +1,7 @@
 import type { WorkspaceTransaction } from '@api/core/db/tx'
 import { rolePermissions, roles } from '@api/modules/access/access.table'
 import type { Permission, SystemRoleKey } from '@financas/shared'
+import { and, eq, isNull } from 'drizzle-orm'
 
 type NewSystemRole = {
   workspaceId: string
@@ -28,4 +29,22 @@ export async function insertRolePermissions(
   await tx
     .insert(rolePermissions)
     .values(permissions.map(({ module, action }) => ({ workspaceId, roleId, module, action })))
+}
+
+export async function selectActiveRole(tx: WorkspaceTransaction, roleId: string) {
+  const [role] = await tx
+    .select({ roleId: roles.id, name: roles.name, systemKey: roles.systemKey })
+    .from(roles)
+    .where(and(eq(roles.id, roleId), isNull(roles.deletedAt)))
+  return role
+}
+
+export function selectRolePermissions(
+  tx: WorkspaceTransaction,
+  roleId: string,
+): Promise<Permission[]> {
+  return tx
+    .select({ module: rolePermissions.module, action: rolePermissions.action })
+    .from(rolePermissions)
+    .where(eq(rolePermissions.roleId, roleId))
 }

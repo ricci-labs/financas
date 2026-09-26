@@ -43,8 +43,9 @@ updated: 2026-09-25
   7b. [x] Login rate limit (per email and per client IP)
   7c. [x] Routes that send account emails: sign-up, verification resend, forgot password (202, limits)
   7d. [x] Routes that use the links: verify email, reset password (with limits on failed links)
-  8. [ ] `authorize(module, action)` middleware + workspace routes (`/api/workspaces/:workspaceId/...`)
+  8. [x] `authorize(module, action)` middleware + workspace routes (`/api/workspaces/:workspaceId/...`)
      and a test that fails when a route has no permission
+  8b. [ ] `GET /api/workspaces`: the caller's workspaces (narrow SECURITY DEFINER lookup, ADR 0019)
   9. [ ] Ledger routes, one PR per area: accounts, cards and invoices, entries, balances
   10. [ ] Invitation routes (create and email the link, accept with sign-up)
 - Later options, in the order proposed: contacts and charges, planning, deploy on the homelab.

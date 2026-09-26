@@ -11,10 +11,12 @@ import {
   insertMembership,
   lockInvitationByTokenHash,
   markInvitationAccepted,
+  selectActiveMembershipOfUser,
 } from '@api/modules/members/members.repository'
 import type {
   AcceptedInvitation,
   AcceptInvitationInput,
+  ActiveMembership,
   CreatedInvitation,
   CreateInvitationInput,
   NewMembership,
@@ -90,4 +92,11 @@ function assertInvitationIsOpen(invitation: InvitationState, now: Date): void {
   if (invitation.expiresAt <= now) {
     throw new ConflictError('INVITATION_EXPIRED', 'Invitation has expired')
   }
+}
+
+export function findActiveMembership(
+  tx: WorkspaceTransaction,
+  userId: string,
+): Promise<ActiveMembership | undefined> {
+  return selectActiveMembershipOfUser(tx, userId)
 }
