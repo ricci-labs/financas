@@ -5,7 +5,9 @@ import { dailyAllowance } from '@shared/metrics/daily-allowance'
 import { fixedIncome } from '@shared/metrics/fixed-income'
 import { freeToSpend } from '@shared/metrics/free-to-spend'
 import type { PeriodFacts } from '@shared/metrics/metrics.types'
+import { reserveCoverage } from '@shared/metrics/reserve-coverage'
 import { spent } from '@shared/metrics/spent'
+import { variableAverage } from '@shared/metrics/variable-average'
 import { variableIncome } from '@shared/metrics/variable-income'
 
 export const METRICS = {
@@ -17,6 +19,8 @@ export const METRICS = {
   freeToSpend,
   dailyAllowance,
   budgetPace,
+  variableAverage,
+  reserveCoverage,
 } as const
 
 export type PeriodMetrics = { [Key in keyof typeof METRICS]: ReturnType<(typeof METRICS)[Key]> }

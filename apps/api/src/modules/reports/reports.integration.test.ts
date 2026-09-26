@@ -1,6 +1,6 @@
 import { createApp } from '@api/app'
 import { createAccount, createCard, deleteEntry, recordEntry } from '@api/modules/ledger'
-import { createRecurrenceRule, setBudget } from '@api/modules/planning'
+import { createGoal, createRecurrenceRule, setBudget } from '@api/modules/planning'
 import { getPeriodOverview, type PeriodOverview } from '@api/modules/reports'
 import { changeWorkspaceSettings } from '@api/modules/workspaces'
 import { testAppDeps } from '@api/testing/app'
@@ -72,6 +72,37 @@ async function household() {
     cardAccountId: card,
     categoryId: groceries,
   })
+  await entry({
+    entryType: 'income',
+    occurredOn: '2026-08-10',
+    description: 'Comissão de agosto',
+    amountCents: 60_000,
+    receivedInAccountId: checking,
+    categoryId: commission,
+  })
+  await entry({
+    entryType: 'expense',
+    occurredOn: '2026-08-12',
+    description: 'Feira de agosto',
+    amountCents: 40_000,
+    paidFromAccountId: checking,
+    categoryId: housing,
+  })
+  const reserve = await account({ kind: 'savings', name: 'Reserva' })
+  await createGoal(databases.app, context, {
+    name: 'Reserva',
+    targetCents: 1_000_000,
+    accountId: reserve,
+    isReserve: true,
+  })
+  await entry({
+    entryType: 'transfer',
+    occurredOn: '2026-10-01',
+    description: 'Guardar',
+    amountCents: 300_000,
+    fromAccountId: checking,
+    toAccountId: reserve,
+  })
   const mistake = await entry({
     entryType: 'expense',
     occurredOn: '2026-10-13',
@@ -123,6 +154,13 @@ describe('getPeriodOverview', () => {
     const { spent, freeToSpend, dailyAllowance } = overview.metrics
     expect(freeToSpend).toBe(900_000 - spent - 200_000)
     expect(dailyAllowance).toBe(Math.floor(freeToSpend / 17))
+    expect(overview.metrics.variableAverage).toBe(60_000)
+    expect(overview.metrics.reserveCoverage).toEqual({
+      savedCents: 300_000,
+      targetCents: 1_000_000,
+      monthlySpendingCents: 40_000,
+      months: 7.5,
+    })
     expect(overview.metrics.budgetPace).toEqual([
       expect.objectContaining({
         categoryAccountId: groceries,

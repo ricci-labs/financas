@@ -31,15 +31,22 @@ export type FactBudget = {
   limitCents: number
 }
 
+export type FactReserve = {
+  targetCents: number
+  savedCents: number
+}
+
 export type PeriodFacts = {
   today: IsoDate
   period: Period
+  recentPeriods: readonly Period[]
   installmentBudgetView: InstallmentBudgetView
   budgetBase: BudgetBase
   accounts: readonly FactAccount[]
   postings: readonly FactPosting[]
   occurrences: readonly FactOccurrence[]
   budgets: readonly FactBudget[]
+  reserve: FactReserve | null
 }
 
 export type BudgetPace = {
@@ -54,4 +61,11 @@ export type PeriodDays = {
   total: number
   elapsed: number
   left: number
+}
+
+export type ReserveCoverage = {
+  savedCents: number
+  targetCents: number
+  monthlySpendingCents: number
+  months: number | null
 }

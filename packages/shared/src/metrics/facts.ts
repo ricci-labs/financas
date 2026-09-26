@@ -1,3 +1,4 @@
+import type { Period } from '@shared/calendar/calendar.types'
 import { daysBetween } from '@shared/calendar/dates'
 import { isInPeriod } from '@shared/calendar/period'
 import type { AccountClass, IncomeNature } from '@shared/ledger/ledger.constants'
@@ -10,14 +11,18 @@ import type {
 } from '@shared/metrics/metrics.types'
 import type { RecurringEntryType } from '@shared/recurrence/recurrence.constants'
 
-export function postingsCounted(facts: PeriodFacts, accountClass: AccountClass): FactPosting[] {
+export function postingsCounted(
+  facts: PeriodFacts,
+  accountClass: AccountClass,
+  period: Period = facts.period,
+): FactPosting[] {
   const accounts = accountsById(facts)
   const countedOn = (posting: FactPosting) =>
     facts.installmentBudgetView === 'purchase_month' ? posting.occurredOn : posting.effectiveOn
   return facts.postings.filter(
     (posting) =>
       accounts.get(posting.accountId)?.class === accountClass &&
-      isInPeriod(countedOn(posting), facts.period),
+      isInPeriod(countedOn(posting), period),
   )
 }
 
@@ -62,6 +67,15 @@ export function periodDays({ today, period }: PeriodFacts): PeriodDays {
   }
   const elapsed = daysBetween(period.start, today) + 1
   return { total, elapsed, left: total - elapsed + 1 }
+}
+
+export function recentActivePeriods(
+  facts: PeriodFacts,
+  lastCount: number = facts.recentPeriods.length,
+): Period[] {
+  return facts.recentPeriods
+    .slice(-lastCount)
+    .filter((period) => facts.postings.some((posting) => isInPeriod(posting.effectiveOn, period)))
 }
 
 export function sumCents(values: readonly number[]): number {

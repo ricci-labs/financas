@@ -25,6 +25,7 @@ import type {
 } from '@api/modules/planning/planning.types'
 import {
   type AccountKind,
+  type FactReserve,
   goalChangeSchema,
   MONEY_ACCOUNT_KINDS,
   newGoalSchema,
@@ -49,6 +50,17 @@ export function listGoals(db: Database, workspaceId: string): Promise<GoalItem[]
       itemOf(goal, balances.get(goal.accountId) ?? 0),
     )
   })
+}
+
+export async function readReserveFact(tx: WorkspaceTransaction): Promise<FactReserve | null> {
+  const reserve = (await selectActiveGoals(tx)).find((goal) => goal.isReserve)
+  if (!reserve) {
+    return null
+  }
+  const balance = (await readAccountBalances(tx)).find(
+    (candidate) => candidate.accountId === reserve.accountId,
+  )
+  return { targetCents: reserve.targetCents, savedCents: balance?.naturalBalanceCents ?? 0 }
 }
 
 export async function createGoal(

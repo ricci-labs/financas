@@ -3,6 +3,11 @@ import type { FactPosting, PeriodFacts } from '@shared/metrics/metrics.types'
 import { describe, expect, it } from 'vitest'
 
 const OCTOBER = { label: '2026-10', start: '2026-10-01', end: '2026-10-31' }
+const RECENT = ['04', '05', '06', '07', '08', '09'].map((month) => ({
+  label: `2026-${month}`,
+  start: `2026-${month}-01`,
+  end: `2026-${month}-${month === '04' || month === '06' || month === '09' ? '30' : '31'}`,
+}))
 
 function moved(
   accountId: string,
@@ -17,6 +22,7 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
   return {
     today: '2026-10-15',
     period: OCTOBER,
+    recentPeriods: RECENT,
     installmentBudgetView: 'per_installment',
     budgetBase: 'fixed_income',
     accounts: [
@@ -73,6 +79,10 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
       { id: 'card', parentId: null, kind: 'credit_card', class: 'liability', incomeNature: null },
     ],
     postings: [
+      moved('commission', -100_000, '2026-08-05'),
+      moved('checking', 100_000, '2026-08-05'),
+      moved('groceries', 40_000, '2026-08-10'),
+      moved('checking', -40_000, '2026-08-10'),
       moved('checking', 500_000, '2026-10-05'),
       moved('salary-a', -500_000, '2026-10-05'),
       moved('checking', 120_000, '2026-10-10'),
@@ -135,6 +145,7 @@ function household(overrides: Partial<PeriodFacts> = {}): PeriodFacts {
         categoryAccountId: 'housing',
       },
     ],
+    reserve: { targetCents: 3_000_000, savedCents: 1_200_000 },
     budgets: [
       { categoryAccountId: 'food', limitCents: 20_000 },
       { categoryAccountId: 'housing', limitCents: 250_000 },
@@ -234,5 +245,45 @@ describe('budgetPace', () => {
       computeMetrics(household({ today })).budgetPace.map((line) => line.expectedCents)
     expect(expected('2026-09-30')).toEqual([0, 0, 0])
     expect(expected('2026-11-01')).toEqual([20_000, 250_000, 40_000])
+  })
+})
+
+describe('variableAverage', () => {
+  it('averages the commission over the recent periods the household already used', () => {
+    expect(computeMetrics(household()).variableAverage).toBe(50_000)
+  })
+
+  it('has nothing to average before any history', () => {
+    expect(computeMetrics(household({ recentPeriods: [] })).variableAverage).toBeNull()
+  })
+})
+
+describe('reserveCoverage', () => {
+  it('says how many months of recent spending the reserve covers', () => {
+    expect(computeMetrics(household()).reserveCoverage).toEqual({
+      savedCents: 1_200_000,
+      targetCents: 3_000_000,
+      monthlySpendingCents: 35_000,
+      months: 34.3,
+    })
+  })
+
+  it('averages the last three periods, leaving out the ones with no activity', () => {
+    const busy = household()
+    const olderSpending = household({
+      postings: [...busy.postings, moved('groceries', 900_000, '2026-04-10')],
+    })
+    expect(computeMetrics(olderSpending).reserveCoverage?.monthlySpendingCents).toBe(35_000)
+    const recentSpending = household({
+      postings: [...busy.postings, moved('groceries', 900_000, '2026-07-10')],
+    })
+    expect(computeMetrics(recentSpending).reserveCoverage?.monthlySpendingCents).toBe(
+      Math.round((900_000 + 40_000 + 30_000) / 3),
+    )
+  })
+
+  it('has no months without spending history, and nothing without a reserve', () => {
+    expect(computeMetrics(household({ recentPeriods: [] })).reserveCoverage?.months).toBeNull()
+    expect(computeMetrics(household({ reserve: null })).reserveCoverage).toBeNull()
   })
 })

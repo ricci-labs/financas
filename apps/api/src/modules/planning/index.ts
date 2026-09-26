@@ -17,6 +17,7 @@ export {
   matchOccurrence,
   readBudgetFacts,
   readOccurrenceFacts,
+  readReserveFact,
   setBudget,
   skipOccurrence,
   suggestOccurrencesForEntry,

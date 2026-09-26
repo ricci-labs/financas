@@ -10,3 +10,8 @@ export type PeriodOverview = {
 export type ReportRouteDeps = {
   db: Database
 }
+
+export type PeriodTimeline = {
+  period: Period
+  recentPeriods: Period[]
+}
