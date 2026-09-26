@@ -1,4 +1,9 @@
-import { hashPassword, type PasswordCost, verifyPassword } from '@api/core/security/passwords'
+import {
+  hashPassword,
+  type PasswordCost,
+  passwordNeedsRehash,
+  verifyPassword,
+} from '@api/core/security/passwords'
 import { describe, expect, it } from 'vitest'
 
 const FAST_TEST_COST: PasswordCost = { cpuMemoryCost: 2 ** 10, blockSize: 8, parallelization: 1 }
@@ -56,9 +61,24 @@ describe('verifyPassword', () => {
       `${stored}$extra`,
       stored.replace('$1024$', '$abc$'),
       stored.slice(0, -4),
+      stored.replace('$1024$', '$1000$'),
+      stored.replace('$1024$', '$1073741824$'),
+      stored.replace('$8$1$', '$8$64$'),
     ]
     for (const unknownFormat of unknownFormats) {
       await expect(verifyPassword(PASSWORD, unknownFormat)).rejects.toThrow(/unknown format/)
     }
+  })
+})
+
+describe('passwordNeedsRehash', () => {
+  it('asks for a new hash when the stored cost is below the current one', async () => {
+    const stored = await hashPassword(PASSWORD, FAST_TEST_COST)
+    expect(passwordNeedsRehash(stored)).toBe(true)
+  })
+
+  it('keeps a hash made with the current cost', async () => {
+    const stored = await hashPassword(PASSWORD, FAST_TEST_COST)
+    expect(passwordNeedsRehash(stored, FAST_TEST_COST)).toBe(false)
   })
 })

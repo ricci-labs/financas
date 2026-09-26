@@ -1,4 +1,5 @@
 import { randomBytes, type ScryptOptions, scrypt, timingSafeEqual } from 'node:crypto'
+import { createConcurrencyLimit } from '@api/core/concurrency'
 
 export type PasswordCost = {
   cpuMemoryCost: number
@@ -18,8 +19,15 @@ const SALT_BYTES = 16
 const KEY_BYTES = 64
 const BYTES_PER_BLOCK_UNIT = 128
 const MEMORY_HEADROOM = 2
+const MAX_CONCURRENT_DERIVATIONS = 2
 
-let dummyHash: Promise<string> | undefined
+const MAX_ACCEPTED_COST: PasswordCost = {
+  cpuMemoryCost: 2 ** 20,
+  blockSize: 16,
+  parallelization: 4,
+}
+
+const runDerivationLimited = createConcurrencyLimit(MAX_CONCURRENT_DERIVATIONS)
 
 export async function hashPassword(
   password: string,
@@ -51,10 +59,20 @@ export async function verifyPassword(
   return timingSafeEqual(candidate, key)
 }
 
+export function passwordNeedsRehash(
+  storedHash: string,
+  cost: PasswordCost = OWASP_PASSWORD_COST,
+): boolean {
+  const stored = parseStoredHash(storedHash).cost
+  return (
+    stored.cpuMemoryCost < cost.cpuMemoryCost ||
+    stored.blockSize < cost.blockSize ||
+    stored.parallelization < cost.parallelization
+  )
+}
+
 async function verifyAgainstDummyHash(password: string): Promise<void> {
-  dummyHash ??= hashPassword(randomBytes(SALT_BYTES).toString('base64url'))
-  const { cost, salt } = parseStoredHash(await dummyHash)
-  await deriveKey(password, salt, cost)
+  await deriveKey(password, randomBytes(SALT_BYTES), OWASP_PASSWORD_COST)
 }
 
 function parseStoredHash(storedHash: string) {
@@ -71,7 +89,7 @@ function parseStoredHash(storedHash: string) {
   const isWellFormed =
     algorithm === ALGORITHM &&
     extra.length === 0 &&
-    Object.values(cost).every(isPositiveInteger) &&
+    isAcceptedCost(cost) &&
     saltBytes.length === SALT_BYTES &&
     keyBytes.length === KEY_BYTES
   if (!isWellFormed) {
@@ -81,8 +99,21 @@ function parseStoredHash(storedHash: string) {
   return { cost, salt: saltBytes, key: keyBytes }
 }
 
-function isPositiveInteger(value: number): boolean {
-  return Number.isInteger(value) && value > 0
+function isAcceptedCost(cost: PasswordCost): boolean {
+  return (
+    isIntegerBetween(cost.cpuMemoryCost, 2, MAX_ACCEPTED_COST.cpuMemoryCost) &&
+    isPowerOfTwo(cost.cpuMemoryCost) &&
+    isIntegerBetween(cost.blockSize, 1, MAX_ACCEPTED_COST.blockSize) &&
+    isIntegerBetween(cost.parallelization, 1, MAX_ACCEPTED_COST.parallelization)
+  )
+}
+
+function isIntegerBetween(value: number, min: number, max: number): boolean {
+  return Number.isInteger(value) && value >= min && value <= max
+}
+
+function isPowerOfTwo(value: number): boolean {
+  return Number.isInteger(Math.log2(value))
 }
 
 function deriveKey(password: string, salt: Buffer, cost: PasswordCost): Promise<Buffer> {
@@ -92,15 +123,18 @@ function deriveKey(password: string, salt: Buffer, cost: PasswordCost): Promise<
     p: cost.parallelization,
     maxmem: requiredMemory(cost) * MEMORY_HEADROOM,
   }
-  return new Promise((resolve, reject) => {
-    scrypt(password.normalize('NFKC'), salt, KEY_BYTES, options, (error, key) => {
-      if (error) {
-        reject(error)
-        return
-      }
-      resolve(key)
-    })
-  })
+  return runDerivationLimited(
+    () =>
+      new Promise((resolve, reject) => {
+        scrypt(password.normalize('NFKC'), salt, KEY_BYTES, options, (error, key) => {
+          if (error) {
+            reject(error)
+            return
+          }
+          resolve(key)
+        })
+      }),
+  )
 }
 
 function requiredMemory(cost: PasswordCost): number {
