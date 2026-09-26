@@ -33,7 +33,7 @@ export async function loggedInUser(
   if (!token) {
     throw new Error(`Login failed for ${label}`)
   }
-  return { userId, cookie: `session=${token}` }
+  return { userId, email, cookie: `session=${token}` }
 }
 
 export function requestsAs(app: TestApp, session: TestSession): SessionRequests {

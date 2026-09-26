@@ -80,6 +80,8 @@ export type IdentityRouteDeps = {
   background: BackgroundTasks
 }
 
+export type LinkLimitDeps = Pick<IdentityRouteDeps, 'accountEmailLimits' | 'trustedProxyHops'>
+
 export type AccountEmailLimits = {
   byEmail: AttemptLimiter
   byClient: AttemptLimiter

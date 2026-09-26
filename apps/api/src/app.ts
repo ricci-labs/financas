@@ -7,12 +7,17 @@ import { accessRoutes, workspaceAccess, workspaceListRoutes } from '@api/modules
 import { healthRoutes, PUBLIC_HEALTH_ROUTES } from '@api/modules/health'
 import { identityRoutes, PUBLIC_AUTH_ROUTES, resolveSession } from '@api/modules/identity'
 import { ledgerRoutes } from '@api/modules/ledger'
-import { invitationRoutes } from '@api/modules/onboarding'
+import {
+  invitationResponseRoutes,
+  invitationRoutes,
+  PUBLIC_INVITATION_ROUTES,
+} from '@api/modules/onboarding'
 import { Hono } from 'hono'
 
 export const PUBLIC_ROUTES: ReadonlySet<string> = new Set([
   ...PUBLIC_HEALTH_ROUTES,
   ...PUBLIC_AUTH_ROUTES,
+  ...PUBLIC_INVITATION_ROUTES,
 ])
 
 export function createApp(deps: AppDeps) {
@@ -28,6 +33,7 @@ export function createApp(deps: AppDeps) {
     )
     .route('/api/health', healthRoutes(deps))
     .route('/api/auth', identityRoutes(deps))
+    .route('/api/invitations', invitationResponseRoutes(deps))
     .route('/api/workspaces', workspaceListRoutes(deps))
     .route('/api/workspaces/:workspaceId', workspaceScopedRoutes(deps))
 }

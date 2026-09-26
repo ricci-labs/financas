@@ -51,7 +51,8 @@ updated: 2026-09-26
   9c. [x] Ledger routes: entries
   9d. [x] Ledger routes: balances
   10. [x] Invitation routes: create (email or link to share), list pending, revoke; owner-only owner invites
-  10b. [ ] Invitation routes: preview, accept (email must match), accept with sign-up
+  10b. [x] Invitation routes: preview, accept (email must match)
+  10c. [ ] Invitation routes: accept with sign-up
 - Later options, in the order proposed: contacts and charges, planning, deploy on the homelab.
 - [ ] DB: contacts/charges, planning, support tables
 - [ ] Observability core (OTel register, metrics, error refs), Dockerfile, deploy workflow

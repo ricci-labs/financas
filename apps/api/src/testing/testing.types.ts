@@ -34,6 +34,7 @@ export type TestApp = ReturnType<typeof createApp>
 
 export type TestSession = {
   userId: string
+  email: string
   cookie: string
 }
 

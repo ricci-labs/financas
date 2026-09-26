@@ -147,14 +147,25 @@ One pending invitation per contact and workspace (partial unique indexes). RLS i
 - **Who may accept (user decision, 2026-09-26):** an email invitation can only be accepted by a
   user logged in with that same email, so a forwarded or leaked link is useless to anyone else. A
   phone invitation is accepted by whoever holds the link until the WhatsApp channel can verify the
-  number (routes in the next PR).
+  number. `acceptInvitation()` checks it inside the locked transaction
+  (`403 INVITATION_FOR_ANOTHER_EMAIL`; the invitation stays open for the right user).
+- `describeInvitation()` reads an open invitation by token without locking it, for the preview.
 
 **Routes** (`onboarding.routes.ts`, under `/api/workspaces/:workspaceId/invitations`):
 | Route | Permission | Behavior |
 |---|---|---|
 | `GET /` | `members:view` | pending invitations |
-| `POST /` `{ email \| phoneE164, roleId }` | `members:create` | `onboarding.inviteMember()`: the role must be active in the workspace (`ROLE_NOT_AVAILABLE`), and **only an owner may invite an owner** (`403 OWNER_ONLY`). Answers `201 { invitationId, expiresAt, inviteLink }`. An email invitation is also emailed in the background (`workspace_invitation`). A phone one has no channel yet, so the inviter shares the link |
+| `POST /` `{ email \| phoneE164, roleId }` | `members:create` | `onboarding.inviteMember()`: the role must be active in the workspace (`ROLE_NOT_AVAILABLE`), and **only an owner may invite an owner** (`403 OWNER_ONLY`). Answers `201 { invitationId, expiresAt, shareableLink }`. **An email invitation's link goes only to that inbox** (emailed in the background, `workspace_invitation`), so `shareableLink` is `null`: holding the token then proves access to the email, which the sign-up through an invitation relies on. A phone invitation has no channel yet, so its link comes back for the inviter to share |
 | `DELETE /:invitationId` | `members:delete` | revoke → `204` |
+
+Answering an invitation (`/api/invitations`, `onboarding.routes.ts`):
+| Route | Access | Behavior |
+|---|---|---|
+| `POST /preview` `{ token }` | public | workspace name, inviter name, role name, invited email (or phone flag), expiry |
+| `POST /accept` `{ token }` | session | joins with the invited role; email invitations only for the same email → `{ workspaceId, membershipId }` |
+
+An unknown token is `404 INVITATION_NOT_FOUND` and counts against the client's invalid-link limit
+(`INVALID_LINKS_PER_IP_PER_HOUR`); over it, `429`.
 
 They live in `onboarding` because they span `members`, `access`, `identity` and email, and because
 `members` can't import `access` (which already imports `members`) without a cycle.

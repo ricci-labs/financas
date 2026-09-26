@@ -1,19 +1,27 @@
 import type { Database } from '@api/core/db/db.types'
 import { withWorkspace } from '@api/core/db/tx'
 import { pageLink } from '@api/core/email/links'
-import { ForbiddenError, ValidationError } from '@api/core/http/errors'
+import { ForbiddenError, NotFoundError, ValidationError } from '@api/core/http/errors'
 import { createSystemRoles, findRole } from '@api/modules/access'
 import { createUser, getAccount, type IdentityDeps } from '@api/modules/identity'
 import { createSystemAccounts } from '@api/modules/ledger'
-import { addMember, createInvitation } from '@api/modules/members'
+import {
+  type AcceptedInvitation,
+  acceptInvitation,
+  addMember,
+  createInvitation,
+  describeInvitation,
+} from '@api/modules/members'
 import { invitationMessage } from '@api/modules/onboarding/onboarding.emails'
 import type {
+  AcceptAsUserInput,
   CreatedWorkspace,
   CreateWorkspaceInput,
   InvitationDeps,
   InvitationEmailInput,
+  InvitationOutcome,
+  InvitationPreview,
   InviteMemberInput,
-  IssuedInvitation,
   RegisteredOwner,
   RegisterOwnerInput,
 } from '@api/modules/onboarding/onboarding.types'
@@ -71,7 +79,7 @@ export async function inviteMember(
   db: Database,
   { workspaceId, inviterUserId, inviterRoleKey, request }: InviteMemberInput,
   deps: InvitationDeps,
-): Promise<IssuedInvitation> {
+): Promise<InvitationOutcome> {
   const role = await findRole(db, { workspaceId, roleId: request.roleId })
   if (!role) {
     throw new ValidationError('ROLE_NOT_AVAILABLE', 'The role does not exist in this workspace')
@@ -86,11 +94,45 @@ export async function inviteMember(
     workspaceId,
     invitedByUserId: inviterUserId,
   })
+  const inviteLink = pageLink(deps.publicUrl, INVITE_PATH, created.token)
+  const isEmailInvitation = 'email' in request
   return {
-    invitationId: created.invitationId,
-    expiresAt: created.expiresAt,
-    inviteLink: pageLink(deps.publicUrl, INVITE_PATH, created.token),
+    invitation: {
+      invitationId: created.invitationId,
+      expiresAt: created.expiresAt,
+      shareableLink: isEmailInvitation ? null : inviteLink,
+    },
+    emailToSend: isEmailInvitation
+      ? { workspaceId, inviterUserId, email: request.email, inviteLink }
+      : null,
   }
+}
+
+export async function previewInvitation(db: Database, token: string): Promise<InvitationPreview> {
+  const invitation = await describeInvitation(db, token)
+  const { workspaceId } = invitation
+  const workspace = await withWorkspace(db, workspaceId, (tx) => findCurrentWorkspace(tx))
+  const role = await findRole(db, { workspaceId, roleId: invitation.roleId })
+  if (!workspace || !role) {
+    throw new NotFoundError('INVITATION_NOT_FOUND', 'Invitation not found')
+  }
+  const inviter = await getAccount(db, invitation.invitedByUserId)
+  return {
+    workspaceName: workspace.name,
+    inviterName: inviter.displayName,
+    roleName: role.name,
+    email: invitation.email,
+    isPhoneInvitation: invitation.phoneE164 !== null,
+    expiresAt: invitation.expiresAt,
+  }
+}
+
+export async function acceptInvitationAsUser(
+  db: Database,
+  { token, userId }: AcceptAsUserInput,
+): Promise<AcceptedInvitation> {
+  const account = await getAccount(db, userId)
+  return acceptInvitation(db, { token, userId, userEmail: account.email })
 }
 
 export async function sendInvitationEmail(
