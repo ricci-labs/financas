@@ -80,7 +80,7 @@ updated: 2026-09-26
      - [x] Insights (first set) in the overview
      - [x] Commission split: allocation steps, suggested transfers, insight for commission not
            yet split
-     - [ ] Balance forecast per account
+     - [x] Balance forecast per account
      - [ ] "Posso comprar?" purchase simulation
   3. [ ] **Contacts, charges and settlements**
   4. [ ] **Reminders:** notification outbox and its worker, email first

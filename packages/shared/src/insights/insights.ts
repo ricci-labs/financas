@@ -1,3 +1,4 @@
+import { balanceGoingNegative } from '@shared/insights/balance-going-negative'
 import { budgetAhead } from '@shared/insights/budget-ahead'
 import { budgetOver } from '@shared/insights/budget-over'
 import { INSIGHT_SEVERITIES } from '@shared/insights/insights.constants'
@@ -16,6 +17,7 @@ export const INSIGHTS: readonly InsightRule[] = [
   budgetOver,
   periodHeavilyCommitted,
   variableIncomeToSplit,
+  balanceGoingNegative,
 ]
 
 export function computeInsights(facts: PeriodFacts, metrics: PeriodMetrics): Insight[] {

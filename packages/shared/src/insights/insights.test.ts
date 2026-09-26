@@ -46,6 +46,7 @@ const FACTS: PeriodFacts = {
   cards: [],
   invoices: [],
   allocation: null,
+  balances: [],
 }
 
 function metricsWith(overrides: Partial<PeriodMetrics>): PeriodMetrics {
@@ -212,5 +213,31 @@ describe('variable_income_to_split', () => {
     expect(toSplit(facts([commission(100_000), moved('reserve', 100_000)]))).toEqual([])
     expect(toSplit(facts([moved('reserve', 5_000)]))).toEqual([])
     expect(toSplit({ ...facts([commission(100_000)]), allocation: null })).toEqual([])
+  })
+})
+
+describe('balance_going_negative', () => {
+  it('alerts for each account whose forecast dips below zero', () => {
+    const forecast = (accountId: string, lowestCents: number) => ({
+      accountId,
+      until: '2026-10-31',
+      startCents: 10_000,
+      endCents: 10_000,
+      lowestCents,
+      lowestOn: '2026-10-20',
+      points: [],
+    })
+    const metrics = metricsWith({
+      balanceForecast: [forecast('checking', -1), forecast('savings', 0)],
+    })
+    expect(computeInsights(FACTS, metrics)[0]).toEqual({
+      code: 'balance_going_negative',
+      severity: 'alert',
+      subject: 'checking',
+      values: { lowestCents: -1, lowestOn: '2026-10-20' },
+    })
+    expect(codes(metrics).filter((code) => code.startsWith('balance'))).toEqual([
+      'balance_going_negative checking',
+    ])
   })
 })

@@ -126,8 +126,9 @@ before and the 6 after it, the budget view and base, the accounts (`ledger.readA
 period by `effective_on` or by the entry's `occurred_on` (`ledger.readPostingFacts`), and the
 occurrences due in the period (`planning.readOccurrenceFacts`, which tops up the horizon first),
 the budgets in force (`planning.readBudgetFacts`), the reserve (`planning.readReserveFact`), the
-cards (`ledger.readCardFacts`) and the invoices closing from a month ago on
-(`ledger.readInvoiceFacts`). Occurrences also load from a month before today when the period starts
+cards with their payment account (`ledger.readCardFacts`), the invoices closing from a month ago on
+(`ledger.readInvoiceFacts`), the account balances (`ledger.readBalanceFacts`) and the commission
+waterfall's destinations. Occurrences also load from a month before today when the period starts
 later, so the open invoice's subscriptions are there.
 Postings are loaded from the start of the oldest previous period to the end of the last coming
 one, and occurrences from the start of the period to that same end. The plan reaches 6 months past
@@ -185,7 +186,7 @@ the order of `INSIGHTS`.
 | `period_heavily_committed` | warning | period label | a coming period with ≥ 70% of its fixed income committed (`HEAVILY_COMMITTED_PERCENT`) |
 | `variable_income_to_split` | info | period label | with a waterfall configured: the period's commission minus what reached its destination accounts in the period (deposits only, never withdrawals) minus the overrun it covers (when a `cover_overspent` step exists) is still positive → `{ amountCents }` still to split |
 
-Still to come with its feature: the balance forecast goes negative.
+| `balance_going_negative` | alert | account | the balance forecast dips below zero → `{ lowestCents, lowestOn }` |
 
 ### Commission split (suggested, never automatic)
 `allocation_steps` holds the household's waterfall, in order. When variable income arrives, the pure
@@ -217,10 +218,19 @@ take is skipped; what no step takes is `leftoverCents`.
 | `GET /allocation/suggestion?amountCents=` | `reports:view` | `reports.suggestAllocation` → `{ parts: [{ position, kind, toAccountId, amountCents }], leftoverCents }` with today's goals and the current period's overrun |
 
 ### Balance forecast
-Per liquid account (checking, savings, cash), day by day from today to the next fixed-income
-occurrence landing there (at least to the end of the period): today's balance + pending
-occurrences on that account + card invoices due and paid from it. Returns the daily balances and
-the lowest point; an insight fires when it goes below zero.
+Metric `balanceForecast`, per money account (checking, savings, cash, investment), day by day from
+today until the next **fixed** income landing on it, or the end of the period if that comes later:
+- start = today's balance (the account's balance minus its postings dated after today);
+- pending bills, incomes and transfers (both sides) touching the account; overdue ones leave
+  **today**. The commission is never counted (household policy);
+- card invoices paid from it (`card_details.payment_account_id`) on their due dates: what is still
+  due, plus the pending subscriptions that land on the open invoice, even before the invoice has a
+  purchase;
+- postings dated after today.
+
+→ `{ accountId, until, startCents, endCents, lowestCents, lowestOn, points: [{ on, balanceCents }] }`
+(one point per day that moves). The alert `balance_going_negative` (subject = account,
+`{ lowestCents, lowestOn }`) fires when the lowest point is below zero.
 
 ### "Posso comprar?" (purchase simulation)
 Read-only. Given an amount, a card (or an account) and an installment count, it plans the postings
