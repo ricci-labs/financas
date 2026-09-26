@@ -1,8 +1,9 @@
 import type { Database } from '@api/core/db/db.types'
-import type { recurrenceRules } from '@api/modules/planning/planning.table'
+import type { plannedOccurrences, recurrenceRules } from '@api/modules/planning/planning.table'
 import type {
   IsoDate,
   NationalHoliday,
+  OccurrenceStatus,
   RecurrenceSchedule,
   RecurringEntryType,
 } from '@financas/shared'
@@ -84,3 +85,23 @@ export type DeleteRecurrenceRuleInput = RecurrenceRuleRef & {
 }
 
 export type RuleDeletion = HolidayDeletion
+
+export type NewOccurrenceRow = typeof plannedOccurrences.$inferInsert
+
+export type OccurrenceRow = {
+  id: string
+  ruleId: string
+  description: string
+  entryType: RecurringEntryType
+  sourceAccountId: string
+  categoryAccountId: string
+  dueOn: IsoDate
+  amountCents: number
+  amountIsEstimate: boolean
+  status: OccurrenceStatus
+  matchedEntryId: string | null
+}
+
+export type OccurrenceItem = OccurrenceRow & {
+  isOverdue: boolean
+}

@@ -1,13 +1,14 @@
 import { primaryId, softDelete, timestamps } from '@api/core/db/columns'
 import { tenantIsolation } from '@api/core/db/tenancy'
 import { users } from '@api/modules/identity/identity.table'
-import { ledgerAccounts } from '@api/modules/ledger/ledger.table'
+import { journalEntries, ledgerAccounts } from '@api/modules/ledger/ledger.table'
 import { workspaces } from '@api/modules/workspaces/workspaces.table'
 import {
   HOLIDAY_NAME_MAX_LENGTH,
   MAX_RECURRENCE_BUSINESS_DAY,
   MAX_RECURRENCE_INTERVAL,
   MAX_REMIND_DAYS_BEFORE,
+  OCCURRENCE_STATUSES,
   RECURRENCE_DESCRIPTION_MAX_LENGTH,
   RECURRENCE_FREQUENCIES,
   RECURRING_ENTRY_TYPES,
@@ -137,5 +138,46 @@ export const recurrenceRules = pgTable(
       sql`${table.sourceAccountId} <> ${table.categoryAccountId}`,
     ),
     tenantIsolation('recurrence_rules', table.workspaceId),
+  ],
+).enableRLS()
+
+export const occurrenceStatus = pgEnum('occurrence_status', OCCURRENCE_STATUSES)
+
+export const plannedOccurrences = pgTable(
+  'planned_occurrences',
+  {
+    workspaceId: uuid()
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    id: primaryId(),
+    ruleId: uuid().notNull(),
+    dueOn: date().notNull(),
+    amountCents: bigint({ mode: 'number' }).notNull(),
+    status: occurrenceStatus().notNull().default('pending'),
+    matchedEntryId: uuid(),
+    ...timestamps(),
+  },
+  (table) => [
+    unique('planned_occurrences_workspace_id_id_unique').on(table.workspaceId, table.id),
+    unique('planned_occurrences_rule_due_on_unique').on(table.ruleId, table.dueOn),
+    uniqueIndex('planned_occurrences_one_per_entry')
+      .on(table.workspaceId, table.matchedEntryId)
+      .where(sql`${table.matchedEntryId} is not null`),
+    foreignKey({
+      name: 'planned_occurrences_rule_fk',
+      columns: [table.workspaceId, table.ruleId],
+      foreignColumns: [recurrenceRules.workspaceId, recurrenceRules.id],
+    }),
+    foreignKey({
+      name: 'planned_occurrences_matched_entry_fk',
+      columns: [table.workspaceId, table.matchedEntryId],
+      foreignColumns: [journalEntries.workspaceId, journalEntries.id],
+    }),
+    check('planned_occurrences_amount', sql`${table.amountCents} > 0`),
+    check(
+      'planned_occurrences_matched_has_entry',
+      sql`(${table.status} = 'matched') = (${table.matchedEntryId} is not null)`,
+    ),
+    tenantIsolation('planned_occurrences', table.workspaceId),
   ],
 ).enableRLS()

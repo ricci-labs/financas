@@ -1,10 +1,11 @@
 import { createApp } from '@api/app'
-import type { RecurrenceRuleItem } from '@api/modules/planning'
+import type { OccurrenceItem, RecurrenceRuleItem } from '@api/modules/planning'
 import { testAppDeps } from '@api/testing/app'
 import { connectTestDatabases } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
 import { addMemberWithSystemRole, loggedInUser, requestsAs } from '@api/testing/http'
 import type { SessionRequests } from '@api/testing/testing.types'
+import { addDays, todayIn } from '@financas/shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const databases = connectTestDatabases()
@@ -16,6 +17,7 @@ let owner: SessionRequests
 let member: SessionRequests
 let viewer: SessionRequests
 let rulesPath: string
+let occurrencesPath: string
 let checkingId: string
 let housingId: string
 let salaryId: string
@@ -39,6 +41,7 @@ beforeAll(async () => {
   viewer = requestsAs(app, viewerSession)
   const workspacePath = `/api/workspaces/${workspaceId}`
   rulesPath = `${workspacePath}/recurrences`
+  occurrencesPath = `${workspacePath}/occurrences`
   checkingId = await created(
     owner.post(`${workspacePath}/accounts`, { kind: 'checking', name: 'Conta X' }),
   )
@@ -245,5 +248,35 @@ describe('DELETE /recurrences/:ruleId', () => {
     const again = await owner.del(`${rulesPath}/${ruleId}`)
     expect([again.status, await codeOf(again)]).toEqual([404, 'RECURRENCE_NOT_FOUND'])
     expect((await member.patch(`${rulesPath}/${ruleId}`, { amountCents: 1 })).status).toBe(404)
+  })
+})
+
+describe('GET /occurrences', () => {
+  it('lists what the rules plan in a range, to anyone who may view planning', async () => {
+    const today = todayIn('America/Sao_Paulo', new Date())
+    const ruleId = await created(
+      member.post(
+        rulesPath,
+        rent({ description: 'Diarista', schedule: { frequency: 'weekly', startsOn: today } }),
+      ),
+    )
+    const response = await viewer.get(`${occurrencesPath}?from=${today}&to=${addDays(today, 20)}`)
+    expect(response.status).toBe(200)
+    const planned = ((await response.json()) as OccurrenceItem[]).filter(
+      (occurrence) => occurrence.ruleId === ruleId,
+    )
+    expect(planned.length).toBeGreaterThanOrEqual(2)
+    expect(planned[0]).toMatchObject({
+      description: 'Diarista',
+      status: 'pending',
+      isOverdue: false,
+    })
+  })
+
+  it('refuses a range that is missing, reversed or longer than a year', async () => {
+    for (const query of ['', '?from=2026-10-02&to=2026-10-01', '?from=2026-01-01&to=2027-06-01']) {
+      const response = await viewer.get(`${occurrencesPath}${query}`)
+      expect([response.status, await codeOf(response)]).toEqual([400, 'OCCURRENCE_QUERY_INVALID'])
+    }
   })
 })

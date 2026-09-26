@@ -4,6 +4,7 @@ export {
   holidayDatesOf,
   listHolidays,
 } from '@api/modules/planning/use-cases/holidays'
+export { listOccurrences } from '@api/modules/planning/use-cases/occurrences'
 export {
   changeRecurrenceRule,
   createRecurrenceRule,
