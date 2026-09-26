@@ -107,8 +107,13 @@ src/
 │   │   ├── errors.ts         # postgresErrorCode(): read the SQLSTATE of a failed query
 │   │   ├── tenancy.ts        # app role + current workspace for RLS policies
 │   │   └── tx.ts             # withWorkspace(): sets app.workspace_id per transaction
-│   ├── http/middleware/      # auth, request id, error handler
-│   ├── http/errors.ts        # AppError hierarchy → HTTP status; parseOrThrow(schema, input, code)
+│   ├── http/
+│   │   ├── base-app.ts       # Hono app with the global middleware (request context, secure
+│   │   │                     #   headers, 100 KB body limit, error and not-found handlers)
+│   │   ├── middleware/       # request-context (request id, logger), error-handler, later auth
+│   │   ├── validation.ts     # jsonBody(schema, code)
+│   │   ├── http.types.ts     # AppEnv: request variables
+│   │   └── errors.ts         # AppError hierarchy → HTTP status; parseOrThrow(schema, input, code)
 │   ├── observability/        # OTel register, pino logger, metrics registry, spans, errors
 │   │                         #   (see docs/operations/observability.md)
 │   ├── security/tokens.ts    # random tokens and their SHA-256 hashes
@@ -146,7 +151,8 @@ src/
 │   └── pending-actions.ts    # proposed writes awaiting confirmation
 └── jobs/                     # croner schedules; each job calls services
 src/testing/                  # test helpers: database.ts (connections, Postgres error codes),
-│                             #   fixtures.ts (users/workspaces through the real services)
+│                             #   fixtures.ts (users/workspaces through the real services),
+│                             #   mailer.ts (recording Mailer), logger.ts (capturing logger)
 scripts/ops/                  # ops:* debugging scripts: Claude's stable interface (runbook.md);
                               #   commands that change data live in src/ops/ instead
 ```

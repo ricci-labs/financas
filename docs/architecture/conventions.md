@@ -101,7 +101,18 @@ without comments.
 
 ## Validation and errors
 - Validate at every boundary with Zod: HTTP (`zValidator`), agent tool inputs, env, WhatsApp payloads.
-- Services throw typed `AppError` subclasses (`NotFoundError`, `ValidationError`, `ConflictError`). The HTTP error middleware maps them to status codes. Agent tools map them to `is_error` tool results.
+- Services throw typed `AppError` subclasses. The HTTP error handler (`core/http/middleware/error-handler.ts`) maps them to status codes; agent tools map them to `is_error` tool results.
+
+  | Error | Status |
+  |---|---|
+  | `ValidationError` | 400 |
+  | `UnauthorizedError` | 401 |
+  | `ForbiddenError` | 403 |
+  | `NotFoundError` | 404 |
+  | `ConflictError` | 409 |
+  | anything else | 500 `INTERNAL_ERROR`, logged once as `http.request.failed`; the message never reaches the client |
+- Every error response has the same body: `{ "error": { "code", "message", "ref" } }`. The web shows pt-BR text chosen by `code`, plus the `ref`.
+- Routes validate bodies with `jsonBody(schema, 'X_INVALID')` (`core/http/validation.ts`, Hono's built-in validator + `parseOrThrow`), so validation errors take the same path. Bodies above 100 KB are refused with 413 before being read.
 - Never swallow errors. Log with context using the pino child logger.
 
 ## Tests
