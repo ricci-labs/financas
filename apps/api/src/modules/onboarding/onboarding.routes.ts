@@ -9,11 +9,13 @@ import {
   inviteMember,
   previewInvitation,
   sendInvitationEmail,
+  signUpThroughInvitation,
 } from '@api/modules/onboarding/onboarding.service'
 import type { OnboardingRouteDeps } from '@api/modules/onboarding/onboarding.types'
 import {
   invitationParamsSchema,
   invitationRequestSchema,
+  invitationSignUpRequestSchema,
   invitationTokenRequestSchema,
 } from '@financas/shared'
 import { Hono } from 'hono'
@@ -22,7 +24,10 @@ const CREATED = 201
 const NO_CONTENT = 204
 const INVITATION_NOT_FOUND = 'INVITATION_NOT_FOUND'
 
-export const PUBLIC_INVITATION_ROUTES = ['POST /api/invitations/preview'] as const
+export const PUBLIC_INVITATION_ROUTES = [
+  'POST /api/invitations/preview',
+  'POST /api/invitations/sign-up',
+] as const
 
 export function invitationRoutes(deps: OnboardingRouteDeps) {
   const invitation = pathParams(invitationParamsSchema, 'INVITATION_NOT_FOUND')
@@ -78,4 +83,13 @@ export function invitationResponseRoutes(deps: OnboardingRouteDeps) {
       })
       return c.json(accepted)
     })
+    .post(
+      '/sign-up',
+      jsonBody(invitationSignUpRequestSchema, 'INVITATION_SIGN_UP_INVALID'),
+      limitInvalidInvitations,
+      async (c) => {
+        const joined = await signUpThroughInvitation(deps.db, c.req.valid('json'), deps)
+        return c.json(joined, CREATED)
+      },
+    )
 }

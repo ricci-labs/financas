@@ -30,7 +30,7 @@ updated: 2026-09-26
 - [x] Purchases already in progress: record only the remaining installments
 - [x] DB: balance views (`account_balances`, `invoice_totals`)
 - [x] **Ledger series done** (#19–#27): accounts, entries, cards, installments, invoices, balances
-- [ ] **HTTP API + web auth** (chosen 2026-09-25; password login, ADR 0021). Small PRs, in order:
+- [x] **HTTP API + web auth** (chosen 2026-09-25, done 2026-09-26, #29–#54; password login, ADR 0021):
   1. [x] ADRs 0021 (auth) and 0022 (email), and this plan
   2. [x] `identity`: `sessions` and `auth_tokens` tables, password hashing (scrypt)
   3. [x] `identity`: create user, login, resolve session, logout services
@@ -52,8 +52,15 @@ updated: 2026-09-26
   9d. [x] Ledger routes: balances
   10. [x] Invitation routes: create (email or link to share), list pending, revoke; owner-only owner invites
   10b. [x] Invitation routes: preview, accept (email must match)
-  10c. [ ] Invitation routes: accept with sign-up
-- Later options, in the order proposed: contacts and charges, planning, deploy on the homelab.
+  10c. [x] Invitation routes: accept with sign-up
+  Along the way: strict file roles, Claude Code hooks and the `new-module` / `pr` skills (#43–#46).
+- [ ] **Next session: choose the next step** (the user decides). Options:
+  1. **Web foundation:** Vite + React app shell, login and sign-up pages, workspace picker, and
+     the first screens on top of these routes (accounts, cards, entries). Makes the app usable.
+  2. **Deploy on the homelab:** Dockerfile, Dokploy deploy workflow, backups, Level 0
+     observability, SMTP provider (open question 10), remote access (open question 7).
+  3. **Contacts and charges** (third parties who owe part of a purchase).
+  4. **Planning:** recurring bills and incomes, commission forecast, budgets, "free to spend".
 - [ ] DB: contacts/charges, planning, support tables
 - [ ] Observability core (OTel register, metrics, error refs), Dockerfile, deploy workflow
 - [ ] Web foundation: TanStack Router/Query, shadcn/ui, layout

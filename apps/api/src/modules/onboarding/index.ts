@@ -10,6 +10,7 @@ export {
   previewInvitation,
   registerOwner,
   sendInvitationEmail,
+  signUpThroughInvitation,
 } from '@api/modules/onboarding/onboarding.service'
 export type {
   CreatedWorkspace,

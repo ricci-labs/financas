@@ -163,6 +163,7 @@ Answering an invitation (`/api/invitations`, `onboarding.routes.ts`):
 |---|---|---|
 | `POST /preview` `{ token }` | public | workspace name, inviter name, role name, invited email (or phone flag), expiry |
 | `POST /accept` `{ token }` | session | joins with the invited role; email invitations only for the same email → `{ workspaceId, membershipId }` |
+| `POST /sign-up` `{ token, displayName, password, email? }` | public | for someone without an account, with public sign-up on or off. The invitation is checked **before** hashing the password. An email invitation creates the account with the **invited** email (a typed one is ignored), already verified, since only that inbox received the link. A phone invitation needs `email` (`EMAIL_REQUIRED`): the account starts unverified, joins, and gets a verification email; login waits for it. An email that already has an account is `409 EMAIL_TAKEN` (log in and accept instead) → `201 { workspaceId, membershipId, isEmailVerified }` |
 
 An unknown token is `404 INVITATION_NOT_FOUND` and counts against the client's invalid-link limit
 (`INVALID_LINKS_PER_IP_PER_HOUR`); over it, `429`.

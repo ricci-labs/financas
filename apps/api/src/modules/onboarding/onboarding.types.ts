@@ -1,7 +1,7 @@
 import type { BackgroundTasks } from '@api/core/background-tasks.types'
 import type { Database } from '@api/core/db/db.types'
 import type { Mailer } from '@api/core/email/email.types'
-import type { LinkLimitDeps } from '@api/modules/identity'
+import type { AccountEmailDeps, LinkLimitDeps } from '@api/modules/identity'
 import type { InvitationRequest, SystemRoleKey } from '@financas/shared'
 
 export type CreateWorkspaceInput = {
@@ -82,3 +82,18 @@ export type OnboardingRouteDeps = InvitationDeps &
     db: Database
     background: BackgroundTasks
   }
+
+export type SignUpThroughInvitationInput = {
+  token: string
+  displayName: string
+  password: string
+  email?: string
+}
+
+export type SignUpThroughInvitationDeps = AccountEmailDeps
+
+export type JoinedThroughSignUp = {
+  workspaceId: string
+  membershipId: string
+  isEmailVerified: boolean
+}

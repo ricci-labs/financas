@@ -3,6 +3,7 @@ import { createBackgroundTasks } from '@api/core/background-tasks'
 import type { WorkspaceListItem } from '@api/modules/access'
 import { roles } from '@api/modules/access/access.table'
 import { createAccountEmailLimits } from '@api/modules/identity'
+import { users } from '@api/modules/identity/identity.table'
 import { TEST_PUBLIC_URL, testAppDeps } from '@api/testing/app'
 import { connectTestDatabases } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
@@ -24,7 +25,7 @@ const app = createApp(
     accountEmailLimits: createAccountEmailLimits({
       maxPerEmailPerHour: 50,
       maxPerClientPerHour: 50,
-      maxInvalidLinksPerClientPerHour: 3,
+      maxInvalidLinksPerClientPerHour: 50,
     }),
   }),
 )
@@ -66,6 +67,23 @@ function publicPost(path: string, body: unknown) {
 
 async function guest(label: string): Promise<TestSession> {
   return loggedInUser(app, databases.app, fixtures.runId, label)
+}
+
+async function phoneInvitationToken(phoneE164: string): Promise<string> {
+  const response = await owner.post(`/api/workspaces/${workspaceId}/invitations`, {
+    phoneE164,
+    roleId: memberRoleId,
+  })
+  const { shareableLink } = (await response.json()) as { shareableLink: string }
+  return new URLSearchParams(new URL(shareableLink).hash.slice(1)).get('token') ?? ''
+}
+
+function newEmail(label: string): string {
+  return `${label}-${crypto.randomUUID()}-${fixtures.runId}@example.test`
+}
+
+function login(email: string, password: string) {
+  return publicPost('/api/auth/login', { email, password })
 }
 
 async function codeOf(response: Response): Promise<string> {
@@ -147,11 +165,110 @@ describe('POST /api/invitations/accept', () => {
   })
 })
 
+describe('POST /api/invitations/sign-up', () => {
+  const PASSWORD = 'a long enough password'
+
+  it('creates a verified account with the invited email, even with public sign-up off', async () => {
+    const invitedEmail = newEmail('new-by-email')
+    const token = await emailInvitationTo(invitedEmail)
+
+    const response = await publicPost('/api/invitations/sign-up', {
+      token,
+      displayName: 'Member New',
+      password: PASSWORD,
+      email: newEmail('ignored'),
+    })
+
+    expect(response.status).toBe(201)
+    expect(await response.json()).toMatchObject({ workspaceId, isEmailVerified: true })
+    const [account] = await databases.owner
+      .select()
+      .from(users)
+      .where(eq(users.email, invitedEmail))
+    expect(account?.emailVerifiedAt).not.toBeNull()
+    expect((await login(invitedEmail, PASSWORD)).status).toBe(200)
+  })
+
+  it('asks a phone invitee for an email, and makes them verify it before logging in', async () => {
+    const email = newEmail('new-by-phone')
+    const token = await phoneInvitationToken('+5511900004444')
+
+    const withoutEmail = await publicPost('/api/invitations/sign-up', {
+      token,
+      displayName: 'Member Phone',
+      password: PASSWORD,
+    })
+    expect([withoutEmail.status, await codeOf(withoutEmail)]).toEqual([400, 'EMAIL_REQUIRED'])
+
+    const response = await publicPost('/api/invitations/sign-up', {
+      token,
+      displayName: 'Member Phone',
+      password: PASSWORD,
+      email,
+    })
+    expect(response.status).toBe(201)
+    expect(await response.json()).toMatchObject({ workspaceId, isEmailVerified: false })
+
+    const beforeVerifying = await login(email, PASSWORD)
+    expect([beforeVerifying.status, await codeOf(beforeVerifying)]).toEqual([
+      403,
+      'EMAIL_NOT_VERIFIED',
+    ])
+
+    const verification = [...recording.sent].reverse().find((sent) => sent.to === email)
+    expect(verification).toMatchObject({ template: 'email_verification' })
+    await publicPost('/api/auth/verify-email', { token: tokenFromEmail(verification) })
+    expect((await login(email, PASSWORD)).status).toBe(200)
+  })
+
+  it('sends an existing account to log in and accept instead', async () => {
+    const invitee = await guest('existing-account')
+    const token = await emailInvitationTo(invitee.email)
+    const response = await publicPost('/api/invitations/sign-up', {
+      token,
+      displayName: 'Someone',
+      password: PASSWORD,
+    })
+    expect([response.status, await codeOf(response)]).toEqual([409, 'EMAIL_TAKEN'])
+  })
+
+  it('refuses a weak password and a made-up token', async () => {
+    const token = await emailInvitationTo(newEmail('weak'))
+    const weak = await publicPost('/api/invitations/sign-up', {
+      token,
+      displayName: 'Weak',
+      password: 'short',
+    })
+    expect([weak.status, await codeOf(weak)]).toEqual([400, 'INVITATION_SIGN_UP_INVALID'])
+
+    const madeUp = await publicPost('/api/invitations/sign-up', {
+      token: 'made-up-token',
+      displayName: 'Nobody',
+      password: PASSWORD,
+    })
+    expect([madeUp.status, await codeOf(madeUp)]).toEqual([404, 'INVITATION_NOT_FOUND'])
+  })
+})
+
 describe('invalid invitation links', () => {
   it('answer 404, and lock a client out after too many', async () => {
+    const limitedApp = createApp(
+      testAppDeps({
+        db: databases.app,
+        accountEmailLimits: createAccountEmailLimits({
+          maxPerEmailPerHour: 50,
+          maxPerClientPerHour: 50,
+          maxInvalidLinksPerClientPerHour: 3,
+        }),
+      }),
+    )
     const statuses = []
     for (let attempt = 0; attempt < 4; attempt += 1) {
-      const response = await publicPost('/api/invitations/preview', { token: `made-up-${attempt}` })
+      const response = await limitedApp.request('/api/invitations/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Origin: TEST_PUBLIC_URL },
+        body: JSON.stringify({ token: `made-up-${attempt}` }),
+      })
       statuses.push(response.status)
     }
     expect(statuses).toEqual([404, 404, 404, 429])
