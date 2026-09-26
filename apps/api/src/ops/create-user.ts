@@ -16,26 +16,28 @@ const database = createDatabase(env.DATABASE_URL, {
 const terminal = openTerminal()
 
 try {
-  terminal.say('Criar usuário (e-mail já verificado) e o primeiro workspace dele.')
+  terminal.say('Create a user (email already verified) who owns a new workspace.')
   const answers = await askOwnerDetails(terminal)
   const { userId, workspaceId } = await registerOwner(database.db, answers)
-  terminal.say(`Usuário ${userId} criado, dono do workspace ${workspaceId}.`)
+  terminal.say(`Created user ${userId}, owner of workspace ${workspaceId}.`)
 } catch (error) {
   process.exitCode = FAILURE_EXIT_CODE
-  terminal.say(`Não foi possível criar: ${describeFailure(error)}`)
+  terminal.say(`Could not create the user: ${describeFailure(error)}`)
 } finally {
   terminal.close()
   await database.close()
 }
 
 async function askOwnerDetails(terminal: Terminal) {
-  const email = await terminal.ask('E-mail: ')
-  const displayName = await terminal.ask('Nome: ')
-  const workspaceName = await terminal.ask('Nome do primeiro workspace: ')
-  const password = await terminal.askSecret(`Senha (mínimo ${PASSWORD_MIN_LENGTH} caracteres): `)
-  const confirmation = await terminal.askSecret('Repita a senha: ')
+  const email = await terminal.ask('Email: ')
+  const displayName = await terminal.ask('Display name: ')
+  const workspaceName = await terminal.ask('First workspace name: ')
+  const password = await terminal.askSecret(
+    `Password (at least ${PASSWORD_MIN_LENGTH} characters): `,
+  )
+  const confirmation = await terminal.askSecret('Repeat the password: ')
   if (password !== confirmation) {
-    throw new Error('as senhas não conferem')
+    throw new Error('the passwords do not match')
   }
   return { email, displayName, workspaceName, password }
 }
