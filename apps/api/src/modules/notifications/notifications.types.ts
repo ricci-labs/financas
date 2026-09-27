@@ -2,7 +2,9 @@ import type { Clock } from '@api/core/clock.types'
 import type { Mailer } from '@api/core/email/email.types'
 import type { Logger } from '@api/core/observability/logger'
 import type { EmailRecipient } from '@api/modules/identity'
+import type { InvoiceDue } from '@api/modules/ledger'
 import type { notificationOutbox } from '@api/modules/notifications/notifications.table'
+import type { OccurrenceRow } from '@api/modules/planning'
 import type { NotificationKind } from '@financas/shared'
 
 export type NotificationRow = typeof notificationOutbox.$inferSelect
@@ -50,3 +52,8 @@ export type DeliveryOutcome = keyof DeliveryResult
 export type NotificationUpdate = Partial<
   Pick<NewNotificationRow, 'status' | 'attempts' | 'lastError' | 'sentAt' | 'scheduledFor'>
 >
+
+export type ReminderSources = {
+  bills: OccurrenceRow[]
+  invoices: InvoiceDue[]
+}

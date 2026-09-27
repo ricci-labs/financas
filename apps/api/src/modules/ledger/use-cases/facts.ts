@@ -7,9 +7,10 @@ import {
   selectContactItems,
   selectContactPostings,
   selectInvoiceFacts,
+  selectInvoicesDueBetween,
   selectPostingFacts,
 } from '@api/modules/ledger/ledger.repository'
-import type { ContactItems } from '@api/modules/ledger/ledger.types'
+import type { ContactItems, InvoiceDue } from '@api/modules/ledger/ledger.types'
 import type {
   ChargeableItem,
   ContactPosting,
@@ -87,4 +88,12 @@ export async function activeEntryIdsOf(
   entryIds: string[],
 ): Promise<ReadonlySet<string>> {
   return new Set(await selectActiveEntryIds(tx, entryIds))
+}
+
+export function readInvoicesDueBetween(
+  tx: WorkspaceTransaction,
+  from: IsoDate,
+  to: IsoDate,
+): Promise<InvoiceDue[]> {
+  return selectInvoicesDueBetween(tx, from, to)
 }

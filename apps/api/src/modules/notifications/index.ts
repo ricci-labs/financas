@@ -1,6 +1,7 @@
 export {
   deliverDueNotifications,
   enqueueNotification,
+  queueReminders,
 } from '@api/modules/notifications/notifications.service'
 export type {
   DeliveryDeps,

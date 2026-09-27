@@ -25,6 +25,7 @@ import {
   selectActiveMembershipOfUser,
   selectActiveMemberships,
   selectInvitationByTokenHash,
+  selectNotificationTargets,
   selectPendingInvitations,
   selectWorkspaceIdsOfUser,
   updateMembershipRole,
@@ -41,6 +42,7 @@ import type {
   MembershipRemoval,
   MembershipRow,
   NewMembership,
+  NotificationTarget,
   PendingInvitation,
   RevocableInvitation,
   RevokeInvitationInput,
@@ -263,4 +265,8 @@ export function removeMembership(
   removal: MembershipRemoval,
 ): Promise<void> {
   return markMembershipRemoved(tx, membershipId, removal)
+}
+
+export function readNotificationTargets(tx: WorkspaceTransaction): Promise<NotificationTarget[]> {
+  return selectNotificationTargets(tx)
 }

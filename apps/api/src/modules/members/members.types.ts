@@ -91,3 +91,8 @@ export type MembershipRemoval = {
   deletedByUserId: string
   deleteReason: string | null
 }
+
+export type NotificationTarget = {
+  userId: string
+  billsDaysBefore: number
+}

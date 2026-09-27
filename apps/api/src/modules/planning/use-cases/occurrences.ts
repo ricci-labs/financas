@@ -69,6 +69,15 @@ export async function readOccurrenceFacts(
   }))
 }
 
+export async function readOccurrencesBetween(
+  tx: WorkspaceTransaction,
+  { from, to }: DateRange,
+  today: IsoDate,
+): Promise<OccurrenceRow[]> {
+  await refreshOccurrences(tx, today)
+  return selectOccurrencesBetween(tx, from, to)
+}
+
 export function withOverdueFlag(occurrence: OccurrenceRow, today: IsoDate): OccurrenceItem {
   return { ...occurrence, isOverdue: occurrence.status === 'pending' && occurrence.dueOn < today }
 }

@@ -101,7 +101,7 @@ updated: 2026-09-26
      - [x] `job_workspace_ids()` + `forEachWorkspace`, and the nightly occurrence planning job
      - [x] `notifications` module: `notification_outbox`, enqueue with a dedupe key, quiet hours
      - [x] Worker job: claim due rows, render pt-BR emails, send, retry with backoff
-     - [ ] Reminders of bills and card invoices, by each member's lead time
+     - [x] Reminders of bills and card invoices, by each member's lead time
      - [ ] Members' notification preferences through the API
   5. [ ] **Attachments** on entries (`FileStorage`)
   6. [ ] **Audit log**

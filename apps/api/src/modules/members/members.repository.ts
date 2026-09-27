@@ -6,6 +6,7 @@ import type {
   MembershipRemoval,
   NewInvitation,
   NewMembership,
+  NotificationTarget,
 } from '@api/modules/members/members.types'
 import { and, desc, eq, gt, isNull, lte, sql } from 'drizzle-orm'
 
@@ -204,4 +205,22 @@ export async function markMembershipRemoved(
   removal: MembershipRemoval,
 ): Promise<void> {
   await tx.update(memberships).set(removal).where(eq(memberships.id, membershipId))
+}
+
+export function selectNotificationTargets(tx: WorkspaceTransaction): Promise<NotificationTarget[]> {
+  return tx
+    .select({
+      userId: memberships.userId,
+      billsDaysBefore:
+        sql<number>`coalesce(${membershipPreferences.notifyBillsDaysBefore}, 3)`.mapWith(Number),
+    })
+    .from(memberships)
+    .leftJoin(
+      membershipPreferences,
+      and(
+        eq(membershipPreferences.workspaceId, memberships.workspaceId),
+        eq(membershipPreferences.userId, memberships.userId),
+      ),
+    )
+    .where(isNull(memberships.deletedAt))
 }

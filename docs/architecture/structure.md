@@ -182,6 +182,7 @@ src/
     ├── scheduled-jobs.ts     # SCHEDULED_JOBS, the only list main.ts starts; schedule timezone
     ├── for-each-workspace.ts # forEachWorkspace: job_workspace_ids(), then work per workspace (ADR 0025)
     ├── plan-occurrences.ts   # 02:47: tops up every workspace's planned occurrences
+    ├── queue-reminders.ts    # 08:07: bill and invoice reminders into the outbox
     ├── send-notifications.ts # every 5 min: delivers due outbox emails
     ├── jobs.types.ts
     └── <job-name>.ts         # one ScheduledJob per file: name, cron pattern, run → one service

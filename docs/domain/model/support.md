@@ -54,7 +54,17 @@ validated by the shared schemas) and sends it through the `Mailer`. Outcomes:
 - a payload it can't write, or a contact recipient by email → `failed` at once.
 
 Failures log `notification.failed` (`willRetry`). WhatsApp rows stay pending until that channel
-exists. For a member, `scheduled_for` is
+exists.
+
+**Reminders** (job `queue-reminders`, daily at 08:07, per workspace; `queueReminders`). For each
+active member, with their `membership_preferences.notify_bills_days_before` (default 3):
+- a `bill_reminder` for each pending **expense** occurrence due from today to today + that lead time
+  (card subscriptions are covered by the invoice);
+- an `invoice_reminder` for each card invoice due in that window with something still due.
+
+Dedupe keys are `bill_reminder:<occurrence>:<user>` and `invoice_reminder:<invoice>:<user>`, so each
+member gets each reminder once, even when the job runs again or a day is missed. The channel is
+email until the WhatsApp channel exists, whatever `notify_channel` says. For a member, `scheduled_for` is
 `dueAt` moved past their quiet hours in the workspace time zone (shared `outsideQuietHours`: a window
 across midnight wakes the next morning). Producers call it inside their own workspace transaction.
 
