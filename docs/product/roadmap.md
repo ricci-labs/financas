@@ -121,7 +121,7 @@ updated: 2026-09-27
      - [x] Dockerfile (multi-stage; migrations run before the app, without leaving the owner URL
            to the app process) + image build check on PRs
      - [x] `deploy.yml`: push `:<sha>` and `:main` to GHCR on `main`; redeploy from Dokploy (no
-           webhook while access goes only through Tailscale)
+           webhook: GitHub can't reach Dokploy)
      - [x] Backups: `pg_dump` + attachments archive, 14 days kept locally, optional offsite copy
            through an rclone remote, Uptime Kuma heartbeat; restore script tested and documented
      - [x] `ops:*` scripts: health, logs, trace, errors, metrics, job
@@ -171,7 +171,7 @@ Goal: the couple records everything through WhatsApp and the web, and always kno
 4. Transcription for audio: local whisper.cpp vs external API.
 5. Model for the agent: default `claude-opus-5`; test cheaper models once real message samples exist.
 6. Alert channel (ntfy, Telegram, email). Must not be WhatsApp.
-7. ~~Remote access~~: **Tailscale** (2026-09-27): the app's name points to the server's tailnet IP, with a Let's Encrypt certificate by DNS challenge at DreamHost; deploys are started from Dokploy (`../operations/deploy.md`).
+7. ~~Remote access~~: **Cloudflare Tunnel + Cloudflare Access** (2026-09-27): any browser, no app to install, a one-time email code before the app's login; deploys are started from Dokploy (`../operations/deploy.md`).
 8. Offsite backup destination: the structure is ready (an rclone remote, off until set, 2026-09-27). Choose later between an S3-compatible bucket with a good free tier and the user's OneDrive.
 9. Anti-ban practices for charges sent to contacts.
 10. ~~Email provider~~: **DreamHost SMTP** (2026-09-27), set through the `SMTP_*` env vars at deploy time. The sender domain needs SPF/DKIM, which DreamHost provides for domains it hosts.
