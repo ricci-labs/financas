@@ -37,11 +37,14 @@ Added when the matching code exists, each as its own named check:
 | 📊 Coverage summary in the job summary and a PR comment | Once services exist |
 | 🎭 E2E: Playwright on the main web flows | Web foundation |
 | 🤖 Agent evals on prompt/tool changes (path-filtered, needs an API key secret) | Agent PR |
-| 🐳 Push to GHCR (`main`) | Deploy PR |
 
 ### `deploy.yml`: on push to `main`, after `ci.yml` passes
-1. Build the Docker image (`docker/Dockerfile`, multi-stage) with Buildx and layer cache (`type=gha`).
-2. Push to GHCR: `ghcr.io/ricci-labs/financas:<git-sha>` and `:main`.
+Triggered by `workflow_run` when CI completes on `main` for a push, and only on success. It checks
+out the exact commit CI tested, and runs one deploy at a time.
+1. Build the Docker image (`docker/Dockerfile`, multi-stage) with Buildx and layer cache (`type=gha`,
+   shared with the 🐳 CI job, so it is mostly cached).
+2. Push to GHCR: `ghcr.io/ricci-labs/financas:<git-sha>` and `:main`, and write in the job summary
+   which image to deploy.
 3. Trigger Dokploy to redeploy the application with the new image (webhook or API call; secret in `DOKPLOY_DEPLOY_WEBHOOK`).
 4. Wait and check `GET /api/health/ready` on the deployed app. If it fails, the workflow fails.
 
