@@ -108,7 +108,11 @@ updated: 2026-09-27
      - [x] `core/storage`: `FileStorage` + local disk, `FILE_STORAGE_DIR`, `FILE_MAX_BYTES`
      - [x] `attachments` module: `files` + `entry_attachments`, upload, list, download, detach
      - [x] Charge attachments (payment receipts) and the purge of trashed files after 30 days
-  6. [ ] **Audit log**
+  6. [ ] **Audit log** (ADR 0026; started 2026-09-27):
+     - [x] Operation context (trace id + source for HTTP and jobs), `audit_log` append-only,
+           `recordAudit`, `GET /audit`, entries audited
+     - [ ] Audit the other writes: accounts, cards, contacts, charges, planning, attachments
+     - [ ] Audit settings, members, roles and invitations
   7. [ ] **Observability core and deploy:** OTel, metrics, error refs, ops scripts, Dockerfile,
          Dokploy workflow, backups (needs open questions 7, 8 and 10)
   Then: **web foundation**, then **WhatsApp channel + agent**. The agent's tools include

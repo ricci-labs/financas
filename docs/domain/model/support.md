@@ -105,6 +105,20 @@ across midnight wakes the next morning). Producers call it inside their own work
 Written by services (not DB triggers) so it carries the actor and trace. Entry edits are self-documenting too
 (`replaces_entry_id`), but they are still logged for a single timeline.
 
+Implemented (`modules/audit`, ADR 0026):
+- `recordAudit(tx, { workspaceId, actorUserId, action, tableName, rowId, before?, after? })` inserts
+  in the caller's transaction; `source` (`web`, `whatsapp`, `job`, `ops`, `system`) and `trace_id`
+  come from the operation context. `actor_user_id` becomes null if the user is erased.
+- **Append-only:** `financas_app` may only `select` and `insert` (RLS policies per command, and
+  `UPDATE`/`DELETE`/`TRUNCATE` revoked). The rows go only with the workspace.
+- `before` and `after` are the row as stored, as JSON. Entries include their postings. Entry
+  actions:
+  - `create`, with `after`;
+  - `update`: a details change, or a replacement logged on the **new** entry, with the old one as
+    `before`;
+  - `delete` and `restore`.
+- `GET /audit?tableName=&rowId=&cursor=&limit=` (`audit:view`: owner and admin) pages newest first.
+
 ## Agent
 - `agent_runs`: one row per agent turn (fields in `../../operations/observability.md` → Agent run records) + `workspace_id`, `user_id`.
 - `agent_messages`: conversation memory per (`workspace_id`, `user_id`): `role`, `content` jsonb, `created_at`. Trimmed by age.

@@ -126,6 +126,11 @@ export async function lockEntry(tx: WorkspaceTransaction, entryId: string) {
   return entry
 }
 
+export async function selectEntryRow(tx: WorkspaceTransaction, entryId: string) {
+  const [entry] = await tx.select().from(journalEntries).where(eq(journalEntries.id, entryId))
+  return entry
+}
+
 export async function markEntryDeleted(
   tx: WorkspaceTransaction,
   entryId: string,

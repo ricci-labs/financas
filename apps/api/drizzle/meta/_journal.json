@@ -435,6 +435,20 @@
       "when": 1790494209535,
       "tag": "0061_charge_attachments_fks",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1790494973765,
+      "tag": "0062_audit_log",
+      "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1790494975668,
+      "tag": "0063_audit_log_append_only",
+      "breakpoints": true
     }
   ]
 }

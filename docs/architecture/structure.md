@@ -142,7 +142,8 @@ src/
 │   │   ├── validation.ts     # jsonBody(schema, code)
 │   │   ├── http.types.ts     # AppEnv: request variables
 │   │   └── errors.ts         # AppError hierarchy → HTTP status; parseOrThrow(schema, input, code)
-│   ├── observability/        # OTel register, pino logger, metrics registry, spans, errors
+│   ├── observability/        # OTel register, pino logger, metrics registry, spans, errors;
+│   │                         #   operation-context.ts: trace id + source of the current work (ADR 0026)
 │   │                         #   (see docs/operations/observability.md)
 │   ├── security/tokens.ts    # random tokens and their SHA-256 hashes
 │   ├── security/passwords.ts # scrypt password hashing and verification (ADR 0021)
@@ -160,6 +161,7 @@ src/
 │   ├── planning/             # recurrence rules, occurrences, periods, budgets, goals, holidays
 │   ├── attachments/          # files + link tables (bytes behind core/storage)
 │   ├── notifications/        # outbox, reminder scheduling, templates
+│   ├── audit/                # append-only audit_log, recordAudit, GET /audit (ADR 0026)
 │   └── reports/              # read-only: period facts → metrics and insights (ADR 0024)
 ├── ops/                      # operator commands, bundled into the image (dist/ops/*.mjs)
 │   ├── terminal.ts           # prompts; secrets are read without echo

@@ -68,6 +68,7 @@ routes / agent tools / jobs / channels
 | `reports` | `ledger`, `planning`, `contacts` | Read-only aggregates; the contacts' balances for the `contact_overdue` insight |
 | `attachments` | `ledger`, `contacts` | Attach only to an active entry (`activeEntryIdsOf`) or an existing charge (`chargeExists`) |
 | every module | `workspaces` | Current workspace settings |
+| every module that writes tenant data | `audit` | `recordAudit` in the same transaction (ADR 0026) |
 | `onboarding` | `workspaces`, `ledger`, `access`, `members` | Creating a workspace: the workspace and its settings, the system accounts, the system roles, the creator as owner |
 | `onboarding` | `identity` | Registering an owner: the user, then their first workspace |
 | `access` | `members` | Loading the caller's active membership to authorize a request; managing members (role changes, removals) with the owner rules |
