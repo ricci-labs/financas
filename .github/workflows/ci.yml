@@ -134,11 +134,18 @@ jobs:
             -e EMAIL_FROM=financas@example.test \
             financas:ci
           for attempt in $(seq 1 30); do
-            if curl -fsS http://127.0.0.1:3100/api/health/ready; then exit 0; fi
+            if curl -fsS http://127.0.0.1:3100/api/health/ready; then break; fi
+            if [ "$attempt" = 30 ]; then docker logs financas-ci; exit 1; fi
             sleep 2
           done
-          docker logs financas-ci
-          exit 1
+
+      - name: Every migration was applied
+        run: |
+          applied=$(docker compose -f compose.dev.yml exec -T db \
+            psql -U postgres -d financas -tAc 'select count(*) from drizzle.__drizzle_migrations')
+          expected=$(ls apps/api/drizzle/*.sql | wc -l)
+          echo "Applied $applied of $expected migrations"
+          test "$applied" -eq "$expected"
 
   pr-title:
     name: 📝 PR title

@@ -22,7 +22,7 @@ action `.github/actions/setup`.
 | 🐘 Integration tests | Start Postgres · apply migrations · migrations match the schema · integration tests | A failing migration, a table changed without a migration, or a failing DB test (e.g. RLS isolation) |
 | 📦 Build | Web build + API bundle | Build errors |
 | 📝 PR title | commitlint on the title | A title that isn't a Conventional Commit (it becomes the squash commit) |
-| 🐳 Docker image | Build `docker/Dockerfile` (Buildx, `gha` cache), start an empty Postgres, run the image: it migrates the database and `/api/health/ready` must answer 200 | A broken image, a migration that fails from scratch, an app that doesn't boot |
+| 🐳 Docker image | Build `docker/Dockerfile` (Buildx, `gha` cache), start an empty Postgres, run the image: `/api/health/ready` must answer 200 and every migration in `drizzle/` must be applied | A broken image, a migration that fails from scratch, an app that doesn't boot |
 | 🔐 Secret scan | gitleaks over the full history | Committed secrets |
 
 Rules for workflow changes:
