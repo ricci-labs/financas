@@ -98,6 +98,55 @@ jobs:
       - name: Build web and API
         run: pnpm build
 
+  image:
+    name: 🐳 Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build the image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/Dockerfile
+          build-args: APP_VERSION=${{ github.sha }}
+          tags: financas:ci
+          load: true
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Start an empty Postgres
+        run: docker compose -f compose.dev.yml up -d --wait
+
+      - name: Image migrates the database and becomes ready
+        run: |
+          docker run -d --name financas-ci --network host \
+            -e PORT=3100 \
+            -e DATABASE_URL=postgres://financas_app:app_dev_password@127.0.0.1:5433/financas \
+            -e DATABASE_MIGRATION_URL=postgres://financas_owner:owner_dev_password@127.0.0.1:5433/financas \
+            -e PUBLIC_URL=http://localhost:3100 \
+            -e SMTP_HOST=smtp.example.test \
+            -e EMAIL_FROM=financas@example.test \
+            financas:ci
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3100/api/health/ready; then break; fi
+            if [ "$attempt" = 30 ]; then docker logs financas-ci; exit 1; fi
+            sleep 2
+          done
+
+      - name: Every migration was applied
+        run: |
+          applied=$(docker compose -f compose.dev.yml exec -T db \
+            psql -U postgres -d financas -tAc 'select count(*) from drizzle.__drizzle_migrations')
+          expected=$(ls apps/api/drizzle/*.sql | wc -l)
+          echo "Applied $applied of $expected migrations"
+          test "$applied" -eq "$expected"
+
   pr-title:
     name: 📝 PR title
     if: github.event_name == 'pull_request'

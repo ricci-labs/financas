@@ -1,4 +1,10 @@
-import { type Env, envSchema } from '@api/core/config/env.schemas'
+import {
+  type Env,
+  envSchema,
+  type MigrationEnv,
+  migrationEnvSchema,
+} from '@api/core/config/env.schemas'
+import type { z } from 'zod'
 
 const DEFAULT_PUBLIC_URL = 'http://localhost:5173'
 
@@ -7,7 +13,15 @@ export function publicUrlOf(env: Pick<Env, 'PUBLIC_URL'>): string {
 }
 
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
-  const result = envSchema.safeParse(source)
+  return parseEnv(envSchema, source)
+}
+
+export function loadMigrationEnv(source: NodeJS.ProcessEnv = process.env): MigrationEnv {
+  return parseEnv(migrationEnvSchema, source)
+}
+
+function parseEnv<T>(schema: z.ZodType<T>, source: NodeJS.ProcessEnv): T {
+  const result = schema.safeParse(source)
   if (result.success) {
     return result.data
   }

@@ -55,5 +55,6 @@ Node and pnpm live in `~/.local/share/pnpm/bin` (add it to `PATH` in non-login s
 | `pnpm test` | Vitest in every package |
 | `pnpm --filter @financas/shared test:watch` | Watch the domain tests |
 | `pnpm ops:create-user` | Create a verified user who owns a new workspace (interactive; password without echo) |
+| `pnpm ops:migrate` | Apply migrations with the runtime migrator (what the image entrypoint runs) |
 | `pnpm build` | Web build + API bundle |
 | `pnpm format` | Biome write |
