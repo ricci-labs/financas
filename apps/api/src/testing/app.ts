@@ -5,8 +5,10 @@ import { sessionCookieSettings } from '@api/core/http/session-cookie'
 import { createAccountEmailLimits, createLoginLimits } from '@api/modules/identity'
 import { createCapturingLogger } from '@api/testing/logger'
 import { createRecordingMailer } from '@api/testing/mailer'
+import { createMemoryFileStorage } from '@api/testing/storage'
 
 export const TEST_PUBLIC_URL = 'http://localhost:5173'
+const TEST_FILE_MAX_BYTES = 1024 * 1024
 const NEVER_CONNECTED_DATABASE_URL = 'postgres://unused:unused@127.0.0.1:1/unused'
 
 export function testAppDeps(overrides: Partial<AppDeps> = {}): AppDeps {
@@ -37,6 +39,8 @@ export function testAppDeps(overrides: Partial<AppDeps> = {}): AppDeps {
     }),
     trustedProxyHops: 0,
     background: createBackgroundTasks(),
+    fileStorage: createMemoryFileStorage().storage,
+    fileMaxBytes: TEST_FILE_MAX_BYTES,
     ...overrides,
   }
 }

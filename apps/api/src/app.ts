@@ -5,6 +5,11 @@ import { sameOriginWrites } from '@api/core/http/middleware/same-origin-writes'
 import { requireSession } from '@api/core/http/middleware/session'
 import { workspaceAccess } from '@api/modules/access'
 import { accessRoutes, workspaceListRoutes } from '@api/modules/access/access.routes'
+import {
+  ATTACHMENT_UPLOAD_PATH,
+  attachmentRoutes,
+  uploadBodyLimitOf,
+} from '@api/modules/attachments/attachments.routes'
 import { chargeRoutes, contactRoutes } from '@api/modules/contacts/contacts.routes'
 import { healthRoutes, PUBLIC_HEALTH_ROUTES } from '@api/modules/health/health.routes'
 import { resolveSession } from '@api/modules/identity'
@@ -30,7 +35,10 @@ export const PUBLIC_ROUTES: ReadonlySet<string> = new Set([
 ])
 
 export function createApp(deps: AppDeps) {
-  return createBaseApp(deps.logger)
+  return createBaseApp(deps.logger, {
+    path: ATTACHMENT_UPLOAD_PATH,
+    maxBodyBytes: uploadBodyLimitOf(deps.fileMaxBytes),
+  })
     .use('/api/*', sameOriginWrites(new URL(deps.publicUrl).origin))
     .use(
       '/api/*',
@@ -56,6 +64,7 @@ function workspaceScopedRoutes(deps: AppDeps) {
     .route('/', ledgerRoutes(deps))
     .route('/', planningRoutes(deps))
     .route('/', reportRoutes(deps))
+    .route('/', attachmentRoutes(deps))
     .route('/contacts', contactRoutes(deps))
     .route('/charges', chargeRoutes(deps))
     .route('/invitations', invitationRoutes(deps))

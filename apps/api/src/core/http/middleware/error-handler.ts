@@ -3,6 +3,7 @@ import {
   ConflictError,
   ForbiddenError,
   NotFoundError,
+  PayloadTooLargeError,
   TooManyRequestsError,
   UnauthorizedError,
   ValidationError,
@@ -24,6 +25,7 @@ const STATUS_BY_ERROR_TYPE: ReadonlyArray<
   [ForbiddenError, 403],
   [NotFoundError, 404],
   [ConflictError, 409],
+  [PayloadTooLargeError, 413],
   [TooManyRequestsError, 429],
 ]
 

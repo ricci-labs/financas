@@ -20,6 +20,27 @@ updated: 2026-09-27
 - Storage: a Docker volume at first, behind a `FileStorage` interface (`core/storage`: `put`, `get`, `remove`), so an S3-compatible store can replace it by config. `createLocalFileStorage(FILE_STORAGE_DIR)` stores a file at `<workspace id>/<sha256>`; any other key shape is refused, so nothing can escape the directory.
 - A receipt photo sent on WhatsApp during an expense conversation is attached to that entry.
 
+Implemented (`modules/attachments`):
+- **The type comes from the bytes**, never from the name or the declared type (`detectedMimeTypeOf`,
+  shared): JPEG, PNG, WebP, HEIC and PDF. Anything else is `400 FILE_TYPE_NOT_ALLOWED`; an empty or
+  missing file is `400 FILE_REQUIRED`; above `FILE_MAX_BYTES` is `413 FILE_TOO_LARGE`. The name keeps
+  only its base name without control characters, up to 255 characters (`attachmentNameOf`).
+- **Stored once per content:** the same bytes again reuse the file row (restoring it if trashed), and
+  the bytes are written inside the transaction, after the row is locked.
+- **Detaching** removes the link; a file no longer linked anywhere goes to the trash
+  (`deleted_at`). The file row is locked first, so a concurrent attach can't be lost.
+- **Editing an entry** (replace) moves its attachments to the new entry (constraint trigger
+  `entry_attachments_follow_replaced_entry`, like planned occurrences). A deleted entry keeps them, so
+  a restore brings them back.
+- Composite, deferred FKs to the entry and the file; RLS on both tables.
+
+| Route | Permission | Does |
+|---|---|---|
+| `GET /entries/:entryId/attachments` | `attachments:view` | Files of an active entry: `{ fileId, name, mimeType, sizeBytes, attachedAt, attachedByUserId }` |
+| `POST /entries/:entryId/attachments` | `attachments:create` | Multipart field `file` → `201 { fileId }` |
+| `DELETE /entries/:entryId/attachments/:fileId` | `attachments:delete` | Detach (and trash the file when unlinked) |
+| `GET /files/:fileId` | `attachments:view` | The bytes, `inline` with the name, `Content-Security-Policy: sandbox`, `Cache-Control: private, no-store` |
+
 ## Notifications: `notification_outbox`
 Every outgoing message (reminders, charges, digests, alerts to members) goes through this table.
 | Column | Notes |

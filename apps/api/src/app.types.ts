@@ -3,6 +3,7 @@ import type { Database } from '@api/core/db/db.types'
 import type { Mailer } from '@api/core/email/email.types'
 import type { SessionCookieSettings } from '@api/core/http/http.types'
 import type { Logger } from '@api/core/observability/logger'
+import type { FileStorage } from '@api/core/storage/storage.types'
 import type { AccountEmailLimits, LoginLimits } from '@api/modules/identity'
 
 export type AppDeps = {
@@ -19,4 +20,6 @@ export type AppDeps = {
   accountEmailLimits: AccountEmailLimits
   trustedProxyHops: number
   background: BackgroundTasks
+  fileStorage: FileStorage
+  fileMaxBytes: number
 }
