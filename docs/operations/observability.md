@@ -141,7 +141,7 @@ Alerting lives in **Uptime Kuma and Netdata notification settings**. Both suppor
 | Disk | Netdata | > 85% |
 
 ## Upgrade path
-Each level is additive: env vars plus containers, **no app code change**. The `ops:*` scripts get a backend switch (`OPS_LOGS_BACKEND`...) so the debugging interface stays the same.
+Each level is additive: env vars plus containers, **no app code change**. The `ops:*` scripts read logs from `docker logs` or `OPS_LOGS_FILE`; a log store gets its own backend switch there, so the debugging interface stays the same.
 
 | Level | Adds | How |
 |---|---|---|

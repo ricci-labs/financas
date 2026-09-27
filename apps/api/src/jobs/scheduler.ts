@@ -1,7 +1,7 @@
 import { logUnexpectedError } from '@api/core/observability/errors'
 import { appMetrics } from '@api/core/observability/metrics'
 import { newTraceId, runInOperation } from '@api/core/observability/operation-context'
-import type { ScheduledJob, Scheduler, SchedulerDeps } from '@api/jobs/jobs.types'
+import type { JobDeps, ScheduledJob, Scheduler, SchedulerDeps } from '@api/jobs/jobs.types'
 import { Cron } from 'croner'
 
 const MS_PER_SECOND = 1000
@@ -15,7 +15,7 @@ export function startScheduler(jobs: readonly ScheduledJob[], deps: SchedulerDep
   const crons = jobs.map(
     (job) =>
       new Cron(job.schedule, { name: job.name, timezone: deps.timezone, protect: true }, () =>
-        track(runJob(job, deps)),
+        track(runJob(job, deps).then(() => undefined)),
       ),
   )
   return {
@@ -28,7 +28,7 @@ export function startScheduler(jobs: readonly ScheduledJob[], deps: SchedulerDep
   }
 }
 
-export async function runJob(job: ScheduledJob, deps: SchedulerDeps): Promise<void> {
+export async function runJob(job: ScheduledJob, deps: JobDeps): Promise<boolean> {
   const traceId = newTraceId()
   const logger = deps.logger.child({ job: job.name, trace_id: traceId })
   const startedAt = performance.now()
@@ -43,6 +43,7 @@ export async function runJob(job: ScheduledJob, deps: SchedulerDeps): Promise<vo
     appMetrics().jobLastSuccess.record(deps.clock.now().getTime() / MS_PER_SECOND, {
       job: job.name,
     })
+    return true
   } catch (err) {
     logUnexpectedError(
       logger,
@@ -51,5 +52,6 @@ export async function runJob(job: ScheduledJob, deps: SchedulerDeps): Promise<vo
       'Job failed',
     )
     appMetrics().jobRuns.add(1, { job: job.name, outcome: 'error' })
+    return false
   }
 }

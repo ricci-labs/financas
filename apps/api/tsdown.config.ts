@@ -5,6 +5,7 @@ export default defineConfig({
     main: 'src/main.ts',
     'ops/create-user': 'src/ops/create-user.ts',
     'ops/migrate': 'src/ops/migrate.ts',
+    'ops/run-job': 'src/ops/run-job.ts',
   },
   format: 'esm',
   platform: 'node',

@@ -37,13 +37,14 @@ describe('runJob', () => {
   it('logs the start and the result of a run under one trace, which the run sees as a job', async () => {
     const { deps, entries } = schedulerDeps()
     let operation: Operation | undefined
-    await runJob(
+    const succeeded = await runJob(
       job(async () => {
         operation = currentOperation()
         return { purged: 3 }
       }),
       deps,
     )
+    expect(succeeded).toBe(true)
     const traceId = operation?.traceId
     expect(operation).toEqual({
       traceId: expect.stringMatching(/^[0-9a-f]{32}$/),
@@ -61,7 +62,7 @@ describe('runJob', () => {
     const failing = job(async () => {
       throw new Error('database unreachable')
     })
-    await expect(runJob(failing, deps)).resolves.toBeUndefined()
+    await expect(runJob(failing, deps)).resolves.toBe(false)
     expect(entries().at(-1)).toMatchObject({
       event: 'job.run.failed',
       err: { message: 'database unreachable' },
