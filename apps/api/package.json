@@ -22,6 +22,10 @@
   "dependencies": {
     "@financas/shared": "workspace:*",
     "@hono/node-server": "^2.1.1",
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/exporter-prometheus": "^0.222.0",
+    "@opentelemetry/resources": "^2.11.0",
+    "@opentelemetry/sdk-metrics": "^2.11.0",
     "croner": "^10.0.1",
     "drizzle-orm": "^0.45.3",
     "hono": "^4.13.8",

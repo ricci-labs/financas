@@ -1,5 +1,6 @@
 import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { withWorkspace } from '@api/core/db/tx'
+import { appMetrics } from '@api/core/observability/metrics'
 import { findQuietHours, getAccount } from '@api/modules/identity'
 import { notificationEmail } from '@api/modules/notifications/notifications.emails'
 import {
@@ -63,6 +64,21 @@ export function deliverDueNotifications(
 }
 
 async function deliver(
+  db: Database,
+  tx: WorkspaceTransaction,
+  notification: NotificationRow,
+  deps: DeliveryDeps,
+): Promise<DeliveryOutcome> {
+  const outcome = await attemptDelivery(db, tx, notification, deps)
+  appMetrics().notifications.add(1, {
+    channel: notification.channel,
+    kind: notification.kind,
+    outcome,
+  })
+  return outcome
+}
+
+async function attemptDelivery(
   db: Database,
   tx: WorkspaceTransaction,
   notification: NotificationRow,

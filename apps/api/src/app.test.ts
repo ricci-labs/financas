@@ -61,6 +61,10 @@ describe('loadEnv', () => {
       EMAIL_OUTBOX_DIR: '.private/outbox',
       FILE_STORAGE_DIR: '.private/files',
       FILE_MAX_BYTES: 10 * 1024 * 1024,
+      OTEL_SERVICE_NAME: 'financas-api',
+      OTEL_METRICS_EXPORTER: 'none',
+      OTEL_EXPORTER_PROMETHEUS_HOST: '0.0.0.0',
+      OTEL_EXPORTER_PROMETHEUS_PORT: 9464,
     })
   })
 

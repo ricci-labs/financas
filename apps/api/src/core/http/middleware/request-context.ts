@@ -1,5 +1,6 @@
 import type { AppEnv, Completion } from '@api/core/http/http.types'
 import type { Logger } from '@api/core/observability/logger'
+import { appMetrics } from '@api/core/observability/metrics'
 import { newTraceId, runInOperation } from '@api/core/observability/operation-context'
 import { createMiddleware } from 'hono/factory'
 import { routePath } from 'hono/route'
@@ -9,6 +10,7 @@ const REF_LENGTH = 8
 const CLIENT_ERROR_STATUS = 400
 const SERVER_ERROR_STATUS = 500
 const LAST_MATCHED_ROUTE = -1
+const MS_PER_SECOND = 1000
 
 export function requestContext(rootLogger: Logger) {
   return createMiddleware<AppEnv>(async (c, next) => {
@@ -35,6 +37,11 @@ export function refOf(requestId: string): string {
 }
 
 function logCompletion(logger: Logger, completion: Completion): void {
+  appMetrics().httpRequestDuration.record(completion.durationMs / MS_PER_SECOND, {
+    'http.route': completion.route,
+    'http.request.method': completion.method,
+    'http.response.status_code': completion.status,
+  })
   if (completion.status >= SERVER_ERROR_STATUS) {
     return
   }

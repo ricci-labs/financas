@@ -115,8 +115,8 @@ updated: 2026-09-27
      - [x] Audit settings, members, roles and invitations
   7. [ ] **Observability core and deploy** (started 2026-09-27; decisions 7, 8 and 10 below):
      - [x] Decisions and plan (this list)
-     - [ ] Metrics: OTel metrics SDK + Prometheus exporter on `:9464`, the metric registry, HTTP,
-           job, notification and error metrics
+     - [x] Metrics: OTel metrics SDK + Prometheus exporter on `:9464`, the metric registry, HTTP,
+           job and notification metrics (error metrics come with the fingerprints)
      - [ ] Error fingerprints (`type:code:top-frame`) and fatal process handlers
      - [ ] Dockerfile (multi-stage; migrations run before the app, without leaving the owner URL
            to the app process) + image build check on PRs

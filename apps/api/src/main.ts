@@ -6,6 +6,7 @@ import { createDatabase } from '@api/core/db/client'
 import { createMailer } from '@api/core/email/mailer'
 import { sessionCookieSettings } from '@api/core/http/session-cookie'
 import { createLogger } from '@api/core/observability/logger'
+import { startMetrics } from '@api/core/observability/meter-provider'
 import { createLocalFileStorage } from '@api/core/storage/local-file-storage'
 import { SCHEDULE_TIMEZONE, SCHEDULED_JOBS } from '@api/jobs/scheduled-jobs'
 import { startScheduler } from '@api/jobs/scheduler'
@@ -16,6 +17,7 @@ const SHUTDOWN_TIMEOUT_MS = 10_000
 
 const env = loadEnv()
 const logger = createLogger(env)
+const meterProvider = startMetrics(env)
 const database = createDatabase(env.DATABASE_URL, {
   onConnectionError: (err) => {
     logger.warn({ event: 'db.connection.lost', err }, 'Idle database connection lost')
@@ -69,6 +71,7 @@ function shutdown(signal: NodeJS.Signals) {
   server.close(async () => {
     await scheduler.stop()
     await background.idle()
+    await meterProvider?.shutdown()
     await database.close()
     process.exit(0)
   })

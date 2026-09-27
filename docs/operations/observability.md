@@ -17,9 +17,10 @@ Decision: `../decisions/0011-observability-otel-ready.md`.
 ## Code layout (`apps/api/src/core/observability/`)
 | File | Role |
 |---|---|
-| `register.ts` | Starts the OTel NodeSDK. Loaded with `node --import` **before** any app code so instrumentation can patch modules. Configured only through standard `OTEL_*` env vars. |
+| `meter-provider.ts` | `startMetrics(env)`, called first in `main.ts`: with `OTEL_METRICS_EXPORTER=prometheus`, a `MeterProvider` with the Prometheus exporter on `OTEL_EXPORTER_PROMETHEUS_HOST:PORT`; otherwise nothing (tests and dev record into no-op instruments). |
+| `register.ts` (Level 2) | Starts the OTel NodeSDK with the trace instrumentations, loaded with `node --import` **before** any app code so they can patch modules. Added with a trace backend; Level 0 needs no instrumentation, because the app records its own metrics. |
 | `logger.ts` | pino root logger: redaction, error serializer, base fields. `logger.child({ module })` per module. |
-| `metrics.ts` | **The single registry of all metric instruments.** Nothing creates metrics elsewhere. |
+| `metrics.ts` | **The single registry of all metric instruments** (`createInstruments`), reached through `appMetrics()`, which creates them on first use from the global meter. Nothing creates metrics elsewhere. |
 | `tracing.ts` | `withSpan(name, attrs, fn)` helper and `startRootSpan()` for non-HTTP entry points (WhatsApp messages, jobs). |
 | `errors.ts` | Error fingerprinting, `app_errors_total` recording, and the `ref` shown to users (first 8 chars of `trace_id`). |
 | `process.ts` | `unhandledRejection`/`uncaughtException` → log `fatal`, flush, exit(1). Docker restarts the process. |
@@ -86,9 +87,13 @@ Output: one JSON object per line to stdout. Docker keeps it (with rotation, see 
 ## Metrics
 Exported with the OTel Prometheus exporter on a **separate internal port** (`:9464/metrics`), never through Traefik. Netdata scrapes it (Prometheus collector) and stores, graphs and alerts on it.
 
+Names below are as scraped (the exporter turns dots into `_` and adds `_total` to counters).
+Scope labels are left out (`withoutScopeInfo`). Built so far: HTTP, jobs, notifications.
+
 | Metric | Type | Labels |
 |---|---|---|
-| `http.server.request.duration` | histogram | route, method, status (OTel semantic conventions) |
+| `http_server_request_duration` (seconds; instrument `http.server.request.duration`) | histogram | `http_route` (pattern), `http_request_method`, `http_response_status_code` (OTel semantic conventions) |
+| `financas_notifications_total` | counter | channel, kind, outcome (`sent`, `retried`, `failed`) |
 | `financas_whatsapp_connection_state` | gauge (0 closed, 1 connecting, 2 open, -1 logged out) | |
 | `financas_whatsapp_messages_total` | counter | direction, type |
 | `financas_agent_runs_total` | counter | outcome (`ok`, `error`, `refusal`, `max_tokens`) |
