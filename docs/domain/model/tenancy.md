@@ -242,3 +242,8 @@ Created with defaults by `addMember()`. Kept when a member leaves and comes back
 | `notify_daily_digest` | false | |
 | `notify_budget_threshold_pct` | 80 | Alert when a category reaches this % of its budget |
 | `notify_variable_income` | true | Suggest moving variable income to savings when it arrives |
+
+`GET` / `PATCH /api/workspaces/:workspaceId/members/me/preferences` (any member, their own):
+`membershipPreferencesChangeSchema` (only the fields sent; lead time 0–30, channel `whatsapp` or
+`email`, threshold 1–100) → the preferences; `400 PREFERENCES_INVALID`. Missing rows are created with
+the defaults on first read. Reminders use the lead time (`support.md`).

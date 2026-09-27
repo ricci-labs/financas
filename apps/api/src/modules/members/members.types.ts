@@ -96,3 +96,16 @@ export type NotificationTarget = {
   userId: string
   billsDaysBefore: number
 }
+
+export type MembershipPreferences = {
+  notifyBillsDaysBefore: number
+  notifyChannel: 'whatsapp' | 'email'
+  notifyDailyDigest: boolean
+  notifyBudgetThresholdPct: number
+  notifyVariableIncome: boolean
+}
+
+export type MemberRef = {
+  workspaceId: string
+  userId: string
+}

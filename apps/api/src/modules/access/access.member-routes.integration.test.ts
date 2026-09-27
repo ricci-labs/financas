@@ -163,3 +163,37 @@ describe('removing members', () => {
     expect([lastOwner.status, await codeOf(lastOwner)]).toEqual([409, 'LAST_OWNER'])
   })
 })
+
+describe('/members/me/preferences', () => {
+  it('let every member read and change their own notification preferences', async () => {
+    const { workspaceId, as } = await team()
+    const path = `/api/workspaces/${workspaceId}/members/me/preferences`
+    expect(await (await as('viewer').get(path)).json()).toEqual({
+      notifyBillsDaysBefore: 3,
+      notifyChannel: 'whatsapp',
+      notifyDailyDigest: false,
+      notifyBudgetThresholdPct: 80,
+      notifyVariableIncome: true,
+    })
+
+    const changed = await as('viewer').patch(path, {
+      notifyBillsDaysBefore: 7,
+      notifyChannel: 'email',
+    })
+    expect(await changed.json()).toMatchObject({
+      notifyBillsDaysBefore: 7,
+      notifyChannel: 'email',
+      notifyBudgetThresholdPct: 80,
+    })
+    expect(
+      (await (await as('member').get(path)).json()) as { notifyBillsDaysBefore: number },
+    ).toMatchObject({
+      notifyBillsDaysBefore: 3,
+    })
+
+    for (const body of [{ notifyBillsDaysBefore: 31 }, {}, { notifyChannel: 'sms' }]) {
+      const response = await as('viewer').patch(path, body)
+      expect([response.status, await codeOf(response)]).toEqual([400, 'PREFERENCES_INVALID'])
+    }
+  })
+})
