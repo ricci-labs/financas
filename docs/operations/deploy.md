@@ -104,14 +104,89 @@ owner, RLS policies, triggers, default privileges and migrations, and the attach
 is exposed to the internet. So GitHub can't call a deploy webhook: CI publishes the image, and the
 redeploy is started from Dokploy on the LAN (its Deploy button, or its API from the server).
 
+### HTTPS on the LAN (decided 2026-09-27)
+The production session cookie is `__Host-session` with `Secure` (ADR 0021), so the app must be
+served over HTTPS even at home. Decision: a subdomain of the user's own domain (DNS at DreamHost),
+a **Let's Encrypt certificate obtained by DNS challenge** through the DreamHost API, and an AdGuard
+Home **DNS rewrite** that points the name to the server's LAN IP. The certificate is valid on
+every phone with no setup, and nothing is published: the name only resolves inside the home
+network. Traefik renews the certificate through the same DNS challenge.
+
 Later, to reach the dashboard outside home:
 - **Tailscale** on the phones: private, nothing exposed publicly. The simplest safe choice for 2 users.
 - **Cloudflare Tunnel** with a domain: public HTTPS URL without opening router ports. Needs strong auth in the app.
 - Port-forward 443 on the router to Traefik: works, but exposes the home IP. Not recommended.
 
+## First deploy, step by step
+Placeholders: `financas.example.com` is the chosen subdomain, `192.168.x.y` the server's LAN IP.
+Real values go only in Dokploy, AdGuard and the DreamHost panel, never in this repo.
+
+1. **Image public.** GitHub → org `ricci-labs` → Packages → `financas` → Package settings →
+   Change visibility → Public. The code is public and the image holds no secrets, so Dokploy needs
+   no pull token.
+2. **DreamHost API key.** DreamHost panel → API: create a key allowed to `dns-list_records`,
+   `dns-add_record` and `dns-remove_record`.
+3. **Traefik DNS resolver** (Dokploy → Web Server → Traefik). Traefik restarts, so other services
+   behind it blink for a few seconds.
+   - Add the environment variable `DREAMHOST_API_KEY=<key>` to Traefik.
+   - Add a second resolver next to `letsencrypt` in `traefik.yml`:
+     ```yaml
+     certificatesResolvers:
+       letsencrypt-dns:
+         acme:
+           email: <an email of yours>
+           storage: /etc/dokploy/traefik/dynamic/acme-dns.json
+           dnsChallenge:
+             provider: dreamhost
+             resolvers: ["1.1.1.1:53", "8.8.8.8:53"]
+     ```
+4. **Name on the LAN.** AdGuard Home → Filters → DNS rewrites: `financas.example.com` →
+   `192.168.x.y`. Phones must use AdGuard as their DNS (the router's DHCP setting). A phone with
+   Android "Private DNS" on bypasses it.
+5. **Database.** Dokploy → Create Database → PostgreSQL: image `postgres:18-alpine`, database
+   `financas`, a strong superuser password, no external port. Then create the two roles, typing
+   their passwords without echo (ADR 0018):
+   ```sh
+   read -rs OWNER_DB_PASSWORD && read -rs APP_DB_PASSWORD && export OWNER_DB_PASSWORD APP_DB_PASSWORD
+   docker exec -i -e OWNER_DB_PASSWORD -e APP_DB_PASSWORD "$(docker ps -q -f name=financas-db)" sh -s < docker/postgres/init/01-roles.sh
+   ```
+6. **Application.** Dokploy → Create Application → Docker image
+   `ghcr.io/ricci-labs/financas:main`.
+   - Environment (the table above has the full list):
+     ```
+     DATABASE_URL=postgres://financas_app:<app password>@<db app name>:5432/financas
+     DATABASE_MIGRATION_URL=postgres://financas_owner:<owner password>@<db app name>:5432/financas
+     PUBLIC_URL=https://financas.example.com
+     TRUSTED_PROXY_HOPS=1
+     SMTP_HOST=smtp.dreamhost.com
+     SMTP_PORT=465
+     SMTP_SECURE=true
+     SMTP_USER=<mailbox of the sender domain>
+     SMTP_PASSWORD=<its password>
+     EMAIL_FROM=<the same mailbox>
+     OTEL_METRICS_EXPORTER=prometheus
+     LOG_LEVEL=info
+     ```
+   - Volume: a named volume mounted at `/data/files`.
+   - Domain: host `financas.example.com`, container port `3100`, HTTPS on, certificate
+     **custom** with resolver `letsencrypt-dns`.
+   - Deploy. The entrypoint applies the migrations, then the app starts.
+7. **Check.** `pnpm ops:health` on the server; `https://financas.example.com/api/health/ready` on a
+   phone at home.
+8. **First user:** `docker exec -it "$(docker ps -q -f name=financas-api)" node dist/ops/create-user.mjs`.
+9. **Postman** (`../api/postman.md`): an environment with `baseUrl` and `appOrigin` set to
+   `https://financas.example.com`, then log in and run the collection. It creates its own test
+   workspace, which can be left or deleted.
+10. **Backups and monitors:** the backup env file and crontab line (Backups above), an Uptime Kuma
+    HTTP monitor on `/api/health/ready`, and a push monitor for the backup.
+
+Later deploys: CI publishes `:main` after each merge; press Deploy in Dokploy (the image is pulled
+again). To roll back, set the image to a previous `:<sha>` and deploy.
+
 ## First deploy checklist
 - [x] Remote access decided: LAN only for now
-- [ ] GHCR pull credentials added in Dokploy (a PAT with `read:packages`)
+- [ ] Image made public on GHCR (no pull credentials needed)
+- [ ] DreamHost API key in Traefik, `letsencrypt-dns` resolver, AdGuard rewrite, certificate issued
 - [ ] `financas-db` created with a volume
 - [ ] Roles created once: run `docker/postgres/init/01-roles.sh` with real `OWNER_DB_PASSWORD` / `APP_DB_PASSWORD` (ADR 0018)
 - [ ] `DATABASE_URL` (app role) and `DATABASE_MIGRATION_URL` (owner) set

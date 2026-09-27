@@ -21,7 +21,7 @@ Dokploy can build from a git repo on the server itself, but the server is small 
 
 ## Consequences
 - The server only pulls and runs images. Rollback = redeploy a previous SHA.
-- Dokploy needs GHCR pull credentials.
+- The image is public (2026-09-27; the code is public too), so Dokploy needs no pull credentials.
 - **Depends on GitHub reaching the trigger.** While access is LAN-only (2026-09-27), the redeploy
   is started from Dokploy on the LAN. Later: a tunnel for the webhook, or an on-server poller that
   watches the `:main` digest.
