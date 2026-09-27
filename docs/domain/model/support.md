@@ -1,7 +1,7 @@
 ---
 summary: Supporting tables — tags, attachments (receipts/notas), notification outbox (reminders, charges), audit log, agent runs/messages/pending actions.
 read_when: Working on tags, file uploads/receipts, reminders and message sending, audit, or agent persistence.
-updated: 2026-09-22
+updated: 2026-09-26
 ---
 
 # Supporting tables
@@ -35,6 +35,17 @@ Every outgoing message (reminders, charges, digests, alerts to members) goes thr
 | `dedupe_key` | unique, e.g. `bill_reminder:<occurrence_id>:<days_before>`, so the same reminder is never sent twice |
 
 A worker claims rows with `FOR UPDATE SKIP LOCKED`, sends through the channel queue, and retries with backoff.
+
+Implemented (`modules/notifications`):
+- `dedupe_key` is unique per workspace;
+- `sent_at` is set exactly when sent (CHECK);
+- exactly one recipient (CHECK); a user recipient is removed with the user; the contact FK is
+  deferred.
+
+`enqueueNotification(tx, { workspaceId, recipient: { userId } | { contactId }, channel, kind,
+payload, dueAt, dedupeKey })` inserts once per key (`{ isNew }`). For a member, `scheduled_for` is
+`dueAt` moved past their quiet hours in the workspace time zone (shared `outsideQuietHours`: a window
+across midnight wakes the next morning). Producers call it inside their own workspace transaction.
 
 ## `audit_log`
 `workspace_id`, `id`, `at`, `actor_user_id` (null for jobs), `source`, `trace_id`, `action`

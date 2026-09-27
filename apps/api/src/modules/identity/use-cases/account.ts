@@ -1,9 +1,10 @@
-import type { Database } from '@api/core/db/db.types'
+import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { NotFoundError, parseOrThrow, ValidationError } from '@api/core/http/errors'
 import { hashPassword, verifyPassword } from '@api/core/security/passwords'
 import {
   deleteOtherSessions,
   findPasswordOwner,
+  selectQuietHours,
   selectUserPreferences,
   updateDisplayName,
   updatePasswordHash,
@@ -16,7 +17,12 @@ import type {
   UserPreferences,
 } from '@api/modules/identity/identity.types'
 import { withDefaults } from '@api/modules/identity/use-cases/defaults'
-import { displayNameSchema, passwordSchema, userPreferencesChangeSchema } from '@financas/shared'
+import {
+  displayNameSchema,
+  passwordSchema,
+  type QuietHours,
+  userPreferencesChangeSchema,
+} from '@financas/shared'
 
 const DEFAULT_PREFERENCES: UserPreferences = {
   language: 'pt-BR',
@@ -74,5 +80,19 @@ function withShortTimes(preferences: UserPreferences): UserPreferences {
     language: preferences.language,
     quietHoursStart: preferences.quietHoursStart?.slice(0, HOURS_AND_MINUTES_LENGTH) ?? null,
     quietHoursEnd: preferences.quietHoursEnd?.slice(0, HOURS_AND_MINUTES_LENGTH) ?? null,
+  }
+}
+
+export async function findQuietHours(
+  db: Database | WorkspaceTransaction,
+  userId: string,
+): Promise<QuietHours | null> {
+  const quiet = await selectQuietHours(db, userId)
+  if (!quiet?.start || !quiet.end) {
+    return null
+  }
+  return {
+    start: quiet.start.slice(0, HOURS_AND_MINUTES_LENGTH),
+    end: quiet.end.slice(0, HOURS_AND_MINUTES_LENGTH),
   }
 }
