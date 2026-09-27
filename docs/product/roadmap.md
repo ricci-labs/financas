@@ -120,8 +120,8 @@ updated: 2026-09-27
      - [x] Error fingerprints (`type:code:top-frame`), `financas_app_errors_total` and fatal process handlers
      - [x] Dockerfile (multi-stage; migrations run before the app, without leaving the owner URL
            to the app process) + image build check on PRs
-     - [x] `deploy.yml`: push `:<sha>` and `:main` to GHCR on `main`; redeploy from Dokploy on the
-           LAN (no webhook while access is LAN-only)
+     - [x] `deploy.yml`: push `:<sha>` and `:main` to GHCR on `main`; redeploy from Dokploy (no
+           webhook while access goes only through Tailscale)
      - [x] Backups: `pg_dump` + attachments archive, 14 days kept locally, optional offsite copy
            through an rclone remote, Uptime Kuma heartbeat; restore script tested and documented
      - [x] `ops:*` scripts: health, logs, trace, errors, metrics, job
@@ -129,8 +129,8 @@ updated: 2026-09-27
            DreamHost SMTP, volume, Kuma monitors, backup crontab): the checklist in `../operations/deploy.md`
   Then: **web foundation**, then **WhatsApp channel + agent**. The agent's tools include
   `simulate_purchase` ("posso comprar?", built in #85, decided 2026-09-26), next to `period_overview`.
-- [ ] DB: contacts/charges, planning, support tables
-- [ ] Observability core (OTel register, metrics, error refs), Dockerfile, deploy workflow
+- [x] DB: contacts/charges, planning, support tables
+- [x] Observability core (metrics, error fingerprints and refs), Dockerfile, deploy workflow
 - [ ] Web foundation: TanStack Router/Query, shadcn/ui, layout
 - [ ] Remaining project skills (`new-module`, `db-migration`, `domain-rule`, `pr`) and Claude Code hooks
 
@@ -171,7 +171,7 @@ Goal: the couple records everything through WhatsApp and the web, and always kno
 4. Transcription for audio: local whisper.cpp vs external API.
 5. Model for the agent: default `claude-opus-5`; test cheaper models once real message samples exist.
 6. Alert channel (ntfy, Telegram, email). Must not be WhatsApp.
-7. ~~Remote access~~: **LAN only for now** (2026-09-27). Tailscale or Cloudflare Tunnel later; deploys are pulled from Dokploy on the LAN (`../operations/deploy.md`).
+7. ~~Remote access~~: **Tailscale** (2026-09-27): the app's name points to the server's tailnet IP, with a Let's Encrypt certificate by DNS challenge at DreamHost; deploys are started from Dokploy (`../operations/deploy.md`).
 8. Offsite backup destination: the structure is ready (an rclone remote, off until set, 2026-09-27). Choose later between an S3-compatible bucket with a good free tier and the user's OneDrive.
 9. Anti-ban practices for charges sent to contacts.
 10. ~~Email provider~~: **DreamHost SMTP** (2026-09-27), set through the `SMTP_*` env vars at deploy time. The sender domain needs SPF/DKIM, which DreamHost provides for domains it hosts.

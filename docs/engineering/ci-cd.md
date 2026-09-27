@@ -50,7 +50,7 @@ out the exact commit CI tested, and runs one deploy at a time.
 
 Image tags are immutable git SHAs, so rolling back means redeploying the previous SHA in Dokploy.
 
-**While access is LAN-only (decided 2026-09-27),** GitHub can't reach Dokploy, so steps 3 and 4
+**While access goes only through Tailscale (decided 2026-09-27),** GitHub can't reach Dokploy, so steps 3 and 4
 don't run: the workflow stops after pushing the image, and the redeploy is started from Dokploy on
 the LAN. When remote access exists, the options come back:
 - (a) expose only the deploy webhook through a tunnel (Cloudflare Tunnel or Tailscale Funnel);
