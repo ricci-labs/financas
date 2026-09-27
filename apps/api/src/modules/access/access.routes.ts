@@ -18,11 +18,13 @@ import {
   removeMember,
 } from '@api/modules/access/access.service'
 import type { AccessRouteDeps, MemberActor } from '@api/modules/access/access.types'
+import { changeMembershipPreferences, getMembershipPreferences } from '@api/modules/members'
 import {
   deletionRequestSchema,
   memberParamsSchema,
   memberRemovalSchema,
   memberRoleChangeSchema,
+  membershipPreferencesChangeSchema,
   newRoleSchema,
   roleChangeSchema,
   roleParamsSchema,
@@ -76,11 +78,26 @@ export function accessRoutes({ db }: AccessRouteDeps) {
         return c.body(null, NO_CONTENT)
       },
     )
+    .get('/members/me/preferences', authorizeAnyMember(), async (c) => {
+      return c.json(await getMembershipPreferences(db, myMembership(c)))
+    })
+    .patch(
+      '/members/me/preferences',
+      authorizeAnyMember(),
+      jsonBody(membershipPreferencesChangeSchema, 'PREFERENCES_INVALID'),
+      async (c) => {
+        return c.json(await changeMembershipPreferences(db, myMembership(c), c.req.valid('json')))
+      },
+    )
     .post('/members/leave', authorizeAnyMember(), async (c) => {
       await removeMember(db, { actor: actorOf(c), membershipId: currentWorkspace(c).membershipId })
       return c.body(null, NO_CONTENT)
     })
     .route('/roles', roleRoutes({ db }))
+}
+
+function myMembership(c: Context<AppEnv>) {
+  return { workspaceId: currentWorkspace(c).workspaceId, userId: currentSession(c).userId }
 }
 
 function roleRoutes({ db }: AccessRouteDeps) {

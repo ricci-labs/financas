@@ -7,7 +7,7 @@ import {
   postgresErrorCode,
 } from '@api/core/db/errors'
 import { withWorkspace } from '@api/core/db/tx'
-import { ConflictError, ForbiddenError, NotFoundError } from '@api/core/http/errors'
+import { ConflictError, ForbiddenError, NotFoundError, parseOrThrow } from '@api/core/http/errors'
 import { generateToken, hashToken } from '@api/core/security/tokens'
 import {
   findInvitationWorkspaceId,
@@ -25,9 +25,11 @@ import {
   selectActiveMembershipOfUser,
   selectActiveMemberships,
   selectInvitationByTokenHash,
+  selectMembershipPreferences,
   selectNotificationTargets,
   selectPendingInvitations,
   selectWorkspaceIdsOfUser,
+  updateMembershipPreferences,
   updateMembershipRole,
 } from '@api/modules/members/members.repository'
 import type {
@@ -39,6 +41,8 @@ import type {
   InvitationContact,
   InvitationDetails,
   InvitationState,
+  MemberRef,
+  MembershipPreferences,
   MembershipRemoval,
   MembershipRow,
   NewMembership,
@@ -47,6 +51,7 @@ import type {
   RevocableInvitation,
   RevokeInvitationInput,
 } from '@api/modules/members/members.types'
+import { membershipPreferencesChangeSchema } from '@financas/shared'
 
 const INVITATION_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000
 const EXPIRED_REASON = 'expired'
@@ -269,4 +274,31 @@ export function removeMembership(
 
 export function readNotificationTargets(tx: WorkspaceTransaction): Promise<NotificationTarget[]> {
   return selectNotificationTargets(tx)
+}
+
+export function getMembershipPreferences(
+  db: Database,
+  { workspaceId, userId }: MemberRef,
+): Promise<MembershipPreferences> {
+  return withWorkspace(db, workspaceId, async (tx) => {
+    await insertDefaultPreferencesIfMissing(tx, { workspaceId, userId })
+    const preferences = await selectMembershipPreferences(tx, userId)
+    if (!preferences) {
+      throw new Error('Membership preferences are missing')
+    }
+    return preferences
+  })
+}
+
+export async function changeMembershipPreferences(
+  db: Database,
+  ref: MemberRef,
+  rawChange: unknown,
+): Promise<MembershipPreferences> {
+  const change = parseOrThrow(membershipPreferencesChangeSchema, rawChange, 'PREFERENCES_INVALID')
+  await withWorkspace(db, ref.workspaceId, async (tx) => {
+    await insertDefaultPreferencesIfMissing(tx, ref)
+    await updateMembershipPreferences(tx, ref.userId, change)
+  })
+  return getMembershipPreferences(db, ref)
 }

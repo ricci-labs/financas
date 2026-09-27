@@ -3,6 +3,7 @@ import { invitations, membershipPreferences, memberships } from '@api/modules/me
 import type {
   InvitationContact,
   InvitationRevocation,
+  MembershipPreferences,
   MembershipRemoval,
   NewInvitation,
   NewMembership,
@@ -223,4 +224,29 @@ export function selectNotificationTargets(tx: WorkspaceTransaction): Promise<Not
       ),
     )
     .where(isNull(memberships.deletedAt))
+}
+
+export async function selectMembershipPreferences(
+  tx: WorkspaceTransaction,
+  userId: string,
+): Promise<MembershipPreferences | undefined> {
+  const [preferences] = await tx
+    .select({
+      notifyBillsDaysBefore: membershipPreferences.notifyBillsDaysBefore,
+      notifyChannel: membershipPreferences.notifyChannel,
+      notifyDailyDigest: membershipPreferences.notifyDailyDigest,
+      notifyBudgetThresholdPct: membershipPreferences.notifyBudgetThresholdPct,
+      notifyVariableIncome: membershipPreferences.notifyVariableIncome,
+    })
+    .from(membershipPreferences)
+    .where(eq(membershipPreferences.userId, userId))
+  return preferences
+}
+
+export async function updateMembershipPreferences(
+  tx: WorkspaceTransaction,
+  userId: string,
+  change: Partial<MembershipPreferences>,
+): Promise<void> {
+  await tx.update(membershipPreferences).set(change).where(eq(membershipPreferences.userId, userId))
 }

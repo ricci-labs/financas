@@ -96,13 +96,13 @@ updated: 2026-09-26
            Pix copia-e-cola from the workspace key; mark sent; cancel
      - [x] Settlements pay charges (`charge_payments`, paid / partially paid derived)
      - [x] Insight: a contact with overdue items
-  4. [ ] **Reminders:** notification outbox and its worker, email first (started 2026-09-26; jobs
-         across workspaces per ADR 0025, no bypass role):
+  4. [x] **Reminders:** notification outbox and its worker, email first (done 2026-09-26, #99–#104;
+         jobs across workspaces per ADR 0025, no bypass role):
      - [x] `job_workspace_ids()` + `forEachWorkspace`, and the nightly occurrence planning job
      - [x] `notifications` module: `notification_outbox`, enqueue with a dedupe key, quiet hours
      - [x] Worker job: claim due rows, render pt-BR emails, send, retry with backoff
      - [x] Reminders of bills and card invoices, by each member's lead time
-     - [ ] Members' notification preferences through the API
+     - [x] Members' notification preferences through the API
   5. [ ] **Attachments** on entries (`FileStorage`)
   6. [ ] **Audit log**
   7. [ ] **Observability core and deploy:** OTel, metrics, error refs, ops scripts, Dockerfile,
