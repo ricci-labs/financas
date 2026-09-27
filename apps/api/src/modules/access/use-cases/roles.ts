@@ -15,7 +15,9 @@ import {
   insertRolePermissions,
   lockRole,
   markRoleDeleted,
+  roleAuditTarget,
   selectActiveRolesWithDescriptions,
+  selectRolePermissions,
   selectWorkspacePermissions,
   updateRoleDetails,
 } from '@api/modules/access/access.repository'
@@ -26,10 +28,13 @@ import type {
   MemberActor,
   RoleItem,
 } from '@api/modules/access/access.types'
+import { auditCreation, audited, recordAudit } from '@api/modules/audit'
 import { type Permission, permissionsBeyond } from '@financas/shared'
 
 const OWNER_ROLE = 'owner'
 const ROLE_NAME_CONSTRAINT = 'roles_name_unique'
+
+const ROLE_PERMISSIONS_TABLE = 'role_permissions'
 
 export async function listRoles(db: Database, workspaceId: string): Promise<RoleItem[]> {
   return withWorkspace(db, workspaceId, async (tx) => {
@@ -57,6 +62,14 @@ export async function createRole(
         description: role.description ?? null,
       })
       await insertRolePermissions(tx, actor.workspaceId, roleId, role.permissions)
+      await auditCreation(tx, roleAuditTarget(actor.workspaceId, roleId))
+      await recordAudit(tx, {
+        workspaceId: actor.workspaceId,
+        action: 'create',
+        tableName: ROLE_PERMISSIONS_TABLE,
+        rowId: roleId,
+        after: role.permissions,
+      })
       return { roleId }
     }),
   )
@@ -72,10 +85,23 @@ export async function changeRole(
   await refusingTakenRoleNames(() =>
     withWorkspace(db, actor.workspaceId, async (tx) => {
       await lockEditableRole(tx, roleId)
-      await updateRoleDetails(tx, roleId, { name: change.name, description: change.description })
+      if (change.name !== undefined || change.description !== undefined) {
+        await audited(tx, roleAuditTarget(actor.workspaceId, roleId), 'update', () =>
+          updateRoleDetails(tx, roleId, { name: change.name, description: change.description }),
+        )
+      }
       if (change.permissions) {
+        const before = await selectRolePermissions(tx, roleId)
         await deleteRolePermissions(tx, roleId)
         await insertRolePermissions(tx, actor.workspaceId, roleId, change.permissions)
+        await recordAudit(tx, {
+          workspaceId: actor.workspaceId,
+          action: 'update',
+          tableName: ROLE_PERMISSIONS_TABLE,
+          rowId: roleId,
+          before,
+          after: change.permissions,
+        })
       }
     }),
   )
@@ -92,11 +118,13 @@ export async function deleteRole(
       if (role.systemKey) {
         throw new ConflictError('SYSTEM_ROLE', 'System roles cannot be deleted')
       }
-      await markRoleDeleted(tx, roleId, {
-        deletedAt: clock.now(),
-        deletedByUserId: actor.userId,
-        deleteReason: reason ?? null,
-      })
+      await audited(tx, roleAuditTarget(actor.workspaceId, roleId), 'delete', () =>
+        markRoleDeleted(tx, roleId, {
+          deletedAt: clock.now(),
+          deletedByUserId: actor.userId,
+          deleteReason: reason ?? null,
+        }),
+      )
     })
   } catch (error) {
     if (postgresErrorCode(error) === POSTGRES_CHECK_VIOLATION) {

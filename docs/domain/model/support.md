@@ -128,9 +128,17 @@ Implemented (`modules/audit`, ADR 0026):
     goals; holidays;
   - allocation steps: one `update` per replacement, on `rowId` = the workspace, with the old and
     new lists;
-  - attachment links: `entry_attachments` / `charge_attachments`, on `rowId` = the file.
+  - attachment links: `entry_attachments` / `charge_attachments`, on `rowId` = the file;
+  - the workspace (create, rename) and its settings (incl. Pix receiving);
+  - memberships (join, role change, removal) and each member's `membership_preferences`
+    (`rowId` = the user);
+  - invitations (create, accept, revoke), **without `token_hash`** (`AuditTarget.hidden`);
+  - roles (create, rename, delete) and `role_permissions` (`rowId` = the role, lists before and
+    after).
+- Flows without a session run as the user they identify (`runAsActor`): creating a workspace as
+  its owner, and joining by invitation sign-up as the new user.
 - Not audited: system bookkeeping nobody did by hand (occurrences the nightly job plans, the system
-  accounts of a new workspace).
+  accounts and roles of a new workspace).
 - `GET /audit?tableName=&rowId=&cursor=&limit=` (`audit:view`: owner and admin) pages newest first.
 
 ## Agent

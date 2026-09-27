@@ -9,18 +9,22 @@ import {
 import { withWorkspace } from '@api/core/db/tx'
 import { ConflictError, ForbiddenError, NotFoundError, parseOrThrow } from '@api/core/http/errors'
 import { generateToken, hashToken } from '@api/core/security/tokens'
+import { auditCreation, audited } from '@api/modules/audit'
 import {
   findInvitationWorkspaceId,
   hasActiveMembership,
   insertDefaultPreferencesIfMissing,
   insertInvitation,
   insertMembership,
+  invitationAuditTarget,
   lockInvitation,
   lockInvitationByTokenHash,
   lockMembership,
   markInvitationAccepted,
   markInvitationRevoked,
   markMembershipRemoved,
+  membershipAuditTarget,
+  preferencesAuditTarget,
   retireExpiredInvitations,
   selectActiveMembershipOfUser,
   selectActiveMemberships,
@@ -43,6 +47,7 @@ import type {
   InvitationState,
   MemberRef,
   MembershipPreferences,
+  MembershipRef,
   MembershipRemoval,
   MembershipRow,
   NewMembership,
@@ -67,6 +72,7 @@ export async function addMember(
 ): Promise<string> {
   const membershipId = await insertMembership(tx, membership)
   await insertDefaultPreferencesIfMissing(tx, membership)
+  await auditCreation(tx, membershipAuditTarget(membership.workspaceId, membershipId))
   return membershipId
 }
 
@@ -86,7 +92,13 @@ export async function createInvitation(
         deletedByUserId: null,
         deleteReason: EXPIRED_REASON,
       })
-      return insertInvitation(tx, { ...input, tokenHash: hashToken(token), expiresAt })
+      const created = await insertInvitation(tx, {
+        ...input,
+        tokenHash: hashToken(token),
+        expiresAt,
+      })
+      await auditCreation(tx, invitationAuditTarget(input.workspaceId, created))
+      return created
     }),
   )
   return { invitationId, token, expiresAt }
@@ -117,7 +129,9 @@ export async function acceptInvitation(
     }
 
     const membershipId = await addMember(tx, { workspaceId, userId, roleId: invitation.roleId })
-    await markInvitationAccepted(tx, invitation.id, userId, now)
+    await audited(tx, invitationAuditTarget(workspaceId, invitation.id), 'update', () =>
+      markInvitationAccepted(tx, invitation.id, userId, now),
+    )
     return { workspaceId, membershipId }
   })
 }
@@ -164,11 +178,13 @@ export async function revokeInvitation(
       throw new NotFoundError('INVITATION_NOT_FOUND', 'Invitation not found')
     }
     assertInvitationCanBeRevoked(invitation)
-    await markInvitationRevoked(tx, invitationId, {
-      deletedAt: clock.now(),
-      deletedByUserId: userId,
-      deleteReason: REVOKED_REASON,
-    })
+    await audited(tx, invitationAuditTarget(workspaceId, invitationId), 'delete', () =>
+      markInvitationRevoked(tx, invitationId, {
+        deletedAt: clock.now(),
+        deletedByUserId: userId,
+        deleteReason: REVOKED_REASON,
+      }),
+    )
   })
 }
 
@@ -258,18 +274,22 @@ export async function lockActiveMembership(
 
 export function setMembershipRole(
   tx: WorkspaceTransaction,
-  membershipId: string,
+  { workspaceId, membershipId }: MembershipRef,
   roleId: string,
 ): Promise<void> {
-  return updateMembershipRole(tx, membershipId, roleId)
+  return audited(tx, membershipAuditTarget(workspaceId, membershipId), 'update', () =>
+    updateMembershipRole(tx, membershipId, roleId),
+  )
 }
 
 export function removeMembership(
   tx: WorkspaceTransaction,
-  membershipId: string,
+  { workspaceId, membershipId }: MembershipRef,
   removal: MembershipRemoval,
 ): Promise<void> {
-  return markMembershipRemoved(tx, membershipId, removal)
+  return audited(tx, membershipAuditTarget(workspaceId, membershipId), 'delete', () =>
+    markMembershipRemoved(tx, membershipId, removal),
+  )
 }
 
 export function readNotificationTargets(tx: WorkspaceTransaction): Promise<NotificationTarget[]> {
@@ -298,7 +318,9 @@ export async function changeMembershipPreferences(
   const change = parseOrThrow(membershipPreferencesChangeSchema, rawChange, 'PREFERENCES_INVALID')
   await withWorkspace(db, ref.workspaceId, async (tx) => {
     await insertDefaultPreferencesIfMissing(tx, ref)
-    await updateMembershipPreferences(tx, ref.userId, change)
+    await audited(tx, preferencesAuditTarget(ref.workspaceId, ref.userId), 'update', () =>
+      updateMembershipPreferences(tx, ref.userId, change),
+    )
   })
   return getMembershipPreferences(db, ref)
 }

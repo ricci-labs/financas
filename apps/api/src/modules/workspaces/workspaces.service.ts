@@ -2,6 +2,7 @@ import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { POSTGRES_CHECK_VIOLATION, postgresErrorCode } from '@api/core/db/errors'
 import { withWorkspace } from '@api/core/db/tx'
 import { NotFoundError, parseOrThrow, ValidationError } from '@api/core/http/errors'
+import { auditCreation, audited } from '@api/modules/audit'
 import {
   generateWorkspaceId,
   insertDefaultSettings,
@@ -10,8 +11,10 @@ import {
   selectCurrentWorkspace,
   selectJobWorkspaceIds,
   selectSettings,
+  settingsAuditTarget,
   updateSettings,
   updateWorkspaceName,
+  workspaceAuditTarget,
 } from '@api/modules/workspaces/workspaces.repository'
 import type {
   NewWorkspace,
@@ -37,7 +40,9 @@ export async function addWorkspace(
   workspace: NewWorkspace,
 ): Promise<WorkspaceDefaults> {
   await insertWorkspace(tx, workspace)
-  return insertDefaultSettings(tx, workspace.id)
+  const defaults = await insertDefaultSettings(tx, workspace.id)
+  await auditCreation(tx, workspaceAuditTarget(workspace.id))
+  return defaults
 }
 
 export function currentWorkspaceDefaults(tx: WorkspaceTransaction): Promise<WorkspaceDefaults> {
@@ -64,7 +69,9 @@ export async function renameWorkspace(
 ): Promise<void> {
   const parsedName = parseOrThrow(workspaceNameSchema, name, 'WORKSPACE_NAME_INVALID')
   const renamed = await withWorkspace(db, workspaceId, (tx) =>
-    updateWorkspaceName(tx, workspaceId, parsedName),
+    audited(tx, workspaceAuditTarget(workspaceId), 'update', () =>
+      updateWorkspaceName(tx, workspaceId, parsedName),
+    ),
   )
   if (!renamed) {
     throw new NotFoundError('WORKSPACE_NOT_FOUND', 'Workspace not found')
@@ -106,7 +113,9 @@ export async function changeWorkspaceSettings(
     change.periodAnchor === 'calendar_month' ? null : change.periodAnchorValue
   try {
     return await withWorkspace(db, workspaceId, async (tx) => {
-      await updateSettings(tx, workspaceId, { ...change, periodAnchorValue })
+      await audited(tx, settingsAuditTarget(workspaceId), 'update', () =>
+        updateSettings(tx, workspaceId, { ...change, periodAnchorValue }),
+      )
       return selectCurrentSettingsOrFail(tx)
     })
   } catch (error) {
@@ -126,11 +135,13 @@ export async function setPixReceiving(
 ): Promise<void> {
   const pix = parseOrThrow(pixReceivingSchema, rawInput, 'PIX_INVALID')
   await withWorkspace(db, workspaceId, (tx) =>
-    updateSettings(tx, workspaceId, {
-      pixReceivingKey: pix?.key ?? null,
-      pixReceiverName: pix?.receiverName ?? null,
-      pixReceiverCity: pix?.receiverCity ?? null,
-    }),
+    audited(tx, settingsAuditTarget(workspaceId), 'update', () =>
+      updateSettings(tx, workspaceId, {
+        pixReceivingKey: pix?.key ?? null,
+        pixReceiverName: pix?.receiverName ?? null,
+        pixReceiverCity: pix?.receiverCity ?? null,
+      }),
+    ),
   )
 }
 

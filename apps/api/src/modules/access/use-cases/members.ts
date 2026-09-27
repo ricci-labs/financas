@@ -68,7 +68,7 @@ export async function changeMemberRole(
       const newRole = await activeRole(tx, roleId)
       assertMayManage(actor, [currentRole, newRole])
       assertMayGrant(actor, await selectRolePermissions(tx, newRole.roleId))
-      await setMembershipRole(tx, membershipId, roleId)
+      await setMembershipRole(tx, { workspaceId: actor.workspaceId, membershipId }, roleId)
     }),
   )
 }
@@ -85,11 +85,15 @@ export async function removeMember(
       if (!isLeaving) {
         assertMayManage(actor, [await activeRole(tx, membership.roleId)])
       }
-      await removeMembership(tx, membershipId, {
-        deletedAt: clock.now(),
-        deletedByUserId: actor.userId,
-        deleteReason: reason ?? null,
-      })
+      await removeMembership(
+        tx,
+        { workspaceId: actor.workspaceId, membershipId },
+        {
+          deletedAt: clock.now(),
+          deletedByUserId: actor.userId,
+          deleteReason: reason ?? null,
+        },
+      )
     }),
   )
 }

@@ -22,7 +22,8 @@ updated: 2026-09-27
   `{ traceId, source, actorUserId }`.
   - The HTTP request middleware opens it with the request id and `web`.
   - The job runner opens it with a new trace id per run and `job`, and logs that `trace_id`.
-  - The session middleware adds the logged-in user as the actor (`runAsActor`).
+  - The session middleware adds the logged-in user as the actor (`runAsActor`). Flows without a
+    session run as the user they identify (a new owner, a new member signing up by invitation).
   - The WhatsApp channel will open it with `whatsapp` and the member it identified.
   - Outside any operation, it is `{ traceId: null, source: 'system', actorUserId: null }`.
   - OTel (step 7) can later supply the trace id from the active span, without changing callers.
@@ -32,8 +33,8 @@ updated: 2026-09-27
   names one, the actor come from the operation context.
 - **Helpers for the common case:** `auditCreation(tx, target)` and
   `audited(tx, target, action, change)` read the row before and after by an `AuditTarget` (table, key
-  column, row id). Each repository builds its own targets, so the table objects never leave their
-  module. Sets that change together (allocation steps) or link rows (attachments) call
+  column, row id, and columns to leave out, such as an invitation's `token_hash`). Each repository
+  builds its own targets, so the table objects never leave their module. Sets that change together (allocation steps) or link rows (attachments) call
   `recordAudit` with their own snapshot.
 - **Append-only:** the app role has RLS policies for `select` and `insert` only, and `UPDATE`,
   `DELETE` and `TRUNCATE` are revoked. The rows go only with the workspace (LGPD erasure cascades).

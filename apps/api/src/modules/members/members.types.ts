@@ -109,3 +109,8 @@ export type MemberRef = {
   workspaceId: string
   userId: string
 }
+
+export type MembershipRef = {
+  workspaceId: string
+  membershipId: string
+}
