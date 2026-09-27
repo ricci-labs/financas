@@ -7,6 +7,7 @@ const DEFAULT_EMAIL_OUTBOX_DIR = '.private/outbox'
 const MAX_PROXY_HOPS = 3
 const DEFAULT_FILE_STORAGE_DIR = '.private/files'
 const DEFAULT_FILE_MAX_BYTES = 10 * 1024 * 1024
+const DEFAULT_PROMETHEUS_PORT = 9464
 const REQUIRED_IN_PRODUCTION = ['PUBLIC_URL', 'SMTP_HOST', 'EMAIL_FROM'] as const
 
 export const envSchema = z
@@ -35,6 +36,15 @@ export const envSchema = z
     EMAIL_OUTBOX_DIR: z.string().min(1).default(DEFAULT_EMAIL_OUTBOX_DIR),
     FILE_STORAGE_DIR: z.string().min(1).default(DEFAULT_FILE_STORAGE_DIR),
     FILE_MAX_BYTES: z.coerce.number().int().min(1).default(DEFAULT_FILE_MAX_BYTES),
+    OTEL_SERVICE_NAME: z.string().min(1).default('financas-api'),
+    OTEL_METRICS_EXPORTER: z.enum(['none', 'prometheus']).default('none'),
+    OTEL_EXPORTER_PROMETHEUS_HOST: z.string().min(1).default('0.0.0.0'),
+    OTEL_EXPORTER_PROMETHEUS_PORT: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(65535)
+      .default(DEFAULT_PROMETHEUS_PORT),
   })
   .superRefine((env, context) => {
     const hasUser = env.SMTP_USER !== undefined

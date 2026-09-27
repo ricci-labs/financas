@@ -1,6 +1,9 @@
+import { appMetrics } from '@api/core/observability/metrics'
 import { newTraceId, runInOperation } from '@api/core/observability/operation-context'
 import type { ScheduledJob, Scheduler, SchedulerDeps } from '@api/jobs/jobs.types'
 import { Cron } from 'croner'
+
+const MS_PER_SECOND = 1000
 
 export function startScheduler(jobs: readonly ScheduledJob[], deps: SchedulerDeps): Scheduler {
   const running = new Set<Promise<void>>()
@@ -35,7 +38,12 @@ export async function runJob(job: ScheduledJob, deps: SchedulerDeps): Promise<vo
       job.run({ ...deps, logger }),
     )
     logger.info({ event: 'job.run.completed', durationMs: durationMs(), result }, 'Job completed')
+    appMetrics().jobRuns.add(1, { job: job.name, outcome: 'ok' })
+    appMetrics().jobLastSuccess.record(deps.clock.now().getTime() / MS_PER_SECOND, {
+      job: job.name,
+    })
   } catch (err) {
     logger.error({ event: 'job.run.failed', durationMs: durationMs(), err }, 'Job failed')
+    appMetrics().jobRuns.add(1, { job: job.name, outcome: 'error' })
   }
 }

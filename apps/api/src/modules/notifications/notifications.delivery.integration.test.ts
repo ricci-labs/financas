@@ -11,12 +11,14 @@ import { connectTestDatabases } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
 import { createCapturingLogger } from '@api/testing/logger'
 import { createRecordingMailer } from '@api/testing/mailer'
+import { captureMetrics } from '@api/testing/metrics'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const databases = connectTestDatabases()
 const fixtures = createFixtures(databases.owner, databases.app)
 const NOW = new Date('2026-10-17T12:00:00Z')
+const captured = captureMetrics()
 
 let userId: string
 
@@ -89,6 +91,9 @@ describe('deliverDueNotifications', () => {
     })
     expect(recording.sent[0]?.text).toContain('no valor de R$ 2.000,00')
     expect((await rowsOf(workspaceId))[0]).toMatchObject({ status: 'sent', sentAt: NOW })
+    expect(await captured.scrape()).toContain(
+      'financas_notifications_total{channel="email",kind="bill_reminder",outcome="sent"} 1',
+    )
   })
 
   it('leaves what is not due yet, and WhatsApp messages until that channel exists', async () => {
