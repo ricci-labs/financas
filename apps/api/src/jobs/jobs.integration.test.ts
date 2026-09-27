@@ -6,9 +6,11 @@ import { createRecurrenceRule } from '@api/modules/planning'
 import { plannedOccurrences } from '@api/modules/planning/planning.table'
 import { listJobWorkspaceIds } from '@api/modules/workspaces'
 import { workspaces } from '@api/modules/workspaces/workspaces.table'
+import { TEST_PUBLIC_URL } from '@api/testing/app'
 import { connectTestDatabases } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
 import { createCapturingLogger } from '@api/testing/logger'
+import { createRecordingMailer } from '@api/testing/mailer'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
@@ -30,10 +32,14 @@ afterAll(async () => {
 
 function jobDeps(clock = FIRST_OF_OCTOBER) {
   const capturing = createCapturingLogger()
-  return {
-    deps: { db: databases.app, clock, logger: capturing.logger },
-    entries: capturing.entries,
+  const deps = {
+    db: databases.app,
+    clock,
+    logger: capturing.logger,
+    mailer: createRecordingMailer().mailer,
+    publicUrl: TEST_PUBLIC_URL,
   }
+  return { deps, entries: capturing.entries }
 }
 
 describe('job_workspace_ids', () => {

@@ -21,13 +21,14 @@ const database = createDatabase(env.DATABASE_URL, {
   },
 })
 const background = createBackgroundTasks()
+const mailer = createMailer(env, logger.child({ module: 'email' }))
 const app = createApp({
   version: env.APP_VERSION,
   startedAt: Date.now(),
   isDatabaseReachable: database.isReachable,
   logger,
   db: database.db,
-  mailer: createMailer(env, logger.child({ module: 'email' })),
+  mailer,
   publicUrl: publicUrlOf(env),
   isPublicSignupEnabled: env.PUBLIC_SIGNUP_ENABLED,
   cookie: sessionCookieSettings(env.NODE_ENV),
@@ -49,6 +50,8 @@ const scheduler = startScheduler(SCHEDULED_JOBS, {
   db: database.db,
   clock: systemClock,
   logger: logger.child({ module: 'jobs' }),
+  mailer,
+  publicUrl: publicUrlOf(env),
   timezone: SCHEDULE_TIMEZONE,
 })
 

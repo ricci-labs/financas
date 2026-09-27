@@ -1,3 +1,7 @@
+import type { Clock } from '@api/core/clock.types'
+import type { Mailer } from '@api/core/email/email.types'
+import type { Logger } from '@api/core/observability/logger'
+import type { EmailRecipient } from '@api/modules/identity'
 import type { notificationOutbox } from '@api/modules/notifications/notifications.table'
 import type { NotificationKind } from '@financas/shared'
 
@@ -20,3 +24,29 @@ export type NewNotification = {
 export type EnqueuedNotification = {
   isNew: boolean
 }
+
+export type NotificationEmailInput = {
+  kind: NotificationKind
+  payload: unknown
+  recipient: EmailRecipient
+  appLink: string
+}
+
+export type DeliveryDeps = {
+  mailer: Mailer
+  publicUrl: string
+  clock: Clock
+  logger: Logger
+}
+
+export type DeliveryResult = {
+  sent: number
+  retried: number
+  failed: number
+}
+
+export type DeliveryOutcome = keyof DeliveryResult
+
+export type NotificationUpdate = Partial<
+  Pick<NewNotificationRow, 'status' | 'attempts' | 'lastError' | 'sentAt' | 'scheduledFor'>
+>

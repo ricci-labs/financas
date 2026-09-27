@@ -100,7 +100,7 @@ updated: 2026-09-26
          across workspaces per ADR 0025, no bypass role):
      - [x] `job_workspace_ids()` + `forEachWorkspace`, and the nightly occurrence planning job
      - [x] `notifications` module: `notification_outbox`, enqueue with a dedupe key, quiet hours
-     - [ ] Worker job: claim due rows, render pt-BR emails, send, retry with backoff
+     - [x] Worker job: claim due rows, render pt-BR emails, send, retry with backoff
      - [ ] Reminders of bills and card invoices, by each member's lead time
      - [ ] Members' notification preferences through the API
   5. [ ] **Attachments** on entries (`FileStorage`)

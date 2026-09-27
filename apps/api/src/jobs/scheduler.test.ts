@@ -3,6 +3,7 @@ import type { ScheduledJob, SchedulerDeps } from '@api/jobs/jobs.types'
 import { SCHEDULE_TIMEZONE, SCHEDULED_JOBS } from '@api/jobs/scheduled-jobs'
 import { runJob, startScheduler } from '@api/jobs/scheduler'
 import { createCapturingLogger } from '@api/testing/logger'
+import { createRecordingMailer } from '@api/testing/mailer'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const EVERY_SECOND = '* * * * * *'
@@ -13,6 +14,8 @@ function schedulerDeps() {
     db: {} as Database,
     clock: { now: () => new Date('2026-10-01T12:00:00Z') },
     logger: capturing.logger,
+    mailer: createRecordingMailer().mailer,
+    publicUrl: 'http://localhost:5173',
     timezone: SCHEDULE_TIMEZONE,
   }
   return { deps, entries: capturing.entries }
