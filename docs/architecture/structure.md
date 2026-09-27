@@ -21,6 +21,7 @@ financas/
 │   └── shared/              # Zod schemas, types, pure domain rules
 ├── docker/Dockerfile        # multi-stage build → slim runtime image (API now; the SPA joins with the web)
 ├── docker/entrypoint.sh     # migrate with the owner URL, then start the app without it
+├── docker/backup/           # backup.sh (daily: dump + attachments, retention, rclone, Kuma) and restore.sh
 ├── docs/                    # these docs
 ├── .github/                 # workflows (ci, deploy), PR template, dependabot
 ├── .claude/                 # project skills and Claude Code hooks (engineering/claude-workflow.md)

@@ -57,13 +57,47 @@ Pipeline: `../engineering/ci-cd.md`. Decision: `../decisions/0010-deploy-ghcr-do
 
 ## Backups
 Decided 2026-09-27: the structure is built now, and the offsite destination is chosen later.
-- Daily: `pg_dump` (custom format) of `financas-db` plus an archive of the attachments volume, into
-  a local backup directory, kept 14 days, then an Uptime Kuma heartbeat.
-- **Offsite copy, off until configured:** the same files are copied to an rclone remote when one is
-  set. rclone speaks S3-compatible buckets and OneDrive alike, so the destination is a config
-  change. Candidates: a bucket with a good free tier, or the user's OneDrive. Local-only backups
-  don't survive a disk failure, so this is the next step after the first deploy.
-- A restore is tested once after setup and documented in `runbook.md`.
+`docker/backup/backup.sh` runs daily from the host's crontab (the user's, who is in the `docker`
+group):
+1. `pg_dump --format=custom` inside the database container (as `postgres`, so RLS hides nothing),
+   checked by reading it back with `pg_restore --list`;
+2. a `tar.gz` of `/data/files` from inside the app container;
+3. files older than 14 days are deleted;
+4. an optional offsite copy (below);
+5. an Uptime Kuma push: `up` with the stamp, or `down` with the reason, so a failure alerts at once
+   and a missed run alerts by timeout.
+
+Files are named `financas-db-<UTC stamp>.dump` and `financas-files-<UTC stamp>.tar.gz`, are
+written as `.partial` then renamed, and are created mode 600 (`umask 077`). They hold real
+household data, so the backup folder stays outside the repo.
+
+| Var | Purpose |
+|---|---|
+| `BACKUP_DIR` | Local folder for the backups (required), e.g. `~/backups/financas` |
+| `BACKUP_DB_CONTAINER` | Database container name or prefix (required; Dokploy adds suffixes), e.g. `financas-db` |
+| `BACKUP_APP_CONTAINER` | App container name or prefix; without it, the attachments are not archived |
+| `BACKUP_DB_NAME`, `BACKUP_DB_USER` | Default `financas`, `postgres` |
+| `BACKUP_FILES_PATH` | Attachments path inside the app container, default `/data/files` |
+| `BACKUP_KEEP_DAYS` | Local retention, default 14 |
+| `BACKUP_KUMA_PUSH_URL` | Uptime Kuma push monitor URL (optional) |
+| `BACKUP_RCLONE_REMOTE` | Offsite destination such as `offsite:financas` (optional, off by default) |
+| `BACKUP_REMOTE_KEEP_DAYS` | Offsite retention, default 30 |
+
+Crontab (vars in a mode-600 file outside the repo):
+```sh
+30 3 * * * . "$HOME/.config/financas/backup.env" && "$HOME/projetos/financas/docker/backup/backup.sh" >>"$HOME/backups/financas/backup.log" 2>&1
+```
+
+**Offsite copy, off until configured:** when `BACKUP_RCLONE_REMOTE` is set, the new files are
+copied there with `rclone copy`, and remote files older than `BACKUP_REMOTE_KEEP_DAYS` are deleted.
+rclone speaks S3-compatible buckets and OneDrive alike, so choosing the destination is a config
+change: install rclone, `rclone config` a remote, and set the var. Wrap the remote in an rclone
+`crypt` remote, so the provider only stores ciphertext. Local-only backups don't survive a disk
+failure, so this is the next step after the first deploy.
+
+Restoring: `runbook.md` → Restore from a backup. The procedure was tested on the dev database
+(2026-09-27): the restored schema is identical to the source (`pg_dump --schema-only` diff), with the
+owner, RLS policies, triggers, default privileges and migrations, and the attachments are back.
 
 ## Remote access
 **Decided 2026-09-27: LAN only for now.** The dashboard is reached on the home network, and nothing
@@ -88,4 +122,5 @@ Later, to reach the dashboard outside home:
 - [ ] WhatsApp paired from the bot phone
 - [ ] Uptime Kuma monitors and push URLs created
 - [ ] Netdata scraping `:9464/metrics`
-- [ ] Backup running and restore tested
+- [ ] Backup env file + crontab line installed; first run checked; Kuma push monitor created
+- [ ] Restore tested once against production data into a scratch database

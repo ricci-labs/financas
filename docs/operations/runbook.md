@@ -1,7 +1,7 @@
 ---
 summary: Bug-investigation playbook for Claude (ops scripts, order of checks) and procedures for known incidents.
 read_when: A bug report, an error ref from the user, an alert, or anything "not working" in production or dev.
-updated: 2026-09-22
+updated: 2026-09-27
 ---
 
 # Runbook
@@ -47,6 +47,21 @@ The session was revoked (phone unlinked, or a ban). The app keeps running and th
 
 ### Agent replies failing
 `ops:errors --module agent`. Check for Anthropic API errors (rate limit, auth, overload): they're retried by the SDK and logged after the retries are exhausted. Check the `ANTHROPIC_API_KEY` in Dokploy.
+
+### Restore from a backup
+Backups live in `BACKUP_DIR` (`deploy.md` → Backups). `docker/backup/restore.sh` **drops and
+recreates** the database (`dropdb --force`, then `createdb` owned by `financas_owner`) and restores
+the dump in one transaction. Given an archive, it also untars the attachments into the app
+container.
+1. Pick the files: `ls -t "$BACKUP_DIR"`. Use the db dump and the files archive with the same stamp.
+2. Try it on a scratch database first:
+   `RESTORE_DB_NAME=financas_check RESTORE_CONFIRM=financas_check BACKUP_DB_CONTAINER=financas-db docker/backup/restore.sh <dump>`.
+   Then compare counts (`module_actions`, `pg_policies`, `drizzle.__drizzle_migrations`), and drop it.
+3. For the real one, stop the app in Dokploy (the drop needs no connections), then run with
+   `RESTORE_CONFIRM=financas`, plus `BACKUP_APP_CONTAINER` and the archive once the app is back up.
+   Without `RESTORE_CONFIRM` equal to the database name, the script refuses.
+4. Start the app and check `ops:health`. On boot the entrypoint applies any migrations newer than
+   the dump.
 
 ### Job did not run (Kuma heartbeat missing)
 `ops:logs --event job.run.failed`. Jobs are idempotent, so after the fix, run it by hand: `pnpm ops:job <name> --date YYYY-MM-DD`.
