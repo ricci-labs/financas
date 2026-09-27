@@ -19,7 +19,8 @@ financas/
 │   └── web/                 # frontend: Vite + React SPA
 ├── packages/
 │   └── shared/              # Zod schemas, types, pure domain rules
-├── docker/Dockerfile        # multi-stage build: web + api → slim runtime image
+├── docker/Dockerfile        # multi-stage build → slim runtime image (API now; the SPA joins with the web)
+├── docker/entrypoint.sh     # migrate with the owner URL, then start the app without it
 ├── docs/                    # these docs
 ├── .github/                 # workflows (ci, deploy), PR template, dependabot
 ├── .claude/                 # project skills and Claude Code hooks (engineering/claude-workflow.md)
@@ -165,7 +166,8 @@ src/
 │   └── reports/              # read-only: period facts → metrics and insights (ADR 0024)
 ├── ops/                      # operator commands, bundled into the image (dist/ops/*.mjs)
 │   ├── terminal.ts           # prompts; secrets are read without echo
-│   └── create-user.ts        # first user + first workspace (pnpm ops:create-user)
+│   ├── create-user.ts        # first user + first workspace (pnpm ops:create-user)
+│   └── migrate.ts            # apply drizzle/ migrations as the owner (pnpm ops:migrate; image entrypoint)
 ├── channels/whatsapp/        # non-HTTP entry point
 │   ├── connection.ts         # socket, reconnect with backoff
 │   ├── auth-state.ts         # Baileys auth state stored in Postgres

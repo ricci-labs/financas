@@ -67,3 +67,9 @@ export const envSchema = z
   })
 
 export type Env = z.infer<typeof envSchema>
+
+export const migrationEnvSchema = z.object({
+  DATABASE_MIGRATION_URL: z.url({ protocol: /^postgres(ql)?$/ }),
+})
+
+export type MigrationEnv = z.infer<typeof migrationEnvSchema>

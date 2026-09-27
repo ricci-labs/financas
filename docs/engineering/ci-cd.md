@@ -22,6 +22,7 @@ action `.github/actions/setup`.
 | 🐘 Integration tests | Start Postgres · apply migrations · migrations match the schema · integration tests | A failing migration, a table changed without a migration, or a failing DB test (e.g. RLS isolation) |
 | 📦 Build | Web build + API bundle | Build errors |
 | 📝 PR title | commitlint on the title | A title that isn't a Conventional Commit (it becomes the squash commit) |
+| 🐳 Docker image | Build `docker/Dockerfile` (Buildx, `gha` cache), start an empty Postgres, run the image: it migrates the database and `/api/health/ready` must answer 200 | A broken image, a migration that fails from scratch, an app that doesn't boot |
 | 🔐 Secret scan | gitleaks over the full history | Committed secrets |
 
 Rules for workflow changes:
@@ -36,7 +37,7 @@ Added when the matching code exists, each as its own named check:
 | 📊 Coverage summary in the job summary and a PR comment | Once services exist |
 | 🎭 E2E: Playwright on the main web flows | Web foundation |
 | 🤖 Agent evals on prompt/tool changes (path-filtered, needs an API key secret) | Agent PR |
-| 🐳 Docker image build (PRs) + push to GHCR and deploy (`main`) | Deploy PR |
+| 🐳 Push to GHCR (`main`) | Deploy PR |
 
 ### `deploy.yml`: on push to `main`, after `ci.yml` passes
 1. Build the Docker image (`docker/Dockerfile`, multi-stage) with Buildx and layer cache (`type=gha`).

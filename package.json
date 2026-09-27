@@ -25,6 +25,7 @@
     "db:migrate": "pnpm --filter @financas/api db:migrate",
     "test:integration": "pnpm --filter @financas/api test:integration",
     "ops:create-user": "pnpm --filter @financas/api ops:create-user",
+    "ops:migrate": "pnpm --filter @financas/api ops:migrate",
     "lint:file-roles": "node scripts/check-file-roles.mjs"
   },
   "devDependencies": {

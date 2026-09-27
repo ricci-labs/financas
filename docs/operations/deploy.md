@@ -8,6 +8,20 @@ updated: 2026-09-27
 
 Pipeline: `../engineering/ci-cd.md`. Decision: `../decisions/0010-deploy-ghcr-dokploy.md`.
 
+## Image (`docker/Dockerfile`)
+- Built on GitHub runners (ADR 0010): the API bundle plus its production dependencies
+  (`pnpm deploy --prod`) and `drizzle/`, on `node:24-alpine`, running as `node`. `APP_VERSION` is
+  the git SHA (build arg). The SPA joins the image with the web foundation.
+- **Migrations run on boot, before the app** (`docker/entrypoint.sh`): when
+  `DATABASE_MIGRATION_URL` is set, `dist/ops/migrate.mjs` applies `drizzle/` as `financas_owner`,
+  then the app starts with that variable removed from its environment, so the running process
+  only holds the `financas_app` credentials (ADR 0018). A failed migration stops the container
+  before the app serves anything.
+- Attachments live in the volume `/data/files` (`FILE_STORAGE_DIR` points there).
+- Docker healthcheck: `GET /api/health/live`. Ports: `3100` (HTTP), `9464` (metrics, internal).
+- The home link is slow (about 100 KB/s at times), so the first pull of the base layers takes
+  minutes. Later deploys only pull the changed app layers.
+
 ## Containers (Dokploy project `financas`)
 | Service | Image | Notes |
 |---|---|---|
@@ -68,7 +82,8 @@ Later, to reach the dashboard outside home:
 - [ ] Roles created once: run `docker/postgres/init/01-roles.sh` with real `OWNER_DB_PASSWORD` / `APP_DB_PASSWORD` (ADR 0018)
 - [ ] `DATABASE_URL` (app role) and `DATABASE_MIGRATION_URL` (owner) set
 - [ ] Env vars set; the app boots and `/api/health/ready` is 200
-- [ ] Migrations applied (on boot, or as a one-off command; decide at scaffold)
+- [ ] Migrations applied: on boot by the entrypoint (`DATABASE_MIGRATION_URL` set), or by hand with `node dist/ops/migrate.mjs`
+- [ ] Volume mounted at `/data/files` for attachments
 - [ ] First user created: `docker exec -it <container> node dist/ops/create-user.mjs` (asks for the email, display name, workspace name and password; the password is typed without echo, never passed as an argument)
 - [ ] WhatsApp paired from the bot phone
 - [ ] Uptime Kuma monitors and push URLs created
