@@ -421,6 +421,20 @@
       "when": 1790493439838,
       "tag": "0059_attachments_triggers_and_fks",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1790494207626,
+      "tag": "0060_charge_attachments",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1790494209535,
+      "tag": "0061_charge_attachments_fks",
+      "breakpoints": true
     }
   ]
 }

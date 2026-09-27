@@ -65,8 +65,10 @@ async function idOf(response: Promise<Response>): Promise<string> {
     accountId?: string
     entryId?: string
     fileId?: string
+    contactId?: string
+    chargeId?: string
   }
-  const id = body.accountId ?? body.entryId ?? body.fileId
+  const id = body.accountId ?? body.entryId ?? body.fileId ?? body.contactId ?? body.chargeId
   if (!id) {
     throw new Error(`Nothing was created: ${JSON.stringify(body)}`)
   }
@@ -280,3 +282,38 @@ async function sha256Of(bytes: Uint8Array): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', bytes)
   return Buffer.from(digest).toString('hex')
 }
+
+describe('charge attachments', () => {
+  it('hold payment receipts, and keep a file alive while a charge still holds it', async () => {
+    const contactId = await idOf(member.post(`${workspacePath}/contacts`, { name: 'Contact J' }))
+    const entryId = await idOf(
+      member.post(`${workspacePath}/entries`, {
+        ...expense('Jantar'),
+        occurredOn: '2026-01-05',
+        shares: [{ contactId, amountCents: 2100 }],
+      }),
+    )
+    const chargeId = await idOf(member.post(`${workspacePath}/contacts/${contactId}/charges`, {}))
+    const chargePath = `${workspacePath}/charges/${chargeId}/attachments`
+    const bytes = jpeg('pix-receipt')
+
+    const fileId = await idOf(member.postForm(chargePath, formWith(bytes, 'pix.jpg')))
+    expect(await upload(entryId, bytes)).toBe(fileId)
+    expect(await (await viewer.get(chargePath)).json()).toEqual([
+      expect.objectContaining({ fileId, name: 'pix.jpg', mimeType: 'image/jpeg' }),
+    ])
+
+    expect((await owner.del(`${attachmentsPath(entryId)}/${fileId}`)).status).toBe(204)
+    expect((await viewer.get(`${workspacePath}/files/${fileId}`)).status).toBe(200)
+    expect((await owner.del(`${chargePath}/${fileId}`)).status).toBe(204)
+    expect((await viewer.get(`${workspacePath}/files/${fileId}`)).status).toBe(404)
+
+    for (const unknown of ['not-a-uuid', UNKNOWN_ID]) {
+      const response = await member.postForm(
+        `${workspacePath}/charges/${unknown}/attachments`,
+        formWith(jpeg('no-charge')),
+      )
+      expect([response.status, await codeOf(response)]).toEqual([404, 'CHARGE_NOT_FOUND'])
+    }
+  })
+})

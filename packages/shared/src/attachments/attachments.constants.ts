@@ -13,3 +13,5 @@ export const FILE_SOURCES = ['web', 'whatsapp'] as const
 export type FileSource = (typeof FILE_SOURCES)[number]
 
 export const ATTACHMENT_NAME_MAX_LENGTH = 255
+
+export const TRASHED_FILE_RETENTION_DAYS = 30

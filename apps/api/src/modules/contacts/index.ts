@@ -1,6 +1,7 @@
 export {
   cancelCharge,
   changeContact,
+  chargeExists,
   createCharge,
   createContact,
   deleteContact,

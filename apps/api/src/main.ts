@@ -23,6 +23,7 @@ const database = createDatabase(env.DATABASE_URL, {
 })
 const background = createBackgroundTasks()
 const mailer = createMailer(env, logger.child({ module: 'email' }))
+const fileStorage = createLocalFileStorage(env.FILE_STORAGE_DIR)
 const app = createApp({
   version: env.APP_VERSION,
   startedAt: Date.now(),
@@ -45,7 +46,7 @@ const app = createApp({
   }),
   trustedProxyHops: env.TRUSTED_PROXY_HOPS,
   background,
-  fileStorage: createLocalFileStorage(env.FILE_STORAGE_DIR),
+  fileStorage,
   fileMaxBytes: env.FILE_MAX_BYTES,
 })
 
@@ -55,6 +56,7 @@ const scheduler = startScheduler(SCHEDULED_JOBS, {
   logger: logger.child({ module: 'jobs' }),
   mailer,
   publicUrl: publicUrlOf(env),
+  fileStorage,
   timezone: SCHEDULE_TIMEZONE,
 })
 

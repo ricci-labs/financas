@@ -1,13 +1,29 @@
 import type { WorkspaceTransaction } from '@api/core/db/db.types'
-import { entryAttachments, files } from '@api/modules/attachments/attachments.table'
+import {
+  chargeAttachments,
+  entryAttachments,
+  files,
+} from '@api/modules/attachments/attachments.table'
 import type {
   AttachmentItem,
+  AttachmentLink,
   FileRow,
-  NewEntryAttachmentRow,
   NewFileRow,
+  PurgeableFile,
   TrashedBy,
 } from '@api/modules/attachments/attachments.types'
-import { and, asc, eq, isNull } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNull, lt, notExists } from 'drizzle-orm'
+
+const FILE_OF_LINK = {
+  entry: and(
+    eq(files.workspaceId, entryAttachments.workspaceId),
+    eq(files.id, entryAttachments.fileId),
+  ),
+  charge: and(
+    eq(files.workspaceId, chargeAttachments.workspaceId),
+    eq(files.id, chargeAttachments.fileId),
+  ),
+}
 
 export async function upsertFile(tx: WorkspaceTransaction, file: NewFileRow): Promise<string> {
   const [stored] = await tx
@@ -26,9 +42,22 @@ export async function upsertFile(tx: WorkspaceTransaction, file: NewFileRow): Pr
 
 export async function insertEntryAttachment(
   tx: WorkspaceTransaction,
-  link: NewEntryAttachmentRow,
+  { workspaceId, targetId, fileId, userId }: AttachmentLink,
 ): Promise<void> {
-  await tx.insert(entryAttachments).values(link).onConflictDoNothing()
+  await tx
+    .insert(entryAttachments)
+    .values({ workspaceId, entryId: targetId, fileId, attachedByUserId: userId })
+    .onConflictDoNothing()
+}
+
+export async function insertChargeAttachment(
+  tx: WorkspaceTransaction,
+  { workspaceId, targetId, fileId, userId }: AttachmentLink,
+): Promise<void> {
+  await tx
+    .insert(chargeAttachments)
+    .values({ workspaceId, chargeId: targetId, fileId, attachedByUserId: userId })
+    .onConflictDoNothing()
 }
 
 export function selectEntryAttachments(
@@ -45,15 +74,28 @@ export function selectEntryAttachments(
       attachedByUserId: entryAttachments.attachedByUserId,
     })
     .from(entryAttachments)
-    .innerJoin(
-      files,
-      and(
-        eq(files.workspaceId, entryAttachments.workspaceId),
-        eq(files.id, entryAttachments.fileId),
-      ),
-    )
+    .innerJoin(files, FILE_OF_LINK.entry)
     .where(and(eq(entryAttachments.entryId, entryId), isNull(files.deletedAt)))
     .orderBy(asc(entryAttachments.createdAt), asc(files.id))
+}
+
+export function selectChargeAttachments(
+  tx: WorkspaceTransaction,
+  chargeId: string,
+): Promise<AttachmentItem[]> {
+  return tx
+    .select({
+      fileId: files.id,
+      name: files.originalName,
+      mimeType: files.mimeType,
+      sizeBytes: files.sizeBytes,
+      attachedAt: chargeAttachments.createdAt,
+      attachedByUserId: chargeAttachments.attachedByUserId,
+    })
+    .from(chargeAttachments)
+    .innerJoin(files, FILE_OF_LINK.charge)
+    .where(and(eq(chargeAttachments.chargeId, chargeId), isNull(files.deletedAt)))
+    .orderBy(asc(chargeAttachments.createdAt), asc(files.id))
 }
 
 export async function selectActiveFile(
@@ -91,13 +133,30 @@ export async function deleteEntryAttachment(
   return deleted.length > 0
 }
 
+export async function deleteChargeAttachment(
+  tx: WorkspaceTransaction,
+  chargeId: string,
+  fileId: string,
+): Promise<boolean> {
+  const deleted = await tx
+    .delete(chargeAttachments)
+    .where(and(eq(chargeAttachments.chargeId, chargeId), eq(chargeAttachments.fileId, fileId)))
+    .returning({ fileId: chargeAttachments.fileId })
+  return deleted.length > 0
+}
+
 export async function isFileAttached(tx: WorkspaceTransaction, fileId: string): Promise<boolean> {
-  const [link] = await tx
+  const [entryLink] = await tx
     .select({ fileId: entryAttachments.fileId })
     .from(entryAttachments)
     .where(eq(entryAttachments.fileId, fileId))
     .limit(1)
-  return link !== undefined
+  const [chargeLink] = await tx
+    .select({ fileId: chargeAttachments.fileId })
+    .from(chargeAttachments)
+    .where(eq(chargeAttachments.fileId, fileId))
+    .limit(1)
+  return entryLink !== undefined || chargeLink !== undefined
 }
 
 export async function trashFile(
@@ -106,4 +165,28 @@ export async function trashFile(
   { userId, at }: TrashedBy,
 ): Promise<void> {
   await tx.update(files).set({ deletedAt: at, deletedByUserId: userId }).where(eq(files.id, fileId))
+}
+
+export function lockFilesTrashedBefore(
+  tx: WorkspaceTransaction,
+  cutoff: Date,
+  limit: number,
+): Promise<PurgeableFile[]> {
+  return tx
+    .select({ id: files.id, storageKey: files.storageKey })
+    .from(files)
+    .where(
+      and(
+        lt(files.deletedAt, cutoff),
+        notExists(tx.select().from(entryAttachments).where(FILE_OF_LINK.entry)),
+        notExists(tx.select().from(chargeAttachments).where(FILE_OF_LINK.charge)),
+      ),
+    )
+    .orderBy(asc(files.deletedAt))
+    .limit(limit)
+    .for('update', { skipLocked: true })
+}
+
+export async function deleteFiles(tx: WorkspaceTransaction, fileIds: string[]): Promise<void> {
+  await tx.delete(files).where(inArray(files.id, fileIds))
 }

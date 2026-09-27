@@ -34,11 +34,21 @@ Implemented (`modules/attachments`):
   a restore brings them back.
 - Composite, deferred FKs to the entry and the file; RLS on both tables.
 
+- **Charges** hold payment receipts the same way (`charge_attachments`, any charge status). A file
+  may be attached to entries and charges at once; it's trashed only when the last link goes.
+- **Purge** (job `purge-trashed-files`, daily at 03:37, per workspace, ADR 0025): files trashed more
+  than `TRASHED_FILE_RETENTION_DAYS` (30) ago and linked nowhere are deleted with their bytes, up to
+  100 per workspace a night (`FOR UPDATE SKIP LOCKED`). The bytes are removed inside the
+  transaction, before the row goes, so an upload of the same content waits and writes them again.
+  `job.run.completed` reports `purged`.
+
+`:target` is `entries/:entryId` or `charges/:chargeId` (`404 ENTRY_NOT_FOUND` / `CHARGE_NOT_FOUND`):
+
 | Route | Permission | Does |
 |---|---|---|
-| `GET /entries/:entryId/attachments` | `attachments:view` | Files of an active entry: `{ fileId, name, mimeType, sizeBytes, attachedAt, attachedByUserId }` |
-| `POST /entries/:entryId/attachments` | `attachments:create` | Multipart field `file` → `201 { fileId }` |
-| `DELETE /entries/:entryId/attachments/:fileId` | `attachments:delete` | Detach (and trash the file when unlinked) |
+| `GET /:target/attachments` | `attachments:view` | `{ fileId, name, mimeType, sizeBytes, attachedAt, attachedByUserId }` of an active entry or a charge |
+| `POST /:target/attachments` | `attachments:create` | Multipart field `file` → `201 { fileId }` |
+| `DELETE /:target/attachments/:fileId` | `attachments:delete` | Detach (and trash the file when unlinked) |
 | `GET /files/:fileId` | `attachments:view` | The bytes, `inline` with the name, `Content-Security-Policy: sandbox`, `Cache-Control: private, no-store` |
 
 ## Notifications: `notification_outbox`

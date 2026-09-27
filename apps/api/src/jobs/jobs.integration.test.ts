@@ -1,6 +1,9 @@
 import { withWorkspace } from '@api/core/db/tx'
 import { forEachWorkspace } from '@api/jobs/for-each-workspace'
 import { planOccurrencesJob } from '@api/jobs/plan-occurrences'
+import { purgeTrashedFilesJob } from '@api/jobs/purge-trashed-files'
+import { entryAttachments, files } from '@api/modules/attachments/attachments.table'
+import { recordEntry } from '@api/modules/ledger'
 import { ledgerAccounts } from '@api/modules/ledger/ledger.table'
 import { createRecurrenceRule } from '@api/modules/planning'
 import { plannedOccurrences } from '@api/modules/planning/planning.table'
@@ -11,6 +14,7 @@ import { connectTestDatabases } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
 import { createCapturingLogger } from '@api/testing/logger'
 import { createRecordingMailer } from '@api/testing/mailer'
+import { createMemoryFileStorage } from '@api/testing/storage'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
@@ -30,7 +34,7 @@ afterAll(async () => {
   await databases.closeAll()
 })
 
-function jobDeps(clock = FIRST_OF_OCTOBER) {
+function jobDeps(clock = FIRST_OF_OCTOBER, files = createMemoryFileStorage()) {
   const capturing = createCapturingLogger()
   const deps = {
     db: databases.app,
@@ -38,6 +42,7 @@ function jobDeps(clock = FIRST_OF_OCTOBER) {
     logger: capturing.logger,
     mailer: createRecordingMailer().mailer,
     publicUrl: TEST_PUBLIC_URL,
+    fileStorage: files.storage,
   }
   return { deps, entries: capturing.entries }
 }
@@ -127,5 +132,79 @@ describe('plan-occurrences job', () => {
 
     expect(await lastDueOn()).toBe('2027-06-10')
     expect(result.failedWorkspaces).toBe(0)
+  })
+})
+
+describe('purge-trashed-files job', () => {
+  it('removes files trashed more than 30 days ago, with their bytes, and nothing else', async () => {
+    const { workspaceId } = await fixtures.createWorkspaceOwnedBy(userId, 'Purge job')
+    const storage = createMemoryFileStorage()
+    const daysAgo = (days: number) => new Date(MID_DECEMBER.now().getTime() - days * 86_400_000)
+    const file = async (label: string, deletedAt: Date | null) => {
+      const sha256 = label.repeat(64)
+      const storageKey = `${workspaceId}/${sha256}`
+      await storage.storage.put(storageKey, new Uint8Array([1]))
+      const [row] = await databases.owner
+        .insert(files)
+        .values({
+          workspaceId,
+          storageKey,
+          mimeType: 'image/jpeg',
+          sizeBytes: 1,
+          sha256,
+          originalName: `${label}.jpg`,
+          uploadedByUserId: userId,
+          source: 'web',
+          deletedAt,
+          deletedByUserId: deletedAt && userId,
+        })
+        .returning({ id: files.id })
+      return { id: row?.id ?? '', storageKey }
+    }
+    await file('a', daysAgo(31))
+    const recent = await file('b', daysAgo(29))
+    const active = await file('c', null)
+    const stillLinked = await file('d', daysAgo(40))
+    const [checking, groceries] = await withWorkspace(databases.app, workspaceId, (tx) =>
+      tx
+        .insert(ledgerAccounts)
+        .values([
+          { workspaceId, kind: 'checking', name: 'Conta X', currency: 'BRL' },
+          { workspaceId, kind: 'expense_category', name: 'Mercado', currency: 'BRL' },
+        ])
+        .returning({ id: ledgerAccounts.id }),
+    )
+    const entry = await recordEntry(
+      databases.app,
+      { workspaceId, userId, source: 'web' },
+      {
+        entryType: 'expense',
+        occurredOn: '2026-10-05',
+        description: 'Nota',
+        amountCents: 1000,
+        paidFromAccountId: checking?.id,
+        categoryId: groceries?.id,
+      },
+    )
+    await databases.owner.insert(entryAttachments).values({
+      workspaceId,
+      entryId: entry.entryId,
+      fileId: stillLinked.id,
+      attachedByUserId: userId,
+    })
+
+    const result = await purgeTrashedFilesJob.run(jobDeps(MID_DECEMBER, storage).deps)
+
+    const remaining = await databases.owner
+      .select({ id: files.id })
+      .from(files)
+      .where(eq(files.workspaceId, workspaceId))
+    expect(remaining.map((row) => row.id).sort()).toEqual(
+      [recent.id, active.id, stillLinked.id].sort(),
+    )
+    expect([...storage.stored.keys()].sort()).toEqual(
+      [recent.storageKey, active.storageKey, stillLinked.storageKey].sort(),
+    )
+    expect(result).toMatchObject({ purged: 1, failedWorkspaces: 0 })
   })
 })
