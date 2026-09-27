@@ -26,6 +26,12 @@
     "test:integration": "pnpm --filter @financas/api test:integration",
     "ops:create-user": "pnpm --filter @financas/api ops:create-user",
     "ops:migrate": "pnpm --filter @financas/api ops:migrate",
+    "ops:health": "node scripts/ops/health.mjs",
+    "ops:logs": "node scripts/ops/logs.mjs",
+    "ops:trace": "node scripts/ops/trace.mjs",
+    "ops:errors": "node scripts/ops/errors.mjs",
+    "ops:metrics": "node scripts/ops/metrics.mjs",
+    "ops:job": "node scripts/ops/job.mjs",
     "lint:file-roles": "node scripts/check-file-roles.mjs"
   },
   "devDependencies": {

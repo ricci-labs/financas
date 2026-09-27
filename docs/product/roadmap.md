@@ -124,7 +124,9 @@ updated: 2026-09-27
            LAN (no webhook while access is LAN-only)
      - [x] Backups: `pg_dump` + attachments archive, 14 days kept locally, optional offsite copy
            through an rclone remote, Uptime Kuma heartbeat; restore script tested and documented
-     - [ ] `ops:*` scripts: health, logs, trace, errors, metrics, job
+     - [x] `ops:*` scripts: health, logs, trace, errors, metrics, job
+     - [ ] **First deploy, with the user** (Dokploy: GHCR pull token, `financas-db` + roles, env incl.
+           DreamHost SMTP, volume, Kuma monitors, backup crontab): the checklist in `../operations/deploy.md`
   Then: **web foundation**, then **WhatsApp channel + agent**. The agent's tools include
   `simulate_purchase` ("posso comprar?", built in #85, decided 2026-09-26), next to `period_overview`.
 - [ ] DB: contacts/charges, planning, support tables

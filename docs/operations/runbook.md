@@ -6,8 +6,11 @@ updated: 2026-09-27
 
 # Runbook
 
-Status: the `ops:*` scripts are planned for the scaffold (`apps/api/scripts/ops/`). Until they
-exist, use the raw commands shown.
+The `ops:*` scripts live in `scripts/ops/` (plain Node, run from the repo root on the server). They
+find containers by name prefix: `OPS_APP_CONTAINER` (default `financas-api`) and
+`OPS_DB_CONTAINER` (default `financas-db`). Logs come from `docker logs`, or from a file of JSON
+lines with `OPS_LOGS_FILE` (e.g. a dev run saved with `node dist/main.mjs > app.log`). The raw
+commands still work when a script can't be used.
 
 ## Access
 - The app runs on the same server as Claude Code, which can read container logs with `docker`.
@@ -17,12 +20,13 @@ exist, use the raw commands shown.
 ## Ops scripts (stable interface)
 | Script | Does | Raw equivalent |
 |---|---|---|
-| `pnpm ops:health` | Ready + WhatsApp status + version | `curl -s <app>/api/health/ready` |
-| `pnpm ops:logs [--since 1h] [--level error] [--event x] [--module y]` | Filtered JSON logs | `docker logs <c> --since 1h 2>&1 \| jq -c 'select(.level>=50)'` |
-| `pnpm ops:trace <trace_id or 8-char ref>` | Every log line for that unit of work plus its `agent_run` | `docker logs <c> 2>&1 \| grep <ref>` |
-| `pnpm ops:agent-run <id\|last> [--member X]` | One agent turn: input, tool calls with inputs and results, reply, tokens, cost | SQL on `agent_run` |
-| `pnpm ops:errors [--since 24h]` | Errors grouped by fingerprint with counts | jq group_by on error logs |
-| `pnpm ops:metrics [prefix]` | Current metric values | `curl ... \| grep ^financas_` |
+| `pnpm ops:health` | App and DB container state (since, health, restarts, image) + `/api/health/ready` (version) | `docker ps` + `docker exec <app> wget -qO- 127.0.0.1:3100/api/health/ready` |
+| `pnpm ops:logs [--since 1h] [--level debug] [--event prefix] [--module y]` | Filtered JSON logs (`--event job.` matches every job event) | `docker logs <c> --since 1h 2>&1 \| jq -c 'select(.level>=50)'` |
+| `pnpm ops:trace <trace_id or 8-char ref> [--since 7d] [--no-audit]` | Every log line for that unit of work, plus its `audit_log` rows (later its `agent_run`) | `docker logs <c> 2>&1 \| grep <ref>` |
+| `pnpm ops:agent-run <id\|last> [--member X]` | One agent turn: input, tool calls with inputs and results, reply, tokens, cost. **Comes with the agent** | SQL on `agent_run` |
+| `pnpm ops:errors [--since 24h] [--module y]` | Errors grouped by fingerprint: count, last seen, last trace id, message | jq group_by on error logs |
+| `pnpm ops:metrics [prefix]` | Current metric values (default prefix `financas_`) | `docker exec <app> wget -qO- 127.0.0.1:9464/metrics \| grep ^financas_` |
+| `pnpm ops:job <name> [--at ISO time]` | Run a scheduled job now, inside the app container (`dist/ops/run-job.mjs`); `--at` fixes its clock. Exit 1 if it failed | `docker exec <app> node dist/ops/run-job.mjs <name>` |
 
 ## Investigation playbook
 1. **Get an anchor.** A `ref` from the user → `ops:trace <ref>`. A time ("ontem à noite") → `ops:logs --since`. An alert → its metric or endpoint.
@@ -64,4 +68,4 @@ container.
    the dump.
 
 ### Job did not run (Kuma heartbeat missing)
-`ops:logs --event job.run.failed`. Jobs are idempotent, so after the fix, run it by hand: `pnpm ops:job <name> --date YYYY-MM-DD`.
+`ops:logs --event job.run.failed`. Jobs are idempotent, so after the fix, run it by hand: `pnpm ops:job <name>` (or `--at <ISO time>` to run it as of another moment).

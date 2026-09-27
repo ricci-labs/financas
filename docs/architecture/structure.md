@@ -168,7 +168,8 @@ src/
 ├── ops/                      # operator commands, bundled into the image (dist/ops/*.mjs)
 │   ├── terminal.ts           # prompts; secrets are read without echo
 │   ├── create-user.ts        # first user + first workspace (pnpm ops:create-user)
-│   └── migrate.ts            # apply drizzle/ migrations as the owner (pnpm ops:migrate; image entrypoint)
+│   ├── migrate.ts            # apply drizzle/ migrations as the owner (pnpm ops:migrate; image entrypoint)
+│   └── run-job.ts            # run one scheduled job now, optionally at a fixed time (ops:job)
 ├── channels/whatsapp/        # non-HTTP entry point
 │   ├── connection.ts         # socket, reconnect with backoff
 │   ├── auth-state.ts         # Baileys auth state stored in Postgres
@@ -198,7 +199,7 @@ src/testing/                  # test helpers: database.ts (connections, Postgres
 │                             #   mailer.ts (recording Mailer), logger.ts (capturing logger),
 │                             #   storage.ts (in-memory FileStorage),
 │                             #   app.ts (test AppDeps), testing.types.ts (test-only shapes)
-scripts/ops/                  # ops:* debugging scripts: Claude's stable interface (runbook.md);
+scripts/ops/                  # ops:* scripts (health, logs, trace, errors, metrics, job): Claude's stable interface (runbook.md);
                               #   commands that change data live in src/ops/ instead
 ```
 
