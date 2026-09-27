@@ -1,5 +1,5 @@
 ---
-summary: Production setup on Dokploy — containers, image, env vars, resources, logs rotation, backups (offsite destination later), LAN-only access for now, first-deploy checklist.
+summary: Production setup on Dokploy — containers, image, env vars, resources, logs rotation, backups (offsite destination later), access through Tailscale with HTTPS on the user's domain, first-deploy checklist.
 read_when: Deploying, changing env vars or runtime config, setting up backups, or exposing the app.
 updated: 2026-09-27
 ---
@@ -100,26 +100,31 @@ Restoring: `runbook.md` → Restore from a backup. The procedure was tested on t
 owner, RLS policies, triggers, default privileges and migrations, and the attachments are back.
 
 ## Remote access
-**Decided 2026-09-27: LAN only for now.** The dashboard is reached on the home network, and nothing
-is exposed to the internet. So GitHub can't call a deploy webhook: CI publishes the image, and the
-redeploy is started from Dokploy on the LAN (its Deploy button, or its API from the server).
+**Decided 2026-09-27: Tailscale.** The server and the couple's phones join the same tailnet. The
+app's name resolves to the server's **tailnet IP** (100.x.y.z), so it answers only to devices
+logged in to that tailnet, at home or outside, and nothing is exposed to the internet. GitHub
+can't reach Dokploy either, so CI publishes the image and the redeploy is started from Dokploy.
 
 ### HTTPS on the LAN (decided 2026-09-27)
 The production session cookie is `__Host-session` with `Secure` (ADR 0021), so the app must be
-served over HTTPS even at home. Decision: a subdomain of the user's own domain (DNS at DreamHost),
-a **Let's Encrypt certificate obtained by DNS challenge** through the DreamHost API, and an AdGuard
-Home **DNS rewrite** that points the name to the server's LAN IP. The certificate is valid on
-every phone with no setup, and nothing is published: the name only resolves inside the home
-network. Traefik renews the certificate through the same DNS challenge.
+served over HTTPS even at home. Decision: a subdomain of the user's own domain (registered at
+registro.br, DNS at DreamHost), with a **Let's Encrypt certificate obtained by DNS challenge**
+through the DreamHost API. Its public `A` record points to the server's tailnet IP, which only
+tailnet devices can reach. The certificate is valid on every phone with no setup, and Traefik
+renews it through the same DNS challenge.
 
-Later, to reach the dashboard outside home:
-- **Tailscale** on the phones: private, nothing exposed publicly. The simplest safe choice for 2 users.
-- **Cloudflare Tunnel** with a domain: public HTTPS URL without opening router ports. Needs strong auth in the app.
-- Port-forward 443 on the router to Traefik: works, but exposes the home IP. Not recommended.
+Alternatives kept on file: Cloudflare Tunnel (a public URL, and the domain's DNS would have to move
+to Cloudflare), or forwarding port 443 on the router (exposes the home IP; not recommended).
 
 ## First deploy, step by step
-Placeholders: `financas.example.com` is the chosen subdomain, `192.168.x.y` the server's LAN IP.
-Real values go only in Dokploy, AdGuard and the DreamHost panel, never in this repo.
+Placeholders: `financas.example.com` is the chosen subdomain, `100.x.y.z` the server's tailnet IP.
+Real values go only in Dokploy, Tailscale and the DreamHost panel, never in this repo.
+
+0. **Tailscale** (needs sudo on the server):
+   `curl -fsSL https://tailscale.com/install.sh | sh`, then `sudo tailscale up` and open the login
+   link. `tailscale ip -4` shows the tailnet IP. In the Tailscale admin console, **disable key
+   expiry** for the server, or it drops off the tailnet after 180 days. Install the Tailscale app
+   on both phones with the same account, and leave it on.
 
 1. **Image public.** GitHub → org `ricci-labs` → Packages → `financas` → Package settings →
    Change visibility → Public. The code is public and the image holds no secrets, so Dokploy needs
@@ -140,9 +145,9 @@ Real values go only in Dokploy, AdGuard and the DreamHost panel, never in this r
              provider: dreamhost
              resolvers: ["1.1.1.1:53", "8.8.8.8:53"]
      ```
-4. **Name on the LAN.** AdGuard Home → Filters → DNS rewrites: `financas.example.com` →
-   `192.168.x.y`. Phones must use AdGuard as their DNS (the router's DHCP setting). A phone with
-   Android "Private DNS" on bypasses it.
+4. **Name.** DreamHost panel → DNS of the domain: an `A` record `financas` → `100.x.y.z` (the
+   tailnet IP). Optional: an AdGuard Home rewrite of the same name to the LAN IP, for a phone at
+   home with Tailscale off.
 5. **Database.** Dokploy → Create Database → PostgreSQL: image `postgres:18-alpine`, database
    `financas`, a strong superuser password, no external port. Then create the two roles, typing
    their passwords without echo (ADR 0018):
@@ -184,9 +189,10 @@ Later deploys: CI publishes `:main` after each merge; press Deploy in Dokploy (t
 again). To roll back, set the image to a previous `:<sha>` and deploy.
 
 ## First deploy checklist
-- [x] Remote access decided: LAN only for now
+- [x] Remote access decided: Tailscale
+- [ ] Tailscale on the server (key expiry off) and on both phones
 - [ ] Image made public on GHCR (no pull credentials needed)
-- [ ] DreamHost API key in Traefik, `letsencrypt-dns` resolver, AdGuard rewrite, certificate issued
+- [ ] DreamHost API key in Traefik, `letsencrypt-dns` resolver, `A` record to the tailnet IP, certificate issued
 - [ ] `financas-db` created with a volume
 - [ ] Roles created once: run `docker/postgres/init/01-roles.sh` with real `OWNER_DB_PASSWORD` / `APP_DB_PASSWORD` (ADR 0018)
 - [ ] `DATABASE_URL` (app role) and `DATABASE_MIGRATION_URL` (owner) set
