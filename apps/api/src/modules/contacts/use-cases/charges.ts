@@ -9,6 +9,7 @@ import {
   insertChargePayment,
   lockActiveContact,
   lockCharge,
+  selectChargeExists,
   selectChargeItems,
   selectChargePayments,
   selectCharges,
@@ -184,6 +185,10 @@ async function moveCharge(
     }
     await updateCharge(tx, chargeId, update)
   })
+}
+
+export function chargeExists(tx: WorkspaceTransaction, chargeId: string): Promise<boolean> {
+  return selectChargeExists(tx, chargeId)
 }
 
 async function lockExistingCharge(tx: WorkspaceTransaction, chargeId: string): Promise<ChargeRow> {

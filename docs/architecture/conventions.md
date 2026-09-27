@@ -163,7 +163,7 @@ without comments.
   | anything else | 500 `INTERNAL_ERROR`, logged once as `http.request.failed`; the message never reaches the client |
 - Every error response has the same body: `{ "error": { "code", "message", "ref" } }`. The web shows pt-BR text chosen by `code`, plus the `ref`.
 - Routes validate ids in the URL with `pathParams(schema, 'X_NOT_FOUND')`: a malformed id is a `404`
-  before any query. Query strings go through `queryParams(schema, 'X_QUERY_INVALID')`. Routes validate bodies with `jsonBody(schema, 'X_INVALID')` (`core/http/validation.ts`, Hono's built-in validator + `parseOrThrow`), so validation errors take the same path. Bodies above 100 KB are refused with 413 before being read. The only exception is the attachment upload route (`ATTACHMENT_UPLOAD_PATH` in its routes file), limited to `FILE_MAX_BYTES` plus the multipart overhead.
+  before any query. Query strings go through `queryParams(schema, 'X_QUERY_INVALID')`. Routes validate bodies with `jsonBody(schema, 'X_INVALID')` (`core/http/validation.ts`, Hono's built-in validator + `parseOrThrow`), so validation errors take the same path. Bodies above 100 KB are refused with 413 before being read. The only exception is the attachment upload routes (`ATTACHMENT_UPLOAD_PATH` in its routes file), limited to `FILE_MAX_BYTES` plus the multipart overhead.
 - A list that grows without bound (entries, the trash) answers one page: `{ items, nextCursor }`. The
   client sends `nextCursor` back as `?cursor=` until it is `null`. The cursor is keyset, `<sort key>_<id>`
   over the list's order (never an offset, so a row recorded meanwhile is neither skipped nor repeated).

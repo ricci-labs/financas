@@ -1,13 +1,12 @@
-import type { Database } from '@api/core/db/db.types'
+import type { Clock } from '@api/core/clock.types'
+import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import type { FileStorage } from '@api/core/storage/storage.types'
-import type { entryAttachments, files } from '@api/modules/attachments/attachments.table'
+import type { files } from '@api/modules/attachments/attachments.table'
 import type { AttachmentMimeType, FileSource } from '@financas/shared'
 
 export type FileRow = typeof files.$inferSelect
 
 export type NewFileRow = typeof files.$inferInsert
-
-export type NewEntryAttachmentRow = typeof entryAttachments.$inferInsert
 
 export type AttachmentRouteDeps = {
   db: Database
@@ -19,6 +18,12 @@ export type AttachmentDeps = {
   db: Database
   storage: FileStorage
   maxBytes: number
+}
+
+export type PurgeDeps = {
+  db: Database
+  storage: FileStorage
+  clock: Clock
 }
 
 export type UploadedFile = {
@@ -40,16 +45,34 @@ export type Uploader = {
   userId: string
 }
 
-export type EntryAttachmentRef = {
-  workspaceId: string
-  entryId: string
-}
+export type AttachmentTargetKind = 'entry' | 'charge'
 
-export type EntryAttachmentContext = EntryAttachmentRef & {
+export type AttachmentLink = {
+  workspaceId: string
+  targetId: string
+  fileId: string
   userId: string
 }
 
-export type DetachFromEntryInput = EntryAttachmentContext & {
+export type AttachmentTarget = {
+  notFoundCode: string
+  exists: (tx: WorkspaceTransaction, targetId: string) => Promise<boolean>
+  link: (tx: WorkspaceTransaction, link: AttachmentLink) => Promise<void>
+  unlink: (tx: WorkspaceTransaction, targetId: string, fileId: string) => Promise<boolean>
+  items: (tx: WorkspaceTransaction, targetId: string) => Promise<AttachmentItem[]>
+}
+
+export type AttachmentTargetRef = {
+  workspaceId: string
+  kind: AttachmentTargetKind
+  targetId: string
+}
+
+export type AttachmentContext = AttachmentTargetRef & {
+  userId: string
+}
+
+export type DetachInput = AttachmentContext & {
   fileId: string
 }
 
@@ -85,4 +108,9 @@ export type FileContent = {
 export type ReceivedFile = {
   name: string
   bytes: Uint8Array
+}
+
+export type PurgeableFile = {
+  id: string
+  storageKey: string
 }

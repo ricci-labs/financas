@@ -4,6 +4,7 @@ import { SCHEDULE_TIMEZONE, SCHEDULED_JOBS } from '@api/jobs/scheduled-jobs'
 import { runJob, startScheduler } from '@api/jobs/scheduler'
 import { createCapturingLogger } from '@api/testing/logger'
 import { createRecordingMailer } from '@api/testing/mailer'
+import { createMemoryFileStorage } from '@api/testing/storage'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const EVERY_SECOND = '* * * * * *'
@@ -16,6 +17,7 @@ function schedulerDeps() {
     logger: capturing.logger,
     mailer: createRecordingMailer().mailer,
     publicUrl: 'http://localhost:5173',
+    fileStorage: createMemoryFileStorage().storage,
     timezone: SCHEDULE_TIMEZONE,
   }
   return { deps, entries: capturing.entries }

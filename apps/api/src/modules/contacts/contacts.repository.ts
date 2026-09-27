@@ -107,6 +107,14 @@ export async function lockCharge(
   return charge
 }
 
+export async function selectChargeExists(
+  tx: WorkspaceTransaction,
+  chargeId: string,
+): Promise<boolean> {
+  const [charge] = await tx.select({ id: charges.id }).from(charges).where(eq(charges.id, chargeId))
+  return charge !== undefined
+}
+
 export function selectCharges(tx: WorkspaceTransaction, contactId?: string): Promise<ChargeRow[]> {
   return tx
     .select()

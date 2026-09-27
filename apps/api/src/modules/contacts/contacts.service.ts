@@ -1,5 +1,6 @@
 export {
   cancelCharge,
+  chargeExists,
   createCharge,
   listCharges,
   markChargeSent,

@@ -185,11 +185,13 @@ src/
     ├── plan-occurrences.ts   # 02:47: tops up every workspace's planned occurrences
     ├── queue-reminders.ts    # 08:07: bill and invoice reminders into the outbox
     ├── send-notifications.ts # every 5 min: delivers due outbox emails
+    ├── purge-trashed-files.ts # 03:37: deletes files trashed 30+ days ago, bytes included
     ├── jobs.types.ts
     └── <job-name>.ts         # one ScheduledJob per file: name, cron pattern, run → one service
 src/testing/                  # test helpers: database.ts (connections, Postgres error codes),
 │                             #   fixtures.ts (users/workspaces through the real services),
 │                             #   mailer.ts (recording Mailer), logger.ts (capturing logger),
+│                             #   storage.ts (in-memory FileStorage),
 │                             #   app.ts (test AppDeps), testing.types.ts (test-only shapes)
 scripts/ops/                  # ops:* debugging scripts: Claude's stable interface (runbook.md);
                               #   commands that change data live in src/ops/ instead

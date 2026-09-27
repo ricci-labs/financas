@@ -1,5 +1,6 @@
 import { primaryId, softDelete, timestamps } from '@api/core/db/columns'
 import { tenantIsolation } from '@api/core/db/tenancy'
+import { charges } from '@api/modules/contacts/contacts.table'
 import { users } from '@api/modules/identity/identity.table'
 import { journalEntries } from '@api/modules/ledger/ledger.table'
 import { workspaces } from '@api/modules/workspaces/workspaces.table'
@@ -96,5 +97,38 @@ export const entryAttachments = pgTable(
     }),
     index('entry_attachments_file_idx').on(table.workspaceId, table.fileId),
     tenantIsolation('entry_attachments', table.workspaceId),
+  ],
+).enableRLS()
+
+export const chargeAttachments = pgTable(
+  'charge_attachments',
+  {
+    workspaceId: uuid()
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    chargeId: uuid().notNull(),
+    fileId: uuid().notNull(),
+    attachedByUserId: uuid()
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({
+      name: 'charge_attachments_pk',
+      columns: [table.workspaceId, table.chargeId, table.fileId],
+    }),
+    foreignKey({
+      name: 'charge_attachments_charge_fk',
+      columns: [table.workspaceId, table.chargeId],
+      foreignColumns: [charges.workspaceId, charges.id],
+    }),
+    foreignKey({
+      name: 'charge_attachments_file_fk',
+      columns: [table.workspaceId, table.fileId],
+      foreignColumns: [files.workspaceId, files.id],
+    }),
+    index('charge_attachments_file_idx').on(table.workspaceId, table.fileId),
+    tenantIsolation('charge_attachments', table.workspaceId),
   ],
 ).enableRLS()
