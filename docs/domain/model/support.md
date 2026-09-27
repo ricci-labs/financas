@@ -43,7 +43,18 @@ Implemented (`modules/notifications`):
   deferred.
 
 `enqueueNotification(tx, { workspaceId, recipient: { userId } | { contactId }, channel, kind,
-payload, dueAt, dedupeKey })` inserts once per key (`{ isNew }`). For a member, `scheduled_for` is
+payload, dueAt, dedupeKey })` inserts once per key (`{ isNew }`).
+
+**Worker** (job `send-notifications`, every 5 minutes, per workspace, ADR 0025):
+`deliverDueNotifications` claims up to 20 pending **email** rows due now (`FOR UPDATE SKIP LOCKED`),
+writes the pt-BR email (`notifications.emails.ts`: `bill_reminder`, `invoice_reminder`, payloads
+validated by the shared schemas) and sends it through the `Mailer`. Outcomes:
+- sent → `sent` + `sent_at`, event `notification.sent`;
+- a send error → retried after 2^attempts minutes (2, 4, 8, 16), then `failed` at the fifth attempt;
+- a payload it can't write, or a contact recipient by email → `failed` at once.
+
+Failures log `notification.failed` (`willRetry`). WhatsApp rows stay pending until that channel
+exists. For a member, `scheduled_for` is
 `dueAt` moved past their quiet hours in the workspace time zone (shared `outsideQuietHours`: a window
 across midnight wakes the next morning). Producers call it inside their own workspace transaction.
 

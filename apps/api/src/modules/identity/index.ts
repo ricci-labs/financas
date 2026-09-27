@@ -23,6 +23,7 @@ export type {
   AccountEmailLimits,
   ActiveSession,
   EmailOnlyInput,
+  EmailRecipient,
   IdentityDeps,
   IdentityRouteDeps,
   LinkLimitDeps,

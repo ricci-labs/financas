@@ -181,6 +181,8 @@ src/
     │                         #   and runJob (logs job.run.*; a failure never stops the schedule)
     ├── scheduled-jobs.ts     # SCHEDULED_JOBS, the only list main.ts starts; schedule timezone
     ├── for-each-workspace.ts # forEachWorkspace: job_workspace_ids(), then work per workspace (ADR 0025)
+    ├── plan-occurrences.ts   # 02:47: tops up every workspace's planned occurrences
+    ├── send-notifications.ts # every 5 min: delivers due outbox emails
     ├── jobs.types.ts
     └── <job-name>.ts         # one ScheduledJob per file: name, cron pattern, run → one service
 src/testing/                  # test helpers: database.ts (connections, Postgres error codes),
