@@ -1,7 +1,7 @@
 ---
 summary: GitHub Actions pipelines (PR checks, main build and deploy), image registry, Dokploy trigger, Dependabot policy.
 read_when: Editing .github/workflows, changing the Dockerfile or deploy, or when CI fails.
-updated: 2026-09-25
+updated: 2026-09-27
 ---
 
 # CI/CD
@@ -46,11 +46,11 @@ Added when the matching code exists, each as its own named check:
 
 Image tags are immutable git SHAs, so rolling back means redeploying the previous SHA in Dokploy.
 
-**Open question (blocks the deploy step):** can GitHub reach the Dokploy panel from the internet? The server is on a home network. If it can't, the options are:
+**While access is LAN-only (decided 2026-09-27),** GitHub can't reach Dokploy, so steps 3 and 4
+don't run: the workflow stops after pushing the image, and the redeploy is started from Dokploy on
+the LAN. When remote access exists, the options come back:
 - (a) expose only the deploy webhook through a tunnel (Cloudflare Tunnel or Tailscale Funnel);
 - (b) a tiny poller on the server that redeploys when `:main` changes digest.
-
-This is tied to how the couple reaches the dashboard outside home (`../operations/deploy.md`).
 
 ## Why build in Actions instead of on the server
 The server has 4 cores and ~5 GB free RAM, shared with Postgres, the bot and other services. A

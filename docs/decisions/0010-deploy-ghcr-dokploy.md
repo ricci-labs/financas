@@ -1,7 +1,7 @@
 ---
 summary: Images are built in GitHub Actions, pushed to GHCR tagged by git SHA, and Dokploy only pulls and runs them.
 read_when: Changing how the app is built or deployed.
-updated: 2026-09-22
+updated: 2026-09-27
 ---
 
 # 0010. Build in GitHub Actions, publish to GHCR, run on Dokploy
@@ -22,4 +22,6 @@ Dokploy can build from a git repo on the server itself, but the server is small 
 ## Consequences
 - The server only pulls and runs images. Rollback = redeploy a previous SHA.
 - Dokploy needs GHCR pull credentials.
-- **Depends on GitHub reaching the trigger.** Remote access is still open (`../operations/deploy.md`). Fallback: an on-server poller that watches the `:main` digest.
+- **Depends on GitHub reaching the trigger.** While access is LAN-only (2026-09-27), the redeploy
+  is started from Dokploy on the LAN. Later: a tunnel for the webhook, or an on-server poller that
+  watches the `:main` digest.

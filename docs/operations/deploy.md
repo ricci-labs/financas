@@ -1,5 +1,5 @@
 ---
-summary: Production setup on Dokploy — containers, image, env vars, resources, logs rotation, backups, remote access (open), first-deploy checklist.
+summary: Production setup on Dokploy — containers, image, env vars, resources, logs rotation, backups (offsite destination later), LAN-only access for now, first-deploy checklist.
 read_when: Deploying, changing env vars or runtime config, setting up backups, or exposing the app.
 updated: 2026-09-27
 ---
@@ -26,7 +26,7 @@ Pipeline: `../engineering/ci-cd.md`. Decision: `../decisions/0010-deploy-ghcr-do
 | `LOGIN_MAX_FAILURES_PER_EMAIL`, `LOGIN_MAX_FAILURES_PER_IP`, `LOGIN_FAILURE_WINDOW_MINUTES` | Login lockout (defaults 5, 30, 15 minutes). Kept in memory, reset on restart |
 | `ACCOUNT_EMAILS_PER_ADDRESS_PER_HOUR`, `ACCOUNT_EMAILS_PER_IP_PER_HOUR` | Sign-up, verification and forgot-password emails allowed per hour (defaults 3 per address, 10 per client) |
 | `INVALID_LINKS_PER_IP_PER_HOUR` | Invalid verification or reset links a client may try per hour (default 20) |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE` | Email provider (ADR 0022). `SMTP_HOST` is required in production. Port `587` = STARTTLS, `465` = implicit TLS; TLS 1.2+ is always required |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE` | Email provider (ADR 0022). `SMTP_HOST` is required in production. Port `587` = STARTTLS, `465` = implicit TLS; TLS 1.2+ is always required. This instance uses DreamHost's SMTP server with a mailbox of the sender domain |
 | `SMTP_USER`, `SMTP_PASSWORD` | SMTP login, as a pair |
 | `EMAIL_FROM`, `EMAIL_FROM_NAME` | Sender address (required in production) and display name (default `Finanças`) |
 | `EMAIL_OUTBOX_DIR` | Development only: folder for `.eml` files when `SMTP_HOST` is empty |
@@ -42,18 +42,27 @@ Pipeline: `../engineering/ci-cd.md`. Decision: `../decisions/0010-deploy-ghcr-do
 - Metrics port `9464`: internal network only, reachable by Netdata, never published through Traefik.
 
 ## Backups
-- Daily `pg_dump` (custom format) by a small job container or cron, kept 14 days locally, then pinging an Uptime Kuma heartbeat.
-- **Open question:** an offsite copy (another disk, a cloud bucket). Local-only backups don't survive a disk failure.
+Decided 2026-09-27: the structure is built now, and the offsite destination is chosen later.
+- Daily: `pg_dump` (custom format) of `financas-db` plus an archive of the attachments volume, into
+  a local backup directory, kept 14 days, then an Uptime Kuma heartbeat.
+- **Offsite copy, off until configured:** the same files are copied to an rclone remote when one is
+  set. rclone speaks S3-compatible buckets and OneDrive alike, so the destination is a config
+  change. Candidates: a bucket with a good free tier, or the user's OneDrive. Local-only backups
+  don't survive a disk failure, so this is the next step after the first deploy.
 - A restore is tested once after setup and documented in `runbook.md`.
 
-## Remote access (open question)
-The couple needs to reach the dashboard from their phones outside home, and GitHub may need to reach the deploy webhook. Options:
+## Remote access
+**Decided 2026-09-27: LAN only for now.** The dashboard is reached on the home network, and nothing
+is exposed to the internet. So GitHub can't call a deploy webhook: CI publishes the image, and the
+redeploy is started from Dokploy on the LAN (its Deploy button, or its API from the server).
+
+Later, to reach the dashboard outside home:
 - **Tailscale** on the phones: private, nothing exposed publicly. The simplest safe choice for 2 users.
 - **Cloudflare Tunnel** with a domain: public HTTPS URL without opening router ports. Needs strong auth in the app.
 - Port-forward 443 on the router to Traefik: works, but exposes the home IP. Not recommended.
 
 ## First deploy checklist
-- [ ] Remote access decided and configured
+- [x] Remote access decided: LAN only for now
 - [ ] GHCR pull credentials added in Dokploy (a PAT with `read:packages`)
 - [ ] `financas-db` created with a volume
 - [ ] Roles created once: run `docker/postgres/init/01-roles.sh` with real `OWNER_DB_PASSWORD` / `APP_DB_PASSWORD` (ADR 0018)

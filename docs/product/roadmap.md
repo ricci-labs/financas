@@ -113,8 +113,18 @@ updated: 2026-09-27
            `recordAudit`, `GET /audit`, entries audited
      - [x] Audit the other writes: accounts, cards, contacts, charges, planning, attachments
      - [x] Audit settings, members, roles and invitations
-  7. [ ] **Observability core and deploy:** OTel, metrics, error refs, ops scripts, Dockerfile,
-         Dokploy workflow, backups (needs open questions 7, 8 and 10)
+  7. [ ] **Observability core and deploy** (started 2026-09-27; decisions 7, 8 and 10 below):
+     - [x] Decisions and plan (this list)
+     - [ ] Metrics: OTel metrics SDK + Prometheus exporter on `:9464`, the metric registry, HTTP,
+           job, notification and error metrics
+     - [ ] Error fingerprints (`type:code:top-frame`) and fatal process handlers
+     - [ ] Dockerfile (multi-stage; migrations run before the app, without leaving the owner URL
+           to the app process) + image build check on PRs
+     - [ ] `deploy.yml`: push `:<sha>` and `:main` to GHCR on `main`; redeploy from Dokploy on the
+           LAN (no webhook while access is LAN-only)
+     - [ ] Backups: `pg_dump` + attachments archive, 14 days kept locally, optional offsite copy
+           through an rclone remote, Uptime Kuma heartbeat; restore script tested and documented
+     - [ ] `ops:*` scripts: health, logs, trace, errors, metrics, job
   Then: **web foundation**, then **WhatsApp channel + agent**. The agent's tools include
   `simulate_purchase` ("posso comprar?", built in #85, decided 2026-09-26), next to `period_overview`.
 - [ ] DB: contacts/charges, planning, support tables
@@ -159,7 +169,7 @@ Goal: the couple records everything through WhatsApp and the web, and always kno
 4. Transcription for audio: local whisper.cpp vs external API.
 5. Model for the agent: default `claude-opus-5`; test cheaper models once real message samples exist.
 6. Alert channel (ntfy, Telegram, email). Must not be WhatsApp.
-7. Remote access to the dashboard and deploy trigger (Tailscale vs Cloudflare Tunnel), see `../operations/deploy.md`.
-8. Offsite backup destination.
+7. ~~Remote access~~: **LAN only for now** (2026-09-27). Tailscale or Cloudflare Tunnel later; deploys are pulled from Dokploy on the LAN (`../operations/deploy.md`).
+8. Offsite backup destination: the structure is ready (an rclone remote, off until set, 2026-09-27). Choose later between an S3-compatible bucket with a good free tier and the user's OneDrive.
 9. Anti-ban practices for charges sent to contacts.
-10. Email provider (SMTP) and sender domain with SPF/DKIM (ADR 0022). Needed before the first deploy.
+10. ~~Email provider~~: **DreamHost SMTP** (2026-09-27), set through the `SMTP_*` env vars at deploy time. The sender domain needs SPF/DKIM, which DreamHost provides for domains it hosts.
