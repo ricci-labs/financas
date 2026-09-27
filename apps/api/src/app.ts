@@ -10,6 +10,7 @@ import {
   attachmentRoutes,
   uploadBodyLimitOf,
 } from '@api/modules/attachments/attachments.routes'
+import { auditRoutes } from '@api/modules/audit/audit.routes'
 import { chargeRoutes, contactRoutes } from '@api/modules/contacts/contacts.routes'
 import { healthRoutes, PUBLIC_HEALTH_ROUTES } from '@api/modules/health/health.routes'
 import { resolveSession } from '@api/modules/identity'
@@ -68,6 +69,7 @@ function workspaceScopedRoutes(deps: AppDeps) {
     .route('/contacts', contactRoutes(deps))
     .route('/charges', chargeRoutes(deps))
     .route('/invitations', invitationRoutes(deps))
+    .route('/audit', auditRoutes(deps))
 }
 
 export type AppType = ReturnType<typeof createApp>

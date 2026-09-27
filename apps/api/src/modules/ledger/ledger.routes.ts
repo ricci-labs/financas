@@ -214,8 +214,9 @@ function entryRoutes({ db }: LedgerRouteDeps) {
       jsonBody(entryDetailsChangeSchema, ENTRY_INVALID),
       async (c) => {
         const { workspaceId } = currentWorkspace(c)
+        const { userId } = currentSession(c)
         const { entryId } = c.req.valid('param')
-        await changeEntryDetails(db, { workspaceId, entryId }, c.req.valid('json'))
+        await changeEntryDetails(db, { workspaceId, entryId, userId }, c.req.valid('json'))
         return c.body(null, NO_CONTENT)
       },
     )
@@ -234,7 +235,8 @@ function entryRoutes({ db }: LedgerRouteDeps) {
     )
     .post('/:entryId/restore', authorize('entries', 'delete'), entry, async (c) => {
       const { workspaceId } = currentWorkspace(c)
-      await restoreEntry(db, { workspaceId, entryId: c.req.valid('param').entryId })
+      const { userId } = currentSession(c)
+      await restoreEntry(db, { workspaceId, userId, entryId: c.req.valid('param').entryId })
       return c.body(null, NO_CONTENT)
     })
 }

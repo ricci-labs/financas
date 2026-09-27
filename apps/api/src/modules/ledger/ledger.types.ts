@@ -42,8 +42,11 @@ export type EntryRef = {
   entryId: string
 }
 
-export type DeleteEntryInput = EntryRef & {
+export type EntryChangeRef = EntryRef & {
   userId: string
+}
+
+export type DeleteEntryInput = EntryChangeRef & {
   reason?: string
 }
 
@@ -224,4 +227,8 @@ export type InvoiceDue = {
   cardName: string
   dueOn: string
   dueCents: number
+}
+
+export type EntrySnapshot = typeof journalEntries.$inferSelect & {
+  postings: PostingItem[]
 }

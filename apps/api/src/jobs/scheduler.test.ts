@@ -1,4 +1,6 @@
 import type { Database } from '@api/core/db/db.types'
+import type { Operation } from '@api/core/observability/observability.types'
+import { currentOperation } from '@api/core/observability/operation-context'
 import type { ScheduledJob, SchedulerDeps } from '@api/jobs/jobs.types'
 import { SCHEDULE_TIMEZONE, SCHEDULED_JOBS } from '@api/jobs/scheduled-jobs'
 import { runJob, startScheduler } from '@api/jobs/scheduler'
@@ -32,15 +34,21 @@ afterEach(() => {
 })
 
 describe('runJob', () => {
-  it('logs the start and the result of a run', async () => {
+  it('logs the start and the result of a run under one trace, which the run sees as a job', async () => {
     const { deps, entries } = schedulerDeps()
+    let operation: Operation | undefined
     await runJob(
-      job(async () => ({ purged: 3 })),
+      job(async () => {
+        operation = currentOperation()
+        return { purged: 3 }
+      }),
       deps,
     )
+    const traceId = operation?.traceId
+    expect(operation).toEqual({ traceId: expect.stringMatching(/^[0-9a-f]{32}$/), source: 'job' })
     expect(entries()).toMatchObject([
-      { event: 'job.run.started', job: 'test-job' },
-      { event: 'job.run.completed', job: 'test-job', result: { purged: 3 } },
+      { event: 'job.run.started', job: 'test-job', trace_id: traceId },
+      { event: 'job.run.completed', job: 'test-job', trace_id: traceId, result: { purged: 3 } },
     ])
   })
 

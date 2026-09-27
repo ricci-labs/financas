@@ -4,6 +4,7 @@ import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { postgresConstraintName } from '@api/core/db/errors'
 import { withWorkspace } from '@api/core/db/tx'
 import { ConflictError, NotFoundError, parseOrThrow, ValidationError } from '@api/core/http/errors'
+import { recordAudit } from '@api/modules/audit'
 import {
   findSystemAccount,
   insertEntry,
@@ -13,15 +14,17 @@ import {
   markEntryRestored,
   selectActiveEntry,
   selectEntries,
+  selectEntryRow,
   selectPostingsOfEntries,
   selectTrashedEntries,
   updateEntryDetails,
 } from '@api/modules/ledger/ledger.repository'
 import type {
   DeleteEntryInput,
+  EntryChangeRef,
   EntryContext,
   EntryItem,
-  EntryRef,
+  EntrySnapshot,
   PostingItem,
   RecordedEntry,
   TrashedEntry,
@@ -32,6 +35,7 @@ import { refusingBrokenRules } from '@api/modules/ledger/use-cases/rules'
 import { currentWorkspaceDefaults } from '@api/modules/workspaces'
 import {
   type AccountRef,
+  type AuditAction,
   type ContactShare,
   type EntryInput,
   type EntryListQuery,
@@ -48,6 +52,8 @@ import {
 } from '@financas/shared'
 
 const ENTRY_INVALID = 'ENTRY_INVALID'
+
+const ENTRIES_TABLE = 'journal_entries'
 
 const SPENDER_IS_MEMBER_CONSTRAINT = 'journal_entries_spender_is_member'
 
@@ -81,7 +87,7 @@ async function recordParsedEntry(
   context: EntryContext,
   input: EntryInput,
   clock: Clock,
-  replacesEntryId?: string,
+  replaced?: EntrySnapshot,
 ): Promise<string> {
   const { timezone } = await currentWorkspaceDefaults(tx)
   const today = todayIn(timezone, clock.now())
@@ -102,12 +108,21 @@ async function recordParsedEntry(
     spentByUserId: input.spentByUserId ?? null,
     source: context.source,
     createdByUserId: context.userId,
-    replacesEntryId: replacesEntryId ?? null,
+    replacesEntryId: replaced?.id ?? null,
   })
   await insertPostings(
     tx,
     planned.postings.map((posting) => ({ ...posting, workspaceId: context.workspaceId, entryId })),
   )
+  await recordAudit(tx, {
+    workspaceId: context.workspaceId,
+    actorUserId: context.userId,
+    action: replaced ? 'update' : 'create',
+    tableName: ENTRIES_TABLE,
+    rowId: entryId,
+    before: replaced,
+    after: await entrySnapshot(tx, entryId),
+  })
   return entryId
 }
 
@@ -172,13 +187,15 @@ async function withPostings<T extends { id: string }>(
 
 export async function changeEntryDetails(
   db: Database,
-  { workspaceId, entryId }: EntryRef,
+  { workspaceId, entryId, userId }: EntryChangeRef,
   rawChange: unknown,
 ): Promise<void> {
   const change = parseOrThrow(entryDetailsChangeSchema, rawChange, ENTRY_INVALID)
   await withWorkspace(db, workspaceId, async (tx) => {
     await lockActiveEntry(tx, entryId)
-    await updateEntryDetails(tx, entryId, change)
+    await auditingEntry(tx, { workspaceId, entryId, userId }, 'update', () =>
+      updateEntryDetails(tx, entryId, change),
+    )
   })
 }
 
@@ -189,15 +206,17 @@ export async function deleteEntry(
 ): Promise<void> {
   await withWorkspace(db, workspaceId, async (tx) => {
     await lockActiveEntry(tx, entryId)
-    await markEntryDeleted(tx, entryId, {
-      deletedAt: clock.now(),
-      deletedByUserId: userId,
-      deleteReason: reason ?? null,
-    })
+    await auditingEntry(tx, { workspaceId, entryId, userId }, 'delete', () =>
+      markEntryDeleted(tx, entryId, {
+        deletedAt: clock.now(),
+        deletedByUserId: userId,
+        deleteReason: reason ?? null,
+      }),
+    )
   })
 }
 
-export async function restoreEntry(db: Database, { workspaceId, entryId }: EntryRef) {
+export async function restoreEntry(db: Database, { workspaceId, entryId, userId }: EntryChangeRef) {
   await refusingBrokenRules('ENTRY_CANNOT_BE_RESTORED', () =>
     withWorkspace(db, workspaceId, async (tx) => {
       const entry = await lockEntry(tx, entryId)
@@ -207,7 +226,9 @@ export async function restoreEntry(db: Database, { workspaceId, entryId }: Entry
       if (!entry.deletedAt) {
         throw new ConflictError('ENTRY_NOT_DELETED', `Entry ${entryId} is not deleted`)
       }
-      await markEntryRestored(tx, entryId)
+      await auditingEntry(tx, { workspaceId, entryId, userId }, 'restore', () =>
+        markEntryRestored(tx, entryId),
+      )
     }),
   )
 }
@@ -223,14 +244,43 @@ export async function replaceEntry(
   return refusingUnknownContacts(() =>
     withWorkspace(db, context.workspaceId, async (tx) => {
       await lockActiveEntry(tx, entryId)
+      const replaced = await entrySnapshot(tx, entryId)
       await markEntryDeleted(tx, entryId, {
         deletedAt: clock.now(),
         deletedByUserId: context.userId,
         deleteReason: null,
       })
-      return { entryId: await recordParsedEntry(tx, context, input, clock, entryId) }
+      return { entryId: await recordParsedEntry(tx, context, input, clock, replaced) }
     }),
   )
+}
+
+async function auditingEntry(
+  tx: WorkspaceTransaction,
+  { workspaceId, entryId, userId }: EntryChangeRef,
+  action: AuditAction,
+  change: () => Promise<void>,
+): Promise<void> {
+  const before = await entrySnapshot(tx, entryId)
+  await change()
+  await recordAudit(tx, {
+    workspaceId,
+    actorUserId: userId,
+    action,
+    tableName: ENTRIES_TABLE,
+    rowId: entryId,
+    before,
+    after: await entrySnapshot(tx, entryId),
+  })
+}
+
+async function entrySnapshot(tx: WorkspaceTransaction, entryId: string): Promise<EntrySnapshot> {
+  const entry = await selectEntryRow(tx, entryId)
+  if (!entry) {
+    throw entryNotFound(entryId)
+  }
+  const entryPostings = await selectPostingsOfEntries(tx, [entryId])
+  return { ...entry, postings: entryPostings.map(({ entryId: _, ...posting }) => posting) }
 }
 
 async function refusingUnknownContacts<T>(work: () => Promise<T>): Promise<T> {

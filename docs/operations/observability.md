@@ -1,7 +1,7 @@
 ---
 summary: Observability design — OpenTelemetry-ready instrumentation, structured logs, metrics, health checks, agent run records, alerts, and the staged upgrade path; built so Claude can investigate bugs quickly.
 read_when: Adding logs/metrics/spans, touching core/observability, wiring alerts, or planning an observability upgrade. For investigating a bug, go to runbook.md.
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Observability
@@ -79,7 +79,7 @@ Output: one JSON object per line to stdout. Docker keeps it (with rotation, see 
 ## Errors
 - Services throw `AppError` subclasses with a stable `code` (`CARD_NOT_FOUND`, `INVOICE_CLOSED`...), defined in `core/http/errors.ts`.
 - Unexpected errors are logged once at the boundary (HTTP middleware, agent runner, job runner) with the fingerprint `type:code:top-frame`, never at every layer.
-- Until the OTel SDK is wired, `core/http/middleware/request-context.ts` makes a random 32-hex id per request, logs it as `trace_id`, returns it in `X-Request-Id`, and never accepts one from the client. The OTel trace id replaces it later with no change to fields or refs.
+- Until the OTel SDK is wired, `core/http/middleware/request-context.ts` makes a random 32-hex id per request, logs it as `trace_id`, returns it in `X-Request-Id`, and never accepts one from the client. The job runner makes one per run and logs it as `trace_id` on every `job.run.*` line. Both open the operation context (`core/observability/operation-context.ts`, ADR 0026), so the audit log stores the same `trace_id`. The OTel trace id replaces it later with no change to fields or refs.
 - Request logs carry the route pattern (`/api/items/:itemId`), never the real path or query string.
 - **Users see a reference, never a stack:** "Algo deu errado (ref: `4f3a9c1b`)" in the web or WhatsApp. The ref is a `trace_id` prefix. When the user pastes it, run `pnpm ops:trace 4f3a9c1b`.
 

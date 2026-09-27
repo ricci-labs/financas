@@ -1,3 +1,4 @@
+import { newTraceId, runInOperation } from '@api/core/observability/operation-context'
 import type { ScheduledJob, Scheduler, SchedulerDeps } from '@api/jobs/jobs.types'
 import { Cron } from 'croner'
 
@@ -24,12 +25,15 @@ export function startScheduler(jobs: readonly ScheduledJob[], deps: SchedulerDep
 }
 
 export async function runJob(job: ScheduledJob, deps: SchedulerDeps): Promise<void> {
-  const logger = deps.logger.child({ job: job.name })
+  const traceId = newTraceId()
+  const logger = deps.logger.child({ job: job.name, trace_id: traceId })
   const startedAt = performance.now()
   const durationMs = () => Math.round(performance.now() - startedAt)
   logger.info({ event: 'job.run.started' }, 'Job started')
   try {
-    const result = await job.run({ ...deps, logger })
+    const result = await runInOperation({ traceId, source: 'job' }, () =>
+      job.run({ ...deps, logger }),
+    )
     logger.info({ event: 'job.run.completed', durationMs: durationMs(), result }, 'Job completed')
   } catch (err) {
     logger.error({ event: 'job.run.failed', durationMs: durationMs(), err }, 'Job failed')

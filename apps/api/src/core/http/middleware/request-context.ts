@@ -1,10 +1,9 @@
-import { randomBytes } from 'node:crypto'
 import type { AppEnv, Completion } from '@api/core/http/http.types'
 import type { Logger } from '@api/core/observability/logger'
+import { newTraceId, runInOperation } from '@api/core/observability/operation-context'
 import { createMiddleware } from 'hono/factory'
 import { routePath } from 'hono/route'
 
-const REQUEST_ID_BYTES = 16
 const REQUEST_ID_HEADER = 'X-Request-Id'
 const REF_LENGTH = 8
 const CLIENT_ERROR_STATUS = 400
@@ -13,14 +12,14 @@ const LAST_MATCHED_ROUTE = -1
 
 export function requestContext(rootLogger: Logger) {
   return createMiddleware<AppEnv>(async (c, next) => {
-    const requestId = randomBytes(REQUEST_ID_BYTES).toString('hex')
+    const requestId = newTraceId()
     const logger = rootLogger.child({ trace_id: requestId, channel: 'web' })
     c.set('requestId', requestId)
     c.set('logger', logger)
     c.header(REQUEST_ID_HEADER, requestId)
 
     const startedAt = performance.now()
-    await next()
+    await runInOperation({ traceId: requestId, source: 'web' }, next)
     logCompletion(logger, {
       method: c.req.method,
       route: routePath(c, LAST_MATCHED_ROUTE),

@@ -908,7 +908,7 @@ describe('changing, deleting, restoring and replacing entries', () => {
     return (await recordEntry(databases.app, context, expenseOf(amountCents))).entryId
   }
 
-  const refOf = (entryId: string) => ({ workspaceId: workspaceA, entryId })
+  const refOf = (entryId: string) => ({ workspaceId: workspaceA, entryId, userId: ownerUserId })
 
   it('changes the description and notes in place', async () => {
     const entryId = await recordExpense()
