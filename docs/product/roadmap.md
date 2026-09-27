@@ -122,7 +122,7 @@ updated: 2026-09-27
            to the app process) + image build check on PRs
      - [x] `deploy.yml`: push `:<sha>` and `:main` to GHCR on `main`; redeploy from Dokploy on the
            LAN (no webhook while access is LAN-only)
-     - [ ] Backups: `pg_dump` + attachments archive, 14 days kept locally, optional offsite copy
+     - [x] Backups: `pg_dump` + attachments archive, 14 days kept locally, optional offsite copy
            through an rclone remote, Uptime Kuma heartbeat; restore script tested and documented
      - [ ] `ops:*` scripts: health, logs, trace, errors, metrics, job
   Then: **web foundation**, then **WhatsApp channel + agent**. The agent's tools include
