@@ -1,7 +1,7 @@
 ---
 summary: Allowed and forbidden import directions across packages, layers and modules; enforced by dependency-cruiser.
 read_when: Adding an import that crosses a module, layer or package boundary.
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Dependency rules
@@ -66,6 +66,7 @@ routes / agent tools / jobs / channels
 | `notifications` | `planning`, `ledger`, `members` | Reminders: upcoming bills, invoices due, each member's lead time |
 | `planning` | `notifications` | Bill and invoice reminders |
 | `reports` | `ledger`, `planning`, `contacts` | Read-only aggregates; the contacts' balances for the `contact_overdue` insight |
+| `attachments` | `ledger` | Attach only to an active entry (`activeEntryIdsOf`) |
 | every module | `workspaces` | Current workspace settings |
 | `onboarding` | `workspaces`, `ledger`, `access`, `members` | Creating a workspace: the workspace and its settings, the system accounts, the system roles, the creator as owner |
 | `onboarding` | `identity` | Registering an owner: the user, then their first workspace |

@@ -127,6 +127,21 @@ describe('request bodies', () => {
     expect(response.status).toBe(413)
     expect((await errorOf(response)).code).toBe('PAYLOAD_TOO_LARGE')
   })
+
+  it('lets upload routes take bodies up to their own limit, and only them', async () => {
+    const uploads = { path: /^\/api\/uploads$/, maxBodyBytes: 2 * MAX_REQUEST_BODY_BYTES }
+    const app = createBaseApp(createCapturingLogger().logger, uploads)
+      .post('/api/uploads', async (c) => c.json({ bytes: (await c.req.arrayBuffer()).byteLength }))
+      .post('/api/uploads/other', async (c) =>
+        c.json({ bytes: (await c.req.arrayBuffer()).byteLength }),
+      )
+    const send = (path: string, bytes: number) =>
+      app.request(path, { method: 'POST', body: new Uint8Array(bytes) })
+
+    expect((await send('/api/uploads', MAX_REQUEST_BODY_BYTES + 1)).status).toBe(200)
+    expect((await send('/api/uploads', 2 * MAX_REQUEST_BODY_BYTES + 1)).status).toBe(413)
+    expect((await send('/api/uploads/other', MAX_REQUEST_BODY_BYTES + 1)).status).toBe(413)
+  })
 })
 
 describe('request context', () => {

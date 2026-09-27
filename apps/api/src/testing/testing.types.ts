@@ -45,4 +45,5 @@ export type SessionRequests = {
   patch: (path: string, body: unknown) => Promise<Response>
   put: (path: string, body: unknown) => Promise<Response>
   del: (path: string, body?: unknown) => Promise<Response>
+  postForm: (path: string, form: FormData) => Promise<Response>
 }

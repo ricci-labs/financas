@@ -58,3 +58,8 @@ export type Completion = {
   code: string | undefined
   durationMs: number
 }
+
+export type UploadRoutes = {
+  path: RegExp
+  maxBodyBytes: number
+}

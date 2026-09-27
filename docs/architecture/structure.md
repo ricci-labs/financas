@@ -137,7 +137,7 @@ src/
 │   │   └── tx.ts             # withWorkspace(): sets app.workspace_id per transaction
 │   ├── http/
 │   │   ├── base-app.ts       # Hono app with the global middleware (request context, secure
-│   │   │                     #   headers, 100 KB body limit, error and not-found handlers)
+│   │   │                     #   headers, 100 KB body limit (upload routes: FILE_MAX_BYTES), error and not-found handlers)
 │   │   ├── middleware/       # request-context (request id, logger), error-handler, later auth
 │   │   ├── validation.ts     # jsonBody(schema, code)
 │   │   ├── http.types.ts     # AppEnv: request variables
@@ -158,7 +158,7 @@ src/
 │   │                         #   journal entries, postings (cards live here: see dependency-rules)
 │   ├── contacts/             # contacts, charges, settlements
 │   ├── planning/             # recurrence rules, occurrences, periods, budgets, goals, holidays
-│   ├── attachments/          # files + link tables, FileStorage interface
+│   ├── attachments/          # files + link tables (bytes behind core/storage)
 │   ├── notifications/        # outbox, reminder scheduling, templates
 │   └── reports/              # read-only: period facts → metrics and insights (ADR 0024)
 ├── ops/                      # operator commands, bundled into the image (dist/ops/*.mjs)

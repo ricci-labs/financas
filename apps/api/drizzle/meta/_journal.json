@@ -407,6 +407,20 @@
       "when": 1790467135462,
       "tag": "0057_notification_outbox_triggers",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1790493424599,
+      "tag": "0058_files_and_entry_attachments",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1790493439838,
+      "tag": "0059_attachments_triggers_and_fks",
+      "breakpoints": true
     }
   ]
 }

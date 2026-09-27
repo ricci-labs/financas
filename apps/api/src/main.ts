@@ -6,6 +6,7 @@ import { createDatabase } from '@api/core/db/client'
 import { createMailer } from '@api/core/email/mailer'
 import { sessionCookieSettings } from '@api/core/http/session-cookie'
 import { createLogger } from '@api/core/observability/logger'
+import { createLocalFileStorage } from '@api/core/storage/local-file-storage'
 import { SCHEDULE_TIMEZONE, SCHEDULED_JOBS } from '@api/jobs/scheduled-jobs'
 import { startScheduler } from '@api/jobs/scheduler'
 import { createAccountEmailLimits, createLoginLimits } from '@api/modules/identity'
@@ -44,6 +45,8 @@ const app = createApp({
   }),
   trustedProxyHops: env.TRUSTED_PROXY_HOPS,
   background,
+  fileStorage: createLocalFileStorage(env.FILE_STORAGE_DIR),
+  fileMaxBytes: env.FILE_MAX_BYTES,
 })
 
 const scheduler = startScheduler(SCHEDULED_JOBS, {

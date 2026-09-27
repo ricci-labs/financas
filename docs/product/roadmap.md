@@ -106,7 +106,7 @@ updated: 2026-09-27
   5. [ ] **Attachments** on entries (`FileStorage`) (started 2026-09-27; the user asked for steps 5 and
          6 in a row):
      - [x] `core/storage`: `FileStorage` + local disk, `FILE_STORAGE_DIR`, `FILE_MAX_BYTES`
-     - [ ] `attachments` module: `files` + `entry_attachments`, upload, list, download, detach
+     - [x] `attachments` module: `files` + `entry_attachments`, upload, list, download, detach
      - [ ] Charge attachments (payment receipts) and the purge of trashed files after 30 days
   6. [ ] **Audit log**
   7. [ ] **Observability core and deploy:** OTel, metrics, error refs, ops scripts, Dockerfile,
