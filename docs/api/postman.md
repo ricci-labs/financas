@@ -13,7 +13,9 @@ Files:
 
 ## Import and run
 1. In Postman, import both files. For the deployed app, duplicate the environment and set
-   `baseUrl` and `appOrigin` to the app URL, e.g. `https://financas.example.com`.
+   `baseUrl` and `appOrigin` to the app URL, e.g. `https://financas.example.com`. The deployed app
+   sits behind Cloudflare Access, so also set `cfAccessClientId` and `cfAccessClientSecret` to an
+   Access service token (`../operations/deploy.md` → First deploy, step 5), as current values only.
 2. Set `email` and `password` of an existing user (`pnpm ops:create-user`, or
    `node dist/ops/create-user.mjs` in the container). Keep the real password in the environment's
    **current value** only, so it is never exported.
@@ -31,6 +33,8 @@ Files:
   `Origin: {{appOrigin}}` to every non-GET request. `appOrigin` must equal the app's `PUBLIC_URL`:
   in dev that is `http://localhost:5173` (the Vite server, which also proxies `/api`, so `baseUrl`
   can be the same).
+- When `cfAccessClientId` and `cfAccessClientSecret` are set, every request carries the Cloudflare
+  Access service token headers, so it passes Access without the email code.
 - It sets `today`, `pastDay`, `in30Days`, `period` (YYYY-MM), `year` and `nextYear` before each
   request, so the dated examples always fit.
 - Every response is checked for no server error, and each happy-path request for its expected

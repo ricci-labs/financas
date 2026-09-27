@@ -21,6 +21,12 @@
           "pm.collectionVariables.set('nextYear', String(today.getUTCFullYear() + 1))",
           "if (!['GET', 'HEAD', 'OPTIONS'].includes(pm.request.method)) {",
           "  pm.request.headers.upsert({ key: 'Origin', value: pm.variables.replaceIn('{{appOrigin}}') })",
+          "}",
+          "const accessId = pm.variables.get('cfAccessClientId')",
+          "const accessSecret = pm.variables.get('cfAccessClientSecret')",
+          "if (accessId && accessSecret) {",
+          "  pm.request.headers.upsert({ key: 'CF-Access-Client-Id', value: accessId })",
+          "  pm.request.headers.upsert({ key: 'CF-Access-Client-Secret', value: accessSecret })",
           "}"
         ]
       }
@@ -168,6 +174,14 @@
     },
     {
       "key": "nextYear",
+      "value": ""
+    },
+    {
+      "key": "cfAccessClientId",
+      "value": ""
+    },
+    {
+      "key": "cfAccessClientSecret",
       "value": ""
     }
   ],

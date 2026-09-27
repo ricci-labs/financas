@@ -1,5 +1,5 @@
 ---
-summary: Production setup on Dokploy — containers, image, env vars, resources, logs rotation, backups (offsite destination later), access through Tailscale with HTTPS on the user's domain, first-deploy checklist.
+summary: Production setup on Dokploy — containers, image, env vars, resources, logs rotation, backups (offsite destination later), access through Cloudflare Tunnel + Access on the user's domain, first-deploy steps and checklist.
 read_when: Deploying, changing env vars or runtime config, setting up backups, or exposing the app.
 updated: 2026-09-27
 ---
@@ -27,6 +27,7 @@ Pipeline: `../engineering/ci-cd.md`. Decision: `../decisions/0010-deploy-ghcr-do
 |---|---|---|
 | `financas-api` | `ghcr.io/ricci-labs/financas:<sha>` | Node process: HTTP + SPA + WhatsApp + agent + jobs |
 | `financas-db` | `postgres:18-alpine` | Own volume. Separate from Dokploy's internal Postgres. Never published on the host network |
+| `cloudflared` | `cloudflare/cloudflared` | The tunnel that publishes the app (Remote access below). Chosen by the user, 2026-09-27 |
 
 ## Runtime config (Dokploy environment; validated by `core/config/env.ts`)
 | Var | Purpose |
@@ -100,63 +101,46 @@ Restoring: `runbook.md` → Restore from a backup. The procedure was tested on t
 owner, RLS policies, triggers, default privileges and migrations, and the attachments are back.
 
 ## Remote access
-**Decided 2026-09-27: Tailscale.** The server and the couple's phones join the same tailnet. The
-app's name resolves to the server's **tailnet IP** (100.x.y.z), so it answers only to devices
-logged in to that tailnet, at home or outside, and nothing is exposed to the internet. GitHub
-can't reach Dokploy either, so CI publishes the image and the redeploy is started from Dokploy.
+**Decided 2026-09-27: Cloudflare Tunnel with Cloudflare Access.** The couple opens the app from
+any browser, at home or outside, with no app to install and no router port open.
+- **Tunnel:** a `cloudflared` container on the server keeps an outbound connection to Cloudflare.
+  Cloudflare answers `https://financas.example.com` and sends each request through the tunnel to
+  the app container (`http://<app name>:3100` on `dokploy-network`), without passing through
+  Traefik.
+- **HTTPS:** Cloudflare's edge serves the certificate, and the tunnel carries the request
+  encrypted. The browser sees HTTPS, so the `__Host-session` cookie (`Secure`, ADR 0021) works.
+- **Access:** before reaching the app, Cloudflare asks for a one-time code sent by email, and only
+  the listed emails get one. The app's own login comes after, so there are two locks.
+  - Someone invited to the workspace must be added to the Access policy first, or they can't open
+    the invitation link.
+  - Scripts (Postman) pass with an Access **service token** (`../api/postman.md`).
+- **Client IP:** Cloudflare appends the visitor's IP to `X-Forwarded-For`, so
+  `TRUSTED_PROXY_HOPS=1` gives the real IP for the login limits.
+- **DNS:** the domain (registered at registro.br) uses Cloudflare's nameservers. The tunnel creates
+  the app's DNS record itself.
+- GitHub still can't reach Dokploy, so CI publishes the image and the redeploy is started from
+  Dokploy.
 
-### HTTPS on the LAN (decided 2026-09-27)
-The production session cookie is `__Host-session` with `Secure` (ADR 0021), so the app must be
-served over HTTPS even at home. Decision: a subdomain of the user's own domain (registered at
-registro.br, DNS at DreamHost), with a **Let's Encrypt certificate obtained by DNS challenge**
-through the DreamHost API. Its public `A` record points to the server's tailnet IP, which only
-tailnet devices can reach. The certificate is valid on every phone with no setup, and Traefik
-renews it through the same DNS challenge.
-
-Alternatives kept on file: Cloudflare Tunnel (a public URL, and the domain's DNS would have to move
-to Cloudflare), or forwarding port 443 on the router (exposes the home IP; not recommended).
+Alternatives kept on file: Tailscale (private, but needs its app on every device) and forwarding
+port 443 on the router (exposes the home IP, and CGNAT often prevents it).
 
 ## First deploy, step by step
-Placeholders: `financas.example.com` is the chosen subdomain, `100.x.y.z` the server's tailnet IP.
-Real values go only in Dokploy, Tailscale and the DreamHost panel, never in this repo.
-
-0. **Tailscale** (needs sudo on the server):
-   `curl -fsSL https://tailscale.com/install.sh | sh`, then `sudo tailscale up` and open the login
-   link. `tailscale ip -4` shows the tailnet IP. In the Tailscale admin console, **disable key
-   expiry** for the server, or it drops off the tailnet after 180 days. Install the Tailscale app
-   on both phones with the same account, and leave it on.
+Placeholders: `financas.example.com` is the chosen hostname, `<app name>` the application's name in
+Dokploy (its service name on `dokploy-network`). Real values go only in Dokploy and Cloudflare,
+never in this repo.
 
 1. **Image public.** GitHub → org `ricci-labs` → Packages → `financas` → Package settings →
    Change visibility → Public. The code is public and the image holds no secrets, so Dokploy needs
    no pull token.
-2. **DreamHost API key.** DreamHost panel → API: create a key allowed to `dns-list_records`,
-   `dns-add_record` and `dns-remove_record`.
-3. **Traefik DNS resolver** (Dokploy → Web Server → Traefik). Traefik restarts, so other services
-   behind it blink for a few seconds.
-   - Add the environment variable `DREAMHOST_API_KEY=<key>` to Traefik.
-   - Add a second resolver next to `letsencrypt` in `traefik.yml`:
-     ```yaml
-     certificatesResolvers:
-       letsencrypt-dns:
-         acme:
-           email: <an email of yours>
-           storage: /etc/dokploy/traefik/dynamic/acme-dns.json
-           dnsChallenge:
-             provider: dreamhost
-             resolvers: ["1.1.1.1:53", "8.8.8.8:53"]
-     ```
-4. **Name.** DreamHost panel → DNS of the domain: an `A` record `financas` → `100.x.y.z` (the
-   tailnet IP). Optional: an AdGuard Home rewrite of the same name to the LAN IP, for a phone at
-   home with Tailscale off.
-5. **Database.** Dokploy → Create Database → PostgreSQL: image `postgres:18-alpine`, database
+2. **Database.** Dokploy → Create Database → PostgreSQL: image `postgres:18-alpine`, database
    `financas`, a strong superuser password, no external port. Then create the two roles, typing
    their passwords without echo (ADR 0018):
    ```sh
    read -rs OWNER_DB_PASSWORD && read -rs APP_DB_PASSWORD && export OWNER_DB_PASSWORD APP_DB_PASSWORD
    docker exec -i -e OWNER_DB_PASSWORD -e APP_DB_PASSWORD "$(docker ps -q -f name=financas-db)" sh -s < docker/postgres/init/01-roles.sh
    ```
-6. **Application.** Dokploy → Create Application → Docker image
-   `ghcr.io/ricci-labs/financas:main`.
+3. **Application.** Dokploy → Create Application → Docker image
+   `ghcr.io/ricci-labs/financas:main`, no domain in Dokploy (the tunnel reaches it).
    - Environment (the table above has the full list):
      ```
      DATABASE_URL=postgres://financas_app:<app password>@<db app name>:5432/financas
@@ -173,26 +157,34 @@ Real values go only in Dokploy, Tailscale and the DreamHost panel, never in this
      LOG_LEVEL=info
      ```
    - Volume: a named volume mounted at `/data/files`.
-   - Domain: host `financas.example.com`, container port `3100`, HTTPS on, certificate
-     **custom** with resolver `letsencrypt-dns`.
    - Deploy. The entrypoint applies the migrations, then the app starts.
-7. **Check.** `pnpm ops:health` on the server; `https://financas.example.com/api/health/ready` on a
-   phone at home.
-8. **First user:** `docker exec -it "$(docker ps -q -f name=financas-api)" node dist/ops/create-user.mjs`.
-9. **Postman** (`../api/postman.md`): an environment with `baseUrl` and `appOrigin` set to
-   `https://financas.example.com`, then log in and run the collection. It creates its own test
-   workspace, which can be left or deleted.
-10. **Backups and monitors:** the backup env file and crontab line (Backups above), an Uptime Kuma
-    HTTP monitor on `/api/health/ready`, and a push monitor for the backup.
+4. **Tunnel.** Cloudflare Zero Trust → Networks → Tunnels → Create a tunnel (Cloudflared), and copy
+   its token. In Dokploy, create an application from the Docker image `cloudflare/cloudflared:latest`
+   with the command `tunnel --no-autoupdate run` and the environment `TUNNEL_TOKEN=<token>`. Once it
+   shows as connected, add a **public hostname**: `financas.example.com` → type HTTP, URL
+   `<app name>:3100`.
+5. **Access.** Zero Trust → Access → Applications → Add a self-hosted application for
+   `financas.example.com`:
+   - a policy **Allow** with the two emails, login method One-time PIN;
+   - optionally, a service token (Access → Service Auth) and a second policy **Service Auth** that
+     includes it, for Postman.
+6. **Check.** `pnpm ops:health` on the server; `https://financas.example.com/api/health/ready` on a
+   phone (after the Access code).
+7. **First user:** `docker exec -it "$(docker ps -q -f name=financas-api)" node dist/ops/create-user.mjs`.
+8. **Postman** (`../api/postman.md`): an environment with `baseUrl` and `appOrigin` set to
+   `https://financas.example.com`, plus the service token variables; then log in and run the
+   collection. It creates its own test workspace, which can be left or deleted.
+9. **Backups and monitors:** the backup env file and crontab line (Backups above); an Uptime Kuma
+   HTTP monitor on `/api/health/ready` (on the internal address, or through the tunnel with the
+   service token headers), and a push monitor for the backup.
 
 Later deploys: CI publishes `:main` after each merge; press Deploy in Dokploy (the image is pulled
 again). To roll back, set the image to a previous `:<sha>` and deploy.
 
 ## First deploy checklist
-- [x] Remote access decided: Tailscale
-- [ ] Tailscale on the server (key expiry off) and on both phones
+- [x] Remote access decided: Cloudflare Tunnel + Access
+- [ ] Tunnel connected, public hostname to the app, Access policy with both emails
 - [ ] Image made public on GHCR (no pull credentials needed)
-- [ ] DreamHost API key in Traefik, `letsencrypt-dns` resolver, `A` record to the tailnet IP, certificate issued
 - [ ] `financas-db` created with a volume
 - [ ] Roles created once: run `docker/postgres/init/01-roles.sh` with real `OWNER_DB_PASSWORD` / `APP_DB_PASSWORD` (ADR 0018)
 - [ ] `DATABASE_URL` (app role) and `DATABASE_MIGRATION_URL` (owner) set
