@@ -87,8 +87,12 @@ describe('error responses', () => {
     expect(failures[0]).toMatchObject({
       level: 50,
       trace_id: response.headers.get('X-Request-Id'),
+      module: 'http',
+      route: '/api/errors/unexpected',
+      fingerprint: expect.stringMatching(/^Error:INTERNAL_ERROR:/),
       err: { message: INTERNAL_DETAIL },
     })
+    expect(failures[0]).not.toHaveProperty('path')
   })
 
   it('answers an unknown route with ROUTE_NOT_FOUND', async () => {

@@ -1,3 +1,4 @@
+import { logUnexpectedError } from '@api/core/observability/errors'
 import type { JobDeps, JobResult, WorkspaceWork } from '@api/jobs/jobs.types'
 import { listJobWorkspaceIds } from '@api/modules/workspaces'
 
@@ -9,8 +10,10 @@ export async function forEachWorkspace(deps: JobDeps, work: WorkspaceWork): Prom
       await work(workspaceId)
     } catch (err) {
       failedWorkspaces += 1
-      deps.logger.error(
-        { event: 'job.workspace.failed', workspaceId, err },
+      logUnexpectedError(
+        deps.logger,
+        { event: 'job.workspace.failed', module: 'jobs', workspaceId },
+        err,
         'Job failed for a workspace',
       )
     }

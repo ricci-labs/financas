@@ -1,4 +1,5 @@
 import type { BackgroundTasks } from '@api/core/background-tasks.types'
+import { logUnexpectedError } from '@api/core/observability/errors'
 import type { Logger } from '@api/core/observability/logger'
 
 export function createBackgroundTasks(): BackgroundTasks {
@@ -8,8 +9,10 @@ export function createBackgroundTasks(): BackgroundTasks {
     const running = work()
       .then(() => undefined)
       .catch((error: unknown) => {
-        logger.error(
-          { event: 'background.task.failed', task, err: error },
+        logUnexpectedError(
+          logger,
+          { event: 'background.task.failed', module: 'background', task },
+          error,
           'Background task failed',
         )
       })

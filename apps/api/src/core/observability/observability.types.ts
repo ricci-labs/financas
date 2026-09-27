@@ -8,3 +8,9 @@ export type Operation = {
   source: AuditSource
   actorUserId: string | null
 }
+
+export type UnexpectedError = {
+  event: string
+  module: string
+  [context: string]: unknown
+}

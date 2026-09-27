@@ -22,8 +22,8 @@ Decision: `../decisions/0011-observability-otel-ready.md`.
 | `logger.ts` | pino root logger: redaction, error serializer, base fields. `logger.child({ module })` per module. |
 | `metrics.ts` | **The single registry of all metric instruments** (`createInstruments`), reached through `appMetrics()`, which creates them on first use from the global meter. Nothing creates metrics elsewhere. |
 | `tracing.ts` | `withSpan(name, attrs, fn)` helper and `startRootSpan()` for non-HTTP entry points (WhatsApp messages, jobs). |
-| `errors.ts` | Error fingerprinting, `app_errors_total` recording, and the `ref` shown to users (first 8 chars of `trace_id`). |
-| `process.ts` | `unhandledRejection`/`uncaughtException` → log `fatal`, flush, exit(1). Docker restarts the process. |
+| `errors.ts` | `fingerprintOf`, `errorCodeOf` and `logUnexpectedError(logger, { event, module, … }, err, msg)`: logs once with the fingerprint and counts `financas_app_errors_total`. The `ref` shown to users (first 8 chars of `trace_id`) is made by the HTTP error handler. |
+| `process.ts` | `exitOnCrash(logger)`, called in `main.ts`: `unhandledRejection`/`uncaughtException` → `process.crashed` at `fatal` with the fingerprint, flush, exit(1). Docker restarts the process. |
 
 Instrumentations are chosen one by one (not the heavy auto-instrumentations bundle): `http` (Hono via node-server), `undici` (Anthropic SDK and outbound fetch), `pg`, `pino` (injects `trace_id`/`span_id` into logs).
 
@@ -72,6 +72,7 @@ Output: one JSON object per line to stdout. Docker keeps it (with rotation, see 
 | `notification.sent` / `.failed` | info / warn |
 | `job.run.started` / `.completed` / `.failed` (with `job`, `durationMs`; `result` counts on completion) | info / info / error |
 | `job.workspace.failed` (with `job`, `workspaceId`, `err`): one workspace failed, the others went on | error |
+| `process.crashed` (with `err`, `fingerprint`): an uncaught exception or unhandled rejection; the process exits and Docker restarts it | fatal |
 
 ### Redaction and privacy
 - Always redacted: `authorization`, cookies, API keys, tokens, passwords, Baileys credentials, phone numbers and JIDs. Email bodies and links are never logged.
@@ -79,7 +80,10 @@ Output: one JSON object per line to stdout. Docker keeps it (with rotation, see 
 
 ## Errors
 - Services throw `AppError` subclasses with a stable `code` (`CARD_NOT_FOUND`, `INVOICE_CLOSED`...), defined in `core/http/errors.ts`.
-- Unexpected errors are logged once at the boundary (HTTP middleware, agent runner, job runner) with the fingerprint `type:code:top-frame`, never at every layer.
+- Unexpected errors are logged once at the boundary (HTTP middleware, job runner, per-workspace job work, background tasks; later the agent runner) through `logUnexpectedError`, never at every layer. The fingerprint is `type:code:top-frame`:
+  - `code` is the `AppError` code, else a driver code on the error or its `cause` (e.g. Postgres `23505`), else `INTERNAL_ERROR`;
+  - `top-frame` is the function name of the first stack frame outside `node_modules` and `node:` internals (else `file:line`), so it stays readable in the bundled `dist/main.mjs`.
+- The 5xx log carries the route pattern, never the path.
 - Until the OTel SDK is wired, `core/http/middleware/request-context.ts` makes a random 32-hex id per request, logs it as `trace_id`, returns it in `X-Request-Id`, and never accepts one from the client. The job runner makes one per run and logs it as `trace_id` on every `job.run.*` line. Both open the operation context (`core/observability/operation-context.ts`, ADR 0026), so the audit log stores the same `trace_id`. The OTel trace id replaces it later with no change to fields or refs.
 - Request logs carry the route pattern (`/api/items/:itemId`), never the real path or query string.
 - **Users see a reference, never a stack:** "Algo deu errado (ref: `4f3a9c1b`)" in the web or WhatsApp. The ref is a `trace_id` prefix. When the user pastes it, run `pnpm ops:trace 4f3a9c1b`.
@@ -88,7 +92,7 @@ Output: one JSON object per line to stdout. Docker keeps it (with rotation, see 
 Exported with the OTel Prometheus exporter on a **separate internal port** (`:9464/metrics`), never through Traefik. Netdata scrapes it (Prometheus collector) and stores, graphs and alerts on it.
 
 Names below are as scraped (the exporter turns dots into `_` and adds `_total` to counters).
-Scope labels are left out (`withoutScopeInfo`). Built so far: HTTP, jobs, notifications.
+Scope labels are left out (`withoutScopeInfo`). Built so far: HTTP, jobs, notifications, app errors.
 
 | Metric | Type | Labels |
 |---|---|---|
