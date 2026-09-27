@@ -1,7 +1,10 @@
 import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { withWorkspace } from '@api/core/db/tx'
 import { NotFoundError, parseOrThrow, ValidationError } from '@api/core/http/errors'
+import { auditCreation, audited } from '@api/modules/audit'
 import {
+  accountAuditTarget,
+  cardAuditTarget,
   findUsableAccounts,
   insertAccount,
   insertCardDetails,
@@ -52,6 +55,8 @@ export async function createCard(
         holderUserId: input.holderUserId ?? null,
         paymentAccountId: input.paymentAccountId ?? null,
       })
+      await auditCreation(tx, accountAuditTarget(workspaceId, accountId))
+      await auditCreation(tx, cardAuditTarget(workspaceId, accountId))
       return { accountId }
     }),
   )
@@ -75,7 +80,9 @@ export async function changeCard(
     if (change.paymentAccountId) {
       await assertPaymentAccountUsable(tx, change.paymentAccountId)
     }
-    await updateCardDetails(tx, cardAccountId, change)
+    await audited(tx, cardAuditTarget(workspaceId, cardAccountId), 'update', () =>
+      updateCardDetails(tx, cardAccountId, change),
+    )
   })
 }
 

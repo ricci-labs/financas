@@ -5,6 +5,7 @@ import {
   readSessionCookie,
   writeSessionCookie,
 } from '@api/core/http/session-cookie'
+import { runAsActor } from '@api/core/observability/operation-context'
 import type { Context } from 'hono'
 import { createMiddleware } from 'hono/factory'
 import { routePath } from 'hono/route'
@@ -29,7 +30,7 @@ export function requireSession({ resolve, publicRoutes, cookie }: SessionGuardOp
       writeSessionCookie(c, cookie, token, session.expiresAt)
     }
     c.set('session', { sessionId: session.sessionId, userId: session.userId })
-    await next()
+    await runAsActor(session.userId, next)
   })
 }
 

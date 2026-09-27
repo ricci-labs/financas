@@ -55,6 +55,8 @@ export type AttachmentLink = {
 }
 
 export type AttachmentTarget = {
+  linkTable: string
+  targetKey: string
   notFoundCode: string
   exists: (tx: WorkspaceTransaction, targetId: string) => Promise<boolean>
   link: (tx: WorkspaceTransaction, link: AttachmentLink) => Promise<void>

@@ -1,4 +1,5 @@
 import type { WorkspaceTransaction } from '@api/core/db/db.types'
+import type { AuditTarget } from '@api/modules/audit'
 import {
   allocationSteps,
   budgetLines,
@@ -232,8 +233,8 @@ export async function selectBudgetsEffectiveOn(
 export async function upsertBudgetLine(
   tx: WorkspaceTransaction,
   line: NewBudgetLine,
-): Promise<void> {
-  await tx
+): Promise<string> {
+  const [stored] = await tx
     .insert(budgetLines)
     .values(line)
     .onConflictDoUpdate({
@@ -241,6 +242,29 @@ export async function upsertBudgetLine(
       targetWhere: isNull(budgetLines.deletedAt),
       set: { limitCents: line.limitCents },
     })
+    .returning({ id: budgetLines.id })
+  if (!stored) {
+    throw new Error('Budget line was not stored')
+  }
+  return stored.id
+}
+
+export async function selectActiveBudgetLineId(
+  tx: WorkspaceTransaction,
+  categoryAccountId: string,
+  validFrom: string,
+): Promise<string | undefined> {
+  const [line] = await tx
+    .select({ id: budgetLines.id })
+    .from(budgetLines)
+    .where(
+      and(
+        eq(budgetLines.categoryAccountId, categoryAccountId),
+        eq(budgetLines.validFrom, validFrom),
+        isNull(budgetLines.deletedAt),
+      ),
+    )
+  return line?.id
 }
 
 export function selectActiveGoals(tx: WorkspaceTransaction): Promise<GoalRow[]> {
@@ -306,4 +330,24 @@ export async function insertAllocationSteps(
   steps: NewAllocationStepRow[],
 ): Promise<void> {
   await tx.insert(allocationSteps).values(steps)
+}
+
+export function holidayAuditTarget(workspaceId: string, holidayId: string): AuditTarget {
+  return { workspaceId, table: workspaceHolidays, key: workspaceHolidays.id, rowId: holidayId }
+}
+
+export function ruleAuditTarget(workspaceId: string, ruleId: string): AuditTarget {
+  return { workspaceId, table: recurrenceRules, key: recurrenceRules.id, rowId: ruleId }
+}
+
+export function occurrenceAuditTarget(workspaceId: string, occurrenceId: string): AuditTarget {
+  return { workspaceId, table: plannedOccurrences, key: plannedOccurrences.id, rowId: occurrenceId }
+}
+
+export function budgetLineAuditTarget(workspaceId: string, lineId: string): AuditTarget {
+  return { workspaceId, table: budgetLines, key: budgetLines.id, rowId: lineId }
+}
+
+export function goalAuditTarget(workspaceId: string, goalId: string): AuditTarget {
+  return { workspaceId, table: goals, key: goals.id, rowId: goalId }
 }

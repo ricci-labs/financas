@@ -19,7 +19,7 @@ export function requestContext(rootLogger: Logger) {
     c.header(REQUEST_ID_HEADER, requestId)
 
     const startedAt = performance.now()
-    await runInOperation({ traceId: requestId, source: 'web' }, next)
+    await runInOperation({ traceId: requestId, source: 'web', actorUserId: null }, next)
     logCompletion(logger, {
       method: c.req.method,
       route: routePath(c, LAST_MATCHED_ROUTE),

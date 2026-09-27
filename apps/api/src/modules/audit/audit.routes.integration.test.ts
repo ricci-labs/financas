@@ -8,7 +8,7 @@ import { connectTestDatabases } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
 import { addMemberWithSystemRole, loggedInUser, requestsAs } from '@api/testing/http'
 import type { SessionRequests } from '@api/testing/testing.types'
-import type { Page } from '@financas/shared'
+import { addDays, type Page, todayIn } from '@financas/shared'
 import { sql } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
@@ -64,8 +64,16 @@ afterAll(async () => {
 })
 
 async function idOf(response: Promise<Response>): Promise<string> {
-  const body = (await (await response).json()) as { accountId?: string; entryId?: string }
-  const id = body.accountId ?? body.entryId
+  const body = (await (await response).json()) as Record<string, string | undefined>
+  const id =
+    body.accountId ??
+    body.entryId ??
+    body.contactId ??
+    body.chargeId ??
+    body.ruleId ??
+    body.goalId ??
+    body.holidayId ??
+    body.fileId
   if (!id) {
     throw new Error(`Nothing was created: ${JSON.stringify(body)}`)
   }
@@ -167,7 +175,7 @@ describe('GET /audit', () => {
 
 describe('audit_log', () => {
   it('can only be appended to and read by the app, and only in its own workspace', async () => {
-    await runInOperation({ traceId: 'job-trace', source: 'job' }, () =>
+    await runInOperation({ traceId: 'job-trace', source: 'job', actorUserId: null }, () =>
       withWorkspace(databases.app, workspaceId, (tx) =>
         recordAudit(tx, {
           workspaceId,
@@ -208,5 +216,161 @@ describe('audit_log', () => {
         }),
       ),
     ).rejects.toMatchObject({ cause: { code: '42501' } })
+  })
+})
+
+describe('writes across the modules', () => {
+  it('each leave an audit event with the logged-in member as the actor', async () => {
+    const today = todayIn('America/Sao_Paulo', new Date())
+    const base = workspacePath
+    const expectLatest = async (tableName: string, rowId: string, action: string) => {
+      const [event] = (await auditAt(`?tableName=${tableName}&rowId=${rowId}&limit=1`)).items
+      expect({ tableName, action: event?.action, actor: event?.actorUserId }).toEqual({
+        tableName,
+        action,
+        actor: ownerId,
+      })
+      return event
+    }
+    const ok = async (response: Promise<Response>) =>
+      expect((await response).status).toBeLessThan(300)
+
+    const accountId = await idOf(
+      owner.post(`${base}/accounts`, { kind: 'savings', name: 'Reserva' }),
+    )
+    await expectLatest('ledger_accounts', accountId, 'create')
+    await ok(owner.patch(`${base}/accounts/${accountId}`, { name: 'Reserva A' }))
+    expect((await expectLatest('ledger_accounts', accountId, 'update'))?.after).toMatchObject({
+      name: 'Reserva A',
+    })
+    await ok(owner.post(`${base}/accounts/${accountId}/archive`))
+    await expectLatest('ledger_accounts', accountId, 'archive')
+    await ok(owner.post(`${base}/accounts/${accountId}/unarchive`))
+    await expectLatest('ledger_accounts', accountId, 'unarchive')
+    await ok(owner.del(`${base}/accounts/${accountId}`, {}))
+    await expectLatest('ledger_accounts', accountId, 'delete')
+    await ok(owner.post(`${base}/accounts/${accountId}/restore`))
+    await expectLatest('ledger_accounts', accountId, 'restore')
+
+    const cardId = await idOf(
+      owner.post(`${base}/cards`, { name: 'Card X', closingDay: 3, dueDay: 10 }),
+    )
+    await expectLatest('ledger_accounts', cardId, 'create')
+    await expectLatest('card_details', cardId, 'create')
+    await ok(owner.patch(`${base}/cards/${cardId}`, { dueDay: 12 }))
+    await expectLatest('card_details', cardId, 'update')
+
+    const contactId = await idOf(owner.post(`${base}/contacts`, { name: 'Contact J' }))
+    await expectLatest('contacts', contactId, 'create')
+    await ok(owner.patch(`${base}/contacts/${contactId}`, { notes: 'Colega' }))
+    await expectLatest('contacts', contactId, 'update')
+    await ok(
+      owner.post(`${base}/entries`, {
+        ...expense('Jantar'),
+        occurredOn: addDays(today, -3),
+        shares: [{ contactId, amountCents: 2000 }],
+      }),
+    )
+    const chargeId = await idOf(owner.post(`${base}/contacts/${contactId}/charges`, {}))
+    await expectLatest('charges', chargeId, 'create')
+    await ok(owner.post(`${base}/charges/${chargeId}/sent`))
+    await expectLatest('charges', chargeId, 'update')
+    await ok(
+      owner.post(`${base}/charges/${chargeId}/payments`, {
+        amountCents: 2000,
+        receivedInAccountId: checkingId,
+        occurredOn: today,
+      }),
+    )
+    const [payment] = (await auditAt('?tableName=charge_payments&limit=1')).items
+    expect(payment).toMatchObject({ action: 'create', after: { chargeId, amountCents: 2000 } })
+    const other = await idOf(owner.post(`${base}/contacts`, { name: 'Contact K' }))
+    await ok(owner.del(`${base}/contacts/${other}`, {}))
+    await expectLatest('contacts', other, 'delete')
+
+    const ruleId = await idOf(
+      owner.post(`${base}/recurrences`, {
+        description: 'Diarista',
+        entryType: 'expense',
+        amountCents: 4200,
+        sourceAccountId: checkingId,
+        categoryAccountId: groceriesId,
+        schedule: { frequency: 'weekly', startsOn: today },
+      }),
+    )
+    await expectLatest('recurrence_rules', ruleId, 'create')
+    await ok(owner.patch(`${base}/recurrences/${ruleId}`, { description: 'Diarista nova' }))
+    await expectLatest('recurrence_rules', ruleId, 'update')
+    const occurrences = (await (
+      await owner.get(`${base}/occurrences?from=${today}&to=${addDays(today, 6)}`)
+    ).json()) as { id: string; ruleId: string }[]
+    const occurrenceId = occurrences.find((item) => item.ruleId === ruleId)?.id ?? ''
+    const occurrencePath = `${base}/occurrences/${occurrenceId}`
+    for (const step of ['skip', 'unskip']) {
+      await ok(owner.post(`${occurrencePath}/${step}`))
+      await expectLatest('planned_occurrences', occurrenceId, 'update')
+    }
+    await ok(owner.patch(occurrencePath, { amountCents: 4300 }))
+    expect(
+      (await expectLatest('planned_occurrences', occurrenceId, 'update'))?.after,
+    ).toMatchObject({ amountCents: 4300 })
+    const paid = await idOf(
+      owner.post(`${base}/entries`, { ...expense('Diarista', 4300), occurredOn: today }),
+    )
+    await ok(owner.post(`${occurrencePath}/match`, { entryId: paid }))
+    expect(
+      (await expectLatest('planned_occurrences', occurrenceId, 'update'))?.after,
+    ).toMatchObject({ matchedEntryId: paid })
+    await ok(owner.post(`${occurrencePath}/unmatch`))
+    await expectLatest('planned_occurrences', occurrenceId, 'update')
+    await ok(owner.del(`${base}/recurrences/${ruleId}`, {}))
+    await expectLatest('recurrence_rules', ruleId, 'delete')
+
+    const goalId = await idOf(
+      owner.post(`${base}/goals`, { name: 'Viagem', targetCents: 500_000, accountId: checkingId }),
+    )
+    await expectLatest('goals', goalId, 'create')
+    await ok(owner.patch(`${base}/goals/${goalId}`, { targetCents: 600_000 }))
+    await expectLatest('goals', goalId, 'update')
+    await ok(
+      owner.put(`${base}/allocation-steps`, {
+        steps: [{ kind: 'fill_goal', goalId }],
+      }),
+    )
+    expect(await expectLatest('allocation_steps', workspaceId, 'update')).toMatchObject({
+      before: [],
+      after: [expect.objectContaining({ kind: 'fill_goal', goalId })],
+    })
+    await ok(owner.del(`${base}/goals/${goalId}`, {}))
+    await expectLatest('goals', goalId, 'delete')
+
+    const holidayId = await idOf(
+      owner.post(`${base}/holidays`, { onDate: '2027-01-25', name: 'Aniversário da cidade' }),
+    )
+    await expectLatest('workspace_holidays', holidayId, 'create')
+    await ok(owner.del(`${base}/holidays/${holidayId}`, {}))
+    await expectLatest('workspace_holidays', holidayId, 'delete')
+
+    await ok(
+      owner.put(`${base}/budgets/${groceriesId}`, { limitCents: 80_000, fromPeriod: '2026-10' }),
+    )
+    const [created] = (await auditAt('?tableName=budget_lines&limit=1')).items
+    expect(created).toMatchObject({ action: 'create', after: { limitCents: 80_000 } })
+    await ok(
+      owner.put(`${base}/budgets/${groceriesId}`, { limitCents: 90_000, fromPeriod: '2026-10' }),
+    )
+    expect(await expectLatest('budget_lines', created?.rowId ?? '', 'update')).toMatchObject({
+      before: { limitCents: 80_000 },
+      after: { limitCents: 90_000 },
+    })
+
+    const form = new FormData()
+    form.append('file', new File([new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 7])], 'nota.jpg'))
+    const fileId = await idOf(owner.postForm(`${base}/entries/${paid}/attachments`, form))
+    expect(await expectLatest('entry_attachments', fileId, 'create')).toMatchObject({
+      after: { entryId: paid, fileId, name: 'nota.jpg' },
+    })
+    await ok(owner.del(`${base}/entries/${paid}/attachments/${fileId}`))
+    await expectLatest('entry_attachments', fileId, 'delete')
   })
 })

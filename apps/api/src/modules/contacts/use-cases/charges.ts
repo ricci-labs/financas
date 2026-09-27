@@ -3,7 +3,10 @@ import type { Clock } from '@api/core/clock.types'
 import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { withWorkspace } from '@api/core/db/tx'
 import { ConflictError, NotFoundError, parseOrThrow } from '@api/core/http/errors'
+import { auditCreation, audited } from '@api/modules/audit'
 import {
+  chargeAuditTarget,
+  chargePaymentAuditTarget,
   insertCharge,
   insertChargeItems,
   insertChargePayment,
@@ -109,6 +112,7 @@ export async function createCharge(
       pixPayload,
     })
     await updateCharge(tx, chargeId, { messageText, pixPayload })
+    await auditCreation(tx, chargeAuditTarget(workspaceId, chargeId))
     return { chargeId }
   })
 }
@@ -161,12 +165,13 @@ export async function payCharge(
       },
       clock,
     )
-    await insertChargePayment(tx, {
+    const paymentId = await insertChargePayment(tx, {
       workspaceId,
       chargeId,
       entryId,
       amountCents: payment.amountCents,
     })
+    await auditCreation(tx, chargePaymentAuditTarget(workspaceId, paymentId))
     return { entryId }
   })
 }
@@ -183,7 +188,9 @@ async function moveCharge(
     if (!from.includes(charge.status) || paidCents > 0) {
       throw new ConflictError('CHARGE_STATUS_REFUSED', `Charge ${chargeId} is ${charge.status}`)
     }
-    await updateCharge(tx, chargeId, update)
+    await audited(tx, chargeAuditTarget(workspaceId, chargeId), 'update', () =>
+      updateCharge(tx, chargeId, update),
+    )
   })
 }
 

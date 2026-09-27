@@ -3,6 +3,7 @@ import type { Clock } from '@api/core/clock.types'
 import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { withWorkspace } from '@api/core/db/tx'
 import { parseOrThrow, ValidationError } from '@api/core/http/errors'
+import { recordAudit } from '@api/modules/audit'
 import { loadUsableAccounts } from '@api/modules/ledger'
 import {
   insertAllocationSteps,
@@ -20,6 +21,8 @@ import {
 } from '@financas/shared'
 
 const MONEY_KINDS: ReadonlySet<AccountKind> = new Set(MONEY_ACCOUNT_KINDS)
+
+const ALLOCATION_STEPS_TABLE = 'allocation_steps'
 
 export function listAllocationSteps(
   db: Database,
@@ -41,14 +44,26 @@ export async function replaceAllocationSteps(
   const { steps } = parseOrThrow(allocationStepsSchema, rawInput, 'ALLOCATION_INVALID')
   await withWorkspace(db, workspaceId, async (tx) => {
     await assertDestinationsExist(tx, steps)
+    const before = await selectAllocationSteps(tx)
     await markAllocationStepsDeleted(tx, { deletedAt: clock.now(), deletedByUserId: userId })
-    if (steps.length === 0) {
-      return
+    if (steps.length > 0) {
+      await insertAllocationSteps(
+        tx,
+        steps.map((step, index) => ({
+          workspaceId,
+          position: index + 1,
+          ...allocationStepOf(step),
+        })),
+      )
     }
-    await insertAllocationSteps(
-      tx,
-      steps.map((step, index) => ({ workspaceId, position: index + 1, ...allocationStepOf(step) })),
-    )
+    await recordAudit(tx, {
+      workspaceId,
+      action: 'update',
+      tableName: ALLOCATION_STEPS_TABLE,
+      rowId: workspaceId,
+      before,
+      after: await selectAllocationSteps(tx),
+    })
   })
 }
 

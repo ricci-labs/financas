@@ -1,8 +1,11 @@
 import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { withWorkspace } from '@api/core/db/tx'
 import { parseOrThrow, ValidationError } from '@api/core/http/errors'
+import { auditCreation, audited } from '@api/modules/audit'
 import { loadUsableAccounts } from '@api/modules/ledger'
 import {
+  budgetLineAuditTarget,
+  selectActiveBudgetLineId,
   selectBudgetsEffectiveOn,
   upsertBudgetLine,
 } from '@api/modules/planning/planning.repository'
@@ -44,12 +47,15 @@ export async function setBudget(
     if (category?.kind !== 'expense_category') {
       throw new ValidationError('BUDGET_CATEGORY_INVALID', 'Budgets are set on expense categories')
     }
-    await upsertBudgetLine(tx, {
-      workspaceId,
-      categoryAccountId,
-      validFrom: firstDayOf(fromPeriod),
-      limitCents,
-    })
+    const line = { workspaceId, categoryAccountId, validFrom: firstDayOf(fromPeriod), limitCents }
+    const existingId = await selectActiveBudgetLineId(tx, categoryAccountId, line.validFrom)
+    if (existingId) {
+      await audited(tx, budgetLineAuditTarget(workspaceId, existingId), 'update', () =>
+        upsertBudgetLine(tx, line),
+      )
+      return
+    }
+    await auditCreation(tx, budgetLineAuditTarget(workspaceId, await upsertBudgetLine(tx, line)))
   })
 }
 

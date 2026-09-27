@@ -1,8 +1,8 @@
 import type { WorkspaceTransaction } from '@api/core/db/db.types'
 import { auditLog } from '@api/modules/audit/audit.table'
-import type { AuditItem, NewAuditRow } from '@api/modules/audit/audit.types'
+import type { AuditItem, AuditTarget, NewAuditRow } from '@api/modules/audit/audit.types'
 import type { AuditQuery } from '@financas/shared'
-import { and, desc, eq, type SQL, sql } from 'drizzle-orm'
+import { and, desc, eq, getTableName, type SQL, sql } from 'drizzle-orm'
 
 const AT_TO_THE_MILLISECOND = sql`date_trunc('milliseconds', ${auditLog.at})`
 
@@ -40,4 +40,16 @@ export function selectAuditRows(tx: WorkspaceTransaction, query: AuditQuery): Pr
     .where(and(...conditions))
     .orderBy(desc(AT_TO_THE_MILLISECOND), desc(auditLog.id))
     .limit(query.limit + 1)
+}
+
+export async function selectAuditedRow(
+  tx: WorkspaceTransaction,
+  { table, key, rowId }: AuditTarget,
+): Promise<unknown> {
+  const [row] = await tx.select().from(table).where(eq(key, rowId))
+  return row ?? null
+}
+
+export function tableNameOf({ table }: AuditTarget): string {
+  return getTableName(table)
 }

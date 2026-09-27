@@ -3,10 +3,12 @@ import type { Clock } from '@api/core/clock.types'
 import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { withWorkspace } from '@api/core/db/tx'
 import { NotFoundError, parseOrThrow, ValidationError } from '@api/core/http/errors'
+import { auditCreation, audited } from '@api/modules/audit'
 import { loadUsableAccounts } from '@api/modules/ledger'
 import {
   insertRule,
   lockActiveRule,
+  ruleAuditTarget,
   selectActiveRules,
   updateRule,
 } from '@api/modules/planning/planning.repository'
@@ -50,6 +52,7 @@ export async function createRecurrenceRule(
   return withWorkspace(db, workspaceId, async (tx) => {
     await assertAccountsFit(tx, rule.entryType, rule.sourceAccountId, rule.categoryAccountId)
     const ruleId = await insertRule(tx, { workspaceId, ...rule, ...schedule })
+    await auditCreation(tx, ruleAuditTarget(workspaceId, ruleId))
     await replanRuleOccurrences(
       tx,
       await lockExistingRule(tx, ruleId),
@@ -74,7 +77,9 @@ export async function changeRecurrenceRule(
       change.sourceAccountId ?? current.sourceAccountId,
       change.categoryAccountId ?? current.categoryAccountId,
     )
-    await updateRule(tx, ruleId, { ...change, ...schedule })
+    await audited(tx, ruleAuditTarget(workspaceId, ruleId), 'update', () =>
+      updateRule(tx, ruleId, { ...change, ...schedule }),
+    )
     await replanRuleOccurrences(
       tx,
       await lockExistingRule(tx, ruleId),
@@ -90,11 +95,13 @@ export async function deleteRecurrenceRule(
 ): Promise<void> {
   await withWorkspace(db, workspaceId, async (tx) => {
     await lockExistingRule(tx, ruleId)
-    await updateRule(tx, ruleId, {
-      deletedAt: clock.now(),
-      deletedByUserId: userId,
-      deleteReason: reason ?? null,
-    })
+    await audited(tx, ruleAuditTarget(workspaceId, ruleId), 'delete', () =>
+      updateRule(tx, ruleId, {
+        deletedAt: clock.now(),
+        deletedByUserId: userId,
+        deleteReason: reason ?? null,
+      }),
+    )
     await dropPendingOccurrences(tx, ruleId)
   })
 }

@@ -1,7 +1,8 @@
 import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { withWorkspace } from '@api/core/db/tx'
 import { ConflictError, parseOrThrow } from '@api/core/http/errors'
-import { updateOccurrence } from '@api/modules/planning/planning.repository'
+import { audited } from '@api/modules/audit'
+import { occurrenceAuditTarget, updateOccurrence } from '@api/modules/planning/planning.repository'
 import type { OccurrenceRef } from '@api/modules/planning/planning.types'
 import { lockExistingOccurrence } from '@api/modules/planning/use-cases/occurrences'
 import { type OccurrenceStatus, occurrenceChangeSchema } from '@financas/shared'
@@ -22,7 +23,9 @@ export async function changeOccurrenceAmount(
   const { amountCents } = parseOrThrow(occurrenceChangeSchema, rawChange, 'OCCURRENCE_INVALID')
   await withWorkspace(db, workspaceId, async (tx) => {
     await lockInStatus(tx, occurrenceId, 'pending')
-    await updateOccurrence(tx, occurrenceId, { amountCents })
+    await audited(tx, occurrenceAuditTarget(workspaceId, occurrenceId), 'update', () =>
+      updateOccurrence(tx, occurrenceId, { amountCents }),
+    )
   })
 }
 
@@ -34,7 +37,9 @@ async function moveStatus(
 ): Promise<void> {
   await withWorkspace(db, workspaceId, async (tx) => {
     await lockInStatus(tx, occurrenceId, from)
-    await updateOccurrence(tx, occurrenceId, { status: to })
+    await audited(tx, occurrenceAuditTarget(workspaceId, occurrenceId), 'update', () =>
+      updateOccurrence(tx, occurrenceId, { status: to }),
+    )
   })
 }
 

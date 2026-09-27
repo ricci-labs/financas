@@ -3,7 +3,9 @@ import type { Clock } from '@api/core/clock.types'
 import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { withWorkspace } from '@api/core/db/tx'
 import { ConflictError, NotFoundError, parseOrThrow, ValidationError } from '@api/core/http/errors'
+import { auditCreation, audited } from '@api/modules/audit'
 import {
+  accountAuditTarget,
   findAccountClass,
   insertAccount,
   insertAccounts,
@@ -75,6 +77,7 @@ export async function createAccount(
         icon: input.icon ?? null,
         sortOrder: input.sortOrder,
       })
+      await auditCreation(tx, accountAuditTarget(workspaceId, accountId))
       return { accountId }
     }),
   )
@@ -93,7 +96,9 @@ export async function changeAccount(
         if (change.parentId) {
           await assertParentFits(tx, change.parentId, account.class)
         }
-        await updateAccount(tx, accountId, change)
+        await audited(tx, accountAuditTarget(workspaceId, accountId), 'update', () =>
+          updateAccount(tx, accountId, change),
+        )
       }),
     ),
   )
@@ -127,11 +132,13 @@ export async function deleteAccount(
   await refusingBrokenRules('ACCOUNT_CANNOT_BE_DELETED', () =>
     withWorkspace(db, workspaceId, async (tx) => {
       await lockActiveAccount(tx, accountId)
-      await markAccountDeleted(tx, accountId, {
-        deletedAt: clock.now(),
-        deletedByUserId: userId,
-        deleteReason: reason ?? null,
-      })
+      await audited(tx, accountAuditTarget(workspaceId, accountId), 'delete', () =>
+        markAccountDeleted(tx, accountId, {
+          deletedAt: clock.now(),
+          deletedByUserId: userId,
+          deleteReason: reason ?? null,
+        }),
+      )
     }),
   )
 }
@@ -147,7 +154,9 @@ export async function restoreAccount(db: Database, { workspaceId, accountId }: W
         if (!account.deletedAt) {
           throw new ConflictError('ACCOUNT_NOT_DELETED', `Account ${accountId} is not deleted`)
         }
-        await markAccountRestored(tx, accountId)
+        await audited(tx, accountAuditTarget(workspaceId, accountId), 'restore', () =>
+          markAccountRestored(tx, accountId),
+        )
       }),
     ),
   )
@@ -161,7 +170,12 @@ async function setArchived(
   await refusingBrokenRules('ACCOUNT_CHANGE_REFUSED', () =>
     withWorkspace(db, workspaceId, async (tx) => {
       await lockActiveAccount(tx, accountId)
-      await updateAccount(tx, accountId, { archivedAt })
+      await audited(
+        tx,
+        accountAuditTarget(workspaceId, accountId),
+        archivedAt ? 'archive' : 'unarchive',
+        () => updateAccount(tx, accountId, { archivedAt }),
+      )
     }),
   )
 }

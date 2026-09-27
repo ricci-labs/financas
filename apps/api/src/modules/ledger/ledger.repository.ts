@@ -1,4 +1,5 @@
 import type { WorkspaceTransaction } from '@api/core/db/db.types'
+import type { AuditTarget } from '@api/modules/audit'
 import {
   accountBalances,
   cardDetails,
@@ -593,4 +594,12 @@ export function selectInvoicesDueBetween(tx: WorkspaceTransaction, from: IsoDate
     .from(invoiceTotals)
     .innerJoin(ledgerAccounts, eq(ledgerAccounts.id, invoiceTotals.cardAccountId))
     .where(and(between(invoiceTotals.dueOn, from, to), gt(invoiceTotals.dueCents, 0)))
+}
+
+export function accountAuditTarget(workspaceId: string, accountId: string): AuditTarget {
+  return { workspaceId, table: ledgerAccounts, key: ledgerAccounts.id, rowId: accountId }
+}
+
+export function cardAuditTarget(workspaceId: string, cardAccountId: string): AuditTarget {
+  return { workspaceId, table: cardDetails, key: cardDetails.accountId, rowId: cardAccountId }
 }

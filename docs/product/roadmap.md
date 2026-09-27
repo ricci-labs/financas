@@ -111,7 +111,7 @@ updated: 2026-09-27
   6. [ ] **Audit log** (ADR 0026; started 2026-09-27):
      - [x] Operation context (trace id + source for HTTP and jobs), `audit_log` append-only,
            `recordAudit`, `GET /audit`, entries audited
-     - [ ] Audit the other writes: accounts, cards, contacts, charges, planning, attachments
+     - [x] Audit the other writes: accounts, cards, contacts, charges, planning, attachments
      - [ ] Audit settings, members, roles and invitations
   7. [ ] **Observability core and deploy:** OTel, metrics, error refs, ops scripts, Dockerfile,
          Dokploy workflow, backups (needs open questions 7, 8 and 10)

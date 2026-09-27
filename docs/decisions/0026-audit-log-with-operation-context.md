@@ -19,16 +19,22 @@ updated: 2026-09-27
 
 ## Decision
 - **Operation context** (`core/observability/operation-context.ts`): an `AsyncLocalStorage` holding
-  `{ traceId, source }`.
+  `{ traceId, source, actorUserId }`.
   - The HTTP request middleware opens it with the request id and `web`.
   - The job runner opens it with a new trace id per run and `job`, and logs that `trace_id`.
-  - The WhatsApp channel will open it with `whatsapp`.
-  - Outside any operation, it is `{ traceId: null, source: 'system' }`.
+  - The session middleware adds the logged-in user as the actor (`runAsActor`).
+  - The WhatsApp channel will open it with `whatsapp` and the member it identified.
+  - Outside any operation, it is `{ traceId: null, source: 'system', actorUserId: null }`.
   - OTel (step 7) can later supply the trace id from the active span, without changing callers.
 - **`recordAudit(tx, change)`** (`modules/audit`) inserts one row in the service's transaction, so
   the audit row and the change commit or roll back together. The change carries `workspaceId`,
-  `actorUserId`, `action`, `tableName`, `rowId`, `before` and `after`. `source` and `trace_id` come
-  from the operation context.
+  `action`, `tableName`, `rowId`, `before` and `after`. `source`, `trace_id` and, unless the change
+  names one, the actor come from the operation context.
+- **Helpers for the common case:** `auditCreation(tx, target)` and
+  `audited(tx, target, action, change)` read the row before and after by an `AuditTarget` (table, key
+  column, row id). Each repository builds its own targets, so the table objects never leave their
+  module. Sets that change together (allocation steps) or link rows (attachments) call
+  `recordAudit` with their own snapshot.
 - **Append-only:** the app role has RLS policies for `select` and `insert` only, and `UPDATE`,
   `DELETE` and `TRUNCATE` are revoked. The rows go only with the workspace (LGPD erasure cascades).
 - The trail is read through `GET /audit` with `audit:view`.
@@ -36,7 +42,8 @@ updated: 2026-09-27
 ## Alternatives considered
 - Triggers on every table: they miss the actor and trace unless every transaction sets them, and
   they would log internal bookkeeping (balances, invoice totals) as if a person did it.
-- Explicit `traceId`/`source` parameters: correct, but noisy in every signature, and easy to forget.
+- Explicit `traceId`/`source`/`userId` parameters: correct, but noisy in every signature, and easy
+  to forget.
 
 ## Consequences
 - Each write use case calls `recordAudit`; a missing call is caught in review and by the tests of
