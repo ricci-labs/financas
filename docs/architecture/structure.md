@@ -1,7 +1,7 @@
 ---
 summary: The intended folder tree for the whole monorepo, with the role of every folder and file type.
 read_when: Creating files or folders, or deciding where a piece of code belongs.
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Project structure
@@ -127,6 +127,7 @@ src/
 │   ├── config/env.ts         # Zod-validated env, fails at boot
 │   ├── email/                # Mailer (ADR 0022): SMTP via Nodemailer, or .eml files in development;
 │   │                         #   layout.ts renders text + escaped HTML
+│   ├── storage/              # FileStorage (put/get/remove) and the local-disk implementation
 │   ├── db/
 │   │   ├── client.ts         # pg pool + Drizzle, readiness check
 │   │   ├── columns.ts        # primaryId, timestamps, softDelete helpers
