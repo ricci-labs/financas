@@ -1,7 +1,7 @@
 ---
 summary: Supporting tables — tags, attachments (receipts/notas), notification outbox (reminders, charges), audit log, agent runs/messages/pending actions.
 read_when: Working on tags, file uploads/receipts, reminders and message sending, audit, or agent persistence.
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Supporting tables
@@ -17,7 +17,7 @@ updated: 2026-09-26
   - `entry_attachments`: `entry_id`, `file_id`
   - `charge_attachments`: `charge_id`, `file_id`
   - more are added the same way when needed.
-- Storage: a Docker volume at first, behind a `FileStorage` interface (`put/get/delete`), so an S3-compatible store can replace it by config.
+- Storage: a Docker volume at first, behind a `FileStorage` interface (`core/storage`: `put`, `get`, `remove`), so an S3-compatible store can replace it by config. `createLocalFileStorage(FILE_STORAGE_DIR)` stores a file at `<workspace id>/<sha256>`; any other key shape is refused, so nothing can escape the directory.
 - A receipt photo sent on WhatsApp during an expense conversation is attached to that entry.
 
 ## Notifications: `notification_outbox`

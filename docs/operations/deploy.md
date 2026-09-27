@@ -1,7 +1,7 @@
 ---
 summary: Production setup on Dokploy — containers, image, env vars, resources, logs rotation, backups, remote access (open), first-deploy checklist.
 read_when: Deploying, changing env vars or runtime config, setting up backups, or exposing the app.
-updated: 2026-09-25
+updated: 2026-09-27
 ---
 
 # Deploy
@@ -30,6 +30,8 @@ Pipeline: `../engineering/ci-cd.md`. Decision: `../decisions/0010-deploy-ghcr-do
 | `SMTP_USER`, `SMTP_PASSWORD` | SMTP login, as a pair |
 | `EMAIL_FROM`, `EMAIL_FROM_NAME` | Sender address (required in production) and display name (default `Finanças`) |
 | `EMAIL_OUTBOX_DIR` | Development only: folder for `.eml` files when `SMTP_HOST` is empty |
+| `FILE_STORAGE_DIR` | Where attachments live (default `.private/files`). In production, a mounted Docker volume that is part of the backups |
+| `FILE_MAX_BYTES` | Largest upload accepted (default 10 MB) |
 | `LOG_LEVEL` | `info` in prod |
 | `OTEL_SERVICE_NAME=financas-api`, `OTEL_METRICS_EXPORTER=prometheus`, `OTEL_TRACES_EXPORTER=none` | Observability Level 0 (`observability.md`) |
 | `UPTIME_KUMA_PUSH_URL_<JOB>` | Heartbeats (optional) |

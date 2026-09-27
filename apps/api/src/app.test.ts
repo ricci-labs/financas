@@ -59,6 +59,8 @@ describe('loadEnv', () => {
       SMTP_PORT: 587,
       EMAIL_FROM_NAME: 'Finanças',
       EMAIL_OUTBOX_DIR: '.private/outbox',
+      FILE_STORAGE_DIR: '.private/files',
+      FILE_MAX_BYTES: 10 * 1024 * 1024,
     })
   })
 

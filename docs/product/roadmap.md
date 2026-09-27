@@ -1,7 +1,7 @@
 ---
 summary: Phases, MVP scope, current focus and the list of open questions.
 read_when: Deciding what to build next, checking whether something is in scope, or resuming work in a new session.
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Roadmap
@@ -103,7 +103,11 @@ updated: 2026-09-26
      - [x] Worker job: claim due rows, render pt-BR emails, send, retry with backoff
      - [x] Reminders of bills and card invoices, by each member's lead time
      - [x] Members' notification preferences through the API
-  5. [ ] **Attachments** on entries (`FileStorage`)
+  5. [ ] **Attachments** on entries (`FileStorage`) (started 2026-09-27; the user asked for steps 5 and
+         6 in a row):
+     - [x] `core/storage`: `FileStorage` + local disk, `FILE_STORAGE_DIR`, `FILE_MAX_BYTES`
+     - [ ] `attachments` module: `files` + `entry_attachments`, upload, list, download, detach
+     - [ ] Charge attachments (payment receipts) and the purge of trashed files after 30 days
   6. [ ] **Audit log**
   7. [ ] **Observability core and deploy:** OTel, metrics, error refs, ops scripts, Dockerfile,
          Dokploy workflow, backups (needs open questions 7, 8 and 10)
