@@ -8,7 +8,8 @@ updated: 2026-09-27
 
 The `ops:*` scripts live in `scripts/ops/` (plain Node, run from the repo root on the server). They
 find containers by name prefix: `OPS_APP_CONTAINER` (default `financas-api`) and
-`OPS_DB_CONTAINER` (default `financas-db`). Logs come from `docker logs`, or from a file of JSON
+`OPS_DB_CONTAINER` (default `financas-db`). Dokploy names services `<project>-<name>-<suffix>`, so
+export both with the real prefixes (seen in `docker ps`) before running them. Logs come from `docker logs`, or from a file of JSON
 lines with `OPS_LOGS_FILE` (e.g. a dev run saved with `node dist/main.mjs > app.log`). The raw
 commands still work when a script can't be used.
 

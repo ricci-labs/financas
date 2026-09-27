@@ -77,7 +77,7 @@ household data, so the backup folder stays outside the repo.
 | `BACKUP_DIR` | Local folder for the backups (required), e.g. `~/backups/financas` |
 | `BACKUP_DB_CONTAINER` | Database container name or prefix (required; Dokploy adds suffixes), e.g. `financas-db` |
 | `BACKUP_APP_CONTAINER` | App container name or prefix; without it, the attachments are not archived |
-| `BACKUP_DB_NAME`, `BACKUP_DB_USER` | Default `financas`, `postgres` |
+| `BACKUP_DB_NAME`, `BACKUP_DB_USER` | Default `financas`, `postgres`. With a Dokploy database, `BACKUP_DB_USER` is the superuser chosen when creating it |
 | `BACKUP_FILES_PATH` | Attachments path inside the app container, default `/data/files` |
 | `BACKUP_KEEP_DAYS` | Local retention, default 14 |
 | `BACKUP_KUMA_PUSH_URL` | Uptime Kuma push monitor URL (optional) |
@@ -133,12 +133,16 @@ never in this repo.
    Change visibility → Public. The code is public and the image holds no secrets, so Dokploy needs
    no pull token.
 2. **Database.** Dokploy → Create Database → PostgreSQL: image `postgres:18-alpine`, database
-   `financas`, a strong superuser password, no external port. Then create the two roles, typing
-   their passwords without echo (ADR 0018):
+   `financas`, a strong superuser password, no external port. Generate two passwords with
+   `openssl rand -hex 24` (letters and digits only, so the connection URLs need no escaping), then
+   create the two roles from the repo on the server. The script asks for both passwords without
+   echo (ADR 0018):
    ```sh
-   read -rs OWNER_DB_PASSWORD && read -rs APP_DB_PASSWORD && export OWNER_DB_PASSWORD APP_DB_PASSWORD
-   docker exec -i -e OWNER_DB_PASSWORD -e APP_DB_PASSWORD "$(docker ps -q -f name=financas-db)" sh -s < docker/postgres/init/01-roles.sh
+   sh docker/postgres/create-roles.sh <db app name>
    ```
+   To change one later: `sh docker/postgres/change-password.sh <db app name> financas_app` (or
+   `financas_owner`), then update the matching URL in Dokploy and redeploy.
+   Passwords and tokens go straight into Dokploy, never into chats, issues or the repo.
 3. **Application.** Dokploy → Create Application → Docker image
    `ghcr.io/ricci-labs/financas:main`, no domain in Dokploy (the tunnel reaches it).
    - Environment (the table above has the full list):
@@ -157,7 +161,11 @@ never in this repo.
      LOG_LEVEL=info
      ```
    - Volume: a named volume mounted at `/data/files`.
-   - Deploy. The entrypoint applies the migrations, then the app starts.
+   - `EMAIL_FROM` must be a real address format (the mailbox may come later). Without the SMTP
+     mailbox yet, leave `SMTP_USER`/`SMTP_PASSWORD` out: the app boots and emails fail until they
+     are set.
+   - Deploy. The entrypoint applies the migrations, then the app starts. Dokploy's log view keeps
+     the output of earlier failed attempts, so check the newest lines or `pnpm ops:health`.
 4. **Tunnel.** Cloudflare Zero Trust → Networks → Tunnels → Create a tunnel (Cloudflared), and copy
    its token. In Dokploy, create an application from the Docker image `cloudflare/cloudflared:latest`
    with the command `tunnel --no-autoupdate run` and the environment `TUNNEL_TOKEN=<token>`. Once it
