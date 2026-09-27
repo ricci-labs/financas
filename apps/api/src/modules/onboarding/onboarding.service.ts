@@ -2,6 +2,7 @@ import type { Database } from '@api/core/db/db.types'
 import { withWorkspace } from '@api/core/db/tx'
 import { pageLink } from '@api/core/email/links'
 import { ForbiddenError, NotFoundError, ValidationError } from '@api/core/http/errors'
+import { runAsActor } from '@api/core/observability/operation-context'
 import { createSystemRoles, findRole, listRolePermissions } from '@api/modules/access'
 import {
   createUser,
@@ -46,21 +47,23 @@ export async function createWorkspace(
   const name = parseWorkspaceName(input.name)
   const workspaceId = await reserveWorkspaceId(db)
 
-  return withWorkspace(db, workspaceId, async (tx) => {
-    const { currency } = await addWorkspace(tx, {
-      id: workspaceId,
-      name,
-      createdByUserId: input.ownerUserId,
-    })
-    await createSystemAccounts(tx, workspaceId, currency)
-    const systemRoles = await createSystemRoles(tx, workspaceId)
-    const ownerMembershipId = await addMember(tx, {
-      workspaceId,
-      userId: input.ownerUserId,
-      roleId: systemRoles.owner,
-    })
-    return { workspaceId, ownerMembershipId }
-  })
+  return runAsActor(input.ownerUserId, () =>
+    withWorkspace(db, workspaceId, async (tx) => {
+      const { currency } = await addWorkspace(tx, {
+        id: workspaceId,
+        name,
+        createdByUserId: input.ownerUserId,
+      })
+      await createSystemAccounts(tx, workspaceId, currency)
+      const systemRoles = await createSystemRoles(tx, workspaceId)
+      const ownerMembershipId = await addMember(tx, {
+        workspaceId,
+        userId: input.ownerUserId,
+        roleId: systemRoles.owner,
+      })
+      return { workspaceId, ownerMembershipId }
+    }),
+  )
 }
 
 export async function registerOwner(
@@ -187,7 +190,9 @@ export async function signUpThroughInvitation(
     { email, displayName: input.displayName, password: input.password, isEmailVerified },
     deps,
   )
-  const accepted = await acceptInvitation(db, { token: input.token, userId, userEmail: email })
+  const accepted = await runAsActor(userId, () =>
+    acceptInvitation(db, { token: input.token, userId, userEmail: email }),
+  )
   if (!isEmailVerified) {
     await requestEmailVerification(db, { email }, deps)
   }

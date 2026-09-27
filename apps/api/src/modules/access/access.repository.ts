@@ -1,6 +1,7 @@
 import type { WorkspaceTransaction } from '@api/core/db/db.types'
 import { rolePermissions, roles } from '@api/modules/access/access.table'
 import type { NewSystemRole, RoleDeletion, RoleDetails } from '@api/modules/access/access.types'
+import type { AuditTarget } from '@api/modules/audit'
 import type { Permission } from '@financas/shared'
 import { and, asc, eq, isNull } from 'drizzle-orm'
 
@@ -120,4 +121,8 @@ export async function markRoleDeleted(
   deletion: RoleDeletion,
 ): Promise<void> {
   await tx.update(roles).set(deletion).where(eq(roles.id, roleId))
+}
+
+export function roleAuditTarget(workspaceId: string, roleId: string): AuditTarget {
+  return { workspaceId, table: roles, key: roles.id, rowId: roleId }
 }

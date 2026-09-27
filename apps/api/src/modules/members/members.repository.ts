@@ -1,4 +1,5 @@
 import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
+import type { AuditTarget } from '@api/modules/audit'
 import { invitations, membershipPreferences, memberships } from '@api/modules/members/members.table'
 import type {
   InvitationContact,
@@ -249,4 +250,27 @@ export async function updateMembershipPreferences(
   change: Partial<MembershipPreferences>,
 ): Promise<void> {
   await tx.update(membershipPreferences).set(change).where(eq(membershipPreferences.userId, userId))
+}
+
+export function membershipAuditTarget(workspaceId: string, membershipId: string): AuditTarget {
+  return { workspaceId, table: memberships, key: memberships.id, rowId: membershipId }
+}
+
+export function preferencesAuditTarget(workspaceId: string, userId: string): AuditTarget {
+  return {
+    workspaceId,
+    table: membershipPreferences,
+    key: membershipPreferences.userId,
+    rowId: userId,
+  }
+}
+
+export function invitationAuditTarget(workspaceId: string, invitationId: string): AuditTarget {
+  return {
+    workspaceId,
+    table: invitations,
+    key: invitations.id,
+    rowId: invitationId,
+    hidden: ['tokenHash'],
+  }
 }

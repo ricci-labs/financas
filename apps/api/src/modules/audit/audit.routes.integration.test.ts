@@ -3,7 +3,7 @@ import { withWorkspace } from '@api/core/db/tx'
 import { runInOperation } from '@api/core/observability/operation-context'
 import { type AuditItem, recordAudit } from '@api/modules/audit'
 import { auditLog } from '@api/modules/audit/audit.table'
-import { testAppDeps } from '@api/testing/app'
+import { TEST_PUBLIC_URL, testAppDeps } from '@api/testing/app'
 import { connectTestDatabases } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
 import { addMemberWithSystemRole, loggedInUser, requestsAs } from '@api/testing/http'
@@ -202,9 +202,11 @@ describe('audit_log', () => {
       ).rejects.toMatchObject({ cause: { code: '42501' } })
     }
     const visibleElsewhere = await withWorkspace(databases.app, otherWorkspaceId, (tx) =>
-      tx.select({ id: auditLog.id }).from(auditLog),
+      tx.select({ workspaceId: auditLog.workspaceId }).from(auditLog),
     )
-    expect(visibleElsewhere).toEqual([])
+    expect(new Set(visibleElsewhere.map((row) => row.workspaceId))).toEqual(
+      new Set([otherWorkspaceId]),
+    )
     await expect(
       withWorkspace(databases.app, otherWorkspaceId, (tx) =>
         recordAudit(tx, {
@@ -374,3 +376,138 @@ describe('writes across the modules', () => {
     await expectLatest('entry_attachments', fileId, 'delete')
   })
 })
+
+describe('workspace, roles, invitations and members', () => {
+  it('leave audit events too, with the new user as actor when they join by sign-up', async () => {
+    const created = await owner.post('/api/workspaces', { name: 'Audited home' })
+    const { workspaceId: homeId } = (await created.json()) as { workspaceId: string }
+    const home = `/api/workspaces/${homeId}`
+    const auditOf = async (tableName: string, rowId?: string) =>
+      (
+        (await (
+          await owner.get(`${home}/audit?tableName=${tableName}${rowId ? `&rowId=${rowId}` : ''}`)
+        ).json()) as Page<AuditItem>
+      ).items
+    const ok = async (response: Promise<Response>) =>
+      expect((await response).status).toBeLessThan(300)
+
+    expect((await auditOf('workspaces', homeId))[0]).toMatchObject({
+      action: 'create',
+      actorUserId: ownerId,
+      after: { id: homeId, name: 'Audited home' },
+    })
+    expect((await auditOf('memberships'))[0]).toMatchObject({
+      action: 'create',
+      actorUserId: ownerId,
+      after: { userId: ownerId },
+    })
+
+    await ok(owner.patch(home, { name: 'Audited house' }))
+    expect((await auditOf('workspaces', homeId))[0]).toMatchObject({
+      action: 'update',
+      before: { name: 'Audited home' },
+      after: { name: 'Audited house' },
+    })
+    await ok(owner.patch(`${home}/settings`, { weekStartsOn: 1 }))
+    await ok(
+      owner.put(`${home}/settings/pix`, {
+        key: 'household@example.test',
+        receiverName: 'Casa',
+        receiverCity: 'Sao Paulo',
+      }),
+    )
+    expect((await auditOf('workspace_settings', homeId)).map((event) => event.action)).toEqual([
+      'update',
+      'update',
+    ])
+
+    const roleId = (
+      (await (
+        await owner.post(`${home}/roles`, {
+          name: 'Lançador',
+          permissions: [
+            { module: 'entries', action: 'view' },
+            { module: 'entries', action: 'create' },
+          ],
+        })
+      ).json()) as { roleId: string }
+    ).roleId
+    expect((await auditOf('roles', roleId))[0]).toMatchObject({ action: 'create' })
+    await ok(
+      owner.patch(`${home}/roles/${roleId}`, {
+        permissions: [{ module: 'entries', action: 'view' }],
+      }),
+    )
+    expect((await auditOf('role_permissions', roleId))[0]).toMatchObject({
+      action: 'update',
+      before: expect.arrayContaining([{ module: 'entries', action: 'create' }]),
+      after: [{ module: 'entries', action: 'view' }],
+    })
+
+    const invitation = await owner.post(`${home}/invitations`, {
+      phoneE164: '+5511900005555',
+      roleId,
+    })
+    const { invitationId, shareableLink } = (await invitation.json()) as {
+      invitationId: string
+      shareableLink: string
+    }
+    const [invited] = await auditOf('invitations', invitationId)
+    expect(invited).toMatchObject({ action: 'create', actorUserId: ownerId })
+    expect(invited?.after).not.toHaveProperty('tokenHash')
+
+    const token = new URLSearchParams(new URL(shareableLink).hash.slice(1)).get('token')
+    const joined = await app.request('/api/invitations/sign-up', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Origin: TEST_PUBLIC_URL },
+      body: JSON.stringify({
+        token,
+        displayName: 'Member New',
+        password: 'a long enough password',
+        email: `joined-${crypto.randomUUID()}-${fixtures.runId}@example.test`,
+      }),
+    })
+    const { membershipId } = (await joined.json()) as { membershipId: string }
+    const [membership] = await auditOf('memberships', membershipId)
+    const joinedUserId = (membership?.after as { userId?: string } | undefined)?.userId
+    expect(joinedUserId).toEqual(expect.any(String))
+    expect(membership?.actorUserId).toBe(joinedUserId)
+    expect((await auditOf('invitations', invitationId))[0]).toMatchObject({
+      action: 'update',
+      after: { acceptedAt: expect.any(String) },
+    })
+
+    await ok(owner.patch(`${home}/members/${membershipId}`, { roleId: await viewerRoleOf(home) }))
+    expect((await auditOf('memberships', membershipId))[0]).toMatchObject({ action: 'update' })
+    await ok(owner.del(`${home}/members/${membershipId}`, { reason: 'Saiu' }))
+    expect((await auditOf('memberships', membershipId))[0]).toMatchObject({ action: 'delete' })
+    await ok(owner.del(`${home}/roles/${roleId}`, {}))
+    expect((await auditOf('roles', roleId))[0]).toMatchObject({ action: 'delete' })
+
+    const revoked = (
+      (await (
+        await owner.post(`${home}/invitations`, {
+          phoneE164: '+5511900006666',
+          roleId: await viewerRoleOf(home),
+        })
+      ).json()) as { invitationId: string }
+    ).invitationId
+    await ok(owner.del(`${home}/invitations/${revoked}`))
+    expect((await auditOf('invitations', revoked))[0]).toMatchObject({ action: 'delete' })
+
+    await ok(owner.patch(`${home}/members/me/preferences`, { notifyBillsDaysBefore: 5 }))
+    expect((await auditOf('membership_preferences', ownerId))[0]).toMatchObject({
+      action: 'update',
+      before: { notifyBillsDaysBefore: 3 },
+      after: { notifyBillsDaysBefore: 5 },
+    })
+  })
+})
+
+async function viewerRoleOf(home: string): Promise<string> {
+  const roles = (await (await owner.get(`${home}/roles`)).json()) as {
+    roleId: string
+    systemKey: string | null
+  }[]
+  return roles.find((role) => role.systemKey === 'viewer')?.roleId ?? ''
+}

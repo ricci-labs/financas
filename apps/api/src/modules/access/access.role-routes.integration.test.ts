@@ -149,6 +149,15 @@ describe('PATCH /roles/:roleId', () => {
       name: 'Observador',
       permissions: [{ module: 'reports', action: 'view' }],
     })
+
+    const onlyPermissions = await as('owner').patch(`${base}/roles/${viewerRoleId}`, {
+      permissions: [{ module: 'entries', action: 'view' }],
+    })
+    expect(onlyPermissions.status).toBe(204)
+    expect((await roles()).find((role) => role.roleId === viewerRoleId)).toMatchObject({
+      name: 'Observador',
+      permissions: [{ module: 'entries', action: 'view' }],
+    })
   })
 })
 

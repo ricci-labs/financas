@@ -1,4 +1,5 @@
 import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
+import type { AuditTarget } from '@api/modules/audit'
 import { workspaceSettings, workspaces } from '@api/modules/workspaces/workspaces.table'
 import type { NewWorkspace, SettingsUpdate } from '@api/modules/workspaces/workspaces.types'
 import { and, eq, isNull, sql } from 'drizzle-orm'
@@ -99,4 +100,17 @@ export async function selectJobWorkspaceIds(db: Database): Promise<string[]> {
     sql`select job_workspace_ids() as workspace_id`,
   )
   return result.rows.map((row) => row.workspace_id)
+}
+
+export function workspaceAuditTarget(workspaceId: string): AuditTarget {
+  return { workspaceId, table: workspaces, key: workspaces.id, rowId: workspaceId }
+}
+
+export function settingsAuditTarget(workspaceId: string): AuditTarget {
+  return {
+    workspaceId,
+    table: workspaceSettings,
+    key: workspaceSettings.workspaceId,
+    rowId: workspaceId,
+  }
 }

@@ -44,10 +44,13 @@ export function selectAuditRows(tx: WorkspaceTransaction, query: AuditQuery): Pr
 
 export async function selectAuditedRow(
   tx: WorkspaceTransaction,
-  { table, key, rowId }: AuditTarget,
+  { table, key, rowId, hidden = [] }: AuditTarget,
 ): Promise<unknown> {
   const [row] = await tx.select().from(table).where(eq(key, rowId))
-  return row ?? null
+  if (!row) {
+    return null
+  }
+  return Object.fromEntries(Object.entries(row).filter(([column]) => !hidden.includes(column)))
 }
 
 export function tableNameOf({ table }: AuditTarget): string {

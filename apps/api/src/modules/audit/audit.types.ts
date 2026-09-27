@@ -28,4 +28,5 @@ export type AuditTarget = {
   table: PgTable
   key: PgColumn
   rowId: string
+  hidden?: readonly string[]
 }
