@@ -5,6 +5,7 @@ export {
 } from '@api/modules/identity/identity.middleware'
 export {
   createUser,
+  findQuietHours,
   getAccount,
   listAccounts,
   login,

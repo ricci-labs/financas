@@ -99,7 +99,7 @@ updated: 2026-09-26
   4. [ ] **Reminders:** notification outbox and its worker, email first (started 2026-09-26; jobs
          across workspaces per ADR 0025, no bypass role):
      - [x] `job_workspace_ids()` + `forEachWorkspace`, and the nightly occurrence planning job
-     - [ ] `notifications` module: `notification_outbox`, enqueue with a dedupe key, quiet hours
+     - [x] `notifications` module: `notification_outbox`, enqueue with a dedupe key, quiet hours
      - [ ] Worker job: claim due rows, render pt-BR emails, send, retry with backoff
      - [ ] Reminders of bills and card invoices, by each member's lead time
      - [ ] Members' notification preferences through the API

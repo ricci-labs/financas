@@ -62,6 +62,7 @@ routes / agent tools / jobs / channels
 | `contacts` | `workspaces` | The workspace time zone, for "today"; the Pix receiving settings |
 | `contacts` | `identity` | The requester's display name in the charge message |
 | `contacts` | `notifications` | Send charges and charge reminders |
+| `notifications` | `identity`, `workspaces` | Members' quiet hours; the workspace time zone |
 | `planning` | `notifications` | Bill and invoice reminders |
 | `reports` | `ledger`, `planning`, `contacts` | Read-only aggregates; the contacts' balances for the `contact_overdue` insight |
 | every module | `workspaces` | Current workspace settings |

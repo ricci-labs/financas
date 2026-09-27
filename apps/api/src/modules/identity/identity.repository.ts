@@ -1,4 +1,4 @@
-import type { Database } from '@api/core/db/db.types'
+import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { authTokens, sessions, userPreferences, users } from '@api/modules/identity/identity.table'
 import type {
   AuthTokenPurpose,
@@ -259,4 +259,12 @@ export async function deleteSessionsExpiredBy(db: Database, now: Date): Promise<
 export async function deleteAuthTokensExpiredBy(db: Database, now: Date): Promise<number> {
   const deleted = await db.delete(authTokens).where(lte(authTokens.expiresAt, now))
   return deleted.rowCount ?? 0
+}
+
+export async function selectQuietHours(db: Database | WorkspaceTransaction, userId: string) {
+  const [preferences] = await db
+    .select({ start: userPreferences.quietHoursStart, end: userPreferences.quietHoursEnd })
+    .from(userPreferences)
+    .where(eq(userPreferences.userId, userId))
+  return preferences
 }

@@ -2,6 +2,7 @@ export {
   changeDisplayName,
   changePassword,
   changeUserPreferences,
+  findQuietHours,
   getUserPreferences,
 } from '@api/modules/identity/use-cases/account'
 export {
