@@ -8,6 +8,7 @@ export {
   listPendingInvitations,
   listWorkspaceIdsOfUser,
   lockActiveMembership,
+  readNotificationTargets,
   removeMembership,
   revokeInvitation,
   setMembershipRole,
@@ -21,6 +22,7 @@ export type {
   InvitationDetails,
   MembershipRow,
   NewMembership,
+  NotificationTarget,
   PendingInvitation,
   RevokeInvitationInput,
 } from '@api/modules/members/members.types'

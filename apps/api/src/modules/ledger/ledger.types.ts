@@ -218,3 +218,10 @@ export type ContactItems = {
   items: ChargeableItem[]
   paidCents: number
 }
+
+export type InvoiceDue = {
+  invoiceId: string
+  cardName: string
+  dueOn: string
+  dueCents: number
+}

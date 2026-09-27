@@ -31,6 +31,7 @@ import {
   between,
   desc,
   eq,
+  gt,
   gte,
   inArray,
   isNotNull,
@@ -574,4 +575,17 @@ export async function selectActiveEntryIds(
     .from(journalEntries)
     .where(and(inArray(journalEntries.id, entryIds), isNull(journalEntries.deletedAt)))
   return rows.map((row) => row.id)
+}
+
+export function selectInvoicesDueBetween(tx: WorkspaceTransaction, from: IsoDate, to: IsoDate) {
+  return tx
+    .select({
+      invoiceId: invoiceTotals.invoiceId,
+      cardName: ledgerAccounts.name,
+      dueOn: invoiceTotals.dueOn,
+      dueCents: invoiceTotals.dueCents,
+    })
+    .from(invoiceTotals)
+    .innerJoin(ledgerAccounts, eq(ledgerAccounts.id, invoiceTotals.cardAccountId))
+    .where(and(between(invoiceTotals.dueOn, from, to), gt(invoiceTotals.dueCents, 0)))
 }
