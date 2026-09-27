@@ -10,12 +10,15 @@ import {
 } from '@api/core/http/errors'
 import type { AppEnv, ErrorBody } from '@api/core/http/http.types'
 import { refOf } from '@api/core/http/middleware/request-context'
+import { logUnexpectedError } from '@api/core/observability/errors'
 import type { Context, ErrorHandler, NotFoundHandler } from 'hono'
 import { HTTPException } from 'hono/http-exception'
+import { routePath } from 'hono/route'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 
 const INTERNAL_SERVER_ERROR = 500
 const NOT_FOUND = 404
+const LAST_MATCHED_ROUTE = -1
 
 const STATUS_BY_ERROR_TYPE: ReadonlyArray<
   [new (...args: never[]) => AppError, ContentfulStatusCode]
@@ -47,8 +50,15 @@ export const handleError: ErrorHandler<AppEnv> = (error, c) => {
     return respond(c, error.status, code, error.message)
   }
 
-  c.get('logger').error(
-    { event: 'http.request.failed', method: c.req.method, path: c.req.path, err: error },
+  logUnexpectedError(
+    c.get('logger'),
+    {
+      event: 'http.request.failed',
+      module: 'http',
+      method: c.req.method,
+      route: routePath(c, LAST_MATCHED_ROUTE),
+    },
+    error,
     'Unexpected error while handling a request',
   )
   return respond(c, INTERNAL_SERVER_ERROR, 'INTERNAL_ERROR', 'Something went wrong')

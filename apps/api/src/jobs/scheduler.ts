@@ -1,3 +1,4 @@
+import { logUnexpectedError } from '@api/core/observability/errors'
 import { appMetrics } from '@api/core/observability/metrics'
 import { newTraceId, runInOperation } from '@api/core/observability/operation-context'
 import type { ScheduledJob, Scheduler, SchedulerDeps } from '@api/jobs/jobs.types'
@@ -43,7 +44,12 @@ export async function runJob(job: ScheduledJob, deps: SchedulerDeps): Promise<vo
       job: job.name,
     })
   } catch (err) {
-    logger.error({ event: 'job.run.failed', durationMs: durationMs(), err }, 'Job failed')
+    logUnexpectedError(
+      logger,
+      { event: 'job.run.failed', module: 'jobs', durationMs: durationMs() },
+      err,
+      'Job failed',
+    )
     appMetrics().jobRuns.add(1, { job: job.name, outcome: 'error' })
   }
 }

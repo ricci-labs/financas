@@ -18,6 +18,9 @@ export function createInstruments(meter: Meter) {
     jobLastSuccess: meter.createGauge('financas_job_last_success_timestamp_seconds', {
       description: 'When each job last finished without an error',
     }),
+    appErrors: meter.createCounter('financas_app_errors', {
+      description: 'Unexpected errors by code and module',
+    }),
     notifications: meter.createCounter('financas_notifications', {
       description: 'Notification delivery attempts by channel, kind and outcome',
     }),

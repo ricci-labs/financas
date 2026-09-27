@@ -117,7 +117,7 @@ updated: 2026-09-27
      - [x] Decisions and plan (this list)
      - [x] Metrics: OTel metrics SDK + Prometheus exporter on `:9464`, the metric registry, HTTP,
            job and notification metrics (error metrics come with the fingerprints)
-     - [ ] Error fingerprints (`type:code:top-frame`) and fatal process handlers
+     - [x] Error fingerprints (`type:code:top-frame`), `financas_app_errors_total` and fatal process handlers
      - [ ] Dockerfile (multi-stage; migrations run before the app, without leaving the owner URL
            to the app process) + image build check on PRs
      - [ ] `deploy.yml`: push `:<sha>` and `:main` to GHCR on `main`; redeploy from Dokploy on the
