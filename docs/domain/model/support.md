@@ -106,9 +106,12 @@ Written by services (not DB triggers) so it carries the actor and trace. Entry e
 (`replaces_entry_id`), but they are still logged for a single timeline.
 
 Implemented (`modules/audit`, ADR 0026):
-- `recordAudit(tx, { workspaceId, actorUserId, action, tableName, rowId, before?, after? })` inserts
-  in the caller's transaction; `source` (`web`, `whatsapp`, `job`, `ops`, `system`) and `trace_id`
-  come from the operation context. `actor_user_id` becomes null if the user is erased.
+- `recordAudit(tx, { workspaceId, actorUserId?, action, tableName, rowId, before?, after? })` inserts
+  in the caller's transaction; `source` (`web`, `whatsapp`, `job`, `ops`, `system`), `trace_id` and
+  the default actor (the logged-in member) come from the operation context. `actor_user_id` becomes
+  null if the user is erased.
+- `auditCreation(tx, target)` and `audited(tx, target, action, change)` snapshot the row by an
+  `AuditTarget` built in the owning repository (`accountAuditTarget`, `goalAuditTarget`, …).
 - **Append-only:** `financas_app` may only `select` and `insert` (RLS policies per command, and
   `UPDATE`/`DELETE`/`TRUNCATE` revoked). The rows go only with the workspace.
 - `before` and `after` are the row as stored, as JSON. Entries include their postings. Entry
@@ -117,6 +120,17 @@ Implemented (`modules/audit`, ADR 0026):
   - `update`: a details change, or a replacement logged on the **new** entry, with the old one as
     `before`;
   - `delete` and `restore`.
+- Also audited:
+  - ledger accounts: create, update, archive, unarchive, delete, restore;
+  - cards (`card_details`);
+  - contacts; charges (create, sent, cancelled); `charge_payments`;
+  - recurrence rules; planned occurrences (skip, unskip, amount, match, unmatch); budget lines;
+    goals; holidays;
+  - allocation steps: one `update` per replacement, on `rowId` = the workspace, with the old and
+    new lists;
+  - attachment links: `entry_attachments` / `charge_attachments`, on `rowId` = the file.
+- Not audited: system bookkeeping nobody did by hand (occurrences the nightly job plans, the system
+  accounts of a new workspace).
 - `GET /audit?tableName=&rowId=&cursor=&limit=` (`audit:view`: owner and admin) pages newest first.
 
 ## Agent

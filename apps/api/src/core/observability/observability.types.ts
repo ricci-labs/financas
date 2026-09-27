@@ -6,4 +6,5 @@ export type LoggerEnv = Pick<Env, 'LOG_LEVEL' | 'NODE_ENV' | 'APP_VERSION'>
 export type Operation = {
   traceId: string | null
   source: AuditSource
+  actorUserId: string | null
 }

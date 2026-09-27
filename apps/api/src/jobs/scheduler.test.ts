@@ -45,7 +45,11 @@ describe('runJob', () => {
       deps,
     )
     const traceId = operation?.traceId
-    expect(operation).toEqual({ traceId: expect.stringMatching(/^[0-9a-f]{32}$/), source: 'job' })
+    expect(operation).toEqual({
+      traceId: expect.stringMatching(/^[0-9a-f]{32}$/),
+      source: 'job',
+      actorUserId: null,
+    })
     expect(entries()).toMatchObject([
       { event: 'job.run.started', job: 'test-job', trace_id: traceId },
       { event: 'job.run.completed', job: 'test-job', trace_id: traceId, result: { purged: 3 } },

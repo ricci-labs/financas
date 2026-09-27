@@ -4,7 +4,9 @@ import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { POSTGRES_UNIQUE_VIOLATION, postgresErrorCode } from '@api/core/db/errors'
 import { withWorkspace } from '@api/core/db/tx'
 import { ConflictError, NotFoundError, parseOrThrow } from '@api/core/http/errors'
+import { auditCreation, audited } from '@api/modules/audit'
 import {
+  contactAuditTarget,
   insertContact,
   lockActiveContact,
   selectActiveContacts,
@@ -70,9 +72,11 @@ export async function createContact(
 ): Promise<CreatedContact> {
   const contact = parseOrThrow(newContactSchema, rawInput, CONTACT_INVALID)
   return refusingTakenPhones(() =>
-    withWorkspace(db, workspaceId, async (tx) => ({
-      contactId: await insertContact(tx, { workspaceId, ...contact }),
-    })),
+    withWorkspace(db, workspaceId, async (tx) => {
+      const contactId = await insertContact(tx, { workspaceId, ...contact })
+      await auditCreation(tx, contactAuditTarget(workspaceId, contactId))
+      return { contactId }
+    }),
   )
 }
 
@@ -93,13 +97,19 @@ export async function changeContact(
       if (isArchived) {
         await assertNothingOwed(tx, contactId)
       }
-      await updateContact(tx, contactId, {
-        ...change,
-        optedOutAt:
-          isOptedOut === undefined ? current.optedOutAt : optOutMoment(current, isOptedOut, clock),
-        archivedAt:
-          isArchived === undefined ? current.archivedAt : archiveMoment(current, isArchived, clock),
-      })
+      await audited(tx, contactAuditTarget(workspaceId, contactId), 'update', () =>
+        updateContact(tx, contactId, {
+          ...change,
+          optedOutAt:
+            isOptedOut === undefined
+              ? current.optedOutAt
+              : optOutMoment(current, isOptedOut, clock),
+          archivedAt:
+            isArchived === undefined
+              ? current.archivedAt
+              : archiveMoment(current, isArchived, clock),
+        }),
+      )
     }),
   )
 }
@@ -111,11 +121,13 @@ export async function deleteContact(
 ): Promise<void> {
   await withWorkspace(db, workspaceId, async (tx) => {
     await lockExistingContact(tx, contactId)
-    await updateContact(tx, contactId, {
-      deletedAt: clock.now(),
-      deletedByUserId: userId,
-      deleteReason: reason ?? null,
-    })
+    await audited(tx, contactAuditTarget(workspaceId, contactId), 'delete', () =>
+      updateContact(tx, contactId, {
+        deletedAt: clock.now(),
+        deletedByUserId: userId,
+        deleteReason: reason ?? null,
+      }),
+    )
   })
 }
 

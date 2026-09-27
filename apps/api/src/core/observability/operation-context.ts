@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto'
 import type { Operation } from '@api/core/observability/observability.types'
 
 const TRACE_ID_BYTES = 16
-const SYSTEM_OPERATION: Operation = { traceId: null, source: 'system' }
+const SYSTEM_OPERATION: Operation = { traceId: null, source: 'system', actorUserId: null }
 const operations = new AsyncLocalStorage<Operation>()
 
 export function newTraceId(): string {
@@ -12,6 +12,10 @@ export function newTraceId(): string {
 
 export function runInOperation<T>(operation: Operation, work: () => T): T {
   return operations.run(operation, work)
+}
+
+export function runAsActor<T>(actorUserId: string, work: () => T): T {
+  return operations.run({ ...currentOperation(), actorUserId }, work)
 }
 
 export function currentOperation(): Operation {

@@ -37,6 +37,7 @@ import type {
   UploadedFile,
   Uploader,
 } from '@api/modules/attachments/attachments.types'
+import { recordAudit } from '@api/modules/audit'
 import { chargeExists } from '@api/modules/contacts'
 import { activeEntryIdsOf } from '@api/modules/ledger'
 import { attachmentNameOf, detectedMimeTypeOf, TRASHED_FILE_RETENTION_DAYS } from '@financas/shared'
@@ -46,6 +47,8 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000
 
 const TARGETS: Record<AttachmentTargetKind, AttachmentTarget> = {
   entry: {
+    linkTable: 'entry_attachments',
+    targetKey: 'entryId',
     notFoundCode: 'ENTRY_NOT_FOUND',
     exists: async (tx, entryId) => (await activeEntryIdsOf(tx, [entryId])).has(entryId),
     link: insertEntryAttachment,
@@ -53,6 +56,8 @@ const TARGETS: Record<AttachmentTargetKind, AttachmentTarget> = {
     items: selectEntryAttachments,
   },
   charge: {
+    linkTable: 'charge_attachments',
+    targetKey: 'chargeId',
     notFoundCode: 'CHARGE_NOT_FOUND',
     exists: chargeExists,
     link: insertChargeAttachment,
@@ -72,6 +77,13 @@ export async function attachFile(
     await requireTarget(tx, target, targetId)
     const fileId = await storeFile(tx, storage, { workspaceId, userId }, file)
     await target.link(tx, { workspaceId, targetId, fileId, userId })
+    await recordAudit(tx, {
+      workspaceId,
+      action: 'create',
+      tableName: target.linkTable,
+      rowId: fileId,
+      after: { [target.targetKey]: targetId, fileId, name: file.name, mimeType: file.mimeType },
+    })
     return { fileId }
   })
 }
@@ -94,9 +106,17 @@ export function detachFile(
 ): Promise<void> {
   return withWorkspace(db, workspaceId, async (tx) => {
     const file = await lockActiveFile(tx, fileId)
-    if (!file || !(await TARGETS[kind].unlink(tx, targetId, fileId))) {
+    const target = TARGETS[kind]
+    if (!file || !(await target.unlink(tx, targetId, fileId))) {
       throw new NotFoundError('ATTACHMENT_NOT_FOUND', 'This file is not attached here')
     }
+    await recordAudit(tx, {
+      workspaceId,
+      action: 'delete',
+      tableName: target.linkTable,
+      rowId: fileId,
+      before: { [target.targetKey]: targetId, fileId, name: file.originalName },
+    })
     if (!(await isFileAttached(tx, fileId))) {
       await trashFile(tx, fileId, { userId, at: clock.now() })
     }

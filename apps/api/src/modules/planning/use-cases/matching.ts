@@ -4,8 +4,10 @@ import type { Database } from '@api/core/db/db.types'
 import { POSTGRES_UNIQUE_VIOLATION, postgresErrorCode } from '@api/core/db/errors'
 import { withWorkspace } from '@api/core/db/tx'
 import { ConflictError, NotFoundError, ValidationError } from '@api/core/http/errors'
+import { audited } from '@api/modules/audit'
 import { findActiveEntry } from '@api/modules/ledger'
 import {
+  occurrenceAuditTarget,
   selectOccurrencesBetween,
   setOccurrenceMatch,
 } from '@api/modules/planning/planning.repository'
@@ -72,7 +74,9 @@ export async function matchOccurrence(
           'The entry does not move the accounts of this occurrence',
         )
       }
-      await setOccurrenceMatch(tx, occurrenceId, entryId)
+      await audited(tx, occurrenceAuditTarget(workspaceId, occurrenceId), 'update', () =>
+        setOccurrenceMatch(tx, occurrenceId, entryId),
+      )
     }),
   )
 }
@@ -86,7 +90,9 @@ export async function unmatchOccurrence(
     if (occurrence.status !== 'matched') {
       throw new ConflictError('OCCURRENCE_NOT_MATCHED', `Occurrence ${occurrenceId} is not matched`)
     }
-    await setOccurrenceMatch(tx, occurrenceId, null)
+    await audited(tx, occurrenceAuditTarget(workspaceId, occurrenceId), 'update', () =>
+      setOccurrenceMatch(tx, occurrenceId, null),
+    )
   })
 }
 

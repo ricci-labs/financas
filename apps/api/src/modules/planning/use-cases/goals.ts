@@ -8,8 +8,10 @@ import {
 } from '@api/core/db/errors'
 import { withWorkspace } from '@api/core/db/tx'
 import { ConflictError, NotFoundError, parseOrThrow, ValidationError } from '@api/core/http/errors'
+import { auditCreation, audited } from '@api/modules/audit'
 import { loadUsableAccounts, readAccountBalances } from '@api/modules/ledger'
 import {
+  goalAuditTarget,
   insertGoal,
   lockActiveGoal,
   selectActiveGoals,
@@ -88,7 +90,9 @@ export async function createGoal(
   return refusingSharedGoals(() =>
     withWorkspace(db, workspaceId, async (tx) => {
       await assertMoneyAccount(tx, goal.accountId)
-      return { goalId: await insertGoal(tx, { workspaceId, ...goal }) }
+      const goalId = await insertGoal(tx, { workspaceId, ...goal })
+      await auditCreation(tx, goalAuditTarget(workspaceId, goalId))
+      return { goalId }
     }),
   )
 }
@@ -105,7 +109,9 @@ export async function changeGoal(
       if (change.accountId) {
         await assertMoneyAccount(tx, change.accountId)
       }
-      await updateGoal(tx, goalId, change)
+      await audited(tx, goalAuditTarget(workspaceId, goalId), 'update', () =>
+        updateGoal(tx, goalId, change),
+      )
     }),
   )
 }
@@ -117,11 +123,13 @@ export async function deleteGoal(
 ): Promise<void> {
   await withWorkspace(db, workspaceId, async (tx) => {
     await lockExistingGoal(tx, goalId)
-    await updateGoal(tx, goalId, {
-      deletedAt: clock.now(),
-      deletedByUserId: userId,
-      deleteReason: reason ?? null,
-    })
+    await audited(tx, goalAuditTarget(workspaceId, goalId), 'delete', () =>
+      updateGoal(tx, goalId, {
+        deletedAt: clock.now(),
+        deletedByUserId: userId,
+        deleteReason: reason ?? null,
+      }),
+    )
   })
 }
 

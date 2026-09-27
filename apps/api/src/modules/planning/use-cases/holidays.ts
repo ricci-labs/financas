@@ -4,7 +4,9 @@ import type { Database, WorkspaceTransaction } from '@api/core/db/db.types'
 import { POSTGRES_UNIQUE_VIOLATION, postgresErrorCode } from '@api/core/db/errors'
 import { withWorkspace } from '@api/core/db/tx'
 import { ConflictError, NotFoundError, parseOrThrow } from '@api/core/http/errors'
+import { auditCreation, audited } from '@api/modules/audit'
 import {
+  holidayAuditTarget,
   insertHoliday,
   markHolidayDeleted,
   selectHolidaysBetween,
@@ -52,9 +54,15 @@ export async function addHoliday(
     throw new ConflictError('HOLIDAY_ALREADY_NATIONAL', `${input.onDate} is a national holiday`)
   }
   return refusingTakenHolidayDates(() =>
-    withWorkspace(db, workspaceId, async (tx) => ({
-      holidayId: await insertHoliday(tx, { workspaceId, onDate: input.onDate, name: input.name }),
-    })),
+    withWorkspace(db, workspaceId, async (tx) => {
+      const holidayId = await insertHoliday(tx, {
+        workspaceId,
+        onDate: input.onDate,
+        name: input.name,
+      })
+      await auditCreation(tx, holidayAuditTarget(workspaceId, holidayId))
+      return { holidayId }
+    }),
   )
 }
 
@@ -64,11 +72,13 @@ export async function deleteHoliday(
   clock: Clock = systemClock,
 ): Promise<void> {
   await withWorkspace(db, workspaceId, async (tx) => {
-    const wasDeleted = await markHolidayDeleted(tx, holidayId, {
-      deletedAt: clock.now(),
-      deletedByUserId: userId,
-      deleteReason: reason ?? null,
-    })
+    const wasDeleted = await audited(tx, holidayAuditTarget(workspaceId, holidayId), 'delete', () =>
+      markHolidayDeleted(tx, holidayId, {
+        deletedAt: clock.now(),
+        deletedByUserId: userId,
+        deleteReason: reason ?? null,
+      }),
+    )
     if (!wasDeleted) {
       throw new NotFoundError('HOLIDAY_NOT_FOUND', `Holiday ${holidayId} not found`)
     }

@@ -31,7 +31,7 @@ export async function runJob(job: ScheduledJob, deps: SchedulerDeps): Promise<vo
   const durationMs = () => Math.round(performance.now() - startedAt)
   logger.info({ event: 'job.run.started' }, 'Job started')
   try {
-    const result = await runInOperation({ traceId, source: 'job' }, () =>
+    const result = await runInOperation({ traceId, source: 'job', actorUserId: null }, () =>
       job.run({ ...deps, logger }),
     )
     logger.info({ event: 'job.run.completed', durationMs: durationMs(), result }, 'Job completed')

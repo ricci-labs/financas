@@ -1,4 +1,5 @@
 import type { WorkspaceTransaction } from '@api/core/db/db.types'
+import type { AuditTarget } from '@api/modules/audit'
 import {
   chargeItems,
   chargePayments,
@@ -140,8 +141,15 @@ export function selectChargeItems(
 export async function insertChargePayment(
   tx: WorkspaceTransaction,
   payment: NewChargePaymentRow,
-): Promise<void> {
-  await tx.insert(chargePayments).values(payment)
+): Promise<string> {
+  const [inserted] = await tx
+    .insert(chargePayments)
+    .values(payment)
+    .returning({ id: chargePayments.id })
+  if (!inserted) {
+    throw new Error('Charge payment was not inserted')
+  }
+  return inserted.id
 }
 
 export function selectChargePayments(
@@ -156,4 +164,16 @@ export function selectChargePayments(
     })
     .from(chargePayments)
     .where(inArray(chargePayments.chargeId, chargeIds))
+}
+
+export function contactAuditTarget(workspaceId: string, contactId: string): AuditTarget {
+  return { workspaceId, table: contacts, key: contacts.id, rowId: contactId }
+}
+
+export function chargeAuditTarget(workspaceId: string, chargeId: string): AuditTarget {
+  return { workspaceId, table: charges, key: charges.id, rowId: chargeId }
+}
+
+export function chargePaymentAuditTarget(workspaceId: string, paymentId: string): AuditTarget {
+  return { workspaceId, table: chargePayments, key: chargePayments.id, rowId: paymentId }
 }
