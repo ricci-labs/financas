@@ -47,3 +47,9 @@ export type SessionRequests = {
   del: (path: string, body?: unknown) => Promise<Response>
   postForm: (path: string, form: FormData) => Promise<Response>
 }
+
+export type PostmanItem = {
+  name: string
+  item?: PostmanItem[]
+  request?: { method: string; url: { raw: string } }
+}

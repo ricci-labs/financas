@@ -39,11 +39,14 @@ Read first: `docs/architecture/structure.md` → Module anatomy, `docs/architect
 7. **Tests:** `<m>.integration.test.ts` (or `<m>.<area>.integration.test.ts`) with one `describe` per
    table or use case. Seed through `createFixtures()`. Test-only shapes go in
    `src/testing/testing.types.ts`. For every DB rule and security check, prove the test fails without it.
+   Add a request per new route to `docs/api/financas.postman_collection.json` (`docs/api/postman.md`);
+   `app.postman.test.ts` fails otherwise.
 8. **Docs:** the model doc for the area (`docs/domain/model/*.md`), `structure.md` if the module's role
    is new, `access-control.md` if it adds an `app_module`, the roadmap. Bump `updated:`.
 9. Run the `pr` skill.
 
 ## Checklist
+- [ ] Every new route has a request in the Postman collection
 - [ ] Only role-named files in the module folder (`pnpm lint:file-roles` passes)
 - [ ] No `type`/`interface` outside `.types.ts`; no Zod schema outside `.schemas.ts`
 - [ ] Every workspace route has a permission check (`app.routes.test.ts` passes)

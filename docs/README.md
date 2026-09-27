@@ -1,7 +1,7 @@
 ---
 summary: Index of all project docs, with when to read each one, plus the rules for writing docs.
 read_when: Start of any task. Pick only the files the task needs.
-updated: 2026-09-22
+updated: 2026-09-27
 ---
 
 # Docs index
@@ -35,6 +35,7 @@ updated: 2026-09-22
 | `operations/observability.md` | Adding logs, metrics or spans; alerts; observability upgrades |
 | `operations/runbook.md` | **Investigating any bug, error ref, alert or "not working"** |
 | `operations/deploy.md` | Deploying, env vars, backups, remote access |
+| `api/postman.md` | Testing the API with the Postman collection, or adding/changing a route (the collection must follow) |
 | `decisions/README.md` | Checking why something was chosen, or recording a new decision |
 
 ## Rules for writing docs
