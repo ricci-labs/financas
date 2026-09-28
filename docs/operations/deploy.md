@@ -54,7 +54,12 @@ Pipeline: `../engineering/ci-cd.md`. Decision: `../decisions/0010-deploy-ghcr-do
 ## Resources
 - Memory limit for `financas-api`: start at 512 MB and adjust from Netdata data.
 - Docker log rotation for the app: `max-size=20m`, `max-file=5`. Set it in Dokploy's advanced settings or the daemon config.
-- Metrics port `9464`: internal network only, reachable by Netdata, never published through Traefik.
+- Metrics port `9464`: published by Dokploy in **host** mode (Advanced → Ports, `9464:9464`), so
+  Netdata, which runs on the host network, scrapes `http://127.0.0.1:9464/metrics`. It is visible on
+  the home LAN but never on the internet: the tunnel only carries port 3100, and the router forwards
+  nothing. Metrics hold counts only, never data or secrets.
+- Netdata job: `/etc/netdata/go.d/prometheus.conf` in its config volume, job `financas`, every 10 s;
+  charts are named `prometheus_financas.*`. Restart Netdata after editing it.
 
 ## Backups
 Decided 2026-09-27: the structure is built now, and the offsite destination is chosen later.
@@ -219,8 +224,8 @@ Status of the first deploy (2026-09-28). Open items are left for later on purpos
 - [ ] SMTP mailbox credentials (`SMTP_USER`, `SMTP_PASSWORD`) set, then redeploy
 - [ ] First user created: `docker exec -it <container> node dist/ops/create-user.mjs` (asks for the email, display name, workspace name and password; the password is typed without echo, never passed as an argument)
 - [ ] WhatsApp paired from the bot phone (with the agent)
-- [ ] Uptime Kuma monitors: HTTP on the internal address `http://<app name>:3100/api/health/ready`, and a push monitor for the backup (its URL in the backup env file as `BACKUP_KUMA_PUSH_URL`)
+- [x] Uptime Kuma monitors: HTTP on the internal address `http://<app name>:3100/api/health/ready` (every 60 s, 2 retries), and a push monitor for the backup (every 90000 s; its URL, through Kuma's Traefik hostname, in the backup env file as `BACKUP_KUMA_PUSH_URL`)
 - [ ] Alert channel for Kuma chosen (not WhatsApp)
-- [ ] Netdata scraping `:9464/metrics`
+- [x] Netdata scraping `:9464/metrics` (port published in host mode)
 - [x] Backup env file + crontab line installed; first run checked
 - [x] Restore tested once against production data into a scratch database (schemas identical)
