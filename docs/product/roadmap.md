@@ -1,7 +1,7 @@
 ---
 summary: Phases, MVP scope, current focus and the list of open questions.
 read_when: Deciding what to build next, checking whether something is in scope, or resuming work in a new session.
-updated: 2026-09-27
+updated: 2026-09-28
 ---
 
 # Roadmap
@@ -125,8 +125,10 @@ updated: 2026-09-27
      - [x] Backups: `pg_dump` + attachments archive, 14 days kept locally, optional offsite copy
            through an rclone remote, Uptime Kuma heartbeat; restore script tested and documented
      - [x] `ops:*` scripts: health, logs, trace, errors, metrics, job
-     - [ ] **First deploy, with the user** (Dokploy: GHCR pull token, `financas-db` + roles, env incl.
-           DreamHost SMTP, volume, Kuma monitors, backup crontab): the checklist in `../operations/deploy.md`
+     - [x] **First deploy, with the user** (2026-09-28): app, database, tunnel and daily backups
+           running. Left for later: Cloudflare Access, the Postman service token, SMTP
+           credentials, the first real user, Kuma monitors and the alert channel (checklist in
+           `../operations/deploy.md`)
   Then: **web foundation**, then **WhatsApp channel + agent**. The agent's tools include
   `simulate_purchase` ("posso comprar?", built in #85, decided 2026-09-26), next to `period_overview`.
 - [x] DB: contacts/charges, planning, support tables

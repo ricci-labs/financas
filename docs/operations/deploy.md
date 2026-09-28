@@ -201,18 +201,26 @@ Later deploys: CI publishes `:main` after each merge; press Deploy in Dokploy (t
 again). To roll back, set the image to a previous `:<sha>` and deploy.
 
 ## First deploy checklist
+Status of the first deploy (2026-09-28). Open items are left for later on purpose.
 - [x] Remote access decided: Cloudflare Tunnel + Access
-- [ ] Tunnel connected, public hostname to the app, Access policy with both emails
-- [ ] Image made public on GHCR (no pull credentials needed)
-- [ ] `financas-db` created with a volume
-- [ ] Roles created once: run `docker/postgres/init/01-roles.sh` with real `OWNER_DB_PASSWORD` / `APP_DB_PASSWORD` (ADR 0018)
-- [ ] `DATABASE_URL` (app role) and `DATABASE_MIGRATION_URL` (owner) set
-- [ ] Env vars set; the app boots and `/api/health/ready` is 200
-- [ ] Migrations applied: on boot by the entrypoint (`DATABASE_MIGRATION_URL` set), or by hand with `node dist/ops/migrate.mjs`
-- [ ] Volume mounted at `/data/files` for attachments
+- [x] Domain's DNS moved to Cloudflare, mail records (MX, SPF, DKIM) for the DreamHost mailbox kept
+- [x] Tunnel connected, published application route to the app, HTTPS answering
+- [ ] **Cloudflare Access** application with the two emails (one-time PIN). Until then the app is
+      reachable by anyone on the internet, protected only by its own login, so do this before
+      creating real accounts
+- [ ] Access service token for Postman (`cfAccessClientId` / `cfAccessClientSecret`)
+- [x] Image made public on GHCR (no pull credentials needed)
+- [x] Database created in Dokploy with a volume
+- [x] Roles created once with `docker/postgres/create-roles.sh` (ADR 0018)
+- [x] `DATABASE_URL` (app role) and `DATABASE_MIGRATION_URL` (owner) set
+- [x] Env vars set; the app boots and `/api/health/ready` is 200
+- [x] Migrations applied on boot by the entrypoint
+- [x] Volume mounted at `/data/files` for attachments
+- [ ] SMTP mailbox credentials (`SMTP_USER`, `SMTP_PASSWORD`) set, then redeploy
 - [ ] First user created: `docker exec -it <container> node dist/ops/create-user.mjs` (asks for the email, display name, workspace name and password; the password is typed without echo, never passed as an argument)
-- [ ] WhatsApp paired from the bot phone
-- [ ] Uptime Kuma monitors and push URLs created
+- [ ] WhatsApp paired from the bot phone (with the agent)
+- [ ] Uptime Kuma monitors: HTTP on the internal address `http://<app name>:3100/api/health/ready`, and a push monitor for the backup (its URL in the backup env file as `BACKUP_KUMA_PUSH_URL`)
+- [ ] Alert channel for Kuma chosen (not WhatsApp)
 - [ ] Netdata scraping `:9464/metrics`
-- [ ] Backup env file + crontab line installed; first run checked; Kuma push monitor created
-- [ ] Restore tested once against production data into a scratch database
+- [x] Backup env file + crontab line installed; first run checked
+- [x] Restore tested once against production data into a scratch database (schemas identical)
