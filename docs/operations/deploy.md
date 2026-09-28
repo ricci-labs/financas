@@ -125,6 +125,13 @@ any browser, at home or outside, with no app to install and no router port open.
   the app's DNS record itself.
 - GitHub still can't reach Dokploy, so CI publishes the image and the redeploy is started from
   Dokploy.
+- **The tunnel is shared by the homelab** (2026-09-28). Besides the app, it publishes the admin
+  panels: Dokploy, Netdata and Uptime Kuma, each on its own subdomain. **Every admin panel has its
+  own Access application with a policy that allows only the owner's email**, created before its
+  route, because Dokploy controls the whole server and Netdata has no login at all. Routes point to
+  the LAN IP for services on the host network (Dokploy `:3000`, Netdata `:19999`) and to container
+  names on `dokploy-network` for the rest. The `cloudflared` service can live in a Dokploy project
+  of its own; moving it keeps working as long as the token and command stay the same.
 
 Alternatives kept on file: Tailscale (private, but needs its app on every device) and forwarding
 port 443 on the router (exposes the home IP, and CGNAT often prevents it).
