@@ -1,7 +1,7 @@
 ---
 summary: Production setup on Dokploy — containers, image, env vars, resources, logs rotation, backups (offsite destination later), access through Cloudflare Tunnel + Access on the user's domain, first-deploy steps and checklist.
 read_when: Deploying, changing env vars or runtime config, setting up backups, or exposing the app.
-updated: 2026-09-27
+updated: 2026-09-28
 ---
 
 # Deploy
@@ -166,11 +166,22 @@ never in this repo.
      are set.
    - Deploy. The entrypoint applies the migrations, then the app starts. Dokploy's log view keeps
      the output of earlier failed attempts, so check the newest lines or `pnpm ops:health`.
-4. **Tunnel.** Cloudflare Zero Trust → Networks → Tunnels → Create a tunnel (Cloudflared), and copy
-   its token. In Dokploy, create an application from the Docker image `cloudflare/cloudflared:latest`
-   with the command `tunnel --no-autoupdate run` and the environment `TUNNEL_TOKEN=<token>`. Once it
-   shows as connected, add a **public hostname**: `financas.example.com` → type HTTP, URL
-   `<app name>:3100`.
+4. **Tunnel.**
+   - **DNS on Cloudflare first:** add the domain to Cloudflare (Free plan), then replace the
+     nameservers at the registrar (registro.br) with the two Cloudflare gives, and wait until
+     Cloudflare shows the domain as Active. A public hostname can only use a domain whose DNS is on
+     Cloudflare. Mail records (MX, SPF, DKIM for the DreamHost mailbox) are then kept in Cloudflare
+     too. Nothing is created at DreamHost or in Dokploy for the app's name.
+   - Cloudflare Zero Trust → Networks → Tunnels → Create a tunnel (Cloudflared), and copy its
+     token.
+   - In Dokploy, create an application from the Docker image `cloudflare/cloudflared:latest` with
+     the environment `TUNNEL_TOKEN=<token>` and the command
+     `cloudflared tunnel --no-autoupdate run`. Dokploy's command replaces the image's entrypoint,
+     so it must start with `cloudflared`; with only `tunnel ...` the container fails with
+     `exec: "tunnel": executable file not found`. Its log shows `Registered tunnel connection` when
+     it is up (a warning about the UDP receive buffer size is harmless).
+   - Once the tunnel shows Healthy, add a **public hostname**: `financas.example.com` → type HTTP,
+     URL `<app name>:3100`. Cloudflare creates the DNS record.
 5. **Access.** Zero Trust → Access → Applications → Add a self-hosted application for
    `financas.example.com`:
    - a policy **Allow** with the two emails, login method One-time PIN;
