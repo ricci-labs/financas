@@ -39,7 +39,7 @@ an app path, otherwise the last workspace, otherwise `WS-01` when they have none
 
 | Action | Enabled when | Loading | Success | Errors |
 |---|---|---|---|---|
-| "Entrar" (primary) | always (see button contract) | spinner, fields read-only | go to the destination above | `INVALID_CREDENTIALS` form message, focus on password, password cleared; `EMAIL_NOT_VERIFIED` inline message with the action "Reenviar e-mail de confirmação" (calls resend with the typed email); `TOO_MANY_ATTEMPTS` form message with the wait time, button disabled until it ends; `LOGIN_INVALID` field errors |
+| "Entrar" (primary) | e-mail valid and password filled (button contract) | spinner, fields read-only | go to the destination above | `INVALID_CREDENTIALS` form message, focus on password, password cleared; `EMAIL_NOT_VERIFIED` inline message with the action "Reenviar e-mail de confirmação" (calls resend with the typed email); `TOO_MANY_ATTEMPTS` form message with the wait time, button disabled until it ends; `LOGIN_INVALID` field errors |
 | "Esqueci minha senha" (link) | always | — | `AUTH-04`, email carried over | — |
 | "Criar conta" (link) | only when `GET /api/auth/config` says sign-up is on | — | `AUTH-02` | — |
 

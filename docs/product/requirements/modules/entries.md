@@ -159,8 +159,8 @@ picker opens `CON-05` in a dialog.
 ### Actions and outcome
 | Action | Enabled when | Success | Errors |
 |---|---|---|---|
-| "Salvar lançamento" (primary) | always (button contract) | toast "Lançamento registrado." with "Ver"; closes, or keeps the form with type, date and accounts for "Salvar e registrar outro" | field-mapped codes below; others as form messages |
-| "Salvar e registrar outro" (secondary) | always | toast, form cleared except type, date and accounts | same |
+| "Salvar lançamento" (primary) | the form is valid for the chosen type (button contract) | toast "Lançamento registrado." with "Ver"; closes, or keeps the form with type, date and accounts for "Salvar e registrar outro" | field-mapped codes below; others as form messages |
+| "Salvar e registrar outro" (secondary) | the form is valid | toast, form cleared except type, date and accounts | same |
 | "Cancelar" | always | warns if changed | — |
 
 Field-mapped codes: `NOT_A_MONEY_ACCOUNT` and `ACCOUNT_NOT_AVAILABLE` → the account field involved;
