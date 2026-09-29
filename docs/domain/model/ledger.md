@@ -1,7 +1,7 @@
 ---
 summary: The double-entry ledger — account kinds, cards and invoices, journal entries and postings, sign convention, DB-enforced invariants, correction policy (soft delete / replace), and worked examples.
 read_when: Anything that records, edits, reverses or reports money movements, cards or invoices.
-updated: 2026-09-26
+updated: 2026-09-29
 ---
 
 # Ledger (double-entry)
@@ -173,8 +173,9 @@ Entry types supported so far: `expense` (paid from a money account: checking, sa
 wallet, investment), `income`, `transfer` between two money accounts, `opening_balance` (signed:
 negative = overdraft, against the system account), `card_purchase` (1–48 installments on the
 card's invoices, payment method `credit` by default) and `invoice_payment` (partial payments
-allowed, from the card's payment account unless another money account is given). Refunds,
-adjustments and settlements come later.
+allowed, from the card's payment account unless another money account is given) and
+`settlement` (a contact paying back: money account +, receivable − with the contact). Refunds and
+adjustments come later.
 
 Card errors: `NOT_A_CARD`, `CARD_NOT_SET_UP`, `INVOICE_CLOSED`, `INVOICE_NOT_FOUND`,
 `PAYMENT_ACCOUNT_REQUIRED`, `TOO_MANY_INSTALLMENTS`.
