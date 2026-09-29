@@ -15,6 +15,7 @@ import {
   selectActiveEntry,
   selectEntries,
   selectEntryRow,
+  selectEntryTouchesClosedInvoice,
   selectPostingsOfEntries,
   selectTrashedEntries,
   updateEntryDetails,
@@ -205,7 +206,7 @@ export async function deleteEntry(
   clock: Clock = systemClock,
 ): Promise<void> {
   await withWorkspace(db, workspaceId, async (tx) => {
-    await lockActiveEntry(tx, entryId)
+    await lockChangeableEntry(tx, entryId)
     await auditingEntry(tx, { workspaceId, entryId, userId }, 'delete', () =>
       markEntryDeleted(tx, entryId, {
         deletedAt: clock.now(),
@@ -243,7 +244,7 @@ export async function replaceEntry(
   const input = parseEntryInput(rawInput)
   return refusingUnknownContacts(() =>
     withWorkspace(db, context.workspaceId, async (tx) => {
-      await lockActiveEntry(tx, entryId)
+      await lockChangeableEntry(tx, entryId)
       const replaced = await entrySnapshot(tx, entryId)
       await markEntryDeleted(tx, entryId, {
         deletedAt: clock.now(),
@@ -303,6 +304,16 @@ async function lockActiveEntry(tx: WorkspaceTransaction, entryId: string): Promi
   }
   if (entry.deletedAt) {
     throw new ConflictError('ENTRY_ALREADY_DELETED', `Entry ${entryId} is deleted`)
+  }
+}
+
+async function lockChangeableEntry(tx: WorkspaceTransaction, entryId: string): Promise<void> {
+  await lockActiveEntry(tx, entryId)
+  if (await selectEntryTouchesClosedInvoice(tx, entryId)) {
+    throw new ConflictError(
+      'ENTRY_ON_CLOSED_INVOICE',
+      `Entry ${entryId} is on a closed invoice; correct it with a refund or an adjustment`,
+    )
   }
 }
 

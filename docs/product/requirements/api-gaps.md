@@ -13,7 +13,7 @@ matching screen would be wrong or fragile without it.
 ## Defects: errors that answer 500
 | # | Today | Proposed fix | When |
 |---|---|---|---|
-| G1 | `DELETE` or `PUT /entries/:id` on an entry with a line on a **closed invoice**: the database refuses and the API answers 500. | Map it to `409 ENTRY_ON_CLOSED_INVOICE`; the UI already hides these actions (`modules/entries.md` → RF-ENT-10). | Before the web |
+| G1 | ~~`DELETE` or `PUT /entries/:id` on an entry with a line on a closed invoice answered 500.~~ **Fixed:** the service checks first and answers `409 ENTRY_ON_CLOSED_INVOICE`. | The UI also hides these actions (`modules/entries.md` → RF-ENT-10). | Done |
 | G2 | `GET /simulations/purchase` on a card with an amount in cents smaller than the installments (R$ 0,05 in 10×): 500. | Add the refinement to the query schema (`SIMULATION_QUERY_INVALID`), as entries already do (`TOO_MANY_INSTALLMENTS`). | Before the web |
 | G3 | `ownerUserId` (accounts) or `holderUserId` (cards) with an unknown user: 500. They are also not checked to be members. | Validate as an active member → `400 ACCOUNT_INVALID` / `CARD_INVALID` (or a specific code). | Before the web |
 | G4 | Password reset sends the "senha trocada" e-mail inside the request; a mail failure answers 500 after the password changed. Same for the verification e-mail of an invitation sign-up by phone (the account was already created). | Send both in the background, like the other account e-mails. | Before the web |

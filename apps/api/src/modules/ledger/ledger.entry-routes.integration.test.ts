@@ -1,6 +1,6 @@
 import { createApp } from '@api/app'
 import type { EntryItem, InvoiceTotal, TrashedEntry } from '@api/modules/ledger'
-import { journalEntries } from '@api/modules/ledger/ledger.table'
+import { cardInvoices, journalEntries } from '@api/modules/ledger/ledger.table'
 import { testAppDeps } from '@api/testing/app'
 import { connectTestDatabases } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
@@ -274,6 +274,37 @@ describe('DELETE and restore /entries/:entryId', () => {
 
     expect((await member.post(`${entriesPath}/${entryId}/restore`)).status).toBe(204)
     expect((await listed()).map((item) => item.id)).toContain(entryId)
+  })
+
+  it('keeps an entry on a closed invoice: no delete or new version, details still change', async () => {
+    const closingCardId = await created(
+      owner.post(`${workspacePath}/cards`, { name: 'Card Fechado', closingDay: 3, dueDay: 10 }),
+    )
+    const purchase = await owner.post(entriesPath, {
+      entryType: 'card_purchase',
+      occurredOn: '2026-11-20',
+      description: 'Sofá',
+      amountCents: 90_000,
+      installmentCount: 3,
+      cardAccountId: closingCardId,
+      categoryId: groceriesId,
+    })
+    const { entryId } = (await purchase.json()) as { entryId: string }
+    const entry = (await listed()).find((item) => item.id === entryId)
+    const firstInvoice = entry?.postings.find((posting) => posting.installmentNo === 1)?.invoiceId
+    await databases.owner
+      .update(cardInvoices)
+      .set({ status: 'closed' })
+      .where(eq(cardInvoices.id, firstInvoice ?? ''))
+
+    const deleted = await member.del(`${entriesPath}/${entryId}`)
+    expect([deleted.status, await codeOf(deleted)]).toEqual([409, 'ENTRY_ON_CLOSED_INVOICE'])
+    const replaced = await member.put(`${entriesPath}/${entryId}`, expense('Sofá'))
+    expect([replaced.status, await codeOf(replaced)]).toEqual([409, 'ENTRY_ON_CLOSED_INVOICE'])
+    expect((await listed()).map((item) => item.id)).toContain(entryId)
+    expect(
+      (await member.patch(`${entriesPath}/${entryId}`, { description: 'Sofá da sala' })).status,
+    ).toBe(204)
   })
 
   it('answers 404 for a malformed or unknown entry id', async () => {

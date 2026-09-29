@@ -177,6 +177,9 @@ allowed, from the card's payment account unless another money account is given) 
 `settlement` (a contact paying back: money account +, receivable − with the contact). Refunds and
 adjustments come later.
 
+Deleting or replacing an entry with a line on a closed invoice answers `409 ENTRY_ON_CLOSED_INVOICE`
+(checked before the database trigger that also refuses it); description and notes still change.
+
 Card errors: `NOT_A_CARD`, `CARD_NOT_SET_UP`, `INVOICE_CLOSED`, `INVOICE_NOT_FOUND`,
 `PAYMENT_ACCOUNT_REQUIRED`, `TOO_MANY_INSTALLMENTS`.
 

@@ -106,6 +106,7 @@ message.
 | `TRASH_QUERY_INVALID` | 400 | Invalid trash paging (guard) | "Não foi possível carregar a lixeira." | page |
 | `ENTRY_NOT_FOUND` | 404 | Entry deleted or edited meanwhile | "Este lançamento foi excluído ou editado. Atualize a lista." | page / toast |
 | `ENTRY_ALREADY_DELETED` | 409 | Changing a deleted or replaced entry | "Este lançamento foi excluído ou já foi editado por outra pessoa. Atualize a lista." | form |
+| `ENTRY_ON_CLOSED_INVOICE` | 409 | Deleting or editing (new version) an entry with a line on a closed invoice | "Parte deste lançamento está em uma fatura fechada, então ele não pode ser excluído nem ter valores alterados. Só a descrição e as observações mudam." | toast |
 | `ENTRY_NOT_DELETED` | 409 | Restoring an active entry | "Este lançamento já está ativo." | toast |
 | `ENTRY_CANNOT_BE_RESTORED` | 409 | Uses a deleted account, touches a closed invoice, or was replaced | "Não dá para restaurar: ele usa uma conta excluída, está numa fatura fechada ou já tem outra versão." | toast |
 | `ACCOUNT_NOT_AVAILABLE` | 400 | An account is archived or deleted | "{Conta} está arquivada ou foi excluída. Escolha outra." | the account field |
