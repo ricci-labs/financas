@@ -253,4 +253,12 @@ describe('purchaseSimulationQuerySchema', () => {
       }).success,
     ).toBe(false)
   })
+
+  it('refuses more installments than cents, since each needs at least one', () => {
+    const onCard = (amountCents: string, installmentCount: string) =>
+      purchaseSimulationQuerySchema.safeParse({ amountCents, installmentCount, cardAccountId: ID })
+        .success
+    expect(onCard('5', '10')).toBe(false)
+    expect(onCard('10', '10')).toBe(true)
+  })
 })
