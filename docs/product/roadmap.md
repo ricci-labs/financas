@@ -1,7 +1,7 @@
 ---
 summary: Phases, MVP scope, current focus and the list of open questions.
 read_when: Deciding what to build next, checking whether something is in scope, or resuming work in a new session.
-updated: 2026-09-28
+updated: 2026-09-29
 ---
 
 # Roadmap
@@ -129,6 +129,13 @@ updated: 2026-09-28
            running, with Uptime Kuma monitors and Netdata charts. Left for later: Cloudflare
            Access, the Postman service token, SMTP credentials, the first real user and the
            alert channel (checklist in `../operations/deploy.md`)
+  8. [x] **Web requirements** (2026-09-29, #127–#128): experience, non-functional requirements, UI
+         standards, design system brief, error messages and every screen per module
+         (`requirements/`), for prototyping in Claude Design.
+  9. [x] **API gaps before the web** (2026-09-29, #129–#134; `requirements/api-gaps.md` G1–G7):
+         500s mapped to clear errors, emails after a change sent in the background, reads of one
+         entry, contact or charge, charge item details and a contact's open items. `packages/shared`
+         grouped by area (#135).
   Then: **web foundation**, then **WhatsApp channel + agent**. The agent's tools include
   `simulate_purchase` ("posso comprar?", built in #85, decided 2026-09-26), next to `period_overview`.
 - [x] DB: contacts/charges, planning, support tables
