@@ -64,7 +64,7 @@ The web dashboard shows the **period overview** (fixed income, spent, committed,
 |---|---|---|---|
 | 📊 | **Period overview** | Free to spend = fixed income − spent − committed, per day, over a configurable financial month (1st, day N, or N-th business day) | ✅ API |
 | 🚨 | **Alerts** | Budget over or ahead of pace, balance going negative, bills overdue, commission not yet split, contacts overdue | ✅ API |
-| 🛒 | **"Posso comprar?"** | Simulates a purchase (in installments too) and shows its effect month by month | ✅ API |
+| 🛒 | **"Can I afford it?"** | Simulates a purchase (in installments too) and shows its effect month by month | ✅ API |
 | 💳 | **Cards and invoices** | Closing and due days per card, installments spread across future invoices, invoice payments never counted as spending twice | ✅ API |
 | 🤝 | **Third parties** | Several people per purchase, installments included; charges with the pt-BR message and a Pix copy-and-paste code; partial payments | ✅ API · sending by WhatsApp next |
 | 🔁 | **Planned vs actual** | Fixed bills, salaries and subscriptions create expected occurrences, matched by real entries; budgets and goals | ✅ API |
