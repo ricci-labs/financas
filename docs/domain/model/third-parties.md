@@ -87,7 +87,7 @@ exactly "parcela 2/3 da TV". The own part and each share are spread over the ins
 the remaining installments of that same split. Monthly charges group all of a contact's items whose invoice is due
 that month.
 
-### Building a charge (pure, `packages/shared/src/charges/` and `pix/`)
+### Building a charge (pure, `packages/shared/src/contacts/charges/` and `pix/`)
 - **Open items** (`openItems`): a contact's receivable lines, with their payments applied to the
   **oldest items first** (by due date, then posting). Items still open, due up to the chosen date and
   not already in an open charge. Each carries what's left of it.

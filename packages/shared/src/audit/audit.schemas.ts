@@ -1,4 +1,4 @@
-import { pageCursorSchema, pageLimitSchema } from '@shared/paging/paging.schemas'
+import { pageCursorSchema, pageLimitSchema } from '@shared/core/paging/paging.schemas'
 import { z } from 'zod'
 
 const TABLE_NAME_MAX_LENGTH = 63

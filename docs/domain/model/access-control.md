@@ -9,7 +9,7 @@ updated: 2026-09-26
 Decision: `../../decisions/0015-module-permissions.md`.
 
 Status: tables implemented in the `access` module (`module_actions`, `roles`, `role_permissions`). The matrix lives in
-`packages/shared/src/access` (single source for API, web and the DB seed). Memberships and
+`packages/shared/src/identity/access` (single source for API, web and the DB seed). Memberships and
 the owner invariant are implemented in `members`. Route enforcement is implemented
 (`access.middleware.ts`); agent tool gating comes with the agent.
 

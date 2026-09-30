@@ -35,7 +35,7 @@ One table for everything money can sit in or be classified as, including **categ
 
 **Implemented** (module `ledger`). Not yet: `institution_id` (comes with the `institutions` table)
 and "kind immutable after the first posting" (comes with `postings`).
-Kinds, classes and system account names live in `packages/shared/src/ledger`.
+Kinds, classes and system account names live in `packages/shared/src/ledger/ledger`.
 | Column | Type | Notes |
 |---|---|---|
 | `workspace_id`, `id` | | |
@@ -159,7 +159,7 @@ Use cases live in `modules/ledger/use-cases/` (`accounts.ts`, `cards.ts`, `entri
 | `createCard(db, context, input)` / `changeCard(db, card, change)` | A `credit_card` account plus its `card_details` (`newCardSchema` / `cardChangeSchema`). Errors: `CARD_INVALID`, `CARD_NOT_FOUND`, `PAYMENT_ACCOUNT_NOT_AVAILABLE`, `ACCOUNT_NAME_TAKEN` |
 | `archiveAccount` / `unarchiveAccount` | Archive keeps history; archived accounts leave the pickers and take no new postings |
 | `deleteAccount(db, input, clock)` / `restoreAccount` | Soft delete (refused for system accounts, accounts with active children or used by active entries) and restore (refused under a deleted parent or when the name was taken meanwhile) |
-| `recordEntry(db, context, input)` | Validates with `entryInputSchema`, loads the accounts (same workspace, not archived, not deleted), plans the postings with `planPostings()` (`packages/shared/src/ledger/postings.ts`) and writes the entry with its postings |
+| `recordEntry(db, context, input)` | Validates with `entryInputSchema`, loads the accounts (same workspace, not archived, not deleted), plans the postings with `planPostings()` (`packages/shared/src/ledger/ledger/postings.ts`) and writes the entry with its postings |
 | `changeEntryDetails(db, ref, change)` | Description and notes in place |
 | `deleteEntry(db, input, clock)` | Soft delete with who, when and why |
 | `restoreEntry(db, ref)` | Back from the trash. A database refusal becomes `ENTRY_CANNOT_BE_RESTORED` |

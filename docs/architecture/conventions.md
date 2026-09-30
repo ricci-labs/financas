@@ -31,6 +31,12 @@ without comments.
 
 ## File organization
 - **One folder per concept** (a domain concept in `shared`, a module in the API, a feature in the web).
+  In `packages/shared/src` the concepts are grouped by area, mirroring the API modules: `core/`
+  (money, calendar, paging, deletion), `identity/` (identity, workspaces, access, members,
+  invitations, notifications), `ledger/` (ledger, cards, installments), `contacts/` (contacts,
+  charges, pix), `planning/` (planning, recurrence, budgets, goals, allocation), `reports/`
+  (reports, metrics, insights, simulation); `attachments/` and `audit/` stand alone. A new concept
+  goes into the area of the module that owns it: `@shared/<area>/<concept>/<concept>.ts`.
 - **Every type lives in a `<concept>.types.ts` file**, exported or not, in every folder, tests
   included (`core/http/http.types.ts`, `core/db/db.types.ts`, `installments/installments.types.ts`,
   `src/testing/testing.types.ts` for test-only shapes...). No `type` or `interface` in a service,
@@ -67,9 +73,9 @@ without comments.
 
 ## Money
 - Store and compute in integer cents (`integer`/`bigint` columns, `number` in TS; the household's values stay far below 2^53).
-- Parse user input like `"87,50"`, `"R$ 1.234,56"` or `"1234.5"` only through `@shared/money/money`.
-- Format for display with `Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })` via `@shared/money/money`.
-- Split amounts only with `@shared/installments/installments`. Never with ad-hoc division.
+- Parse user input like `"87,50"`, `"R$ 1.234,56"` or `"1234.5"` only through `@shared/core/money/money`.
+- Format for display with `Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })` via `@shared/core/money/money`.
+- Split amounts only with `@shared/ledger/installments/installments`. Never with ad-hoc division.
 
 ## Dates
 - Calendar dates (`occurredOn`, `closingDate`, `dueDate`) are `date` columns and `YYYY-MM-DD` strings in TS. They are not `Date` objects, which avoids timezone shifts.
