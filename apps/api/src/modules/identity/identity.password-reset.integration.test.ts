@@ -124,13 +124,13 @@ describe('requestPasswordReset', () => {
 })
 
 describe('resetPassword', () => {
-  it('replaces the password, ends every session and tells the owner', async () => {
+  it('replaces the password, ends every session and says whom to tell', async () => {
     const { userId, email } = await existingUser('reset')
     const openSession = await loginWith(email, OLD_PASSWORD)
     const token = await resetLinkFor(email)
     const { deps, sent } = setup()
 
-    await resetPassword(databases.app, { token, password: NEW_PASSWORD }, deps)
+    const recipient = await resetPassword(databases.app, { token, password: NEW_PASSWORD }, deps)
 
     await expect(loginWith(email, OLD_PASSWORD)).rejects.toMatchObject({
       code: 'INVALID_CREDENTIALS',
@@ -139,8 +139,8 @@ describe('resetPassword', () => {
     expect(
       await resolveSession(databases.app, openSession.token, { clock: clockAt(START) }),
     ).toBeNull()
-    expect(sent).toHaveLength(1)
-    expect(sent[0]).toMatchObject({ template: 'password_changed', to: email })
+    expect(recipient).toMatchObject({ email })
+    expect(sent).toEqual([])
   })
 
   it('verifies the email, since the link proved the user can read it', async () => {

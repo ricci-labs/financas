@@ -1,7 +1,7 @@
 ---
 summary: Coding conventions — naming, money, dates, IDs, errors, validation, tests, migrations, commits.
 read_when: Writing or reviewing any code.
-updated: 2026-09-27
+updated: 2026-09-29
 ---
 
 # Conventions
@@ -136,7 +136,9 @@ without comments.
   `202` with an empty body **before** doing the work, which runs through `BackgroundTasks`
   (`core/background-tasks.ts`). The response is the same whether the email exists or not, and its
   timing doesn't depend on it. A failed task is logged as `background.task.failed`; shutdown waits
-  for pending tasks.
+  for pending tasks. Routes that email **after** their work is done (password changed or reset,
+  invitations, the verification of an invitation sign-up) also send it through `BackgroundTasks`,
+  so a mail failure never turns a finished change into a `500`.
 - **Routes that use an email link** (`POST /api/auth/verify-email`, `/password/reset`) take the
   token in the body (the web reads it from the URL fragment). Each `LINK_INVALID` counts against the
   client (default 20 per hour); over the limit they answer `429` even for a valid link. A reset

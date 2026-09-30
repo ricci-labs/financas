@@ -128,8 +128,11 @@ export function identityRoutes(deps: IdentityRouteDeps) {
       jsonBody(resetPasswordRequestSchema, 'PASSWORD_INVALID'),
       limitInvalidLinks(deps),
       async (c) => {
-        await resetPassword(deps.db, c.req.valid('json'), deps)
+        const recipient = await resetPassword(deps.db, c.req.valid('json'), deps)
         clearSessionCookie(c, deps.cookie)
+        deps.background.run(c.get('logger'), 'auth.password_changed_email', () =>
+          sendPasswordChangedEmail(recipient, deps),
+        )
         return c.body(null, NO_CONTENT)
       },
     )

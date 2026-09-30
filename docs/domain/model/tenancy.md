@@ -1,7 +1,7 @@
 ---
 summary: Identity and multi-tenancy tables — users, WhatsApp identities, workspaces, memberships, invitations — and all settings/preferences tables (financial period, installment view, notifications).
 read_when: Working on auth, workspaces, memberships, invitations, settings screens, or anything scoped by tenant.
-updated: 2026-09-26
+updated: 2026-09-29
 ---
 
 # Tenancy, identity and settings
@@ -75,8 +75,9 @@ Web sessions (ADR 0021). Global table: no `workspace_id`, no RLS, hard deleted. 
 - `resetPassword()` checks the new password first, so a bad one doesn't spend the link, then checks
   the link with a read-only query before hashing, so a fake link costs no scrypt work. Then one
   statement uses the token (unused, unexpired, `password_reset`, active user), stores the new hash,
-  marks the email verified (the link proved the user reads it) and deletes every session. The owner
-  gets a "your password was changed" email with a link to reset it again. Anything else is
+  marks the email verified (the link proved the user reads it) and deletes every session. The route
+  then emails the owner "your password was changed", with a link to reset it again, in the
+  background, so a mail failure can't fail a reset that already happened. Anything else is
   `LINK_INVALID`.
 - Email links carry the token in the URL fragment (`/verify-email#token=...`), which browsers never
   send to a server or put in a `Referer`. The web page reads it and posts it to the API.
@@ -168,7 +169,7 @@ Answering an invitation (`/api/invitations`, `onboarding.routes.ts`):
 |---|---|---|
 | `POST /preview` `{ token }` | public | workspace name, inviter name, role name, invited email (or phone flag), expiry |
 | `POST /accept` `{ token }` | session | joins with the invited role; email invitations only for the same email → `{ workspaceId, membershipId }` |
-| `POST /sign-up` `{ token, displayName, password, email? }` | public | for someone without an account, with public sign-up on or off. The invitation is checked **before** hashing the password. An email invitation creates the account with the **invited** email (a typed one is ignored), already verified, since only that inbox received the link. A phone invitation needs `email` (`EMAIL_REQUIRED`): the account starts unverified, joins, and gets a verification email; login waits for it. An email that already has an account is `409 EMAIL_TAKEN` (log in and accept instead) → `201 { workspaceId, membershipId, isEmailVerified }` |
+| `POST /sign-up` `{ token, displayName, password, email? }` | public | for someone without an account, with public sign-up on or off. The invitation is checked **before** hashing the password. An email invitation creates the account with the **invited** email (a typed one is ignored), already verified, since only that inbox received the link. A phone invitation needs `email` (`EMAIL_REQUIRED`): the account starts unverified, joins, and gets a verification email (sent in the background, so a mail failure doesn't fail the sign-up; the resend route covers a lost one); login waits for it. An email that already has an account is `409 EMAIL_TAKEN` (log in and accept instead) → `201 { workspaceId, membershipId, isEmailVerified }` |
 
 An unknown token is `404 INVITATION_NOT_FOUND` and counts against the client's invalid-link limit
 (`INVALID_LINKS_PER_IP_PER_HOUR`); over it, `429`.
