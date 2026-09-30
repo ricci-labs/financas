@@ -19,15 +19,19 @@ Every screen spec in `modules/` assumes these rules. A spec only says where it d
 3. **Same rules as the API:** the client validates with the same Zod schema the API uses
    (`@financas/shared`). Limits in the specs (lengths, ranges, formats) come from those schemas; a
    field never accepts what the API would refuse.
-4. **When to validate:**
-   - on blur for the first time (never while the user is typing the first value);
+4. **When to validate** (decided with the user, 2026-09-29): the error shows **as soon as the
+   person leaves the field** with an invalid value, never later on submit.
+   - on leaving a field (blur), even the first time; never while the first value is being typed;
    - after a field shows an error, on every change, so the error disappears as soon as it's fixed;
-   - on submit, all fields at once.
+   - rules between fields (the shares' sum, an end date after the start, "Para" different from
+     "De") are checked again as soon as either field changes;
+   - a required field the person hasn't touched shows no error; the disabled button says what is
+     missing (Button contract).
 5. **Error display:** under the field, in the error colour, with an icon and text (not colour
    alone), announced to screen readers. The field gets `aria-invalid`.
-6. **On a failed submit:** focus moves to the first field with an error, and when the form is long,
-   a summary at the top lists every error as a link to its field ("Corrija 2 campos para
-   continuar.").
+6. **Errors from the server on submit** (rules only the API knows, like a name already taken):
+   the error shows under its field and focus moves there; when the form is long, a summary at the
+   top lists every error as a link to its field ("Corrija 2 campos para continuar.").
 7. **Message style:** says what's wrong and what to do, in plain pt-BR, never the raw code or an
    English message. Patterns:
    - required: "Informe {o nome da conta}."
@@ -53,12 +57,14 @@ Every screen spec in `modules/` assumes these rules. A spec only says where it d
 
 ## Button contract
 **Every button and action states all of this in its screen spec.** A button with no rule is a bug.
+A submit button whose spec doesn't give an "Enabled when" follows the default below (disabled
+until the form is valid; on edit forms, also until something changed).
 
 | Aspect | Rule |
 |---|---|
 | Label | A verb that says the outcome: "Salvar conta", "Registrar pagamento", never "OK" or "Enviar" alone |
 | Visibility | Hidden if the role lacks the permission (see Permissions) |
-| Enabled when | Explicit condition. Submit buttons stay **enabled** while the form is invalid, so pressing shows the errors (RNF-A11Y); they are disabled only while a request runs, or when there is nothing to save (edit forms with no change) |
+| Enabled when | Explicit condition. **Submit buttons stay disabled until the whole form is valid** (every required field filled, every rule met) and, on edit forms, until something changed; also while a request runs. A disabled submit shows, right under it, what is missing: "Preencha Valor e Categoria para continuar." (up to 3 field names, else "Preencha os campos obrigatórios (*) para continuar."). It uses `aria-disabled` (still focusable, so screen readers read that hint); tapping it only marks the missing fields and moves focus to the first one, it never sends |
 | Loading | While the request runs: spinner inside the button, label kept, button disabled; other actions of the same form disabled too |
 | Double submit | Impossible: one request per press (RNF-REL-1) |
 | Success | Says what happened (a toast or an inline message) and where the user goes next |
