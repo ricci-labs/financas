@@ -11,6 +11,7 @@ import {
   createCard,
   deleteAccount,
   deleteEntry,
+  getEntry,
   listAccountBalances,
   listAccounts,
   listCards,
@@ -187,6 +188,10 @@ function entryRoutes({ db }: LedgerRouteDeps) {
         return c.json(await listTrashedEntries(db, workspaceId, c.req.valid('query')))
       },
     )
+    .get('/:entryId', authorize('entries', 'view'), entry, async (c) => {
+      const { workspaceId } = currentWorkspace(c)
+      return c.json(await getEntry(db, workspaceId, c.req.valid('param').entryId))
+    })
     .post(
       '/',
       authorize('entries', 'create'),

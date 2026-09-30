@@ -222,6 +222,7 @@ A malformed or unknown id, or one from another workspace, is `404 ACCOUNT_NOT_FO
 | `GET /cards/:cardId/invoices` | `cards:view` | `listInvoiceTotals`: invoices with total, paid and due, and how much of the total others owe (`frontedCents`) vs the household's own (`ownCents`), by reference month |
 | `GET /cards/:cardId/invoices/:invoiceId/lines` | `cards:view` | `listInvoiceLines`: the invoice's statement, one line per card posting of an active entry (description, installment `n/count`, `frontedCents` owed by contacts), charges positive and payments negative; an invoice of another card is `404 INVOICE_NOT_FOUND` |
 | `GET /entries?from&to&accountId&limit&cursor` | `entries:view` | `listEntries`: one page `{ items, nextCursor }` of active entries with their postings, newest first (`occurred_on`, then id); optional period (`YYYY-MM-DD`), account, `limit` (default 100, max 500) and the `cursor` of the previous page |
+| `GET /entries/:entryId` | `entries:view` | `getEntry`: one active entry with its postings, as in the list; a deleted or replaced one is `404 ENTRY_NOT_FOUND` |
 | `POST /entries` | `entries:create` | `recordEntry` (any `entryType` of `entryInputSchema`, source `web`) → `201 { entryId }` |
 | `PUT /entries/:entryId` | `entries:update` | `replaceEntry`: the old entry goes to the trash, a new one points back to it → `201 { entryId }` |
 | `PATCH /entries/:entryId` | `entries:update` | `changeEntryDetails` (description, notes) → `204` |

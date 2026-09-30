@@ -9,6 +9,7 @@ import {
   contactAuditTarget,
   insertContact,
   lockActiveContact,
+  selectActiveContact,
   selectActiveContacts,
   updateContact,
 } from '@api/modules/contacts/contacts.repository'
@@ -36,6 +37,20 @@ const CONTACT_INVALID = 'CONTACT_INVALID'
 
 export function listContacts(db: Database, workspaceId: string): Promise<ContactItem[]> {
   return withWorkspace(db, workspaceId, async (tx) => (await selectActiveContacts(tx)).map(itemOf))
+}
+
+export function getContact(
+  db: Database,
+  workspaceId: string,
+  contactId: string,
+): Promise<ContactItem> {
+  return withWorkspace(db, workspaceId, async (tx) => {
+    const contact = await selectActiveContact(tx, contactId)
+    if (!contact) {
+      throw contactNotFound(contactId)
+    }
+    return itemOf(contact)
+  })
 }
 
 export function listContactBalances(
@@ -137,9 +152,13 @@ async function lockExistingContact(
 ): Promise<ContactRow> {
   const contact = await lockActiveContact(tx, contactId)
   if (!contact) {
-    throw new NotFoundError('CONTACT_NOT_FOUND', `Contact ${contactId} not found`)
+    throw contactNotFound(contactId)
   }
   return contact
+}
+
+function contactNotFound(contactId: string): NotFoundError {
+  return new NotFoundError('CONTACT_NOT_FOUND', `Contact ${contactId} not found`)
 }
 
 async function assertNothingOwed(tx: WorkspaceTransaction, contactId: string): Promise<void> {

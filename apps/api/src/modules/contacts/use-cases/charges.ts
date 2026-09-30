@@ -12,6 +12,7 @@ import {
   insertChargePayment,
   lockActiveContact,
   lockCharge,
+  selectCharge,
   selectChargeExists,
   selectChargeItems,
   selectChargePayments,
@@ -127,6 +128,21 @@ export function listCharges(
   )
 }
 
+export function getCharge(
+  db: Database,
+  workspaceId: string,
+  chargeId: string,
+): Promise<ChargeView> {
+  return withWorkspace(db, workspaceId, async (tx) => {
+    const charge = await selectCharge(tx, chargeId)
+    const [view] = charge ? await viewsOf(tx, [charge]) : []
+    if (!view) {
+      throw chargeNotFound(chargeId)
+    }
+    return view
+  })
+}
+
 export async function markChargeSent(
   db: Database,
   ref: ChargeRef,
@@ -201,9 +217,13 @@ export function chargeExists(tx: WorkspaceTransaction, chargeId: string): Promis
 async function lockExistingCharge(tx: WorkspaceTransaction, chargeId: string): Promise<ChargeRow> {
   const charge = await lockCharge(tx, chargeId)
   if (!charge) {
-    throw new NotFoundError('CHARGE_NOT_FOUND', `Charge ${chargeId} not found`)
+    throw chargeNotFound(chargeId)
   }
   return charge
+}
+
+function chargeNotFound(chargeId: string): NotFoundError {
+  return new NotFoundError('CHARGE_NOT_FOUND', `Charge ${chargeId} not found`)
 }
 
 async function paidByCharge(

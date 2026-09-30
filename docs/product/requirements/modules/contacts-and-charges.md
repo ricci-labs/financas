@@ -60,7 +60,8 @@ and "Em atraso".
 Empty: "Nenhum contato ainda. Contatos são pessoas que dividem compras com vocês." + "Novo contato".
 
 ## CON-02 Contact detail (MVP)
-Route `/contatos/:contactId` (the web finds the contact in the list; there is no single-contact API).
+Route `/contatos/:contactId`, loaded with `GET /contacts/:contactId`; its charges come from
+`GET /charges?contactId=`, and one charge from `GET /charges/:chargeId`.
 
 **RF-CON-3** Header: name, phone (tap to call or open WhatsApp), Pix key, notes, balance fields.
 **RF-CON-4** "Em aberto": the contact's open items, from their share lines (entries list filtered

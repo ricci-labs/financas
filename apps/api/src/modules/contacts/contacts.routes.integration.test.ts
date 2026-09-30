@@ -131,6 +131,23 @@ describe('contacts', () => {
   })
 })
 
+describe('GET /contacts/:contactId', () => {
+  it('shows one contact to anyone who may view, and 404 once it is deleted', async () => {
+    const contactId = await created(
+      member.post(contactsPath, { name: 'Contact S', phoneE164: '+5511900005555' }),
+    )
+    const response = await viewer.get(`${contactsPath}/${contactId}`)
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual((await contacts()).find((item) => item.id === contactId))
+
+    expect((await owner.del(`${contactsPath}/${contactId}`)).status).toBe(204)
+    for (const id of [contactId, UNKNOWN_ID, 'nope']) {
+      const missing = await viewer.get(`${contactsPath}/${id}`)
+      expect([missing.status, await codeOf(missing)]).toEqual([404, 'CONTACT_NOT_FOUND'])
+    }
+  })
+})
+
 describe('contact balances and archiving', () => {
   it('show what each contact owes, and archive only a settled contact', async () => {
     const today = todayIn('America/Sao_Paulo', new Date())

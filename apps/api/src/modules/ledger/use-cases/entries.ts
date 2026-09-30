@@ -141,6 +141,16 @@ export async function listEntries(
   })
 }
 
+export function getEntry(db: Database, workspaceId: string, entryId: string): Promise<EntryItem> {
+  return withWorkspace(db, workspaceId, async (tx) => {
+    const entry = await findActiveEntry(tx, entryId)
+    if (!entry) {
+      throw entryNotFound(entryId)
+    }
+    return entry
+  })
+}
+
 export async function findActiveEntry(
   tx: WorkspaceTransaction,
   entryId: string,

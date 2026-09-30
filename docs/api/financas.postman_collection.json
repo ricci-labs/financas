@@ -1393,6 +1393,27 @@
           ]
         },
         {
+          "name": "Entry",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/entries/{{entryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "workspaces", "{{workspaceId}}", "entries", "{{entryId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('answers 200', () => pm.response.to.have.status(200))"]
+              }
+            }
+          ]
+        },
+        {
           "name": "Change details",
           "request": {
             "method": "PATCH",
@@ -1635,6 +1656,27 @@
           ]
         },
         {
+          "name": "Contact",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/contacts/{{contactId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "workspaces", "{{workspaceId}}", "contacts", "{{contactId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('answers 200', () => pm.response.to.have.status(200))"]
+              }
+            }
+          ]
+        },
+        {
           "name": "Change contact",
           "request": {
             "method": "PATCH",
@@ -1785,6 +1827,27 @@
                   "value": "{{contactId}}"
                 }
               ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('answers 200', () => pm.response.to.have.status(200))"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Charge",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/charges/{{chargeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "workspaces", "{{workspaceId}}", "charges", "{{chargeId}}"]
             }
           },
           "event": [

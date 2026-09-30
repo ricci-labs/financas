@@ -235,6 +235,23 @@ describe('GET /entries', () => {
   })
 })
 
+describe('GET /entries/:entryId', () => {
+  it('shows one entry with its postings, and 404 once it is deleted or replaced', async () => {
+    const entryId = await created(member.post(entriesPath, expense('Açougue')))
+    const response = await viewer.get(`${entriesPath}/${entryId}`)
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual((await listed()).find((item) => item.id === entryId))
+
+    const replacedId = await created(owner.post(entriesPath, expense('Hortifruti')))
+    await member.put(`${entriesPath}/${replacedId}`, expense('Hortifruti', '2026-10-05', 9000))
+    await member.del(`${entriesPath}/${entryId}`)
+    for (const id of [entryId, replacedId, UNKNOWN_ID, 'not-a-uuid']) {
+      const missing = await viewer.get(`${entriesPath}/${id}`)
+      expect([missing.status, await codeOf(missing)]).toEqual([404, 'ENTRY_NOT_FOUND'])
+    }
+  })
+})
+
 describe('PATCH and PUT /entries/:entryId', () => {
   it('changes the description, and replaces an entry with a new one that points back', async () => {
     const entryId = await created(owner.post(entriesPath, expense('Padaria')))

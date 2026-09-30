@@ -216,3 +216,33 @@ describe('charges over HTTP', () => {
     expect((await viewer.post(`${base}/charges/${crypto.randomUUID()}/sent`)).status).toBe(403)
   })
 })
+
+describe('GET /charges/:chargeId', () => {
+  it('shows one charge as the list does, only inside its workspace', async () => {
+    const app = createApp(testAppDeps({ db: databases.app }))
+    const { workspaceId, charge, charges } = await household()
+    const { chargeId } = await charge()
+    const viewerSession = await loggedInUser(app, databases.app, fixtures.runId, 'charge-reader')
+    await addMemberWithSystemRole(
+      databases.app,
+      databases.owner,
+      workspaceId,
+      viewerSession.userId,
+      'viewer',
+    )
+    const viewer = requestsAs(app, viewerSession)
+    const listed = byId(await charges(), chargeId)
+
+    const response = await viewer.get(`/api/workspaces/${workspaceId}/charges/${chargeId}`)
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual(JSON.parse(JSON.stringify(listed)))
+
+    const other = await household()
+    const { chargeId: foreignChargeId } = await other.charge()
+    for (const id of [foreignChargeId, crypto.randomUUID(), 'not-a-uuid']) {
+      const missing = await viewer.get(`/api/workspaces/${workspaceId}/charges/${id}`)
+      expect(missing.status).toBe(404)
+      expect(await missing.json()).toMatchObject({ error: { code: 'CHARGE_NOT_FOUND' } })
+    }
+  })
+})

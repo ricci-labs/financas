@@ -171,9 +171,9 @@ Field-mapped codes: `NOT_A_MONEY_ACCOUNT` and `ACCOUNT_NOT_AVAILABLE` → the ac
 `SHARES_EXCEED_AMOUNT`, `CONTACT_NOT_AVAILABLE` → shares; `SPENT_BY_NOT_A_MEMBER` → "Quem gastou".
 
 ## ENT-03 Entry detail (MVP)
-Route `/lancamentos/:entryId`. There is no API for one entry (`../api-gaps.md`): the web uses the
-entry from the list cache; a direct link with no cache shows "Abra o lançamento pela lista." until
-that route exists.
+Route `/lancamentos/:entryId`, loaded with `GET /entries/:entryId` (shown at once from the list
+cache when there is one). A deleted or replaced entry answers `404 ENTRY_NOT_FOUND`: the page shows
+its message and a link back to the list.
 
 **RF-ENT-9** Shows type, amount, date, description, notes, payment method, who spent, who recorded
 and from where ("pelo WhatsApp", "pela web"), and a readable breakdown of the lines ("Saiu de Conta

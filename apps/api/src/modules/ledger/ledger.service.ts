@@ -20,6 +20,7 @@ export {
   changeEntryDetails,
   deleteEntry,
   findActiveEntry,
+  getEntry,
   listEntries,
   listTrashedEntries,
   recordEntry,
