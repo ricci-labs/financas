@@ -8,6 +8,7 @@ export {
   listCharges,
   listContactBalances,
   listContacts,
+  listOpenItems,
   markChargeSent,
   payCharge,
   readContactBalanceFacts,

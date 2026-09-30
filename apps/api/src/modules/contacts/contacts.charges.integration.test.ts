@@ -5,6 +5,7 @@ import {
   createCharge,
   createContact,
   listCharges,
+  listOpenItems,
   markChargeSent,
   payCharge,
 } from '@api/modules/contacts'
@@ -90,7 +91,16 @@ describe('createCharge', () => {
       status: 'draft',
       pixPayload: null,
     })
-    expect(created?.items).toHaveLength(1)
+    expect(created?.items).toEqual([
+      {
+        postingId: expect.any(String),
+        description: 'Jantar',
+        installmentNo: null,
+        installmentCount: 1,
+        effectiveOn: '2026-10-06',
+        amountCents: 3_000,
+      },
+    ])
     expect(created?.messageText).toContain('Oi, Contact J!')
     expect(created?.messageText).toContain('• Jantar — R$ 30,00')
   })
@@ -107,6 +117,15 @@ describe('createCharge', () => {
     const next = byId(await charges(), chargeId)
     expect(next).toMatchObject({ amountCents: 10_000, dueOn: '2026-11-10' })
     expect(next?.messageText).toContain('• TV (parcela 1/3) — R$ 100,00')
+    expect(next?.items).toContainEqual(
+      expect.objectContaining({
+        description: 'TV',
+        installmentNo: 1,
+        installmentCount: 3,
+        effectiveOn: '2026-11-10',
+        amountCents: 10_000,
+      }),
+    )
     expect(next?.pixPayload).toContain('br.gov.bcb.pix')
     expect(next?.messageText).toContain(next?.pixPayload ?? 'missing')
   })
@@ -118,6 +137,24 @@ describe('createCharge', () => {
     await cancelCharge(databases.app, { workspaceId, chargeId })
     const again = await charge()
     expect(byId(await charges(), again.chargeId)?.amountCents).toBe(3_000)
+  })
+})
+
+describe('listOpenItems', () => {
+  it('shows what a charge would include, up to today or a chosen day', async () => {
+    const { workspaceId, contactId, charge } = await household()
+    const ref = { workspaceId, contactId }
+    expect(await listOpenItems(databases.app, ref, undefined, MID_OCTOBER)).toEqual([
+      expect.objectContaining({ description: 'Jantar', amountCents: 5_000, remainingCents: 3_000 }),
+    ])
+    expect(
+      (await listOpenItems(databases.app, ref, '2026-11-30', MID_OCTOBER)).map(
+        (item) => item.description,
+      ),
+    ).toEqual(['Jantar', 'TV'])
+
+    await charge()
+    expect(await listOpenItems(databases.app, ref, undefined, MID_OCTOBER)).toEqual([])
   })
 })
 
@@ -244,5 +281,35 @@ describe('GET /charges/:chargeId', () => {
       expect(missing.status).toBe(404)
       expect(await missing.json()).toMatchObject({ error: { code: 'CHARGE_NOT_FOUND' } })
     }
+  })
+})
+
+describe('GET /contacts/:contactId/open-items', () => {
+  it('answers what a charge would include, and refuses a bad day or an unknown contact', async () => {
+    const app = createApp(testAppDeps({ db: databases.app }))
+    const { workspaceId, contactId } = await household()
+    const viewerSession = await loggedInUser(app, databases.app, fixtures.runId, 'open-items')
+    await addMemberWithSystemRole(
+      databases.app,
+      databases.owner,
+      workspaceId,
+      viewerSession.userId,
+      'viewer',
+    )
+    const viewer = requestsAs(app, viewerSession)
+    const contactPath = `/api/workspaces/${workspaceId}/contacts`
+
+    const response = await viewer.get(`${contactPath}/${contactId}/open-items?until=2026-11-30`)
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual(
+      await listOpenItems(databases.app, { workspaceId, contactId }, '2026-11-30'),
+    )
+
+    const badDay = await viewer.get(`${contactPath}/${contactId}/open-items?until=30/11/2026`)
+    expect(badDay.status).toBe(400)
+    expect(await badDay.json()).toMatchObject({ error: { code: 'OPEN_ITEMS_QUERY_INVALID' } })
+    const unknown = await viewer.get(`${contactPath}/${crypto.randomUUID()}/open-items`)
+    expect(unknown.status).toBe(404)
+    expect(await unknown.json()).toMatchObject({ error: { code: 'CONTACT_NOT_FOUND' } })
   })
 })

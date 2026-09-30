@@ -9,6 +9,8 @@ export const chargeParamsSchema = z.object({ chargeId: z.uuid() })
 
 export const chargeListQuerySchema = z.object({ contactId: z.uuid().optional() })
 
+export const openItemsQuerySchema = z.object({ until: isoDateSchema.optional() })
+
 export const chargePaymentSchema = z.strictObject({
   amountCents: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
   receivedInAccountId: z.uuid(),

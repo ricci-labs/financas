@@ -102,7 +102,8 @@ that month.
 | Route | Permission | Does |
 |---|---|---|
 | `POST /contacts/:contactId/charges` | `contacts:create` | `createCharge` `{ until? }` (default today, workspace time zone): the contact's open items due up to that day → `201 { chargeId }` with the stored message and Pix copia e cola (when the workspace Pix is set). Nothing open is `409 NOTHING_TO_CHARGE` |
-| `GET /charges?contactId=` | `contacts:view` | `listCharges`: newest first, with items, `paidCents` and the derived status |
+| `GET /contacts/:contactId/open-items?until=` | `contacts:view` | `listOpenItems`: what a charge created now would include (same computation, default today): each item with `description`, `installmentNo`, `installmentCount`, `effectiveOn`, `amountCents` and `remainingCents`, oldest first; items in an open charge are left out |
+| `GET /charges?contactId=` | `contacts:view` | `listCharges`: newest first, with items (`postingId`, `description`, `installmentNo`, `installmentCount`, `effectiveOn`, charged `amountCents`), `paidCents` and the derived status |
 | `GET /charges/:chargeId` | `contacts:view` | `getCharge`: one charge, as in the list |
 | `POST /charges/:chargeId/sent` | `contacts:update` | `markChargeSent`: draft → sent (also when a member forwards the message by hand) |
 | `POST /charges/:chargeId/payments` | `contacts:update` | `payCharge` `{ amountCents, receivedInAccountId, occurredOn }`: records the `settlement` entry and links it → `201 { entryId }`; a cancelled charge is `409 CHARGE_STATUS_REFUSED` |

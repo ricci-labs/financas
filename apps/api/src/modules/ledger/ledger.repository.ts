@@ -588,6 +588,23 @@ export function selectContactItems(tx: WorkspaceTransaction, contactId: string) 
     .where(and(eq(postings.contactId, contactId), isNull(journalEntries.deletedAt)))
 }
 
+export async function selectPostingDetails(tx: WorkspaceTransaction, postingIds: string[]) {
+  if (postingIds.length === 0) {
+    return []
+  }
+  return tx
+    .select({
+      postingId: postings.id,
+      description: journalEntries.description,
+      installmentNo: postings.installmentNo,
+      installmentCount: journalEntries.installmentCount,
+      effectiveOn: postings.effectiveOn,
+    })
+    .from(postings)
+    .innerJoin(journalEntries, eq(journalEntries.id, postings.entryId))
+    .where(inArray(postings.id, postingIds))
+}
+
 export async function selectActiveEntryIds(
   tx: WorkspaceTransaction,
   entryIds: string[],

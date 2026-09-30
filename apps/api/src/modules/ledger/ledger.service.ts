@@ -37,6 +37,7 @@ export {
   readContactPostings,
   readInvoiceFacts,
   readInvoicesDueBetween,
+  readPostingDetails,
   readPostingFacts,
 } from '@api/modules/ledger/use-cases/facts'
 export { loadAccounts as loadUsableAccounts } from '@api/modules/ledger/use-cases/lookups'

@@ -13,6 +13,7 @@ import {
   listCharges,
   listContactBalances,
   listContacts,
+  listOpenItems,
   markChargeSent,
   payCharge,
 } from '@api/modules/contacts/contacts.service'
@@ -26,6 +27,7 @@ import {
   deletionRequestSchema,
   newChargeSchema,
   newContactSchema,
+  openItemsQuerySchema,
 } from '@financas/shared'
 import { Hono } from 'hono'
 
@@ -46,6 +48,19 @@ export function contactRoutes({ db }: ContactRouteDeps) {
       const { workspaceId } = currentWorkspace(c)
       return c.json(await getContact(db, workspaceId, c.req.valid('param').contactId))
     })
+    .get(
+      '/:contactId/open-items',
+      authorize('contacts', 'view'),
+      contact,
+      queryParams(openItemsQuerySchema, 'OPEN_ITEMS_QUERY_INVALID'),
+      async (c) => {
+        const { workspaceId } = currentWorkspace(c)
+        const { contactId } = c.req.valid('param')
+        return c.json(
+          await listOpenItems(db, { workspaceId, contactId }, c.req.valid('query').until),
+        )
+      },
+    )
     .post(
       '/',
       authorize('contacts', 'create'),

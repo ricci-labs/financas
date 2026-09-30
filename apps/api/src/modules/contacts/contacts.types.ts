@@ -5,6 +5,7 @@ import type {
   charges,
   contacts,
 } from '@api/modules/contacts/contacts.table'
+import type { PostingDetails } from '@api/modules/ledger'
 import type { ChargeStatus, ContactBalance } from '@financas/shared'
 
 export type ContactRow = typeof contacts.$inferSelect
@@ -62,13 +63,19 @@ export type ChargeUpdate = Partial<
   Pick<NewChargeRow, 'status' | 'sentAt' | 'messageText' | 'pixPayload'>
 >
 
-export type ChargeItemView = {
+export type ChargeItemView = PostingDetails & {
+  amountCents: number
+}
+
+export type ChargeItemRow = {
+  chargeId: string
   postingId: string
   amountCents: number
 }
 
-export type ChargeItemRow = ChargeItemView & {
-  chargeId: string
+export type OpenItemsRef = {
+  workspaceId: string
+  contactId: string
 }
 
 export type ChargeView = {
