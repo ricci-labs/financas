@@ -16,7 +16,7 @@ matching screen would be wrong or fragile without it.
 | G1 | ~~`DELETE` or `PUT /entries/:id` on an entry with a line on a closed invoice answered 500.~~ **Fixed:** the service checks first and answers `409 ENTRY_ON_CLOSED_INVOICE`. | The UI also hides these actions (`modules/entries.md` → RF-ENT-10). | Done |
 | G2 | ~~`GET /simulations/purchase` on a card with an amount in cents smaller than the installments (R$ 0,05 in 10×) answered 500.~~ **Fixed:** the query schema refuses it (`400 SIMULATION_QUERY_INVALID`). | The UI also limits installments to the amount in cents. | Done |
 | G3 | ~~`ownerUserId` (accounts) or `holderUserId` (cards) with an unknown user answered 500, and a non-member was accepted.~~ **Fixed:** the database requires an active member (`400 OWNER_NOT_A_MEMBER` / `HOLDER_NOT_A_MEMBER`). | The UI picks them from the member list. | Done |
-| G4 | Password reset sends the "senha trocada" e-mail inside the request; a mail failure answers 500 after the password changed. Same for the verification e-mail of an invitation sign-up by phone (the account was already created). | Send both in the background, like the other account e-mails. | Before the web |
+| G4 | ~~Password reset sent the "senha trocada" e-mail inside the request, so a mail failure answered 500 after the password changed. Same for the verification e-mail of an invitation sign-up by phone.~~ **Fixed:** both go out in the background, like the other account e-mails. | Nothing for the UI. | Done |
 
 ## Reads the screens need
 | # | Today | UI meanwhile | Proposed fix | When |

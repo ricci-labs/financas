@@ -54,7 +54,7 @@ export async function resetPassword(
   db: Database,
   input: ResetPasswordInput,
   deps: AccountEmailDeps,
-): Promise<void> {
+): Promise<EmailRecipient> {
   const { clock, passwordCost } = withDefaults(deps)
   const password = parseOrThrow(passwordSchema, input.password, 'PASSWORD_INVALID')
   const tokenHash = hashToken(input.token)
@@ -68,7 +68,7 @@ export async function resetPassword(
     throw invalidLink()
   }
 
-  await sendPasswordChangedEmail(changed, deps)
+  return changed
 }
 
 export async function sendPasswordChangedEmail(

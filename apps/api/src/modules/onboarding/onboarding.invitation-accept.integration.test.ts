@@ -1,5 +1,6 @@
 import { createApp } from '@api/app'
 import { createBackgroundTasks } from '@api/core/background-tasks'
+import type { Mailer } from '@api/core/email/email.types'
 import type { WorkspaceListItem } from '@api/modules/access'
 import { roles } from '@api/modules/access/access.table'
 import { createAccountEmailLimits } from '@api/modules/identity'
@@ -8,6 +9,7 @@ import { TEST_PUBLIC_URL, testAppDeps } from '@api/testing/app'
 import { connectTestDatabases } from '@api/testing/database'
 import { createFixtures } from '@api/testing/fixtures'
 import { loggedInUser, requestsAs } from '@api/testing/http'
+import { createCapturingLogger } from '@api/testing/logger'
 import { createRecordingMailer, tokenFromEmail } from '@api/testing/mailer'
 import type { SessionRequests, TestSession } from '@api/testing/testing.types'
 import { and, eq } from 'drizzle-orm'
@@ -215,10 +217,50 @@ describe('POST /api/invitations/sign-up', () => {
       'EMAIL_NOT_VERIFIED',
     ])
 
+    await background.idle()
     const verification = [...recording.sent].reverse().find((sent) => sent.to === email)
     expect(verification).toMatchObject({ template: 'email_verification' })
     await publicPost('/api/auth/verify-email', { token: tokenFromEmail(verification) })
     expect((await login(email, PASSWORD)).status).toBe(200)
+  })
+
+  it('keeps the new account when the verification email fails, and logs the failure', async () => {
+    const token = await phoneInvitationToken('+5511900005555')
+    const capture = createCapturingLogger()
+    const failingBackground = createBackgroundTasks()
+    const failingMailer: Mailer = {
+      send: async () => {
+        throw new Error('smtp down')
+      },
+    }
+    const smtpDownApp = createApp(
+      testAppDeps({
+        db: databases.app,
+        mailer: failingMailer,
+        background: failingBackground,
+        logger: capture.logger,
+      }),
+    )
+
+    const response = await smtpDownApp.request('/api/invitations/sign-up', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Origin: TEST_PUBLIC_URL },
+      body: JSON.stringify({
+        token,
+        displayName: 'Member Phone',
+        password: PASSWORD,
+        email: newEmail('smtp-down'),
+      }),
+    })
+    await failingBackground.idle()
+
+    expect(response.status).toBe(201)
+    expect(capture.entries()).toContainEqual(
+      expect.objectContaining({
+        event: 'background.task.failed',
+        task: 'onboarding.sign_up_verification_email',
+      }),
+    )
   })
 
   it('sends an existing account to log in and accept instead', async () => {

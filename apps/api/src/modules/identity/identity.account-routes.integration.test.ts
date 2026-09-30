@@ -228,6 +228,30 @@ describe('POST /api/auth/password/reset', () => {
     expect(sent.map((message) => message.template)).toEqual(['password_reset', 'password_changed'])
   })
 
+  it('still answers 204 when the "password changed" email fails, and logs the failure', async () => {
+    const { token } = await resetLink('route-reset-smtp-down')
+    const failingMailer: Mailer = {
+      send: async () => {
+        throw new Error('smtp down')
+      },
+    }
+    const { post, background, entries } = setup({ mailer: failingMailer })
+
+    const response = await post('/api/auth/password/reset', {
+      token,
+      password: 'the new long password',
+    })
+    await background.idle()
+
+    expect(response.status).toBe(204)
+    expect(entries()).toContainEqual(
+      expect.objectContaining({
+        event: 'background.task.failed',
+        task: 'auth.password_changed_email',
+      }),
+    )
+  })
+
   it('refuses a short password and keeps the link usable', async () => {
     const { post, token } = await resetLink('route-reset-short')
     const short = await post('/api/auth/password/reset', { token, password: 'too short' })

@@ -28,11 +28,11 @@ import type {
   InvitationOutcome,
   InvitationPreview,
   InviteMemberInput,
-  JoinedThroughSignUp,
   RegisteredOwner,
   RegisterOwnerInput,
   SignUpThroughInvitationDeps,
   SignUpThroughInvitationInput,
+  SignUpThroughInvitationOutcome,
 } from '@api/modules/onboarding/onboarding.types'
 import { addWorkspace, findCurrentWorkspace, reserveWorkspaceId } from '@api/modules/workspaces'
 import { permissionsBeyond, workspaceNameSchema } from '@financas/shared'
@@ -177,7 +177,7 @@ export async function signUpThroughInvitation(
   db: Database,
   input: SignUpThroughInvitationInput,
   deps: SignUpThroughInvitationDeps,
-): Promise<JoinedThroughSignUp> {
+): Promise<SignUpThroughInvitationOutcome> {
   const invitation = await describeInvitation(db, input.token, deps.clock)
   const email = invitation.email ?? input.email
   if (!email) {
@@ -193,10 +193,18 @@ export async function signUpThroughInvitation(
   const accepted = await runAsActor(userId, () =>
     acceptInvitation(db, { token: input.token, userId, userEmail: email }),
   )
-  if (!isEmailVerified) {
-    await requestEmailVerification(db, { email }, deps)
+  return {
+    joined: { ...accepted, isEmailVerified },
+    emailToVerify: isEmailVerified ? null : email,
   }
-  return { ...accepted, isEmailVerified }
+}
+
+export async function sendSignUpVerificationEmail(
+  db: Database,
+  email: string,
+  deps: SignUpThroughInvitationDeps,
+): Promise<void> {
+  await requestEmailVerification(db, { email }, deps)
 }
 
 function parseWorkspaceName(rawName: string): string {

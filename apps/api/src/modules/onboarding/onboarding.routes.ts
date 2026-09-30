@@ -9,6 +9,7 @@ import {
   inviteMember,
   previewInvitation,
   sendInvitationEmail,
+  sendSignUpVerificationEmail,
   signUpThroughInvitation,
 } from '@api/modules/onboarding/onboarding.service'
 import type { OnboardingRouteDeps } from '@api/modules/onboarding/onboarding.types'
@@ -94,7 +95,16 @@ export function invitationResponseRoutes(deps: OnboardingRouteDeps) {
       jsonBody(invitationSignUpRequestSchema, 'INVITATION_SIGN_UP_INVALID'),
       limitInvalidInvitations,
       async (c) => {
-        const joined = await signUpThroughInvitation(deps.db, c.req.valid('json'), deps)
+        const { joined, emailToVerify } = await signUpThroughInvitation(
+          deps.db,
+          c.req.valid('json'),
+          deps,
+        )
+        if (emailToVerify) {
+          deps.background.run(c.get('logger'), 'onboarding.sign_up_verification_email', () =>
+            sendSignUpVerificationEmail(deps.db, emailToVerify, deps),
+          )
+        }
         return c.json(joined, CREATED)
       },
     )

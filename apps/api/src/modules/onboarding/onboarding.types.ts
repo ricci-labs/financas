@@ -98,3 +98,8 @@ export type JoinedThroughSignUp = {
   membershipId: string
   isEmailVerified: boolean
 }
+
+export type SignUpThroughInvitationOutcome = {
+  joined: JoinedThroughSignUp
+  emailToVerify: string | null
+}
