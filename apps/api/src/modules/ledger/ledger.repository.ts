@@ -118,6 +118,25 @@ export async function insertPostings(tx: WorkspaceTransaction, lines: NewPosting
   await tx.insert(postings).values(lines)
 }
 
+export async function selectEntryTouchesClosedInvoice(
+  tx: WorkspaceTransaction,
+  entryId: string,
+): Promise<boolean> {
+  const [line] = await tx
+    .select({ entryId: postings.entryId })
+    .from(postings)
+    .innerJoin(
+      cardInvoices,
+      and(
+        eq(cardInvoices.workspaceId, postings.workspaceId),
+        eq(cardInvoices.id, postings.invoiceId),
+      ),
+    )
+    .where(and(eq(postings.entryId, entryId), eq(cardInvoices.status, 'closed')))
+    .limit(1)
+  return line !== undefined
+}
+
 export async function lockEntry(tx: WorkspaceTransaction, entryId: string) {
   const [entry] = await tx
     .select({ id: journalEntries.id, deletedAt: journalEntries.deletedAt })
