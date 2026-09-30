@@ -6,7 +6,7 @@
 
 ### *"How much can we still spend?"*
 
-[![Status](https://img.shields.io/badge/status-in%20design-f59e0b?style=flat-square)](docs/product/roadmap.md)
+[![Status](https://img.shields.io/badge/status-API%20live%20%C2%B7%20web%20next-3b82f6?style=flat-square)](docs/product/roadmap.md)
 [![Node](https://img.shields.io/badge/node-24%20LTS-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/typescript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![pnpm](https://img.shields.io/badge/pnpm-workspaces-F69220?style=flat-square&logo=pnpm&logoColor=white)](https://pnpm.io)
@@ -20,7 +20,8 @@
 ---
 
 > [!NOTE]
-> The project is in its **design phase**: the architecture, data model and engineering process are documented, and code comes next. Follow along in the [roadmap](docs/product/roadmap.md).
+> **The backend is done and running in production** on a home server: ledger, cards and invoices, shared purchases and charges, planning, dashboard metrics and alerts, reminders, attachments and an audit log, all behind a typed HTTP API ([Postman collection](docs/api/postman.md)).
+> **Next:** the web app, whose [requirements](docs/product/requirements/README.md) are written screen by screen, and then the WhatsApp channel with the Claude agent. Follow along in the [roadmap](docs/product/roadmap.md).
 
 ## Why it exists
 
@@ -53,20 +54,27 @@ You:  João paid me back via Pix
 Bot:  ✅ Received R$ 100.00 from João. Still open: Maria (R$ 100.00).
 ```
 
+*(The WhatsApp agent is the last phase; the rules it will call already exist in the API.)*
+
 The web dashboard shows the **period overview** (fixed income, spent, committed, free), **card invoices** split between your spending and other people's, **contacts** with what they owe, **upcoming bills**, and budgets per category.
 
 ## Features
 
-| | Feature | Details |
-|---|---|---|
-| 💬 | **WhatsApp agent** | Records expenses, income, transfers and paybacks in natural language. Always asks before saving |
-| 📊 | **Period overview** | Free to spend = fixed income − spent − committed, over a configurable financial month (1st, day N, or N-th business day) |
-| 💳 | **Cards and invoices** | Closing and due days per card, installments spread across future invoices, invoice payments never counted as spending twice |
-| 🤝 | **Third parties** | Several people per purchase, installments included; charges with a Pix copy-and-paste code; partial payments |
-| 🔁 | **Planned vs actual** | Fixed bills, salaries and subscriptions create expected occurrences, matched by real entries |
-| ⏰ | **Reminders** | Bills, invoices and charges, with configurable lead time |
-| 📎 | **Receipts** | Attach receipts and photos to entries, from WhatsApp too |
-| 👥 | **Workspaces** | Isolated spaces ("Home", "Personal") with members and module-level permissions |
+| | Feature | Details | Status |
+|---|---|---|---|
+| 📊 | **Period overview** | Free to spend = fixed income − spent − committed, per day, over a configurable financial month (1st, day N, or N-th business day) | ✅ API |
+| 🚨 | **Alerts** | Budget over or ahead of pace, balance going negative, bills overdue, commission not yet split, contacts overdue | ✅ API |
+| 🛒 | **"Posso comprar?"** | Simulates a purchase (in installments too) and shows its effect month by month | ✅ API |
+| 💳 | **Cards and invoices** | Closing and due days per card, installments spread across future invoices, invoice payments never counted as spending twice | ✅ API |
+| 🤝 | **Third parties** | Several people per purchase, installments included; charges with the pt-BR message and a Pix copy-and-paste code; partial payments | ✅ API · sending by WhatsApp next |
+| 🔁 | **Planned vs actual** | Fixed bills, salaries and subscriptions create expected occurrences, matched by real entries; budgets and goals | ✅ API |
+| 💰 | **Commission split** | Configurable steps (reserve, goals, spending) that suggest where a variable income goes | ✅ API |
+| ⏰ | **Reminders** | Bills and invoices, by each member's lead time and quiet hours | ✅ email · WhatsApp next |
+| 📎 | **Receipts** | Attach receipts to entries and charges | ✅ API · WhatsApp photos next |
+| 👥 | **Workspaces** | Isolated spaces ("Home", "Personal") with members, invitations and module-level permissions | ✅ API |
+| 🕵️ | **History** | Append-only audit log of every change, with who, when and from where | ✅ API |
+| 🖥️ | **Web app** | Mobile-first dashboard for the couple | 🔜 next |
+| 💬 | **WhatsApp agent** | Records expenses, income, transfers and paybacks in natural language. Always asks before saving | 🔜 after the web |
 
 ## How it works
 
@@ -116,12 +124,34 @@ flowchart LR
 ```text
 financas/
 ├── apps/
-│   ├── api/        # Hono + WhatsApp + agent + jobs (one process)
-│   └── web/        # React SPA (served by the API)
+│   ├── api/        # Hono API + jobs (+ WhatsApp and agent later), one process; Drizzle migrations
+│   └── web/        # React SPA, served by the API (next)
 ├── packages/
-│   └── shared/     # Zod schemas and pure domain rules
-└── docs/           # product, domain, architecture, engineering, operations, ADRs
+│   └── shared/     # Zod schemas and pure domain rules, grouped by area (ledger, planning, reports…)
+├── scripts/        # quality checks and ops:* helpers (health, logs, trace, errors, metrics, jobs)
+└── docs/           # product, requirements, domain, architecture, engineering, operations, ADRs, API
 ```
+
+## Running it locally
+
+Needs Node.js 24, pnpm and Docker (for the local Postgres).
+
+```bash
+pnpm install              # dependencies + git hooks
+cp .env.example .env      # once; the defaults work for development
+pnpm db:up                # Postgres 18 on 127.0.0.1:5433
+pnpm db:migrate           # apply the migrations
+pnpm ops:create-user      # first user and workspace (asks for the password without echo)
+pnpm dev                  # API on :3100 + web (Vite, proxies /api)
+```
+
+| Command | Does |
+|---|---|
+| `pnpm check` | Lint, no comments, file roles, typecheck, dependency rules, unit tests, docs links |
+| `pnpm test:integration` | Database tests (RLS, ledger invariants, every route) |
+| `pnpm build` | Web build + API bundle |
+
+The API can be explored with the [Postman collection](docs/api/postman.md). Deploying on your own server: [`docs/operations/deploy.md`](docs/operations/deploy.md).
 
 ## Documentation
 
@@ -129,19 +159,24 @@ The docs are written to be read by people **and by AI agents**: every file start
 
 | Area | Start with |
 |---|---|
-| Product | [Vision](docs/product/vision.md) · [Roadmap](docs/product/roadmap.md) |
+| Product | [Vision](docs/product/vision.md) · [Roadmap](docs/product/roadmap.md) · [Web requirements](docs/product/requirements/README.md) |
 | Domain | [Glossary](docs/domain/glossary.md) · [Data model](docs/domain/model/README.md) · [Diagrams](docs/domain/model/diagrams.md) · [Invoices and installments](docs/domain/billing-and-installments.md) |
 | Architecture | [Overview](docs/architecture/overview.md) · [Structure](docs/architecture/structure.md) · [Dependency rules](docs/architecture/dependency-rules.md) |
 | Engineering | [Git and PRs](docs/engineering/git-workflow.md) · [CI/CD](docs/engineering/ci-cd.md) · [Working with Claude](docs/engineering/claude-workflow.md) |
 | Operations | [Observability](docs/operations/observability.md) · [Runbook](docs/operations/runbook.md) · [Deploy](docs/operations/deploy.md) |
+| API | [Postman collection](docs/api/postman.md) · [Error codes and messages](docs/product/requirements/error-messages.md) |
 | Decisions | [ADRs](docs/decisions/README.md) |
 
 ## Roadmap
 
 - [x] Architecture, stack and engineering process
 - [x] Data model: double-entry ledger, multi-tenancy, permissions, third parties, planning
-- [ ] Monorepo skeleton, schema and migrations
-- [ ] **MVP**: WhatsApp agent, dashboard, cards, third parties, reminders
+- [x] Monorepo, schema and migrations, CI with quality gates
+- [x] Backend: auth, workspaces, ledger, cards, contacts and charges, planning, dashboard metrics and alerts, reminders, attachments, audit log
+- [x] Observability, Docker image, deploy on Dokploy, daily backups
+- [x] Web requirements: experience, UI standards, design system brief, every screen
+- [ ] **Web app**: design system, then screen by screen
+- [ ] **WhatsApp channel and Claude agent**
 - [ ] Voice notes and receipt photos on WhatsApp
 - [ ] Bank statement and invoice import
 
