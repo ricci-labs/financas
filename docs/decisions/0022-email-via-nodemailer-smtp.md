@@ -30,7 +30,7 @@ updated: 2026-09-25
   | `SMTP_USER` | `no-reply@example.com` | none (no auth) |
   | `SMTP_PASSWORD` | provider password or app password | none |
   | `EMAIL_FROM` | `no-reply@example.com` | none |
-  | `EMAIL_FROM_NAME` | `Finanças` | `Finanças` |
+  | `EMAIL_FROM_NAME` | `Twise` | `Twise` |
 
   `SMTP_USER` and `SMTP_PASSWORD` come as a pair. The env schema checks all of it at boot.
 - **Boundary:** `core/email` exposes a `Mailer` (`send({ to, subject, text, html })`). Only

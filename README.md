@@ -1,10 +1,12 @@
 <div align="center">
 
-# 💸 financas
+# 💸 Twise
 
-**Personal and household finance, driven from WhatsApp, with a web dashboard that answers the question that matters most each month:**
+### *Light, clear, together.*
 
-### *"How much can we still spend?"*
+**Clear for both of you, light on the pocket: the app that shows how much you can still spend this month.**
+
+Household finance for couples, with a web dashboard and (soon) a WhatsApp assistant.
 
 [![Status](https://img.shields.io/badge/status-API%20live%20%C2%B7%20web%20next-3b82f6?style=flat-square)](docs/product/roadmap.md)
 [![Node](https://img.shields.io/badge/node-24%20LTS-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org)
@@ -27,7 +29,7 @@
 
 Most money goes out on **credit cards**, so the real cost of a month only shows up weeks later on the invoice. **Installments** quietly eat into the following months. When part of the income is **variable** (sales commissions), planning gets even harder.
 
-**financas** is built for people who want to:
+**Twise** is built for couples who want to:
 
 - 🎯 **live on fixed income and save the variable part**, knowing every day how much is still free;
 - 🔮 **see ahead**: fixed bills, subscriptions and installments projected before they happen;
@@ -120,6 +122,8 @@ flowchart LR
 | Operations | Docker · GitHub Actions → GHCR → Dokploy · OpenTelemetry · Netdata · Uptime Kuma |
 
 ## Repository layout
+
+The code name is `financas`: it names the repository, the packages (`@financas/*`) and the services.
 
 ```text
 financas/

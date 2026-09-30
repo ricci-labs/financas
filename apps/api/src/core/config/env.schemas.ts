@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 const LOG_LEVELS = ['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'] as const
 const DEFAULT_SMTP_PORT = 587
-const DEFAULT_EMAIL_FROM_NAME = 'Finanças'
+const DEFAULT_EMAIL_FROM_NAME = 'Twise'
 const DEFAULT_EMAIL_OUTBOX_DIR = '.private/outbox'
 const MAX_PROXY_HOPS = 3
 const DEFAULT_FILE_STORAGE_DIR = '.private/files'

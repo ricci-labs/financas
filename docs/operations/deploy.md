@@ -43,7 +43,7 @@ Pipeline: `../engineering/ci-cd.md`. Decision: `../decisions/0010-deploy-ghcr-do
 | `INVALID_LINKS_PER_IP_PER_HOUR` | Invalid verification or reset links a client may try per hour (default 20) |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE` | Email provider (ADR 0022). `SMTP_HOST` is required in production. Port `587` = STARTTLS, `465` = implicit TLS; TLS 1.2+ is always required. This instance uses DreamHost's SMTP server with a mailbox of the sender domain |
 | `SMTP_USER`, `SMTP_PASSWORD` | SMTP login, as a pair |
-| `EMAIL_FROM`, `EMAIL_FROM_NAME` | Sender address (required in production) and display name (default `Finanças`) |
+| `EMAIL_FROM`, `EMAIL_FROM_NAME` | Sender address (required in production) and display name (default `Twise`) |
 | `EMAIL_OUTBOX_DIR` | Development only: folder for `.eml` files when `SMTP_HOST` is empty |
 | `FILE_STORAGE_DIR` | Where attachments live (default `.private/files`). In production, a mounted Docker volume that is part of the backups |
 | `FILE_MAX_BYTES` | Largest upload accepted (default 10 MB) |

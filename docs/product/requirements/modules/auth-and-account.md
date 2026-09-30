@@ -48,7 +48,7 @@ States: arriving from an expired session shows "Sua sessão terminou. Entre de n
 
 ## AUTH-02 Sign up (MVP when enabled)
 Route `/signup`. Shown only when public sign-up is on; otherwise the route shows "O cadastro está
-fechado. Peça um convite a quem usa o Finanças." with a link to `AUTH-01`.
+fechado. Peça um convite a quem usa o Twise." with a link to `AUTH-01`.
 
 **RF-AUTH-2** A person creates an account and receives a confirmation email.
 

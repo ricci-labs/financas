@@ -8,6 +8,11 @@ updated: 2026-09-29
 
 Product context: `../vision.md` and `../household-finances.md`.
 
+## Name and slogan
+**Twise — Leve, claro, a dois.** The line under it, where there is room (login, empty home, e-mails):
+"Claro para os dois, leve para o bolso: o app que mostra quanto vocês ainda podem gastar no mês."
+Both come from `../vision.md` → Name.
+
 ## The promise
 **Know in seconds how much is still free to spend, and never be surprised by a card invoice.**
 Every screen serves one of three questions:

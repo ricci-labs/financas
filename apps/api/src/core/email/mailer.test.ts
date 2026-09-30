@@ -18,7 +18,7 @@ const BASE_ENV: MailerEnv = {
   SMTP_USER: undefined,
   SMTP_PASSWORD: undefined,
   EMAIL_FROM: 'no-reply@example.test',
-  EMAIL_FROM_NAME: 'Finanças',
+  EMAIL_FROM_NAME: 'Twise',
   EMAIL_OUTBOX_DIR: '.private/outbox',
 }
 
