@@ -30,7 +30,7 @@ export function notificationEmail({
           paragraphs: [
             `Lembrete: ${bill.data.description} vence em ${brazilianDate(bill.data.dueOn)}, no valor de ${amount}.`,
           ],
-          action: { label: 'Abrir o Finanças', url: appLink },
+          action: { label: 'Abrir o Twise', url: appLink },
           notes: ['Se já pagou, registre o pagamento para o lembrete sair da lista.'],
         }),
       }

@@ -35,7 +35,7 @@ message.
 | `INVALID_CREDENTIALS` | 401 | Wrong e-mail or password (never says which) | "E-mail ou senha incorretos." | form |
 | `EMAIL_NOT_VERIFIED` | 403 | Right password, e-mail not confirmed | "Confirme seu e-mail antes de entrar. Procure o link que enviamos." + "Reenviar e-mail" | form |
 | `USER_INVALID` | 400 | Sign-up fields invalid | per field (standard messages) | fields |
-| `SIGNUP_DISABLED` | 403 | Public sign-up is off | "O cadastro está fechado. Peça um convite a quem usa o Finanças." | page |
+| `SIGNUP_DISABLED` | 403 | Public sign-up is off | "O cadastro está fechado. Peça um convite a quem usa o Twise." | page |
 | `EMAIL_INVALID` | 400 | Invalid e-mail in resend or forgot | "Informe um e-mail válido, como nome@exemplo.com." | field e-mail |
 | `LINK_INVALID` | 400 | Verification or reset link unknown, used or expired | "Este link não vale mais: já foi usado ou expirou." | page |
 | `PASSWORD_INVALID` | 400 | New password outside 12–128 | "Use de 12 a 128 caracteres." | field new password |

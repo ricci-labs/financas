@@ -13,7 +13,7 @@ export function emailVerificationMessage({
 }: VerificationEmail): EmailMessage {
   const rendered = renderEmail({
     heading: `Olá, ${recipient.displayName}`,
-    paragraphs: ['Confirme seu e-mail para começar a usar o Finanças.'],
+    paragraphs: ['Confirme seu e-mail para começar a usar o Twise.'],
     action: { label: 'Confirmar e-mail', url: verifyLink },
     notes: [
       'O link vale por 24 horas e só pode ser usado uma vez.',
@@ -36,7 +36,7 @@ export function accountAlreadyExistsMessage({
   const rendered = renderEmail({
     heading: `Olá, ${recipient.displayName}`,
     paragraphs: [
-      'Alguém tentou criar uma conta no Finanças com este e-mail, mas você já tem uma.',
+      'Alguém tentou criar uma conta no Twise com este e-mail, mas você já tem uma.',
       `Se foi você, entre com sua senha. Se esqueceu a senha, peça uma nova em ${forgotPasswordLink}`,
     ],
     action: { label: 'Entrar', url: loginLink },
@@ -53,7 +53,7 @@ export function accountAlreadyExistsMessage({
 export function passwordResetMessage({ recipient, resetLink }: PasswordResetEmail): EmailMessage {
   const rendered = renderEmail({
     heading: `Olá, ${recipient.displayName}`,
-    paragraphs: ['Recebemos um pedido para trocar a senha da sua conta no Finanças.'],
+    paragraphs: ['Recebemos um pedido para trocar a senha da sua conta no Twise.'],
     action: { label: 'Criar nova senha', url: resetLink },
     notes: [
       'O link vale por 1 hora e só pode ser usado uma vez.',
@@ -75,7 +75,7 @@ export function passwordChangedMessage({
   const rendered = renderEmail({
     heading: `Olá, ${recipient.displayName}`,
     paragraphs: [
-      'A senha da sua conta no Finanças foi trocada, e todas as sessões abertas foram encerradas.',
+      'A senha da sua conta no Twise foi trocada, e todas as sessões abertas foram encerradas.',
       'Se foi você, está tudo certo.',
     ],
     action: { label: 'Não fui eu: trocar a senha', url: forgotPasswordLink },

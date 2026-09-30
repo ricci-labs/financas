@@ -72,7 +72,7 @@ commission split uses the workspace id.
 There is no in-app inbox. Today the app sends by e-mail, to each member:
 | Reminder | When | E-mail |
 |---|---|---|
-| Bill ("{descrição} vence em {data}") | a pending planned expense due within the member's lead time (default 3 days; 0 = on the day) | "Lembrete: {descrição} vence em {data}, no valor de (cerca de) R$ X." + "Abrir o Finanças" |
+| Bill ("{descrição} vence em {data}") | a pending planned expense due within the member's lead time (default 3 days; 0 = on the day) | "Lembrete: {descrição} vence em {data}, no valor de (cerca de) R$ X." + "Abrir o Twise" |
 | Card invoice ("Fatura do {cartão} vence em {data}") | an invoice due within the lead time with something still to pay | "…com R$ X até agora. O valor pode mudar até o fechamento." + "Ver a fatura" |
 Each reminder is sent once per member. Quiet hours (`ME-01`) delay it to the end of the window, in
 the workspace time zone.

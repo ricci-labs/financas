@@ -10,7 +10,7 @@ export function invitationMessage({
 }: InvitationEmail): EmailMessage {
   const rendered = renderEmail({
     heading: 'Você recebeu um convite',
-    paragraphs: [`${inviterName} convidou você para o workspace "${workspaceName}" no Finanças.`],
+    paragraphs: [`${inviterName} convidou você para o workspace "${workspaceName}" no Twise.`],
     action: { label: 'Ver convite', url: inviteLink },
     notes: [
       'O convite vale por 7 dias e só pode ser aceito com este e-mail.',
@@ -20,7 +20,7 @@ export function invitationMessage({
   return {
     template: 'workspace_invitation',
     to: recipientEmail,
-    subject: 'Você recebeu um convite no Finanças',
+    subject: 'Você recebeu um convite no Twise',
     ...rendered,
   }
 }

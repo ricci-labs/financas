@@ -57,7 +57,7 @@ describe('loadEnv', () => {
       ACCOUNT_EMAILS_PER_IP_PER_HOUR: 10,
       INVALID_LINKS_PER_IP_PER_HOUR: 20,
       SMTP_PORT: 587,
-      EMAIL_FROM_NAME: 'Finanças',
+      EMAIL_FROM_NAME: 'Twise',
       EMAIL_OUTBOX_DIR: '.private/outbox',
       FILE_STORAGE_DIR: '.private/files',
       FILE_MAX_BYTES: 10 * 1024 * 1024,

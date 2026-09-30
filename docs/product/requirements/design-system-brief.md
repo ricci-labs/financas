@@ -11,7 +11,8 @@ Accessibility and Responsiveness. Ask for tokens and components only, each shown
 listed. No screens yet.
 
 ## Tone
-Calm, clear and trustworthy, like a good bank app, not a game. Friendly pt-BR copy, short
+The brand is **Twise — "Leve, claro, a dois."** (`experience.md` → Name and slogan): light, clear,
+for two. Calm, clear and trustworthy, like a good bank app, not a game. Friendly pt-BR copy, short
 sentences. Numbers are the heroes; decoration stays out of their way.
 
 ## Foundations (tokens)

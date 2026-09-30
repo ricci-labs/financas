@@ -1,10 +1,16 @@
 ---
 summary: The problem, the users, the goals and non-goals of the project.
 read_when: You need product context, or need to judge whether a feature belongs in the product.
-updated: 2026-09-25
+updated: 2026-09-29
 ---
 
 # Vision
+
+## Name
+The product is **Twise** (from *two* + *wise*), with the slogan **"Leve, claro, a dois."** and the
+line **"Claro para os dois, leve para o bolso: o app que mostra quanto vocês ainda podem gastar no
+mês."** In English (README): *"Light, clear, together."* The repository, packages and services
+keep the code name `financas`.
 
 ## Problem
 A couple pools their incomes into one household budget and struggles to keep track of it. Spending

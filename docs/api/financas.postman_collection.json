@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "Finanças API",
+    "name": "Twise API",
     "description": "Every route of the API, in an order the Collection Runner can follow. See docs/api/postman.md.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
