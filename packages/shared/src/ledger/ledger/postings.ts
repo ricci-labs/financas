@@ -1,0 +1,287 @@
+import type { IsoDate } from '@shared/core/calendar/calendar.types'
+import type { Cents } from '@shared/core/money/money.types'
+import {
+  allocateAcrossInstallments,
+  splitInstallments,
+} from '@shared/ledger/installments/installments'
+import {
+  type AccountKind,
+  MAX_INSTALLMENTS,
+  MONEY_ACCOUNT_KINDS,
+  type MoneyAccountKind,
+} from '@shared/ledger/ledger/ledger.constants'
+import type {
+  AccountRef,
+  ContactShare,
+  EntryPlan,
+  PlanLine,
+  PlanOf,
+  PostingDraft,
+  PostingsPlan,
+  PostingsViolation,
+  SharingParty,
+} from '@shared/ledger/ledger/postings.types'
+
+export function isMoneyAccountKind(kind: AccountKind): kind is MoneyAccountKind {
+  return (MONEY_ACCOUNT_KINDS as readonly AccountKind[]).includes(kind)
+}
+
+export function planPostings(plan: EntryPlan): PostingsPlan {
+  const violation = findViolation(plan)
+  if (violation) {
+    return { ok: false, violation }
+  }
+  return { ok: true, postings: toDrafts(linesOf(plan), plan.occurredOn) }
+}
+
+function findViolation(plan: EntryPlan): PostingsViolation | undefined {
+  switch (plan.entryType) {
+    case 'expense':
+      return expenseViolation(plan)
+    case 'income':
+      return incomeViolation(plan)
+    case 'transfer':
+      return transferViolation(plan)
+    case 'card_purchase':
+      return cardPurchaseViolation(plan)
+    case 'invoice_payment':
+      return invoicePaymentViolation(plan)
+    case 'settlement':
+      return settlementViolation(plan)
+    case 'opening_balance':
+      return openingBalanceViolation(plan)
+  }
+}
+
+function expenseViolation(plan: PlanOf<'expense'>): PostingsViolation | undefined {
+  return (
+    positiveAmountViolation(plan.amountCents) ??
+    moneyAccountViolation(plan.paidFrom) ??
+    kindViolation(plan.category, 'expense_category', 'NOT_AN_EXPENSE_CATEGORY') ??
+    sharesViolation(plan)
+  )
+}
+
+function incomeViolation(plan: PlanOf<'income'>): PostingsViolation | undefined {
+  return (
+    positiveAmountViolation(plan.amountCents) ??
+    moneyAccountViolation(plan.receivedIn) ??
+    kindViolation(plan.category, 'income_category', 'NOT_AN_INCOME_CATEGORY')
+  )
+}
+
+function transferViolation(plan: PlanOf<'transfer'>): PostingsViolation | undefined {
+  return (
+    positiveAmountViolation(plan.amountCents) ??
+    moneyAccountViolation(plan.from) ??
+    moneyAccountViolation(plan.to) ??
+    (plan.from.id === plan.to.id ? 'SAME_ACCOUNT' : undefined)
+  )
+}
+
+function cardPurchaseViolation(plan: PlanOf<'card_purchase'>): PostingsViolation | undefined {
+  return (
+    positiveAmountViolation(plan.amountCents) ??
+    kindViolation(plan.card, 'credit_card', 'NOT_A_CARD') ??
+    kindViolation(plan.category, 'expense_category', 'NOT_AN_EXPENSE_CATEGORY') ??
+    installmentsViolation(plan) ??
+    sharesViolation(plan)
+  )
+}
+
+function invoicePaymentViolation(plan: PlanOf<'invoice_payment'>): PostingsViolation | undefined {
+  return (
+    positiveAmountViolation(plan.amountCents) ??
+    kindViolation(plan.card, 'credit_card', 'NOT_A_CARD') ??
+    moneyAccountViolation(plan.paidFrom)
+  )
+}
+
+function settlementViolation(plan: PlanOf<'settlement'>): PostingsViolation | undefined {
+  return (
+    positiveAmountViolation(plan.amountCents) ??
+    moneyAccountViolation(plan.receivedIn) ??
+    kindViolation(plan.receivable, 'receivable', 'NOT_THE_RECEIVABLE_ACCOUNT')
+  )
+}
+
+function openingBalanceViolation(plan: PlanOf<'opening_balance'>): PostingsViolation | undefined {
+  return (
+    (isNonZeroCents(plan.balanceCents) ? undefined : 'BALANCE_IS_ZERO') ??
+    moneyAccountViolation(plan.account) ??
+    kindViolation(plan.openingBalanceAccount, 'opening_balance', 'NOT_THE_OPENING_BALANCE_ACCOUNT')
+  )
+}
+
+function linesOf(plan: EntryPlan): PlanLine[] {
+  switch (plan.entryType) {
+    case 'expense':
+      return expenseLines(plan)
+    case 'income':
+      return moneyMoves(plan.amountCents, plan.category, plan.receivedIn)
+    case 'transfer':
+      return moneyMoves(plan.amountCents, plan.from, plan.to)
+    case 'card_purchase':
+      return cardPurchaseLines(plan)
+    case 'invoice_payment':
+      return [
+        { account: plan.card, amountCents: plan.amountCents, invoiceId: plan.invoiceId },
+        { account: plan.paidFrom, amountCents: -plan.amountCents },
+      ]
+    case 'settlement':
+      return [
+        { account: plan.receivedIn, amountCents: plan.amountCents },
+        { account: plan.receivable, amountCents: -plan.amountCents, contactId: plan.contactId },
+      ]
+    case 'opening_balance':
+      return moneyMoves(plan.balanceCents, plan.openingBalanceAccount, plan.account)
+  }
+}
+
+function expenseLines(plan: PlanOf<'expense'>): PlanLine[] {
+  const ownCents = plan.amountCents - sharedCents(plan.shares)
+  const ownLine = ownCents > 0 ? [{ account: plan.category, amountCents: ownCents }] : []
+  const shareLines = plan.shares.map((share) => ({
+    account: receivableOf(plan),
+    amountCents: share.amountCents,
+    contactId: share.contactId,
+  }))
+  return [...ownLine, ...shareLines, { account: plan.paidFrom, amountCents: -plan.amountCents }]
+}
+
+function cardPurchaseLines(plan: PlanOf<'card_purchase'>): PlanLine[] {
+  const amounts = splitInstallments(plan.amountCents, plan.installmentCount)
+  const parties = partiesOf(plan)
+  const allocation = allocateAcrossInstallments(
+    amounts,
+    parties.map((party) => party.amountCents),
+  )
+  const perInstallment = plan.installments.map((target, index) => {
+    const installmentNo = plan.firstInstallment + index
+    return {
+      target,
+      installmentNo,
+      amountCents: amounts[installmentNo - 1] ?? 0,
+      cells: allocation[installmentNo - 1] ?? [],
+    }
+  })
+  const cardLines = perInstallment.map(({ target, installmentNo, amountCents }) => ({
+    account: plan.card,
+    amountCents: -amountCents,
+    effectiveOn: target.effectiveOn,
+    invoiceId: target.invoiceId,
+    installmentNo,
+  }))
+  const partyLines = perInstallment.flatMap(({ target, installmentNo, cells }) =>
+    parties.flatMap((party, index) => {
+      const amountCents = cells[index] ?? 0
+      if (amountCents === 0) {
+        return []
+      }
+      return [
+        {
+          account: party.contactId ? receivableOf(plan) : plan.category,
+          amountCents,
+          effectiveOn: target.effectiveOn,
+          installmentNo,
+          ...(party.contactId ? { contactId: party.contactId } : {}),
+        },
+      ]
+    }),
+  )
+  return [...cardLines, ...partyLines]
+}
+
+function partiesOf(plan: PlanOf<'card_purchase'>): SharingParty[] {
+  const ownCents = plan.amountCents - sharedCents(plan.shares)
+  const own = ownCents > 0 ? [{ contactId: null, amountCents: ownCents }] : []
+  return [...own, ...plan.shares]
+}
+
+function receivableOf(plan: PlanOf<'expense' | 'card_purchase'>): AccountRef {
+  if (!plan.receivable) {
+    throw new Error('A shared entry needs the receivable account')
+  }
+  return plan.receivable
+}
+
+function sharedCents(shares: readonly ContactShare[]): Cents {
+  return shares.reduce((sum, share) => sum + share.amountCents, 0)
+}
+
+function sharesViolation(plan: PlanOf<'expense' | 'card_purchase'>): PostingsViolation | undefined {
+  if (plan.shares.length === 0) {
+    return undefined
+  }
+  if (plan.receivable?.kind !== 'receivable') {
+    return 'NOT_THE_RECEIVABLE_ACCOUNT'
+  }
+  if (
+    plan.shares.some((share) => !Number.isSafeInteger(share.amountCents) || share.amountCents <= 0)
+  ) {
+    return 'SHARE_NOT_POSITIVE'
+  }
+  if (new Set(plan.shares.map((share) => share.contactId)).size < plan.shares.length) {
+    return 'CONTACT_TWICE'
+  }
+  return sharedCents(plan.shares) > plan.amountCents ? 'SHARES_EXCEED_AMOUNT' : undefined
+}
+
+function moneyMoves(amountCents: Cents, from: AccountRef, to: AccountRef): PlanLine[] {
+  return [
+    { account: to, amountCents },
+    { account: from, amountCents: -amountCents },
+  ]
+}
+
+function toDrafts(lines: PlanLine[], occurredOn: IsoDate): PostingDraft[] {
+  return lines.map((line, index) => ({
+    lineNo: index + 1,
+    accountId: line.account.id,
+    accountKind: line.account.kind,
+    amountCents: line.amountCents,
+    effectiveOn: line.effectiveOn ?? occurredOn,
+    invoiceId: line.invoiceId ?? null,
+    installmentNo: line.installmentNo ?? null,
+    contactId: line.contactId ?? null,
+  }))
+}
+
+function installmentsViolation(plan: PlanOf<'card_purchase'>): PostingsViolation | undefined {
+  const { amountCents, installmentCount, firstInstallment, installments } = plan
+  if (installmentCount > MAX_INSTALLMENTS || installmentCount > amountCents) {
+    return 'TOO_MANY_INSTALLMENTS'
+  }
+  if (!isInstallmentOf(firstInstallment, installmentCount)) {
+    return 'FIRST_INSTALLMENT_OUT_OF_RANGE'
+  }
+  if (installments.length === 0) {
+    return 'NO_INSTALLMENTS'
+  }
+  const remaining = installmentCount - firstInstallment + 1
+  return installments.length === remaining ? undefined : 'INSTALLMENTS_DO_NOT_MATCH'
+}
+
+function isInstallmentOf(installmentNo: number, installmentCount: number): boolean {
+  return Number.isInteger(installmentNo) && installmentNo >= 1 && installmentNo <= installmentCount
+}
+
+function isNonZeroCents(value: number): boolean {
+  return Number.isSafeInteger(value) && value !== 0
+}
+
+function positiveAmountViolation(amountCents: number): PostingsViolation | undefined {
+  return Number.isSafeInteger(amountCents) && amountCents > 0 ? undefined : 'AMOUNT_NOT_POSITIVE'
+}
+
+function moneyAccountViolation(account: AccountRef): PostingsViolation | undefined {
+  return isMoneyAccountKind(account.kind) ? undefined : 'NOT_A_MONEY_ACCOUNT'
+}
+
+function kindViolation(
+  account: AccountRef,
+  expected: AccountKind,
+  violation: PostingsViolation,
+): PostingsViolation | undefined {
+  return account.kind === expected ? undefined : violation
+}

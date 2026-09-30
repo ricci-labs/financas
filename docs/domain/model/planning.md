@@ -60,7 +60,7 @@ checks it with the accounts that are still usable (not archived nor deleted), el
 | `DELETE /recurrences/:ruleId` | `planning:delete` | `deleteRecurrenceRule` (soft, optional `reason`) → `204` |
 
 **Due dates** come from the pure `dueDatesBetween(schedule, { from, to }, holidays)` in
-`packages/shared/src/recurrence/`: the nominal date of each step (day clamped to shorter months,
+`packages/shared/src/planning/recurrence/`: the nominal date of each step (day clamped to shorter months,
 Feb 29 → 28), moved by `weekend_rule`, kept when inside the range and not before `starts_on` nor
 after `ends_on`. A date just past the range can move into it (`previous_business_day`), so the
 holidays passed must cover the range plus `DAYS_A_DUE_DATE_MAY_SHIFT` (10). The input schema is
@@ -102,7 +102,7 @@ holidays passed must cover the range plus `DAYS_A_DUE_DATE_MAY_SHIFT` (10). The 
 
 ## Financial period
 Driven by `workspace_settings.period_anchor` (`tenancy.md`). Pure function in
-`packages/shared/src/calendar/period.ts`:
+`packages/shared/src/core/calendar/period.ts`:
 
 ```
 periodOf(date, settings, holidays) → { label: 'YYYY-MM', start: date, end: date }
@@ -117,7 +117,7 @@ Every report ("this month") uses the period, never the calendar month directly.
 ## Dashboard: facts, metrics, insights (ADR 0024)
 `reports` loads the **period facts** once (actual postings, pending occurrences, installments on
 future invoices, budgets, goals, balances, settings, today). Every number below is a pure function
-in `packages/shared/src/metrics/`, and every alert one in `packages/shared/src/insights/`. A new
+in `packages/shared/src/reports/metrics/`, and every alert one in `packages/shared/src/reports/insights/`. A new
 number or alert is one file, one line in `METRICS` / `INSIGHTS`, and a test.
 
 **The facts** (`PeriodFacts`, `metrics/metrics.types.ts`), loaded by `reports.getPeriodOverview`:
@@ -172,7 +172,7 @@ reserve_coverage  = the reserve goal's balance and target, the average spending 
 |---|---|---|
 | `GET /overview?period=YYYY-MM` | `reports:view` | `getPeriodOverview`: `{ today, period, metrics, insights }` for the current period, or the period labeled with that month |
 
-**Insights** (`packages/shared/src/insights/`, one rule per file, in `INSIGHTS`): each is
+**Insights** (`packages/shared/src/reports/insights/`, one rule per file, in `INSIGHTS`): each is
 `{ code, severity, subject, values }`. There is no text: the web and the agent write pt-BR from the
 `code` and `values`, and notifications will reuse them. Alerts come before warnings, each group in
 the order of `INSIGHTS`.
@@ -191,7 +191,7 @@ the order of `INSIGHTS`.
 
 ### Commission split (suggested, never automatic)
 `allocation_steps` holds the household's waterfall, in order. When variable income arrives, the pure
-function `splitVariableIncome(amount, steps, { goals, overspentCents })` (`packages/shared/src/allocation/`)
+function `splitVariableIncome(amount, steps, { goals, overspentCents })` (`packages/shared/src/planning/allocation/`)
 suggests the parts, and the members confirm them as ordinary `transfer` entries. Automatic recording
 stays in phase 2. Each step takes what it wants, capped by what is left, and a step with nothing to
 take is skipped; what no step takes is `leftoverCents`.
@@ -234,7 +234,7 @@ today until the next **fixed** income landing on it, or the end of the period if
 `{ lowestCents, lowestOn }`) fires when the lowest point is below zero.
 
 ### "Posso comprar?" (purchase simulation)
-Read-only: nothing is written. `simulatePurchase(facts, purchase)` (`packages/shared/src/simulation/`)
+Read-only: nothing is written. `simulatePurchase(facts, purchase)` (`packages/shared/src/reports/simulation/`)
 adds a hypothetical purchase to the facts and recomputes the same metrics and insights:
 - **on a card:** the same invoices a real purchase would get (`invoicesForInstallments`, installments
   from `splitInstallments`), each installment effective on its invoice's due date, added to that
@@ -288,7 +288,7 @@ Business days skip weekends and holidays. They drive `nth_business_day` periods,
 (`weekend_rule`) and reminders.
 
 - **National holidays are computed, not stored:** `nationalHolidays(year)` in
-  `packages/shared/src/calendar/holidays.ts`. It lists the **bank** holidays, because salaries and due
+  `packages/shared/src/core/calendar/holidays.ts`. It lists the **bank** holidays, because salaries and due
   dates follow the banks: the fixed national dates (Black Consciousness Day from 2024), Good Friday,
   and Carnival Monday/Tuesday and Corpus Christi (no bank business on those days). Movable dates come
   from `easterSunday(year)`. Each holiday has a `key`; the web shows its pt-BR name. No seeding job.

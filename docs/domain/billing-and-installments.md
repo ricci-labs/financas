@@ -6,8 +6,8 @@ updated: 2026-09-25
 
 # Billing cycle and installments
 
-Implemented as pure functions in `packages/shared/src/cards/billing-cycle.ts` and
-`packages/shared/src/installments/installments.ts`. Every example below exists as a unit test next to them.
+Implemented as pure functions in `packages/shared/src/ledger/cards/billing-cycle.ts` and
+`packages/shared/src/ledger/installments/installments.ts`. Every example below exists as a unit test next to them.
 
 ## Invoice assignment
 
@@ -46,7 +46,7 @@ Card Z: `closingDay = 31`, `dueDay = 8`
 | 2027-02-10 | 2027-02-28 | 2027-03-08 | 2027-03 |
 
 ## Invoice status
-`invoiceStatusOn()` in `packages/shared/src/cards/billing-cycle.ts`. "Today" is the calendar day in
+`invoiceStatusOn()` in `packages/shared/src/ledger/cards/billing-cycle.ts`. "Today" is the calendar day in
 the workspace time zone (`todayIn()`).
 
 1. **Closed** once its stored `closing_on` has passed. On the closing day itself it is already closed

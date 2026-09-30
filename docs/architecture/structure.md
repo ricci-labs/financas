@@ -1,7 +1,7 @@
 ---
 summary: The intended folder tree for the whole monorepo, with the role of every folder and file type.
 read_when: Creating files or folders, or deciding where a piece of code belongs.
-updated: 2026-09-27
+updated: 2026-09-29
 ---
 
 # Project structure
@@ -41,72 +41,51 @@ Claude Code loads them only when it works inside those folders.
 
 ## packages/shared
 
-One folder per domain concept. Each folder holds its code, its exported types
-(`<concept>.types.ts`) and its tests, side by side.
+One folder per domain concept, grouped by area like the API modules. Each concept folder holds its
+code, its exported types (`<concept>.types.ts`), its schemas and its tests, side by side. Imports use
+`@shared/<area>/<concept>/<file>`; everything public is re-exported by `index.ts`.
 
 ```
 src/
-├── money/
-│   ├── money.types.ts        # Cents
-│   ├── money.ts              # parse, format, sum, assertions
-│   └── money.test.ts
-├── calendar/
-│   ├── calendar.constants.ts # weekend rules, national holiday keys
-│   ├── calendar.types.ts     # IsoDate, YearMonth, PeriodSettings, Period, NationalHoliday
-│   ├── dates.ts              # calendar-date math, business days (shift by weekend rule), todayIn
-│   ├── holidays.ts           # Easter, national bank holidays, holiday dates in a range
-│   ├── holidays.test.ts
-│   ├── dates.test.ts
-│   ├── period.ts             # financial period (configurable anchor)
-│   └── period.test.ts
-├── cards/
-│   ├── cards.types.ts        # CardCycle, InvoiceRef
-│   ├── billing-cycle.ts      # which invoice a purchase / installment falls into; invoice status
-│   └── billing-cycle.test.ts
-├── allocation/               # commission waterfall: steps (types, schemas) + splitVariableIncome
-├── charges/                  # open items (payments on the oldest first) + the pt-BR charge message
-├── pix/                      # Pix copia e cola (static BR Code with amount) + CRC-16
-├── simulation/               # "posso comprar?": a hypothetical purchase on the facts, before/after
-├── metrics/                  # ADR 0024: one dashboard number per file, (facts) → value
-│   ├── metrics.types.ts      # PeriodFacts and its parts
-│   ├── facts.ts              # helpers over the facts (postings counted by the budget view…)
-│   ├── <metric-name>.ts      # one metric: (facts) → value
-│   ├── metrics.ts            # METRICS, computeMetrics, PeriodMetrics
-│   └── metrics.test.ts       # one scenario, a describe per behavior
-├── insights/                 # ADR 0024: one alert per file, (facts, metrics) → Insight[]
-│   ├── insights.constants.ts # codes, severities, thresholds
-│   ├── insights.types.ts     # Insight { code, severity, subject, values }, InsightRule
-│   ├── <insight-name>.ts     # + <insight-name>.test.ts
-│   ├── insights.ts           # INSIGHTS, computeInsights (alerts first)
-│   └── insights.test.ts
-├── recurrence/
-│   ├── recurrence.constants.ts # frequencies, interval and business-day limits
-│   ├── recurrence.types.ts   # RecurrenceSchedule, DateRange
-│   ├── recurrence.schemas.ts # recurrenceScheduleSchema
-│   ├── recurrence.ts         # dueDatesBetween: due dates of a schedule in a range
-│   └── recurrence.test.ts
+├── core/                       # foundations every area uses
+│   ├── money/                  # Cents: parse, format, sum, assertions
+│   ├── calendar/               # IsoDate, business days, bank holidays, financial period
+│   ├── paging/                 # cursor paging: schemas, pageOf
+│   └── deletion/               # deletion request schema (optional reason)
 ├── identity/
-│   ├── identity.schemas.ts   # email, password (12–128), display name, credentials
-│   └── identity.schemas.test.ts
-├── installments/
-│   ├── installments.types.ts # ProportionalShare
-│   ├── installments.ts       # split + multi-party allocation
-│   └── installments.test.ts
-├── access/
-│   ├── access.constants.ts   # modules, actions, system role keys (+ derived types)
-│   ├── access.types.ts       # Permission, RoleTemplate
-│   ├── access.ts             # valid pairs, role templates, can()
-│   └── access.test.ts
+│   ├── identity/               # email, password (12–128), display name, credentials
+│   ├── workspaces/             # workspace name, settings schemas
+│   ├── access/                 # modules, actions, system roles, role templates, can()
+│   ├── members/                # member and role change schemas
+│   ├── invitations/            # invitation schemas
+│   └── notifications/          # notification preferences, quiet hours
 ├── ledger/
-│   ├── ledger.constants.ts   # account kinds, classes, entry types, payment methods, sources
-│   ├── ledger.ts             # kind → class, system account names
-│   ├── ledger.schemas.ts     # entryInputSchema, entryDetailsChangeSchema
-│   ├── postings.types.ts     # EntryPlan, PostingDraft, PostingsViolation
-│   ├── postings.ts           # planPostings(): entry plan → balanced posting drafts (incl. card installments)
-│   └── *.test.ts
-├── pix/                      # planned: Pix copia-e-cola payload
-└── index.ts                  # public surface of the package
+│   ├── ledger/                 # account kinds and classes, entry schemas, planPostings()
+│   ├── cards/                  # billing cycle: which invoice a purchase falls into; invoice status
+│   └── installments/           # split + multi-party allocation
+├── contacts/
+│   ├── contacts/               # contact schemas, contact balances
+│   ├── charges/                # open items (payments on the oldest first) + the pt-BR message
+│   └── pix/                    # Pix copia e cola (static BR Code with amount) + CRC-16
+├── planning/
+│   ├── planning/               # planning route schemas
+│   ├── recurrence/             # dueDatesBetween, matching payments to occurrences
+│   ├── budgets/                # budget schemas
+│   ├── goals/                  # goal schemas
+│   └── allocation/             # commission waterfall: steps + splitVariableIncome
+├── reports/
+│   ├── reports/                # report query schemas
+│   ├── metrics/                # ADR 0024: one dashboard number per file, (facts) → value
+│   ├── insights/               # ADR 0024: one alert per file, (facts, metrics) → Insight[]
+│   └── simulation/             # "posso comprar?": a hypothetical purchase, before/after
+├── attachments/                # file types, size limits, safe file names
+├── audit/                      # audit query schemas
+└── index.ts                    # public surface of the package
 ```
+
+Inside a concept, the files follow the file roles: `metrics/` for example has `metrics.types.ts`
+(PeriodFacts), `facts.ts` (helpers over the facts), one `<metric-name>.ts` per metric, `metrics.ts`
+(METRICS, computeMetrics) and `metrics.test.ts`.
 
 Rules: no I/O, no clock, no env (all pure). Zod schemas for a concept go in
 `<concept>.schemas.ts` in the same folder. The domain rules live here, not in the API, because the

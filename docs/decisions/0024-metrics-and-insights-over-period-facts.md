@@ -22,9 +22,9 @@ updated: 2026-09-26
   needs: actual postings, pending planned occurrences, installments on future invoices, budgets,
   goals, account balances, the settings. Plain data (`PeriodFacts`), no behavior.
 - **Metrics are pure functions.** Each dashboard number is one file in
-  `packages/shared/src/metrics/`: `(facts) → value`, with its own test. A list (`METRICS`) holds
+  `packages/shared/src/reports/metrics/`: `(facts) → value`, with its own test. A list (`METRICS`) holds
   them. The overview route returns every metric in the list.
-- **Insights are pure functions too.** Each alert is one file in `packages/shared/src/insights/`:
+- **Insights are pure functions too.** Each alert is one file in `packages/shared/src/reports/insights/`:
   `(facts, metrics) → Insight[]`, where an insight is `{ code, severity, subject, values }`. No
   text: the web and the agent write pt-BR from `code` + `values`; notifications will send them
   through the outbox. A list (`INSIGHTS`) holds them.

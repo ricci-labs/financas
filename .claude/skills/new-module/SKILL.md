@@ -22,8 +22,9 @@ Read first: `docs/architecture/structure.md` → Module anatomy, `docs/architect
    | `<m>.middleware.ts` | Guards, limits, request policies the routes use |
    | `<m>.emails.ts` | Email templates returning `EmailMessage` |
    | `index.ts` | Public surface: services, middleware and types other modules need. **Never routes** (`app.ts` imports `<m>.routes.ts` directly) |
-3. **Schemas** for request bodies go in `packages/shared/src/<m>/<m>.schemas.ts` and are exported from
-   the shared `index.ts`. Pure rules shared with the web go in `packages/shared/src/<m>/` too.
+3. **Schemas** for request bodies go in `packages/shared/src/<area>/<m>/<m>.schemas.ts` (areas in
+   `docs/architecture/conventions.md` → File organization) and are exported from the shared
+   `index.ts`. Pure rules shared with the web go in that folder too.
 4. **Tables:** tenant tables get `workspace_id`, composite FKs on `(workspace_id, id)`, RLS, soft delete
    and the `updated_at` trigger (conventions → Migrations): `pnpm db:generate --name=...`,
    read the SQL, a custom migration for triggers, then `pnpm db:migrate`.
