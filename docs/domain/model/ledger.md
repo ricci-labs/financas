@@ -46,7 +46,7 @@ Kinds, classes and system account names live in `packages/shared/src/ledger`.
 | `currency` | char(3) | Default from `workspace_settings` |
 | `institution_id` | FK institutions null | Bank/issuer (global seeded list plus custom) |
 | `income_nature` | enum `fixed` \| `variable` null | Required when `kind = income_category`, null otherwise (CHECK) |
-| `owner_user_id` | FK users null | Informational ("conta do Member A"), not a permission |
+| `owner_user_id` | FK users null | Informational ("conta do Member A"), not a permission. Must be an active member of the workspace (trigger) |
 | `is_system` | bool, **generated** from `kind` | System accounts (receivable, payable, opening balance): one per workspace, at the root, created by `createWorkspace()` in the workspace currency. They can't be renamed, re-kinded, moved, archived or deleted; only personalized (color, icon, order) |
 | `sort_order`, `color`, `icon` | | Personalization |
 | `archived_at` | | |
@@ -73,7 +73,7 @@ account must be an active money account (checked by the service).
 | `closing_day`, `due_day` | smallint 1–31 |
 | `purchase_on_closing_day_goes_next` | bool, default true (per issuer) |
 | `limit_cents` | bigint null |
-| `holder_user_id` | FK users null |
+| `holder_user_id` | FK users null; must be an active member of the workspace (trigger) |
 | `payment_account_id` | FK ledger_accounts null (default account used to pay the invoice) |
 
 ## `card_invoices`

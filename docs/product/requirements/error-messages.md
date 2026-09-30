@@ -86,6 +86,7 @@ message.
 | `ACCOUNT_INVALID` | 400 | Account form invalid | per field | fields |
 | `ACCOUNT_NOT_FOUND` | 404 | Account gone | "Esta conta não existe mais." | page / toast |
 | `ACCOUNT_NAME_TAKEN` | 409 | A sibling has the name | "Já existe uma conta com esse nome aqui." | field name |
+| `OWNER_NOT_A_MEMBER` | 400 | The owner is not an active member | "Escolha um membro do espaço." | field owner |
 | `PARENT_NOT_AVAILABLE` | 400 | Parent deleted | "A categoria escolhida não existe mais." | field parent |
 | `PARENT_OF_ANOTHER_CLASS` | 400 | Parent of another class | "Escolha uma categoria do mesmo tipo." | field parent |
 | `ACCOUNT_CHANGE_REFUSED` | 409 | Cycle, self-parent, or a system account | "Essa mudança não é permitida: uma categoria não pode ficar dentro dela mesma, e contas do sistema não mudam." | form |
@@ -96,6 +97,7 @@ message.
 | `CARD_INVALID` | 400 | Card form invalid | per field | fields |
 | `CARD_NOT_FOUND` | 404 | Card gone | "Este cartão não existe mais." | page |
 | `PAYMENT_ACCOUNT_NOT_AVAILABLE` | 400 | Payment account not an active money account | "Escolha uma conta ativa de dinheiro." | field payment account |
+| `HOLDER_NOT_A_MEMBER` | 400 | The holder is not an active member | "Escolha um membro do espaço." | field holder |
 | `INVOICE_NOT_FOUND` | 404 / 400 | Invoice not of this card | "Fatura não encontrada." | page / field invoice |
 
 ## Entries

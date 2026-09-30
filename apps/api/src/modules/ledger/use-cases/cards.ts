@@ -18,7 +18,7 @@ import type {
   LedgerContext,
   WorkspaceCard,
 } from '@api/modules/ledger/ledger.types'
-import { refusingTakenAccountNames } from '@api/modules/ledger/use-cases/rules'
+import { refusingNonMembers, refusingTakenAccountNames } from '@api/modules/ledger/use-cases/rules'
 import { currentWorkspaceDefaults } from '@api/modules/workspaces'
 import { cardChangeSchema, isMoneyAccountKind, newCardSchema } from '@financas/shared'
 
@@ -31,34 +31,36 @@ export async function createCard(
 ): Promise<CreatedAccount> {
   const input = parseOrThrow(newCardSchema, rawInput, CARD_INVALID)
   return refusingTakenAccountNames(() =>
-    withWorkspace(db, workspaceId, async (tx) => {
-      if (input.paymentAccountId) {
-        await assertPaymentAccountUsable(tx, input.paymentAccountId)
-      }
-      const { currency } = await currentWorkspaceDefaults(tx)
-      const accountId = await insertAccount(tx, {
-        workspaceId,
-        kind: 'credit_card',
-        name: input.name,
-        currency,
-        color: input.color ?? null,
-        icon: input.icon ?? null,
-        sortOrder: input.sortOrder,
-      })
-      await insertCardDetails(tx, {
-        workspaceId,
-        accountId,
-        closingDay: input.closingDay,
-        dueDay: input.dueDay,
-        purchaseOnClosingDayGoesNext: input.purchaseOnClosingDayGoesNext,
-        limitCents: input.limitCents ?? null,
-        holderUserId: input.holderUserId ?? null,
-        paymentAccountId: input.paymentAccountId ?? null,
-      })
-      await auditCreation(tx, accountAuditTarget(workspaceId, accountId))
-      await auditCreation(tx, cardAuditTarget(workspaceId, accountId))
-      return { accountId }
-    }),
+    refusingNonMembers(() =>
+      withWorkspace(db, workspaceId, async (tx) => {
+        if (input.paymentAccountId) {
+          await assertPaymentAccountUsable(tx, input.paymentAccountId)
+        }
+        const { currency } = await currentWorkspaceDefaults(tx)
+        const accountId = await insertAccount(tx, {
+          workspaceId,
+          kind: 'credit_card',
+          name: input.name,
+          currency,
+          color: input.color ?? null,
+          icon: input.icon ?? null,
+          sortOrder: input.sortOrder,
+        })
+        await insertCardDetails(tx, {
+          workspaceId,
+          accountId,
+          closingDay: input.closingDay,
+          dueDay: input.dueDay,
+          purchaseOnClosingDayGoesNext: input.purchaseOnClosingDayGoesNext,
+          limitCents: input.limitCents ?? null,
+          holderUserId: input.holderUserId ?? null,
+          paymentAccountId: input.paymentAccountId ?? null,
+        })
+        await auditCreation(tx, accountAuditTarget(workspaceId, accountId))
+        await auditCreation(tx, cardAuditTarget(workspaceId, accountId))
+        return { accountId }
+      }),
+    ),
   )
 }
 
@@ -72,18 +74,20 @@ export async function changeCard(
   rawChange: unknown,
 ): Promise<void> {
   const change = parseOrThrow(cardChangeSchema, rawChange, CARD_INVALID)
-  await withWorkspace(db, workspaceId, async (tx) => {
-    const card = await lockCardDetails(tx, cardAccountId)
-    if (!card) {
-      throw new NotFoundError('CARD_NOT_FOUND', `Card ${cardAccountId} not found`)
-    }
-    if (change.paymentAccountId) {
-      await assertPaymentAccountUsable(tx, change.paymentAccountId)
-    }
-    await audited(tx, cardAuditTarget(workspaceId, cardAccountId), 'update', () =>
-      updateCardDetails(tx, cardAccountId, change),
-    )
-  })
+  await refusingNonMembers(() =>
+    withWorkspace(db, workspaceId, async (tx) => {
+      const card = await lockCardDetails(tx, cardAccountId)
+      if (!card) {
+        throw new NotFoundError('CARD_NOT_FOUND', `Card ${cardAccountId} not found`)
+      }
+      if (change.paymentAccountId) {
+        await assertPaymentAccountUsable(tx, change.paymentAccountId)
+      }
+      await audited(tx, cardAuditTarget(workspaceId, cardAccountId), 'update', () =>
+        updateCardDetails(tx, cardAccountId, change),
+      )
+    }),
+  )
 }
 
 async function assertPaymentAccountUsable(tx: WorkspaceTransaction, accountId: string) {

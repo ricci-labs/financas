@@ -93,6 +93,11 @@ describe('POST and GET /cards', () => {
       'PAYMENT_ACCOUNT_NOT_AVAILABLE',
     ])
   })
+
+  it('refuses a holder who is not a member', async () => {
+    const response = await createCard(owner, 'Card H', { holderUserId: UNKNOWN_ID })
+    expect([response.status, await codeOf(response)]).toEqual([400, 'HOLDER_NOT_A_MEMBER'])
+  })
 })
 
 describe('PATCH /cards/:cardId', () => {
@@ -114,6 +119,16 @@ describe('PATCH /cards/:cardId', () => {
       const response = await owner.patch(`${workspacePath}/cards/${cardId}`, { dueDay: 20 })
       expect([response.status, await codeOf(response)]).toEqual([404, 'CARD_NOT_FOUND'])
     }
+  })
+
+  it('refuses a holder who is not a member', async () => {
+    const { accountId } = (await (await createCard(owner, 'Card N')).json()) as {
+      accountId: string
+    }
+    const response = await owner.patch(`${workspacePath}/cards/${accountId}`, {
+      holderUserId: UNKNOWN_ID,
+    })
+    expect([response.status, await codeOf(response)]).toEqual([400, 'HOLDER_NOT_A_MEMBER'])
   })
 })
 
