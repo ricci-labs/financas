@@ -24,7 +24,11 @@ import type {
   TrashedAccount,
   WorkspaceAccount,
 } from '@api/modules/ledger/ledger.types'
-import { refusingBrokenRules, refusingTakenAccountNames } from '@api/modules/ledger/use-cases/rules'
+import {
+  refusingBrokenRules,
+  refusingNonMembers,
+  refusingTakenAccountNames,
+} from '@api/modules/ledger/use-cases/rules'
 import { currentWorkspaceDefaults } from '@api/modules/workspaces'
 import {
   type AccountClass,
@@ -60,26 +64,28 @@ export async function createAccount(
 ): Promise<CreatedAccount> {
   const input = parseOrThrow(newAccountSchema, rawInput, ACCOUNT_INVALID)
   return refusingTakenAccountNames(() =>
-    withWorkspace(db, workspaceId, async (tx) => {
-      if (input.parentId) {
-        await assertParentFits(tx, input.parentId, accountClassOf(input.kind))
-      }
-      const { currency } = await currentWorkspaceDefaults(tx)
-      const accountId = await insertAccount(tx, {
-        workspaceId,
-        kind: input.kind,
-        name: input.name,
-        currency,
-        parentId: input.parentId ?? null,
-        incomeNature: input.incomeNature ?? null,
-        ownerUserId: input.ownerUserId ?? null,
-        color: input.color ?? null,
-        icon: input.icon ?? null,
-        sortOrder: input.sortOrder,
-      })
-      await auditCreation(tx, accountAuditTarget(workspaceId, accountId))
-      return { accountId }
-    }),
+    refusingNonMembers(() =>
+      withWorkspace(db, workspaceId, async (tx) => {
+        if (input.parentId) {
+          await assertParentFits(tx, input.parentId, accountClassOf(input.kind))
+        }
+        const { currency } = await currentWorkspaceDefaults(tx)
+        const accountId = await insertAccount(tx, {
+          workspaceId,
+          kind: input.kind,
+          name: input.name,
+          currency,
+          parentId: input.parentId ?? null,
+          incomeNature: input.incomeNature ?? null,
+          ownerUserId: input.ownerUserId ?? null,
+          color: input.color ?? null,
+          icon: input.icon ?? null,
+          sortOrder: input.sortOrder,
+        })
+        await auditCreation(tx, accountAuditTarget(workspaceId, accountId))
+        return { accountId }
+      }),
+    ),
   )
 }
 
@@ -91,15 +97,17 @@ export async function changeAccount(
   const change = parseOrThrow(accountChangeSchema, rawChange, ACCOUNT_INVALID)
   await refusingTakenAccountNames(() =>
     refusingBrokenRules('ACCOUNT_CHANGE_REFUSED', () =>
-      withWorkspace(db, workspaceId, async (tx) => {
-        const account = await lockActiveAccount(tx, accountId)
-        if (change.parentId) {
-          await assertParentFits(tx, change.parentId, account.class)
-        }
-        await audited(tx, accountAuditTarget(workspaceId, accountId), 'update', () =>
-          updateAccount(tx, accountId, change),
-        )
-      }),
+      refusingNonMembers(() =>
+        withWorkspace(db, workspaceId, async (tx) => {
+          const account = await lockActiveAccount(tx, accountId)
+          if (change.parentId) {
+            await assertParentFits(tx, change.parentId, account.class)
+          }
+          await audited(tx, accountAuditTarget(workspaceId, accountId), 'update', () =>
+            updateAccount(tx, accountId, change),
+          )
+        }),
+      ),
     ),
   )
 }

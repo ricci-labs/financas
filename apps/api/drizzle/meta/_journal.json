@@ -449,6 +449,13 @@
       "when": 1790494975668,
       "tag": "0063_audit_log_append_only",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1790726268116,
+      "tag": "0064_owner_and_holder_are_members",
+      "breakpoints": true
     }
   ]
 }

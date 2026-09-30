@@ -105,6 +105,22 @@ describe('POST /accounts', () => {
     const taken = await owner.post(accountsPath, { kind: 'expense_category', name: 'Farmácia' })
     expect([taken.status, await codeOf(taken)]).toEqual([409, 'ACCOUNT_NAME_TAKEN'])
   })
+
+  it('accepts a member as the owner and refuses anyone else', async () => {
+    const owned = await owner.post(accountsPath, {
+      kind: 'checking',
+      name: 'Conta do Member A',
+      ownerUserId: ownerId,
+    })
+    expect(owned.status).toBe(201)
+
+    const stranger = await owner.post(accountsPath, {
+      kind: 'checking',
+      name: 'Conta de ninguém',
+      ownerUserId: UNKNOWN_ID,
+    })
+    expect([stranger.status, await codeOf(stranger)]).toEqual([400, 'OWNER_NOT_A_MEMBER'])
+  })
 })
 
 describe('PATCH /accounts/:accountId', () => {
@@ -124,6 +140,12 @@ describe('PATCH /accounts/:accountId', () => {
       const response = await owner.patch(`${accountsPath}/${accountId}`, { name: 'Nope' })
       expect([response.status, await codeOf(response)]).toEqual([404, 'ACCOUNT_NOT_FOUND'])
     }
+  })
+
+  it('refuses an owner who is not a member', async () => {
+    const accountId = await createCategory('Sem dono')
+    const response = await owner.patch(`${accountsPath}/${accountId}`, { ownerUserId: UNKNOWN_ID })
+    expect([response.status, await codeOf(response)]).toEqual([400, 'OWNER_NOT_A_MEMBER'])
   })
 })
 
