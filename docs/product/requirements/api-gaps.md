@@ -22,8 +22,8 @@ matching screen would be wrong or fragile without it.
 | # | Today | UI meanwhile | Proposed fix | When |
 |---|---|---|---|---|
 | G5 | ~~No route for **one** entry, contact or charge.~~ **Fixed.** | Detail screens load them, showing the list cache first when there is one. | `GET /entries/:entryId`, `GET /contacts/:contactId`, `GET /charges/:chargeId`. | Done |
-| G6 | Charge items carry only `postingId` and amount, no description, installment or date. | Shows the charge's message text. | Return `description`, `installmentNo`, `installmentCount`, `effectiveOn` per item. | Before the web |
-| G7 | No route for a contact's **open items** (what a charge would include). | Recomputes from all entries with the shared `openItems`, paging through the receivable account's entries. | `GET /contacts/:id/open-items?until=`, the same computation the charge uses. | Before the web |
+| G6 | ~~Charge items carry only `postingId` and amount.~~ **Fixed.** | Shows each item's description, installment and date. | Every item carries `description`, `installmentNo`, `installmentCount`, `effectiveOn`. | Done |
+| G7 | ~~No route for a contact's **open items**.~~ **Fixed.** | `CON-02` and the charge preview read it. | `GET /contacts/:contactId/open-items?until=`, the same computation the charge uses. | Done |
 | G8 | The upload size limit (`FILE_MAX_BYTES`) isn't exposed. | Uses a build-time value (10 MB). | Add it to `GET /api/auth/config` (or a workspace config route). | With attachments |
 | G9 | `occurrence_overdue` insights carry the occurrence id but not its description or type. | Looks it up in `GET /occurrences` when it's in range. | Add `description` and `entryType` to the insight values. | With the dashboard |
 | G10 | Reminder e-mails link to the app's home. | — | Link bills to `PLAN-03` and invoices to `CARD-03` with the ids. | With notifications |

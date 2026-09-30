@@ -12,6 +12,7 @@ import {
   insertChargePayment,
   lockActiveContact,
   lockCharge,
+  selectActiveContact,
   selectCharge,
   selectChargeExists,
   selectChargeItems,
@@ -26,10 +27,16 @@ import type {
   ChargeView,
   ContactRef,
   CreatedCharge,
+  OpenItemsRef,
   RecordedPayment,
 } from '@api/modules/contacts/contacts.types'
 import { getAccount } from '@api/modules/identity'
-import { activeEntryIdsOf, readContactItems, recordEntryInTransaction } from '@api/modules/ledger'
+import {
+  activeEntryIdsOf,
+  readContactItems,
+  readPostingDetails,
+  recordEntryInTransaction,
+} from '@api/modules/ledger'
 import { currentWorkspaceSettings } from '@api/modules/workspaces'
 import {
   type ChargeStatus,
@@ -140,6 +147,21 @@ export function getCharge(
       throw chargeNotFound(chargeId)
     }
     return view
+  })
+}
+
+export function listOpenItems(
+  db: Database,
+  { workspaceId, contactId }: OpenItemsRef,
+  until?: IsoDate,
+  clock: Clock = systemClock,
+): Promise<OpenItem[]> {
+  return withWorkspace(db, workspaceId, async (tx) => {
+    if (!(await selectActiveContact(tx, contactId))) {
+      throw new NotFoundError('CONTACT_NOT_FOUND', `Contact ${contactId} not found`)
+    }
+    const { timezone } = await currentWorkspaceSettings(tx)
+    return chargeableItemsOf(tx, contactId, until ?? todayIn(timezone, clock.now()))
   })
 }
 
@@ -258,6 +280,10 @@ async function viewsOf(tx: WorkspaceTransaction, rows: ChargeRow[]): Promise<Cha
   }
   const chargeIds = rows.map((row) => row.id)
   const items = await selectChargeItems(tx, chargeIds)
+  const details = await readPostingDetails(
+    tx,
+    items.map((item) => item.postingId),
+  )
   const paid = await paidByCharge(tx, chargeIds)
   return rows.map((row) => ({
     id: row.id,
@@ -272,6 +298,9 @@ async function viewsOf(tx: WorkspaceTransaction, rows: ChargeRow[]): Promise<Cha
     createdAt: row.createdAt,
     items: items
       .filter((item) => item.chargeId === row.id)
-      .map(({ postingId, amountCents }) => ({ postingId, amountCents })),
+      .flatMap(({ postingId, amountCents }) => {
+        const detail = details.get(postingId)
+        return detail ? [{ ...detail, amountCents }] : []
+      }),
   }))
 }

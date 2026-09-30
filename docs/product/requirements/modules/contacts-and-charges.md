@@ -64,11 +64,12 @@ Route `/contatos/:contactId`, loaded with `GET /contacts/:contactId`; its charge
 `GET /charges?contactId=`, and one charge from `GET /charges/:chargeId`.
 
 **RF-CON-3** Header: name, phone (tap to call or open WhatsApp), Pix key, notes, balance fields.
-**RF-CON-4** "Em aberto": the contact's open items, from their share lines (entries list filtered
-by the receivable account and contact, done on the client): date due, description, installment
-"2/3", amount, overdue marker. (A dedicated API is in `../api-gaps.md`.)
+**RF-CON-4** "Em aberto": the contact's open items up to today (`GET
+/contacts/:contactId/open-items`, the same computation a charge uses): date due, description,
+installment "2/3", what is still owed (`remainingCents`), overdue marker.
 **RF-CON-5** "Cobranças": the contact's charges (`GET /charges?contactId=`), newest first: date,
-total, paid, status badge, due date; tap expands the message and the actions below.
+total, paid, status badge, due date; tap expands the items (description, installment "2/3", due
+date, amount), the message and the actions below.
 
 | Action | Permission | Rule |
 |---|---|---|
@@ -90,8 +91,8 @@ A sheet from `CON-01`/`CON-02`. `POST /contacts/:contactId/charges`, permission 
 |---|---|---|---|---|
 | until | "Cobrar o que vence até" | date, default "Hoje" | yes | valid date; help "Escolha uma data futura para incluir as próximas parcelas." |
 
-**RF-CON-6** Before creating, show a preview of the items that will be included (computed on the
-client from the open items up to that date) and the total. Nothing open up to the date disables
+**RF-CON-6** Before creating, show a preview of the items that will be included
+(`GET /contacts/:contactId/open-items?until=`, refreshed when the date changes) and the total. Nothing open up to the date disables
 "Criar cobrança" with "Nada a cobrar até essa data."
 **RF-CON-7** After creating: the message exactly as the contact will read it (from the response),
 the Pix copia e cola with "Copiar", and the actions "Enviar pelo WhatsApp" (opens `wa.me` with the

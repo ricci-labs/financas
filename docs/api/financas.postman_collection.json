@@ -1768,6 +1768,40 @@
           ]
         },
         {
+          "name": "Contact open items",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/contacts/{{contactId}}/open-items?until={{in30Days}}",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspaceId}}",
+                "contacts",
+                "{{contactId}}",
+                "open-items"
+              ],
+              "query": [
+                {
+                  "key": "until",
+                  "value": "{{in30Days}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('answers 200', () => pm.response.to.have.status(200))"]
+              }
+            }
+          ]
+        },
+        {
           "name": "Charge the contact",
           "request": {
             "method": "POST",

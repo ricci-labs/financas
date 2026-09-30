@@ -139,6 +139,7 @@ message.
 | `CHARGE_INVALID` | 400 | Invalid date | "Informe uma data válida (dd/mm/aaaa)." | field date |
 | `CHARGE_QUERY_INVALID` | 400 | Invalid filter (guard) | "Não foi possível carregar as cobranças." | section |
 | `CHARGE_NOT_FOUND` | 404 | Charge gone | "Esta cobrança não existe mais." | toast |
+| `OPEN_ITEMS_QUERY_INVALID` | 400 | Invalid date (guard) | "Informe uma data válida (dd/mm/aaaa)." | field until |
 | `NOTHING_TO_CHARGE` | 409 | Nothing open up to the date | "Este contato não tem nada em aberto até essa data." | form |
 | `CHARGE_STATUS_REFUSED` | 409 | Action not allowed in the charge's status | sent: "Esta cobrança já foi enviada ou tem pagamento." · cancel: "Cobranças com pagamento não podem ser canceladas." · payment: "Esta cobrança foi cancelada e não recebe pagamentos." | form / toast |
 | `CHARGE_PAYMENT_INVALID` | 400 | Payment form invalid | per field | fields |

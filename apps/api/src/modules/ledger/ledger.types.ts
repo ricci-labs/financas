@@ -217,6 +217,8 @@ export type TrashedAccount = LedgerAccountItem & Deletion
 
 export type TrashedEntry = EntryItem & Deletion
 
+export type PostingDetails = Omit<ChargeableItem, 'amountCents'>
+
 export type ContactItems = {
   items: ChargeableItem[]
   paidCents: number

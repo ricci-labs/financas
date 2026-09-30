@@ -8,9 +8,10 @@ import {
   selectContactPostings,
   selectInvoiceFacts,
   selectInvoicesDueBetween,
+  selectPostingDetails,
   selectPostingFacts,
 } from '@api/modules/ledger/ledger.repository'
-import type { ContactItems, InvoiceDue } from '@api/modules/ledger/ledger.types'
+import type { ContactItems, InvoiceDue, PostingDetails } from '@api/modules/ledger/ledger.types'
 import type {
   ChargeableItem,
   ContactPosting,
@@ -81,6 +82,14 @@ export async function readContactItems(
     .filter((line) => line.amountCents < 0)
     .reduce((sum, line) => sum + line.amountCents, 0)
   return { items, paidCents }
+}
+
+export async function readPostingDetails(
+  tx: WorkspaceTransaction,
+  postingIds: string[],
+): Promise<ReadonlyMap<string, PostingDetails>> {
+  const details = await selectPostingDetails(tx, postingIds)
+  return new Map(details.map((detail) => [detail.postingId, detail]))
 }
 
 export async function activeEntryIdsOf(
