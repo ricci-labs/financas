@@ -1,7 +1,7 @@
 ---
 summary: Contacts (third parties), how their share of entries is recorded (receivable postings, installments, several per entry), charges sent directly over WhatsApp, and settlements.
 read_when: Working on contacts, splitting an entry with other people, charges (cobranças) or recording that someone paid back.
-updated: 2026-09-26
+updated: 2026-09-29
 ---
 
 # Third parties: contacts, charges, settlements
@@ -32,6 +32,7 @@ One active contact per phone (`409 CONTACT_PHONE_TAKEN`); deleting a contact fre
 | `GET /contacts` | `contacts:view` | `listContacts`: active contacts by name, with `isOptedOut`, `isArchived` |
 | `POST /contacts` | `contacts:create` | `createContact` `{ name, phoneE164?, pixKey?, notes? }` → `201 { contactId }` |
 | `GET /contacts/balances` | `contacts:view` | `listContactBalances`: per active contact with postings, `{ contactId, name, owedCents, overdueCents, nextDueOn, nextDueCents }` |
+| `GET /contacts/:contactId` | `contacts:view` | `getContact`: one active contact, as in the list; a deleted one is `404 CONTACT_NOT_FOUND` |
 | `PATCH /contacts/:contactId` | `contacts:update` | `changeContact`: only the fields sent, plus `isOptedOut` and `isArchived` → `204` |
 | `DELETE /contacts/:contactId` | `contacts:delete` | `deleteContact` (soft, optional `reason`) → `204` |
 
@@ -102,6 +103,7 @@ that month.
 |---|---|---|
 | `POST /contacts/:contactId/charges` | `contacts:create` | `createCharge` `{ until? }` (default today, workspace time zone): the contact's open items due up to that day → `201 { chargeId }` with the stored message and Pix copia e cola (when the workspace Pix is set). Nothing open is `409 NOTHING_TO_CHARGE` |
 | `GET /charges?contactId=` | `contacts:view` | `listCharges`: newest first, with items, `paidCents` and the derived status |
+| `GET /charges/:chargeId` | `contacts:view` | `getCharge`: one charge, as in the list |
 | `POST /charges/:chargeId/sent` | `contacts:update` | `markChargeSent`: draft → sent (also when a member forwards the message by hand) |
 | `POST /charges/:chargeId/payments` | `contacts:update` | `payCharge` `{ amountCents, receivedInAccountId, occurredOn }`: records the `settlement` entry and links it → `201 { entryId }`; a cancelled charge is `409 CHARGE_STATUS_REFUSED` |
 | `POST /charges/:chargeId/cancel` | `contacts:update` | `cancelCharge`: an open charge without payments → cancelled; its items can be charged again. `409 CHARGE_STATUS_REFUSED` otherwise |

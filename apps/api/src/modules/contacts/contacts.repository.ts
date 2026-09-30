@@ -29,6 +29,17 @@ export function selectActiveContacts(tx: WorkspaceTransaction): Promise<ContactR
     .orderBy(asc(contacts.name), asc(contacts.id))
 }
 
+export async function selectActiveContact(
+  tx: WorkspaceTransaction,
+  contactId: string,
+): Promise<ContactRow | undefined> {
+  const [contact] = await tx
+    .select()
+    .from(contacts)
+    .where(and(eq(contacts.id, contactId), isNull(contacts.deletedAt)))
+  return contact
+}
+
 export async function lockActiveContact(
   tx: WorkspaceTransaction,
   contactId: string,
@@ -114,6 +125,14 @@ export async function selectChargeExists(
 ): Promise<boolean> {
   const [charge] = await tx.select({ id: charges.id }).from(charges).where(eq(charges.id, chargeId))
   return charge !== undefined
+}
+
+export async function selectCharge(
+  tx: WorkspaceTransaction,
+  chargeId: string,
+): Promise<ChargeRow | undefined> {
+  const [charge] = await tx.select().from(charges).where(eq(charges.id, chargeId))
+  return charge
 }
 
 export function selectCharges(tx: WorkspaceTransaction, contactId?: string): Promise<ChargeRow[]> {

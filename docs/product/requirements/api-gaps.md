@@ -21,7 +21,7 @@ matching screen would be wrong or fragile without it.
 ## Reads the screens need
 | # | Today | UI meanwhile | Proposed fix | When |
 |---|---|---|---|---|
-| G5 | No route for **one** entry, contact or charge. | Detail screens use the list cache; a deep link without it asks to open from the list. | `GET /entries/:id`, `GET /contacts/:id`, `GET /charges/:id`. | Before the web |
+| G5 | ~~No route for **one** entry, contact or charge.~~ **Fixed.** | Detail screens load them, showing the list cache first when there is one. | `GET /entries/:entryId`, `GET /contacts/:contactId`, `GET /charges/:chargeId`. | Done |
 | G6 | Charge items carry only `postingId` and amount, no description, installment or date. | Shows the charge's message text. | Return `description`, `installmentNo`, `installmentCount`, `effectiveOn` per item. | Before the web |
 | G7 | No route for a contact's **open items** (what a charge would include). | Recomputes from all entries with the shared `openItems`, paging through the receivable account's entries. | `GET /contacts/:id/open-items?until=`, the same computation the charge uses. | Before the web |
 | G8 | The upload size limit (`FILE_MAX_BYTES`) isn't exposed. | Uses a build-time value (10 MB). | Add it to `GET /api/auth/config` (or a workspace config route). | With attachments |

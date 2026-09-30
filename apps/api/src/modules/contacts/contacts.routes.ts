@@ -8,6 +8,8 @@ import {
   createCharge,
   createContact,
   deleteContact,
+  getCharge,
+  getContact,
   listCharges,
   listContactBalances,
   listContacts,
@@ -39,6 +41,10 @@ export function contactRoutes({ db }: ContactRouteDeps) {
     })
     .get('/balances', authorize('contacts', 'view'), async (c) => {
       return c.json(await listContactBalances(db, currentWorkspace(c).workspaceId))
+    })
+    .get('/:contactId', authorize('contacts', 'view'), contact, async (c) => {
+      const { workspaceId } = currentWorkspace(c)
+      return c.json(await getContact(db, workspaceId, c.req.valid('param').contactId))
     })
     .post(
       '/',
@@ -116,6 +122,10 @@ export function chargeRoutes({ db }: ContactRouteDeps) {
         return c.json(await listCharges(db, workspaceId, c.req.valid('query').contactId))
       },
     )
+    .get('/:chargeId', authorize('contacts', 'view'), charge, async (c) => {
+      const { workspaceId } = currentWorkspace(c)
+      return c.json(await getCharge(db, workspaceId, c.req.valid('param').chargeId))
+    })
     .post('/:chargeId/sent', authorize('contacts', 'update'), charge, async (c) => {
       const { workspaceId } = currentWorkspace(c)
       await markChargeSent(db, { workspaceId, chargeId: c.req.valid('param').chargeId })
