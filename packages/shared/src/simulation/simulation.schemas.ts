@@ -21,5 +21,9 @@ export const purchaseSimulationQuerySchema = z
     message: 'Only a card splits a purchase in installments',
     path: ['installmentCount'],
   })
+  .refine((query) => query.installmentCount <= query.amountCents, {
+    message: 'Every installment needs at least one cent',
+    path: ['installmentCount'],
+  })
 
 export type PurchaseSimulationQuery = z.infer<typeof purchaseSimulationQuerySchema>

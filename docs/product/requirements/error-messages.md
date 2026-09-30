@@ -182,7 +182,7 @@ message.
 |---|---|---|---|---|
 | `OVERVIEW_QUERY_INVALID` | 400 | Invalid period (guard) | "Mostrando o período atual." | toast |
 | `ALLOCATION_QUERY_INVALID` | 400 | Invalid amount | "Informe um valor maior que zero." | field amount |
-| `SIMULATION_QUERY_INVALID` | 400 | Simulation form invalid | per field; "Escolha um cartão ou uma conta." · "Só compras no cartão podem ser parceladas." | fields |
+| `SIMULATION_QUERY_INVALID` | 400 | Simulation form invalid | per field; "Escolha um cartão ou uma conta." · "Só compras no cartão podem ser parceladas." · "Cada parcela precisa de pelo menos R$ 0,01: use menos parcelas." | fields |
 | `SIMULATION_CARD_INVALID` | 400 | Card deleted | "Escolha um cartão ativo." | field card |
 | `SIMULATION_ACCOUNT_INVALID` | 400 | Account deleted or not money | "Escolha uma conta ativa de dinheiro." | field account |
 

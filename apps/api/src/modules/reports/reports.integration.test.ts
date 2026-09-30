@@ -450,5 +450,20 @@ describe('GET /overview', () => {
       `/api/workspaces/${workspaceId}/simulations/purchase?amountCents=1000`,
     )
     expect(noCardNorAccount.status).toBe(400)
+
+    const card = (await (
+      await requestsAs(app, ownerSession).post(`/api/workspaces/${workspaceId}/cards`, {
+        name: 'Card X',
+        closingDay: 3,
+        dueDay: 10,
+      })
+    ).json()) as { accountId: string }
+    const moreInstallmentsThanCents = await viewer.get(
+      `/api/workspaces/${workspaceId}/simulations/purchase?amountCents=5&installmentCount=10&cardAccountId=${card.accountId}`,
+    )
+    expect(moreInstallmentsThanCents.status).toBe(400)
+    expect(await moreInstallmentsThanCents.json()).toMatchObject({
+      error: { code: 'SIMULATION_QUERY_INVALID' },
+    })
   })
 })
