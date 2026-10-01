@@ -32,6 +32,15 @@ jobs:
       - name: Types and schemas in their own files
         run: pnpm lint:file-roles
 
+      - name: Web visual values only from tokens
+        run: pnpm lint:tokens
+
+      - name: Web copy only in messages files
+        run: pnpm lint:copy
+
+      - name: Token contrast meets WCAG AA
+        run: pnpm check:contrast
+
       - name: Type check
         run: pnpm typecheck
 

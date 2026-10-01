@@ -148,19 +148,19 @@ not a token:
 ## Enforcement
 | Check | Fails on | Where |
 |---|---|---|
-| `pnpm lint:tokens` (`scripts/check-tokens.mjs`) | In `apps/web/src` TS/TSX outside `styles/`: hex, `rgb(`, `hsl(`, `oklch(`; arbitrary values `-[…]` and `[prop:value]` (arbitrary variants like `[&_svg]:` are allowed); classes of the scales we reset, which Tailwind drops **silently** (default palette `-(slate\|gray\|red\|…)-\d{2,3}`, `-black`, `-white`, `text-3xl` and up, `shadow-xs…2xl`, the `sm:` and `2xl:` breakpoints); numeric `z-<n>` and `duration-<n>`; `style=` outside the allowed components | `pnpm check`, pre-commit, CI |
-| `pnpm check:contrast` (`scripts/check-contrast.mjs`, culori) | A declared pair below its minimum in light or dark: the pairs the design's token notes promise (`ink-muted` on `bg-page`, `bg-surface`, `bg-sunken` ≥ 5.4:1; a role on its `-soft`; `on-mint` on `mint`…), text ≥ 4.5:1, `border-control`, `focus-ring` and chart series on `bg-surface` ≥ 3:1 | `pnpm check`, CI |
-| `lint:tokens` on `components/ui` | Same rules; a `shadcn add` that brings `bg-black/50`, `text-white` or `ring-[3px]` is fixed to tokens in the same PR | as above |
+| `pnpm lint:tokens` (`scripts/check-tokens.mjs`) | Every string in `apps/web/src` TS/TSX outside `styles/` (class lists included): a raw colour (`#hex`, `rgb(`, `hsl(`, `oklch(`, `color-mix(`…); an arbitrary value (`w-[37px]`, `[color:red]`, `size-(--x)`), while arbitrary **variants** stay allowed (`[&_svg]:size-4`, `has-data-[icon=x]:pr-2`); classes of the scales we reset, which Tailwind would drop **silently** (the default palette `bg-red-500`, `text-white`, `bg-black/50`; `text-lg` and up; `shadow-xs…2xl`; `rounded-2xl…4xl`); numeric `z-<n>` and `duration-<n>`; the `sm:`, `2xl:` and arbitrary breakpoints; a `style` prop outside the two data-colour components | `pnpm check`, pre-commit, CI |
+| `pnpm check:contrast` (`scripts/check-contrast.mjs`) | A token pair below WCAG 2.2 AA (4.5:1 text, 1.4.3; 3:1 UI parts, 1.4.11), resolved through every alias: the text roles on the three surfaces, each role on its `-soft`, `on-mint` on `mint`, `on-action-primary` on both primary states, `border-control`, `focus-ring` and the chart series on `bg-surface`, in both themes; plus the account-screen pairs (`ink` and `ink-muted` on `sketch-paper`, `focus-ring` on `mint`) in the light theme only, since those screens are always light | `pnpm check`, pre-commit when a token file changes, CI |
 
-The pairs checked live in the script, next to the reason for each minimum (WCAG 2.2 1.4.3 and
-1.4.11).
+`lint:tokens` also covers `components/ui`: a `shadcn add` that brings `bg-black/50`, `text-white`
+or `ring-[3px]` is fixed to tokens in the same PR. The pairs checked live in the script; a new
+role that is drawn on a surface gets its pair there in the same PR.
 
 ## Adding or changing a token
 1. Is there a role for it already? Reuse it. A new hue for one screen is not a token.
 2. Add it to the design system first (it is where roles are decided), then port it: the base role
    in `:root` **and** `.dark` (or an alias), and its `@theme inline` line. A role used as a filled
    background gets its `on-` role too.
-3. Add its pairs to `check-contrast.mjs` and run `pnpm check:contrast`.
+3. Add its pairs to `scripts/check-contrast.mjs` and run `pnpm check:contrast`.
 4. Show it in the workbench (`/dev/components` → Tokens).
 5. Same PR: update this file if a group or rule changed.
 

@@ -17,7 +17,7 @@ action `.github/actions/setup`.
 
 | Check | Steps | Fails on |
 |---|---|---|
-| 🧹 Code quality | Biome lint/format · no comments · file roles · type check · architecture rules · docs | Style, a comment in source (ADR 0017), an exported type outside `.types.ts` or a schema outside `.schemas.ts`, type errors, a dependency-rule violation, bad frontmatter or broken doc links |
+| 🧹 Code quality | Biome lint/format · no comments · file roles · web tokens · web copy · token contrast · type check · architecture rules · docs | Style, a comment in source (ADR 0017), an exported type outside `.types.ts` or a schema outside `.schemas.ts`, a raw visual value or hard-coded copy in the web, a token pair below WCAG AA, type errors, a dependency-rule violation, bad frontmatter or broken doc links |
 | 🧪 Tests | Install Chromium (headless shell) · Vitest in every package, web components in the browser | A failing test. Failures are **annotated on the PR diff** (file and line) by the `github-actions` reporter |
 | 🐘 Integration tests | Start Postgres · apply migrations · migrations match the schema · integration tests | A failing migration, a table changed without a migration, or a failing DB test (e.g. RLS isolation) |
 | 📦 Build | Web build + API bundle | Build errors |

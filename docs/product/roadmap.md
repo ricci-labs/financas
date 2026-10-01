@@ -147,8 +147,8 @@ updated: 2026-10-01
   2. [ ] Web tests: Vitest browser mode (Chromium), axe helper, web tests in `pnpm check` and CI
   3. [x] Tokens: `styles/tokens/` with placeholder values until the Claude Design system, the font,
      dark mode without inline script, shadcn init (Base UI), `cn`
-  4. [ ] Web checks: `lint:tokens`, `lint:copy`, `check:contrast`, web file roles, depcruise web
-     rules 5–8; the existing status badge migrated
+  4. [ ] Web checks: [x] `lint:tokens`, `lint:copy`, `check:contrast` (the status badge and the
+     placeholder page migrated); [ ] web file roles, depcruise web rules 5–8
   5. [ ] Claude Code: web checks in the hooks; `new-component` and `new-feature` skills
   6. [ ] React Compiler and Biome's React rules
   7. [ ] Router + Query + `unwrap`/`ApiError`, error messages map, guards, empty app shell
