@@ -20,8 +20,8 @@ and nothing else: no hex, `rgb()` or `oklch()` in TS/TSX, no arbitrary values (`
 ## Files
 | File | Holds | Who reads it |
 |---|---|---|
-| `styles/tokens/palette.css` | Tier 1: raw OKLCH colours as `:root` variables (`--green-600`) | Only `semantic.css` |
-| `styles/tokens/semantic.css` | Tier 2: roles with a light value in `:root` and a dark value in `.dark` | `theme.css`, charts through `var()` |
+| `styles/tokens/palette.css` | Tier 1: raw OKLCH colours as `:root` variables (`--green-700`, `--white-alpha-10`); the only file with raw colour values | `semantic.css`, `theme.css` (shadows) |
+| `styles/tokens/semantic.css` | Tier 2: roles with a light value in `:root` and a dark value in `.dark`, then the aliases (`danger`, `status-*`) that point to roles and so follow the theme; also radius, durations and layers | `theme.css`, charts through `var()` |
 | `styles/tokens/theme.css` | Resets of Tailwind's defaults, `@theme` scales (type, radius, shadow, breakpoints), `@theme inline` that turns roles into utilities, `@utility` for layers and durations | Tailwind |
 | `styles/globals.css` | Imports, in order: `tailwindcss`, `tw-animate-css`, `shadcn/tailwind.css`, the font, the three token files; then the `@layer base` rules (body, focus ring, reduced motion) | `main.tsx` |
 | `styles/account-colors.ts` | The fixed choices of the account and category colour picker (see Data colours) | The colour picker |
@@ -65,7 +65,8 @@ Each role in the Money, Feedback and Status groups comes as a set: base, `-foreg
 - `--font-*: initial`, then `--font-sans` only (and `--font-mono` if a screen needs it).
 - **Type scale:** `--text-*: initial`, then each step with its pair:
   `--text-<step>`, `--text-<step>--line-height`, and `--letter-spacing` where it differs. Steps:
-  `caption`, `sm`, `base`, `lg`, `xl`, `2xl`, `display` (the "livre para gastar" figure).
+  `xs`, `sm`, `base`, `lg`, `xl`, `2xl` (shadcn's names, so generated components work) and
+  `display` (the "livre para gastar" figure).
 - **Weights:** `normal`, `medium`, `semibold` only.
 - **Amounts** always use `tabular-nums`. It lives inside the `Amount` component, so no screen has
   to remember it (`web-components.md`).
@@ -73,8 +74,8 @@ Each role in the Money, Feedback and Status groups comes as a set: base, `-foreg
 ## Spacing, radius, elevation
 - **Spacing:** `--spacing: 0.25rem` (4 px base, kept from Tailwind). Use the steps
   `0, 0.5, 1, 1.5, 2, 3, 4, 5, 6, 8, 10, 12, 16`; a value off this list needs a token.
-- **Radius:** one `--radius` in `semantic.css`; `--radius-sm/md/lg/xl` derived from it in
-  `@theme inline` (shadcn's pattern). Changing the roundness of the whole app is one value.
+- **Radius:** one `--radius` in `semantic.css`; `--radius-sm` to `--radius-4xl` derived from it
+  in `@theme inline` (shadcn's pattern). Changing the roundness of the whole app is one value.
 - **Elevation:** `--shadow-*: initial`, then `--shadow-raised` (cards), `--shadow-overlay`
   (popovers, menus) and `--shadow-modal` (dialogs, sheets). Dark values may be stronger or replaced
   by a border.
@@ -108,8 +109,8 @@ are preferred for components that live in both the sidebar and the main column.
 - The `ThemeProvider` (`app/`) writes the choice and follows system changes; nothing else touches
   the class.
 - `color-scheme: light` in `:root` and `dark` in `.dark`, so native controls and scrollbars match.
-- `theme-color` in `index.html` is two `<meta>` tags with `media="(prefers-color-scheme: …)"`,
-  using the `background` values; `theme-init.js` updates them on a manual choice.
+- `theme-color` arrives with the PWA (web foundation 10), taken from the tokens; `index.html` has
+  no colour of its own.
 
 ## Tokens in JavaScript
 - **Charts** pass `var(--color-income)` or `var(--chart-1)` straight to Recharts (`fill`,
@@ -131,7 +132,7 @@ not a token:
 ## Enforcement
 | Check | Fails on | Where |
 |---|---|---|
-| `pnpm lint:tokens` (`scripts/check-tokens.mjs`) | In `apps/web/src` TS/TSX outside `styles/`: hex, `rgb(`, `hsl(`, `oklch(`; arbitrary values `-[…]` and `[prop:value]` (arbitrary variants like `[&_svg]:` are allowed); default-palette classes (`-(slate\|gray\|zinc\|red\|…)-\d{2,3}`, `-black`, `-white`); numeric `z-<n>`; `style=` outside the allowed components | `pnpm check`, pre-commit, CI |
+| `pnpm lint:tokens` (`scripts/check-tokens.mjs`) | In `apps/web/src` TS/TSX outside `styles/`: hex, `rgb(`, `hsl(`, `oklch(`; arbitrary values `-[…]` and `[prop:value]` (arbitrary variants like `[&_svg]:` are allowed); classes of the scales we reset, which Tailwind drops **silently** (default palette `-(slate\|gray\|red\|…)-\d{2,3}`, `-black`, `-white`, `text-3xl` and up, `shadow-xs…2xl`, the `sm:` and `2xl:` breakpoints); numeric `z-<n>` and `duration-<n>`; `style=` outside the allowed components | `pnpm check`, pre-commit, CI |
 | `pnpm check:contrast` (`scripts/check-contrast.mjs`, culori) | A declared pair below its minimum in light or dark: text on surfaces ≥ 4.5:1, `-foreground` on its role ≥ 4.5:1, `border`/`ring`/chart series on `background` ≥ 3:1; translucent tokens are blended over their surface first | `pnpm check`, CI |
 | `lint:tokens` on `components/ui` | Same rules; a `shadcn add` that brings `bg-black/50`, `text-white` or `ring-[3px]` is fixed to tokens in the same PR | as above |
 
