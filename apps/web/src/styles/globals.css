@@ -1,8 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/inter";
-@import "./tokens/palette.css";
+@import "@fontsource-variable/bricolage-grotesque";
+@import "@fontsource-variable/figtree";
 @import "./tokens/semantic.css";
 @import "./tokens/theme.css";
 
@@ -12,20 +12,24 @@
   }
 
   html {
-    @apply bg-background font-sans text-foreground antialiased;
+    @apply bg-page font-sans text-body text-ink antialiased;
   }
 
   :focus-visible {
-    @apply outline-2 outline-offset-2 outline-ring;
+    @apply outline-2 outline-offset-2 outline-focus-ring;
   }
 
   @media (prefers-reduced-motion: reduce) {
     *,
     ::before,
     ::after {
+      /* biome-ignore lint/complexity/noImportantStyles: reduced motion must win over every component's own animation */
       animation-duration: 0ms !important;
+      /* biome-ignore lint/complexity/noImportantStyles: reduced motion must win over every component's own animation */
       animation-iteration-count: 1 !important;
+      /* biome-ignore lint/complexity/noImportantStyles: reduced motion must win over every component's own transition */
       transition-duration: 0ms !important;
+      /* biome-ignore lint/complexity/noImportantStyles: reduced motion must win over smooth scrolling */
       scroll-behavior: auto !important;
     }
   }

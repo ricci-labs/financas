@@ -249,6 +249,6 @@ src/
 ├── hooks/                   # generic hooks only
 └── styles/
     ├── globals.css          # imports + @layer base
-    ├── tokens/              # palette.css, semantic.css, theme.css: the only home of visual values
+    ├── tokens/              # semantic.css (roles), theme.css (utilities): the only home of visual values
     └── account-colors.ts    # the colour picker's choices
 ```

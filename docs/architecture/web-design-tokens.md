@@ -6,80 +6,92 @@ updated: 2026-10-01
 
 # Web design tokens
 
-Decision: ADR 0027. Values (the actual colours, fonts and sizes) come from the design system made
-in Claude Design (`../product/requirements/design-system-brief.md`); this file fixes where they
-live and how code reaches them. Tailwind v4 reference: <https://tailwindcss.com/docs/theme>.
+Decisions: ADR 0027 (tokens in CSS, components in layers) and ADR 0028 (the values and names are
+the Twise design system's own). The design system's guide (`docs/design/design-system/`) says
+**when** to use each role; this file fixes where tokens live and how code reaches them. Tailwind v4
+reference: <https://tailwindcss.com/docs/theme>.
 
 ## The rule
 **A visual value is written once, as a token in `apps/web/src/styles/tokens/`.** Components use
-the utility classes those tokens create (`bg-primary`, `text-expense`, `rounded-md`, `shadow-raised`)
-and nothing else: no hex, `rgb()` or `oklch()` in TS/TSX, no arbitrary values (`w-[37px]`,
-`text-[#555]`), no Tailwind default-palette classes (`bg-slate-100`), no `style={{ color }}`.
-`pnpm lint:tokens` fails on each of these (see Enforcement).
+the utility classes those tokens create (`bg-surface`, `text-ink-muted`, `rounded-md`,
+`shadow-float`) and nothing else: no hex, `rgb()` or `oklch()` in TS/TSX, no arbitrary values
+(`w-[37px]`, `text-[#555]`), no Tailwind default-palette classes (`bg-slate-100`), no
+`style={{ color }}`. `pnpm lint:tokens` fails on each of these (see Enforcement).
 
 ## Files
 | File | Holds | Who reads it |
 |---|---|---|
-| `styles/tokens/palette.css` | Tier 1: raw OKLCH colours as `:root` variables (`--green-700`, `--white-alpha-10`); the only file with raw colour values | `semantic.css`, `theme.css` (shadows) |
-| `styles/tokens/semantic.css` | Tier 2: roles with a light value in `:root` and a dark value in `.dark`, then the aliases (`danger`, `status-*`) that point to roles and so follow the theme; also radius, durations and layers | `theme.css`, charts through `var()` |
-| `styles/tokens/theme.css` | Resets of Tailwind's defaults, `@theme` scales (type, radius, shadow, breakpoints), `@theme inline` that turns roles into utilities, `@utility` for layers and durations | Tailwind |
-| `styles/globals.css` | Imports, in order: `tailwindcss`, `tw-animate-css`, `shadcn/tailwind.css`, the font, the three token files; then the `@layer base` rules (body, focus ring, reduced motion) | `main.tsx` |
+| `styles/tokens/semantic.css` | The design's **base roles** with raw values (light in `:root`, dark in `.dark`), elevations, durations and layers; then the **alias roles** (`success`, `status-*`, shadcn's names) as `var()` references. The only file with raw colour values | `theme.css`, charts through `var()` |
+| `styles/tokens/theme.css` | Resets of Tailwind's defaults, the fixed scales in `@theme` (fonts, type styles, radius, control sizes, breakpoints, easing), `@theme inline` that turns every role into a utility, `@utility` for layers and durations | Tailwind |
+| `styles/globals.css` | Imports, in order: `tailwindcss`, `tw-animate-css`, `shadcn/tailwind.css`, the two fonts, the token files; then the `@layer base` rules (page, focus ring, reduced motion) | `main.tsx` |
 | `styles/account-colors.ts` | The fixed choices of the account and category colour picker (see Data colours) | The colour picker |
 
-CSS files follow the code rules too: no comments, one role each.
+CSS files follow the code rules too: no comments, except tool directives with their reason
+(`biome-ignore`).
 
-## Tiers
-| Tier | Example | Becomes a class? | Rule |
+## Roles and aliases
+| Kind | Example | Becomes a class? | Rule |
 |---|---|---|---|
-| 1. Palette | `--green-600: oklch(0.63 0.17 149)` | **No** (plain `:root`, outside `@theme`) | Never referenced outside `semantic.css`, so a palette change can't break a component silently |
-| 2. Semantic | `--income: var(--green-600)` in `:root`, `oklch(...)` in `.dark` | Yes, via `@theme inline { --color-income: var(--income) }` | Named by role, never by hue. Every role has a dark value |
-| 3. Component | `--sidebar-background` | Yes, same way | Only when one component needs its own adjustable value; it points to a semantic token by default |
+| Base role | `--ink: #17191c` in `:root`, `#f2f0ea` in `.dark` | Yes, `@theme inline { --color-ink: var(--ink) }` | Named by role, never by hue. A role whose value is the same in both themes (`mint`, `sketch-paper`) is written once |
+| Alias role | `--status-paid: var(--success)`, `--primary: var(--action-primary)` | Yes, same way | Points to a base role or another alias, so it follows the theme. Changing a hue is an edit to the base role only |
+| Component token | `--sidebar-*` | Yes, same way | Only when one component needs its own adjustable value; it is an alias by default |
 
 `@theme inline` is required whenever a theme variable points to another variable; without it the
 value resolves where it is defined and the theme switch stops working.
 
 ## Naming
-- `--<role>` for the surface or colour, `--<role>-foreground` for text and icons on it,
-  `--<role>-muted` for the soft background of badges and alerts. A role that is used as a
-  background always has its `-foreground`.
-- Lowercase kebab-case, full words (`--status-partially-paid`, not `--st-pp`).
-- shadcn's names are kept as they are (`background`, `foreground`, `card`, `popover`, `primary`,
-  `secondary`, `muted`, `accent`, `destructive`, `border`, `input`, `ring`, `chart-1…5`,
-  `sidebar-*`), so generated components work unchanged.
+- The design system's names, unchanged: `bg-page`, `ink-muted`, `mint-soft`, `on-mint`,
+  `action-primary-hover`, `status-partial`… Lowercase kebab-case, full words.
+- `<role>-soft` is the soft background of badges, alerts and icon circles; text on it uses
+  `<role>` itself (the design checks that pair). `on-<role>` is text and icons on a filled role
+  (`on-mint`, `on-action-primary`).
+- **Utilities drop the `bg-` prefix of background roles:** `--bg-page` → `bg-page`,
+  `--bg-surface` → `bg-surface`, `--bg-sunken` → `bg-sunken` (never `bg-bg-page`).
+- shadcn's names exist only as aliases (`background → bg-page`, `primary → action-primary`,
+  `destructive → danger`, `input → border-control`, `ring → focus-ring`…), so generated components
+  work unchanged. Our own components use the design names.
 
 ## Colour roles
-| Group | Roles | Notes |
-|---|---|---|
-| Base (shadcn) | `background`, `foreground`, `card`, `popover`, `primary`, `secondary`, `muted`, `accent`, `destructive`, `border`, `input`, `ring` | `primary` is the brand colour (Twise) |
-| Money | `income`, `expense`, `transfer` | Always next to a sign or word (RNF-A11Y-4) |
-| Feedback | `success`, `warning`, `danger`, `info` | `danger` points to `destructive` |
-| Status | `status-pending`, `status-overdue`, `status-paid`, `status-partially-paid`, `status-cancelled`, `status-skipped`, `status-matched` | Each points to a feedback or base role by default (`status-overdue → danger`), so the status palette is one edit away |
-| Charts | `chart-1…5`, `chart-grid`, `chart-zero-line` | Series colours; the forecast's zero line is its own role |
+When to use each one: the design system guide → Colour, and each token's notes.
 
-Each role in the Money, Feedback and Status groups comes as a set: base, `-foreground`, `-muted`.
+| Group | Roles |
+|---|---|
+| Surfaces | `bg-page`, `bg-surface`, `bg-sunken`, `border`, `border-control`, `focus-ring` |
+| Text | `ink`, `ink-muted`, `ink-subtle` |
+| Brand | `mint`, `mint-soft`, `on-mint`, `mint-ink` |
+| Actions | `action-primary`, `action-primary-hover`, `on-action-primary`, `action-secondary`, `action-secondary-hover` |
+| Money | `income`, `income-soft`, `expense`, `expense-soft`, `transfer` (always next to a sign or a word, RNF-A11Y-4) |
+| Feedback | `success`, `warning`, `danger`, `info`, each with `-soft`; `warning-fill` (budget bar, never text) |
+| Status | `status-pending`, `status-overdue`, `status-paid`, `status-partial`, `status-matched`, `status-neutral` (cancelled, skipped), each with `-soft` |
+| Illustration | `sketch-ink`, `sketch-paper` (fixed in both themes; illustrations always sit on `sketch-paper` or `mint-soft`) |
+| Charts | `chart-1…5` |
 
 ## Typography
-- **One family, bundled:** Inter Variable from Fontsource (`@fontsource-variable/inter`), imported
-  by `globals.css`, so Vite ships the `woff2` with the app (RNF-PRIV-1: no font CDN). Fontsource
-  already sets `font-display: swap`.
-- `--font-*: initial`, then `--font-sans` only (and `--font-mono` if a screen needs it).
-- **Type scale:** `--text-*: initial`, then each step with its pair:
-  `--text-<step>`, `--text-<step>--line-height`, and `--letter-spacing` where it differs. Steps:
-  `xs`, `sm`, `base`, `lg`, `xl`, `2xl` (shadcn's names, so generated components work) and
-  `display` (the "livre para gastar" figure).
-- **Weights:** `normal`, `medium`, `semibold` only.
+- **Two families, bundled:** Bricolage Grotesque (`font-display`: greeting, screen titles, the
+  "Livre para gastar" figure) and Figtree (`font-sans`: everything else). Imported from Fontsource
+  (`@fontsource-variable/bricolage-grotesque`, `@fontsource-variable/figtree`), the same `woff2`
+  files the design uses, so Vite ships them with the app (RNF-PRIV-1: no font CDN).
+- **Type styles** are the design's, each with size, line height, weight and letter spacing
+  (`--text-<style>`, `--text-<style>--line-height`, `--font-weight`, `--letter-spacing`):
+  `amount-hero`, `display`, `title-lg`, `title` (display family), `amount-lg`, `amount`,
+  `amount-sm`, `title-sm`, `body`, `body-sm`, `label`, `button`, `caption` (sans). Use one class:
+  `text-title-sm`. A display style also needs `font-display`.
+- `text-xs`, `text-sm` and `text-base` exist only as aliases of `caption`, `body-sm` and `body`, so
+  shadcn components work.
 - **Amounts** always use `tabular-nums`. It lives inside the `Amount` component, so no screen has
-  to remember it (`web-components.md`).
+  to remember it (`web-components.md`). Inputs use 16 px (`body`) so iPhones don't zoom.
 
-## Spacing, radius, elevation
-- **Spacing:** `--spacing: 0.25rem` (4 px base, kept from Tailwind). Use the steps
-  `0, 0.5, 1, 1.5, 2, 3, 4, 5, 6, 8, 10, 12, 16`; a value off this list needs a token.
-- **Radius:** one `--radius` in `semantic.css`; `--radius-sm` to `--radius-4xl` derived from it
-  in `@theme inline` (shadcn's pattern). Changing the roundness of the whole app is one value.
-- **Elevation:** `--shadow-*: initial`, then `--shadow-raised` (cards), `--shadow-overlay`
-  (popovers, menus) and `--shadow-modal` (dialogs, sheets). Dark values may be stronger or replaced
-  by a border.
-- **Borders:** width `1px` everywhere; colour `border` or `input`.
+## Spacing, sizes, radius, elevation
+- **Spacing:** `--spacing: 0.25rem`, the design's 4 px base (`space-1` = `p-1` … `space-16` =
+  `p-16`). Side margins: `px-4` phone, `px-6` tablet, `px-12` desktop.
+- **Control sizes** (`--spacing-*`): `touch` 44 px (`min-h-touch`), `control` 48 px (`h-control`),
+  `control-sm` 36 px, `fab` 56 px (`size-fab`).
+- **Radius:** the design's fixed scale, `sm` 8 px, `md` 14 px (fields, alerts), `lg` 20 px (cards,
+  dialogs), `xl` 28 px (main card, bottom sheet), `full` (buttons, badges, chips).
+- **Elevation:** flat by default (cards use `border`). `shadow-float` (floating button, menus,
+  toasts) and `shadow-dialog` (dialogs, bottom sheet) only, from the `--elevation-*` values of each
+  theme.
+- **Borders:** `1px` for cards and fields, `2px` for focus and errors.
 
 ## Motion and layers
 Tailwind has no duration or z-index namespace, so these are `:root` variables with one `@utility`
@@ -94,8 +106,9 @@ each (`@utility duration-fast { transition-duration: var(--duration-fast) }`).
 `prefers-reduced-motion: reduce` sets every duration to `0ms` in `@layer base` (RNF-A11Y-6).
 
 ## Breakpoints
-`--breakpoint-*: initial`, then `md` 768 px, `lg` 1024 px, `xl` 1280 px. The base styles are the
-360 px layout (mobile first, RNF-RESP-1), so there is no `sm`. Container queries (`@container`)
+`--breakpoint-*: initial`, then `md` 768 px (`bp-tablet`), `lg` 1024 px (`bp-desktop`: sidebar
+instead of the bottom bar) and `xl` 1280 px (`bp-wide`). The base styles are the 360 px layout
+(mobile first, RNF-RESP-1), so there is no `sm`. Container queries (`@container`)
 are preferred for components that live in both the sidebar and the main column.
 
 ## Dark mode
@@ -103,9 +116,12 @@ are preferred for components that live in both the sidebar and the main column.
   expects.
 - **No flash, no inline script (RNF-SEC-6):** `public/theme-init.js`, a classic synchronous script
   loaded at the top of `<head>` with `<script src="/theme-init.js">` (allowed by
-  `script-src 'self'`). It reads the device choice (`localStorage` key `theme`: `light`, `dark` or
-  absent = follow the system, RF-AUTH-16 stores it on the device only), applies `.dark`, and sets
+  `script-src 'self'`). It reads the device choice (`localStorage` key `theme`: `dark`, `system`,
+  or `light`/absent; RF-AUTH-16 stores it on the device only), applies `.dark`, and sets
   `color-scheme`. This is the only file in `public/` with logic.
+- **The app always opens in the light theme**, even when the system is dark (design decision,
+  RNF-RESP-3). Dark applies only when the person picks "Escuro", or "Automático" with a dark
+  system. Account screens are always light.
 - The `ThemeProvider` (`app/`) writes the choice and follows system changes; nothing else touches
   the class.
 - `color-scheme: light` in `:root` and `dark` in `.dark`, so native controls and scrollbars match.
@@ -124,7 +140,7 @@ are preferred for components that live in both the sidebar and the main column.
 Accounts and categories store a user-chosen colour as `#RRGGBB` (`ledger.schemas.ts`). It is data,
 not a token:
 - the picker offers only the choices in `styles/account-colors.ts`, picked to read on both themes
-  and checked by `check:contrast` as a dot on `background` and `card`;
+  and checked by `check:contrast` as a dot on `bg-page` and `bg-surface`;
 - it is drawn only as a swatch, dot or icon tint, never as a background behind text;
 - it reaches the DOM only through the `--data-color` custom property set by `ColorSwatch` and
   `CategoryIcon`, the two components allowed a `style` prop.
@@ -133,7 +149,7 @@ not a token:
 | Check | Fails on | Where |
 |---|---|---|
 | `pnpm lint:tokens` (`scripts/check-tokens.mjs`) | In `apps/web/src` TS/TSX outside `styles/`: hex, `rgb(`, `hsl(`, `oklch(`; arbitrary values `-[…]` and `[prop:value]` (arbitrary variants like `[&_svg]:` are allowed); classes of the scales we reset, which Tailwind drops **silently** (default palette `-(slate\|gray\|red\|…)-\d{2,3}`, `-black`, `-white`, `text-3xl` and up, `shadow-xs…2xl`, the `sm:` and `2xl:` breakpoints); numeric `z-<n>` and `duration-<n>`; `style=` outside the allowed components | `pnpm check`, pre-commit, CI |
-| `pnpm check:contrast` (`scripts/check-contrast.mjs`, culori) | A declared pair below its minimum in light or dark: text on surfaces ≥ 4.5:1, `-foreground` on its role ≥ 4.5:1, `border`/`ring`/chart series on `background` ≥ 3:1; translucent tokens are blended over their surface first | `pnpm check`, CI |
+| `pnpm check:contrast` (`scripts/check-contrast.mjs`, culori) | A declared pair below its minimum in light or dark: the pairs the design's token notes promise (`ink-muted` on `bg-page`, `bg-surface`, `bg-sunken` ≥ 5.4:1; a role on its `-soft`; `on-mint` on `mint`…), text ≥ 4.5:1, `border-control`, `focus-ring` and chart series on `bg-surface` ≥ 3:1 | `pnpm check`, CI |
 | `lint:tokens` on `components/ui` | Same rules; a `shadcn add` that brings `bg-black/50`, `text-white` or `ring-[3px]` is fixed to tokens in the same PR | as above |
 
 The pairs checked live in the script, next to the reason for each minimum (WCAG 2.2 1.4.3 and
@@ -141,8 +157,9 @@ The pairs checked live in the script, next to the reason for each minimum (WCAG 
 
 ## Adding or changing a token
 1. Is there a role for it already? Reuse it. A new hue for one screen is not a token.
-2. Add the palette value (if new), the role in `:root` **and** `.dark`, and its `@theme inline`
-   line. A role used as a background gets `-foreground` too.
+2. Add it to the design system first (it is where roles are decided), then port it: the base role
+   in `:root` **and** `.dark` (or an alias), and its `@theme inline` line. A role used as a filled
+   background gets its `on-` role too.
 3. Add its pairs to `check-contrast.mjs` and run `pnpm check:contrast`.
 4. Show it in the workbench (`/dev/components` → Tokens).
 5. Same PR: update this file if a group or rule changed.

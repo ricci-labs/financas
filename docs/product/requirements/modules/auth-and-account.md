@@ -1,7 +1,7 @@
 ---
 summary: Functional requirements for log in, sign-up, email verification, password reset and change, invitations answered by the invitee, session handling, and my account (profile, preferences, notification settings).
 read_when: Designing or building AUTH-*, INV-01 or ME-01, or anything about sessions and login.
-updated: 2026-09-29
+updated: 2026-10-01
 ---
 
 # Auth and my account
@@ -193,6 +193,7 @@ is enabled when the value changed; success toast "Preferências salvas." Error
 e-mail, when the WhatsApp channel exists), "Avisar quando um orçamento chegar a {80}%", "Resumo
 diário", "Sugerir divisão quando entrar comissão". They appear when their feature exists.
 
-**RF-AUTH-16 Theme** ("Tema": "Automático", "Claro", "Escuro"), stored on the device only.
+**RF-AUTH-16 Theme** ("Tema": "Claro" (default), "Escuro", "Automático"), stored on the device
+only. "Automático" follows the system; nothing follows it by default (RNF-RESP-3).
 
 **RF-AUTH-17 Sessions** (Later): list and end sessions on other devices. No API yet.

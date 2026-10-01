@@ -1,7 +1,7 @@
 ---
 summary: Non-functional requirements of the web app (RNF-*) — security, privacy, performance, accessibility, responsiveness and PWA, locale and formatting, reliability, compatibility and quality.
 read_when: Designing the design system, building the web shell, choosing a library, or reviewing a screen before merge.
-updated: 2026-09-29
+updated: 2026-10-01
 ---
 
 # Non-functional requirements
@@ -68,7 +68,9 @@ Target: WCAG 2.2 level AA.
 1. Designed first at 360 px wide; breakpoints for tablet (≥ 768 px) and desktop (≥ 1024 px).
    Nothing scrolls sideways except tables that say so.
 2. Installable PWA (manifest, icons, standalone display), respecting the phone's safe areas.
-3. Light and dark themes, following the system by default, with a manual choice in `ME-01`.
+3. Light and dark themes. The app **always opens in the light theme**, even when the system is
+   dark; dark only by the person's choice in `ME-01` ("Escuro", or "Automático" with a dark
+   system). Account screens are always light (design decision, 2026-10-01).
 4. Forms show the right mobile keyboard (`inputmode="decimal"` for money, `"email"`, `"tel"`).
 
 ## Locale and formatting (RNF-I18N)

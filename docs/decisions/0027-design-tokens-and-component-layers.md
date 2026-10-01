@@ -6,7 +6,7 @@ updated: 2026-10-01
 
 # 0027. Design tokens in CSS, components in layers
 
-- **Status:** Accepted
+- **Status:** Accepted (token tiers amended by 0028)
 - **Date:** 2026-10-01
 
 ## Context
