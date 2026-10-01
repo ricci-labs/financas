@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@financas/shared": "workspace:*",
-    "hono": "^4.13.8",
+    "hono": "^4.13.9",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
