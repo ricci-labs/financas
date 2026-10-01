@@ -28,6 +28,7 @@ Self-hosted on a small headless Debian homelab, deployed with Dokploy.
 - **The LLM never touches the database.** It only calls tools, and each tool calls one service. Every write goes through a confirmation step (`docs/integrations/ai-agent.md`).
 - Modules talk to each other only through their `index.ts`. Only the owning service imports a repository. Full list: `docs/architecture/dependency-rules.md`.
 - Dates follow `America/Sao_Paulo`. Take "now" from `core/clock.ts`, never `new Date()` inside business logic.
+- **Web: one source for every visual value and component part.** Colours, fonts, sizes, shadows and motion only as tokens in `apps/web/src/styles/tokens/`; no raw or arbitrary values in components. Each shared component owns one folder (component, `.variants.ts`, `.types.ts`, `.messages.ts`, `.examples.tsx`, tests); features never import `components/ui` (`docs/architecture/web-design-tokens.md` and `docs/architecture/web-components.md`, ADR 0027).
 - The server has ~5 GB free RAM and 4 cores. Add no new process, container or heavy dependency without asking.
 
 ## Workflow

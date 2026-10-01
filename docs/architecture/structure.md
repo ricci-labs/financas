@@ -1,7 +1,7 @@
 ---
 summary: The intended folder tree for the whole monorepo, with the role of every folder and file type.
 read_when: Creating files or folders, or deciding where a piece of code belongs.
-updated: 2026-09-29
+updated: 2026-10-01
 ---
 
 # Project structure
@@ -215,32 +215,40 @@ modules/ledger/
 - If a module holds two concepts that feel separate, it is two modules (that's how `access` split from `workspaces`), not extra files inside one.
 
 ## apps/web
+Rules for each layer: `web-application.md` (routes, data), `web-components.md` (components),
+`web-design-tokens.md` (styles). Import rules: `dependency-rules.md` → Web.
 
 ```
-index.html
-vite.config.ts               # react, @tailwindcss/vite, tanstack router, pwa
+index.html                   # theme-init.js first in <head>, two theme-color metas, no inline script
+vite.config.ts               # react (+ React Compiler), @tailwindcss/vite, tanstack router, pwa
 components.json              # shadcn config
-public/                      # PWA icons
+public/                      # PWA icons, theme-init.js (the only file here with logic)
 src/
 ├── main.tsx
-├── app/{providers.tsx,router.ts}
-├── routes/                  # TanStack file-based routes; THIN, they only compose features
-│   ├── __root.tsx           # shell: sidebar / mobile bottom nav
-│   ├── index.tsx            # dashboard
-│   ├── transactions.tsx     # list with search params (?month=2026-09&category=...)
-│   ├── cards/{index.tsx,$cardId.tsx}
-│   ├── budget.tsx  login.tsx  settings.tsx
-├── features/<name>/         # dashboard, transactions, cards, budgets, incomes, auth
-│   ├── api/                 # TanStack Query hooks over the hc client; the only backend access
-│   ├── components/
+├── app/                     # providers.tsx, router.ts, theme-provider.tsx
+├── routes/                  # TanStack file-based routes; THIN, they only wire features
+│   ├── __root.tsx
+│   ├── (public)/            # login, signup, verify-email, forgot-password, reset-password, invite
+│   ├── _app.tsx             # session guard + AppShell
+│   ├── _app/w/$workspaceId/ # route.tsx (workspace + permissions), entries/, cards/, planning/...
+│   └── dev/components.tsx   # workbench, development only
+├── features/<feature>/      # auth, workspace, dashboard, entries, accounts, cards, planning, contacts...
+│   ├── api/                 # <feature>.queries.ts + use-<verb>-<noun>.ts; the only backend access
+│   ├── components/          # the feature's pages and parts
 │   ├── hooks/
-│   ├── <feature>.types.ts   # exported types of the feature
+│   ├── <feature>.messages.ts
+│   ├── <feature>.schemas.ts # search params and UI-only schemas (request bodies come from shared)
+│   ├── <feature>.types.ts
 │   └── index.ts             # what routes may import
 ├── components/
-│   ├── ui/                  # shadcn generated; edit only with a reason
-│   └── layout/              # Sidebar, MobileNav, PageHeader, MonthPicker
-├── lib/{api-client.ts,query-client.ts,utils.ts}
+│   ├── ui/                  # shadcn primitives, close to upstream; only layer 2 imports them
+│   └── <family>/<component>/ # design system: actions, inputs, forms, feedback, display, charts,
+│                            # navigation, layout, finance, icons; one folder and file set each
+├── lib/                     # api-client, api/unwrap, query-client, query-keys, errors/, format/,
+│                            # permissions, link-token, tokens, cn
 ├── hooks/                   # generic hooks only
-├── config/
-└── styles/globals.css       # @import "tailwindcss"; theme tokens
+└── styles/
+    ├── globals.css          # imports + @layer base
+    ├── tokens/              # palette.css, semantic.css, theme.css: the only home of visual values
+    └── account-colors.ts    # the colour picker's choices
 ```
