@@ -23,11 +23,16 @@ Read first: `docs/engineering/git-workflow.md`. One concern per PR, around 400 c
    - every workspace route declares a permission; tenant queries run in `withWorkspace()`;
    - new env var → `env.schemas.ts`, `.env.example` with a comment line, `deploy.md`;
    - operator text in English, app-user text in pt-BR;
-   - no real household data anywhere.
+   - no real household data anywhere;
+   - web: token classes only, no user-facing literal in `.tsx`, each shared component in its folder
+     with the full file set, features import `components/<family>/…` (never `components/ui`), routes
+     only wire (`docs/architecture/web-components.md`, `web-application.md`).
 4. **Prove the tests protect what they claim.** For each DB rule, security check or limit you added,
    remove it (or break the condition), run the test, see it go red, restore it. Say in the PR which
    mutations you ran and what caught them.
-5. **Run it for real** when behavior is user-visible: boot the API (`pnpm exec tsx
+5. **Run it for real** when behavior is user-visible. Web: build, open the page in Chromium at
+   360 px and desktop, light and dark (theme stored as `light` / `dark`), and look at the
+   screenshots. API: boot the API (`pnpm exec tsx
    --env-file-if-exists=../../.env src/main.ts` in `apps/api`) and exercise the routes with `curl`, or
    run the ops command. Remove any test data you created.
 6. **Docs in the same PR** for every behavior, rule or structure change; bump `updated:`.
