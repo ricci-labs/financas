@@ -1,7 +1,7 @@
 ---
 summary: Phases, MVP scope, current focus and the list of open questions.
 read_when: Deciding what to build next, checking whether something is in scope, or resuming work in a new session.
-updated: 2026-09-29
+updated: 2026-10-01
 ---
 
 # Roadmap
@@ -140,7 +140,22 @@ updated: 2026-09-29
   `simulate_purchase` ("posso comprar?", built in #85, decided 2026-09-26), next to `period_overview`.
 - [x] DB: contacts/charges, planning, support tables
 - [x] Observability core (metrics, error fingerprints and refs), Dockerfile, deploy workflow
-- [ ] Web foundation: TanStack Router/Query, shadcn/ui, layout
+- [ ] **Web foundation** (approved 2026-10-01). Standards first (ADR 0027,
+  `../architecture/web-application.md`, `../architecture/web-components.md`,
+  `../architecture/web-design-tokens.md`); their checks land before the first screen. One PR each:
+  1. [ ] Standards docs (ADR 0027 + the three web docs)
+  2. [ ] Web tests: Vitest browser mode (Chromium), axe helper, web tests in `pnpm check` and CI
+  3. [ ] Tokens: `styles/tokens/` with placeholder values until the Claude Design system, the font,
+     dark mode without inline script, shadcn init (Base UI), `cn`
+  4. [ ] Web checks: `lint:tokens`, `lint:copy`, `check:contrast`, web file roles, depcruise web
+     rules 5–8; the existing status badge migrated
+  5. [ ] Claude Code: web checks in the hooks; `new-component` and `new-feature` skills
+  6. [ ] React Compiler and Biome's React rules
+  7. [ ] Router + Query + `unwrap`/`ApiError`, error messages map, guards, empty app shell
+  8. [ ] Workbench `/dev/components` with the Tokens page
+  9. [ ] The API serves the SPA (cache headers, SPA fallback, CSP) and the image ships it
+  10. [ ] PWA (shell precache, update toast) and `check:bundle`
+  Then the screens, in the order of `requirements/README.md`, starting with `AUTH-01`.
 - [ ] Remaining project skills (`new-module`, `db-migration`, `domain-rule`, `pr`) and Claude Code hooks
 
 ## Phase 1: MVP

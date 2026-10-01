@@ -1,7 +1,7 @@
 ---
 summary: Index of Architecture Decision Records (ADRs) and the template for new ones.
 read_when: Checking why something was chosen, before proposing to change a past choice, or when recording a new decision.
-updated: 2026-09-26
+updated: 2026-10-01
 ---
 
 # Decisions (ADRs)
@@ -34,6 +34,7 @@ updated: 2026-09-26
 | 0024 | [Metrics and insights over period facts](0024-metrics-and-insights-over-period-facts.md) | Accepted |
 | 0025 | [Cross-workspace jobs without a bypass role](0025-cross-workspace-jobs-without-bypass.md) | Accepted |
 | 0026 | [Audit log written by services, with an operation context](0026-audit-log-with-operation-context.md) | Accepted |
+| 0027 | [Design tokens in CSS, components in layers](0027-design-tokens-and-component-layers.md) | Accepted |
 
 ## Rules
 - ADRs are append-only. To change a decision, write a new ADR that supersedes the old one and set the old one to `Superseded by NNNN`.

@@ -1,7 +1,7 @@
 ---
 summary: Allowed and forbidden import directions across packages, layers and modules; enforced by dependency-cruiser.
 read_when: Adding an import that crosses a module, layer or package boundary.
-updated: 2026-09-27
+updated: 2026-10-01
 ---
 
 # Dependency rules
@@ -44,12 +44,19 @@ routes / agent tools / jobs / channels
 | 9 | Every DB access runs through `core/db/tx.ts` with a workspace set, except global tables (`users`...) and the narrow lookups of ADRs 0019 and 0025 (jobs list workspace ids, then work per workspace) | Tenant isolation (ADR 0012) |
 
 ## Web
-| # | Rule |
-|---|---|
-| 1 | Flow is `shared (components, hooks, lib) → features → routes`. Never the reverse. |
-| 2 | A feature never imports another feature. Routes compose features. |
-| 3 | Only `features/*/api/` calls the backend (through `lib/api-client.ts`). |
-| 4 | `components/ui` (shadcn) never imports from features. |
+Layers: `web-components.md` → Layers. Rules 1–4 are enforced by depcruise today; rules 5–8 are
+added to `.dependency-cruiser.cjs` with the web foundation.
+
+| # | Rule | Why |
+|---|---|---|
+| 1 | Flow is `lib, hooks, styles → components → features → routes`. Never the reverse | Shared code can't depend on a screen |
+| 2 | A feature never imports another feature. Routes compose features | Features stay replaceable; shared parts move to `components/` |
+| 3 | Only `features/*/api/` calls the backend (through `lib/api-client.ts`) | One place per feature knows the API |
+| 4 | `components/` never imports from `features/` or `routes/` | The design system has no screen knowledge |
+| 5 | Only `components/<family>/` imports `components/ui/` | Features see one import surface; primitives can change under it |
+| 6 | From outside a component folder, import only its `index.ts`; from outside a feature, only its `index.ts` | Public surface, like API modules |
+| 7 | `routes/` imports features and `components/<family>/` only (plus the router) | Routes stay thin |
+| 8 | Only `lib/api-client.ts` imports `hono/client`; the web imports only `type` from `apps/api` | Rule 3, and no API runtime in the bundle |
 
 ## Allowed cross-module calls (keep this list current)
 | Caller | Callee | Reason |

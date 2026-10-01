@@ -1,7 +1,7 @@
 ---
 summary: Index of all project docs, with when to read each one, plus the rules for writing docs.
 read_when: Start of any task. Pick only the files the task needs.
-updated: 2026-09-29
+updated: 2026-10-01
 ---
 
 # Docs index
@@ -27,6 +27,9 @@ updated: 2026-09-29
 | `architecture/structure.md` | Creating files or folders, or deciding where code goes |
 | `architecture/dependency-rules.md` | Adding an import across modules or layers |
 | `architecture/conventions.md` | Writing code: naming, money, dates, errors, tests, migrations |
+| `architecture/web-application.md` | Web: routes and guards, server data, API errors, permissions, PWA, SPA serving, bundle budget |
+| `architecture/web-components.md` | Web: creating or using any component, forms, icons, copy, workbench, component tests |
+| `architecture/web-design-tokens.md` | Web: any colour, font, size, shadow, motion or theme; the checks that keep raw values out |
 | `integrations/whatsapp.md` | Working on the Baileys connection, message intake or sending |
 | `integrations/ai-agent.md` | Working on the Claude agent: tools, prompts, confirmation, cost |
 | `engineering/git-workflow.md` | Committing, branching, opening or merging a PR |

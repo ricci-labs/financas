@@ -1,7 +1,7 @@
 ---
 summary: Coding conventions — naming, money, dates, IDs, errors, validation, tests, migrations, commits.
 read_when: Writing or reviewing any code.
-updated: 2026-09-29
+updated: 2026-10-01
 ---
 
 # Conventions
@@ -51,6 +51,11 @@ without comments.
   pre-commit hook and CI) fails on any type declared outside a `.types.ts` file (except the rule
   above), a top-level Zod schema outside a `.schemas.ts` file, or a module file whose name isn't one
   of the module roles (`structure.md` → Module anatomy).
+- **Web file roles** (`web-components.md`, `web-application.md`): `<name>.variants.ts` (cva
+  recipes), `<name>.messages.ts` (pt-BR copy), `<name>.examples.tsx` (workbench examples),
+  `<feature>.queries.ts` (Query options), `use-<verb>-<noun>.ts` (one mutation or hook each). Types
+  and schemas follow the same `.types.ts` / `.schemas.ts` rule as everywhere. Visual values only in
+  `styles/tokens/` (`web-design-tokens.md`).
 - **One purpose per file.** A routes file holds thin handlers; limits, guards and other request policies are middleware in `<module>.middleware.ts`.
 - Each folder exposes its public surface through the package or module `index.ts`.
 

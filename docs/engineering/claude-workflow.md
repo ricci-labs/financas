@@ -1,7 +1,7 @@
 ---
 summary: How Claude works in this repo — project skills, Claude Code hooks, and the standard loop for a change.
 read_when: Starting any development task, creating or editing a skill or hook, or when unsure which procedure to follow.
-updated: 2026-09-25
+updated: 2026-10-01
 ---
 
 # Claude workflow
@@ -25,6 +25,8 @@ Skills encode repeatable procedures so they come out the same way every time.
 | `db-migration` | planned (needs scaffold) | Edit table → `drizzle-kit generate` → SQL review checklist → stop and ask on destructive changes |
 | `domain-rule` | planned (needs scaffold) | Example in the domain doc → failing test → implementation → docs |
 | `pr` | ✅ available | Runs every check, reviews the diff against the conventions, proves new rules can fail, writes the PR from the template, waits for CI, merges when authorized |
+| `new-component` | planned (web foundation 5) | Creates a design-system component: shadcn primitive if needed, the folder and file set, the `cva` recipe, examples for every state of the brief, browser tests with axe, the workbench entry (`../architecture/web-components.md`) |
+| `new-feature` | planned (web foundation 5) | Creates a web feature from a screen spec: folder, query options and mutation hooks, messages, thin route with guard and loader, every state of the spec, tests (`../architecture/web-application.md`) |
 | `investigate` | planned (needs observability code) | The bug-investigation playbook from `../operations/runbook.md`, using the `ops:*` scripts |
 
 Rules for skills:
@@ -43,6 +45,11 @@ is fixed in the same step that introduced it.
 | `Stop` | `check-changed-files.mjs` | Runs the same checks on every `.ts`/`.tsx` file changed since `origin/main`, including files written through Bash, which the edit hook can't see. A problem stops Claude from finishing the turn until it's fixed (one retry, then it reports). |
 | `PreToolUse` (Edit/Write/MultiEdit) | `guard.mjs` | Denies edits to `.env` files (`.env.example` is fine) and to committed migrations in `apps/api/drizzle/`. |
 | `PreToolUse` (Bash) | `guard.mjs` | Denies `--no-verify` and `git commit -n` (hooks can't be skipped), and a force push to `main`. |
+
+**Planned for the web (web foundation 5):** the edit hook also runs `lint:tokens` and `lint:copy`
+on files under `apps/web/src`, and `check:contrast` when a file in `styles/tokens/` changes; the
+Stop hook runs the same over the changed files; `guard.mjs` denies edits to the generated
+`routeTree.gen.ts`.
 
 Hooks load when a session starts. After changing them, open `/hooks` once or restart Claude Code.
 
