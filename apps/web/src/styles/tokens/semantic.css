@@ -1,0 +1,162 @@
+:root {
+  color-scheme: light;
+
+  --background: var(--neutral-0);
+  --foreground: var(--neutral-950);
+  --card: var(--neutral-0);
+  --card-foreground: var(--neutral-950);
+  --popover: var(--neutral-0);
+  --popover-foreground: var(--neutral-950);
+  --primary: var(--neutral-900);
+  --primary-foreground: var(--neutral-50);
+  --secondary: var(--neutral-100);
+  --secondary-foreground: var(--neutral-900);
+  --muted: var(--neutral-100);
+  --muted-foreground: var(--neutral-600);
+  --accent: var(--neutral-100);
+  --accent-foreground: var(--neutral-900);
+  --destructive: var(--red-700);
+  --destructive-foreground: var(--neutral-0);
+  --destructive-muted: var(--red-100);
+  --border: var(--neutral-200);
+  --input: var(--neutral-200);
+  --ring: var(--neutral-400);
+
+  --income: var(--green-700);
+  --income-foreground: var(--neutral-0);
+  --income-muted: var(--green-100);
+  --expense: var(--red-700);
+  --expense-foreground: var(--neutral-0);
+  --expense-muted: var(--red-100);
+  --transfer: var(--neutral-600);
+  --transfer-foreground: var(--neutral-0);
+  --transfer-muted: var(--neutral-100);
+
+  --success: var(--green-700);
+  --success-foreground: var(--neutral-0);
+  --success-muted: var(--green-100);
+  --warning: var(--amber-800);
+  --warning-foreground: var(--neutral-0);
+  --warning-muted: var(--amber-100);
+  --info: var(--blue-700);
+  --info-foreground: var(--neutral-0);
+  --info-muted: var(--blue-100);
+
+  --chart-1: var(--blue-700);
+  --chart-2: var(--green-700);
+  --chart-3: var(--amber-800);
+  --chart-4: var(--red-700);
+  --chart-5: var(--neutral-500);
+  --chart-grid: var(--neutral-200);
+  --chart-zero-line: var(--neutral-600);
+
+  --sidebar: var(--neutral-50);
+  --sidebar-foreground: var(--neutral-950);
+  --sidebar-primary: var(--neutral-900);
+  --sidebar-primary-foreground: var(--neutral-50);
+  --sidebar-accent: var(--neutral-100);
+  --sidebar-accent-foreground: var(--neutral-900);
+  --sidebar-border: var(--neutral-200);
+  --sidebar-ring: var(--neutral-400);
+
+  --radius: 0.625rem;
+
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+  --duration-slow: 320ms;
+
+  --z-sticky: 10;
+  --z-overlay: 40;
+  --z-modal: 50;
+  --z-toast: 60;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --background: var(--neutral-950);
+  --foreground: var(--neutral-50);
+  --card: var(--neutral-900);
+  --card-foreground: var(--neutral-50);
+  --popover: var(--neutral-900);
+  --popover-foreground: var(--neutral-50);
+  --primary: var(--neutral-200);
+  --primary-foreground: var(--neutral-900);
+  --secondary: var(--neutral-800);
+  --secondary-foreground: var(--neutral-50);
+  --muted: var(--neutral-800);
+  --muted-foreground: var(--neutral-400);
+  --accent: var(--neutral-800);
+  --accent-foreground: var(--neutral-50);
+  --destructive: var(--red-400);
+  --destructive-foreground: var(--neutral-950);
+  --destructive-muted: var(--red-950);
+  --border: var(--white-alpha-10);
+  --input: var(--white-alpha-15);
+  --ring: var(--neutral-500);
+
+  --income: var(--green-400);
+  --income-foreground: var(--neutral-950);
+  --income-muted: var(--green-950);
+  --expense: var(--red-400);
+  --expense-foreground: var(--neutral-950);
+  --expense-muted: var(--red-950);
+  --transfer: var(--neutral-400);
+  --transfer-foreground: var(--neutral-950);
+  --transfer-muted: var(--neutral-800);
+
+  --success: var(--green-400);
+  --success-foreground: var(--neutral-950);
+  --success-muted: var(--green-950);
+  --warning: var(--amber-400);
+  --warning-foreground: var(--neutral-950);
+  --warning-muted: var(--amber-950);
+  --info: var(--blue-400);
+  --info-foreground: var(--neutral-950);
+  --info-muted: var(--blue-950);
+
+  --chart-1: var(--blue-400);
+  --chart-2: var(--green-400);
+  --chart-3: var(--amber-400);
+  --chart-4: var(--red-400);
+  --chart-5: var(--neutral-400);
+  --chart-grid: var(--neutral-800);
+  --chart-zero-line: var(--neutral-400);
+
+  --sidebar: var(--neutral-900);
+  --sidebar-foreground: var(--neutral-50);
+  --sidebar-primary: var(--blue-700);
+  --sidebar-primary-foreground: var(--neutral-50);
+  --sidebar-accent: var(--neutral-800);
+  --sidebar-accent-foreground: var(--neutral-50);
+  --sidebar-border: var(--white-alpha-10);
+  --sidebar-ring: var(--neutral-500);
+}
+
+:root {
+  --danger: var(--destructive);
+  --danger-foreground: var(--destructive-foreground);
+  --danger-muted: var(--destructive-muted);
+
+  --status-pending: var(--warning);
+  --status-pending-foreground: var(--warning-foreground);
+  --status-pending-muted: var(--warning-muted);
+  --status-overdue: var(--danger);
+  --status-overdue-foreground: var(--danger-foreground);
+  --status-overdue-muted: var(--danger-muted);
+  --status-paid: var(--success);
+  --status-paid-foreground: var(--success-foreground);
+  --status-paid-muted: var(--success-muted);
+  --status-partially-paid: var(--info);
+  --status-partially-paid-foreground: var(--info-foreground);
+  --status-partially-paid-muted: var(--info-muted);
+  --status-cancelled: var(--transfer);
+  --status-cancelled-foreground: var(--transfer-foreground);
+  --status-cancelled-muted: var(--transfer-muted);
+  --status-skipped: var(--transfer);
+  --status-skipped-foreground: var(--transfer-foreground);
+  --status-skipped-muted: var(--transfer-muted);
+  --status-matched: var(--success);
+  --status-matched-foreground: var(--success-foreground);
+  --status-matched-muted: var(--success-muted);
+}

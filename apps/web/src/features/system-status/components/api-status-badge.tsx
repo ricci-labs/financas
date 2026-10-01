@@ -2,9 +2,9 @@ import { useApiStatus } from '@web/features/system-status/api/use-api-status'
 import type { ApiStatus } from '@web/features/system-status/system-status.types'
 
 const BADGE_STYLES: Record<ApiStatus['state'], string> = {
-  checking: 'bg-slate-100 text-slate-600',
-  online: 'bg-emerald-100 text-emerald-700',
-  offline: 'bg-rose-100 text-rose-700',
+  checking: 'bg-muted text-muted-foreground',
+  online: 'bg-success-muted text-success',
+  offline: 'bg-danger-muted text-danger',
 }
 
 function describe(status: ApiStatus): string {

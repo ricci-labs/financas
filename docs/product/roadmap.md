@@ -143,9 +143,9 @@ updated: 2026-10-01
 - [ ] **Web foundation** (approved 2026-10-01). Standards first (ADR 0027,
   `../architecture/web-application.md`, `../architecture/web-components.md`,
   `../architecture/web-design-tokens.md`); their checks land before the first screen. One PR each:
-  1. [ ] Standards docs (ADR 0027 + the three web docs)
+  1. [x] Standards docs (ADR 0027 + the three web docs) (#141)
   2. [ ] Web tests: Vitest browser mode (Chromium), axe helper, web tests in `pnpm check` and CI
-  3. [ ] Tokens: `styles/tokens/` with placeholder values until the Claude Design system, the font,
+  3. [x] Tokens: `styles/tokens/` with placeholder values until the Claude Design system, the font,
      dark mode without inline script, shadcn init (Base UI), `cn`
   4. [ ] Web checks: `lint:tokens`, `lint:copy`, `check:contrast`, web file roles, depcruise web
      rules 5–8; the existing status badge migrated
