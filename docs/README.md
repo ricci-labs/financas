@@ -38,6 +38,7 @@ updated: 2026-10-01
 | `operations/observability.md` | Adding logs, metrics or spans; alerts; observability upgrades |
 | `operations/runbook.md` | **Investigating any bug, error ref, alert or "not working"** |
 | `operations/deploy.md` | Deploying, env vars, backups, remote access |
+| `design/README.md` | **Building or changing any web screen or component**: design system, account screens, owl illustrations and motion, design decisions |
 | `product/requirements/README.md` | **Designing or building any web screen**: requirements per module, UI standards, error messages, design-system brief, API gaps |
 | `api/postman.md` | Testing the API with the Postman collection, or adding/changing a route (the collection must follow) |
 | `decisions/README.md` | Checking why something was chosen, or recording a new decision |

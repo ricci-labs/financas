@@ -1,0 +1,19 @@
+<!-- @dsCard group="Formulários" height=260 -->
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>MoneyInput</title>
+<style>body{margin:0;padding:20px;background:var(--bg-page)}</style></head>
+<body>
+<div class="fn-stack" style="max-width:360px">
+ <div class="fn-field">
+  <label class="fn-field__label" for="v">Valor <b>*</b></label>
+  <div class="fn-input fn-input--money"><span class="fn-input__affix">R$</span><input id="v" inputmode="decimal" value="87,50"></div>
+ </div>
+ <div class="fn-field">
+  <label class="fn-field__label" for="v2">Valor <b>*</b></label>
+  <div class="fn-input fn-input--money fn-input--error"><span class="fn-input__affix">R$</span><input id="v2" inputmode="decimal" value="0" aria-invalid="true"></div>
+  <div class="fn-field__error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Informe um valor maior que zero, como 25,90.</div>
+ </div>
+</div>
+</body>
+</html>
