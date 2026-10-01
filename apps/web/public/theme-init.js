@@ -1,6 +1,7 @@
 const THEME_STORAGE_KEY = 'theme'
 const DARK_THEME = 'dark'
 const LIGHT_THEME = 'light'
+const SYSTEM_THEME = 'system'
 const SYSTEM_PREFERS_DARK = '(prefers-color-scheme: dark)'
 
 function readStoredTheme() {
@@ -12,10 +13,10 @@ function readStoredTheme() {
 }
 
 function shouldUseDarkTheme(storedTheme) {
-  if (storedTheme === DARK_THEME || storedTheme === LIGHT_THEME) {
-    return storedTheme === DARK_THEME
+  if (storedTheme === SYSTEM_THEME) {
+    return window.matchMedia(SYSTEM_PREFERS_DARK).matches
   }
-  return window.matchMedia(SYSTEM_PREFERS_DARK).matches
+  return storedTheme === DARK_THEME
 }
 
 const usesDarkTheme = shouldUseDarkTheme(readStoredTheme())

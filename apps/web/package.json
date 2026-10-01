@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "@financas/shared": "workspace:*",
-    "@fontsource-variable/inter": "^5.3.0",
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource-variable/figtree": "^5.3.0",
     "cn": "^0.4.0",
     "hono": "^4.13.9",
     "react": "^19.3.0",

@@ -34,7 +34,8 @@ updated: 2026-10-01
 | 0024 | [Metrics and insights over period facts](0024-metrics-and-insights-over-period-facts.md) | Accepted |
 | 0025 | [Cross-workspace jobs without a bypass role](0025-cross-workspace-jobs-without-bypass.md) | Accepted |
 | 0026 | [Audit log written by services, with an operation context](0026-audit-log-with-operation-context.md) | Accepted |
-| 0027 | [Design tokens in CSS, components in layers](0027-design-tokens-and-component-layers.md) | Accepted |
+| 0027 | [Design tokens in CSS, components in layers](0027-design-tokens-and-component-layers.md) | Accepted (token tiers amended by 0028) |
+| 0028 | [Tokens follow the Twise design system](0028-tokens-follow-the-design-system.md) | Accepted |
 
 ## Rules
 - ADRs are append-only. To change a decision, write a new ADR that supersedes the old one and set the old one to `Superseded by NNNN`.
