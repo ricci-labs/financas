@@ -194,6 +194,13 @@ without comments.
 - For a DB rule (trigger, policy, constraint), prove the test can fail: disable the rule locally, see the test go red, re-enable.
 - **Races must be tested deterministically.** Firing concurrent calls and hoping they overlap passes by luck. Hold a lock from the owner connection (e.g. `lock table ... in exclusive mode`) so the racing calls queue up, wait for them with `waitForBlockedQueries()`, then release. Example: the invitation race test in `members.integration.test.ts`.
 - `pnpm test` never needs a database.
+- **Web:** `*.test.ts` runs in Node (pure logic); `*.test.tsx` runs in Chromium through Vitest
+  browser mode (`apps/web/vitest.config.ts`), with `vitest-browser-react`. Every component test file
+  ends with an `expectNoAccessibilityViolations()` check (`apps/web/src/testing/accessibility.ts`,
+  axe-core). Mock the network with `vi.spyOn(globalThis, 'fetch')`, never a real API.
+- Web tests need Chromium once per machine: `pnpm --filter @financas/web exec playwright install
+  --only-shell chromium`, plus its system libraries on Linux
+  (`sudo pnpm --filter @financas/web exec playwright install-deps chromium`).
 - The agent gets an eval set of real anonymized messages later (see `../integrations/ai-agent.md`).
 
 ## Migrations

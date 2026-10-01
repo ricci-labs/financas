@@ -19,6 +19,7 @@ logs/
 
 # test & coverage
 coverage/
+.vitest/
 
 # editors / OS
 .vscode/*

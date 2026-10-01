@@ -53,7 +53,7 @@ Node and pnpm live in `~/.local/share/pnpm/bin` (add it to `PATH` in non-login s
 | `pnpm db:up` / `db:down` / `db:reset` | Local Postgres 18 on 127.0.0.1:5433 (copy `.env.example` to `.env` once) |
 | `pnpm db:generate --name=x` / `pnpm db:migrate` | Generate a migration from `*.table.ts` changes (read the SQL!) / apply migrations |
 | `pnpm test:integration` | DB tests (`*.integration.test.ts`), needs `pnpm db:up` + migrations |
-| `pnpm test` | Vitest in every package |
+| `pnpm test` | Vitest in every package (web components run in Chromium; one-time setup in `docs/architecture/conventions.md` → Tests) |
 | `pnpm --filter @financas/shared test:watch` | Watch the domain tests |
 | `pnpm ops:create-user` | Create a verified user who owns a new workspace (interactive; password without echo) |
 | `pnpm ops:migrate` | Apply migrations with the runtime migrator (what the image entrypoint runs) |
