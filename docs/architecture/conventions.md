@@ -56,6 +56,10 @@ without comments.
   `<feature>.queries.ts` (Query options), `use-<verb>-<noun>.ts` (one mutation or hook each). Types
   and schemas follow the same `.types.ts` / `.schemas.ts` rule as everywhere. Visual values only in
   `styles/tokens/` (`web-design-tokens.md`).
+  `lint:file-roles` checks the names: files of `components/<family>/<component>/` are
+  `<component>.<role>` or `index.ts`; a feature's root holds `index.ts` and
+  `<feature>.<types|schemas|messages>.ts`; its `api/` holds `<feature>.queries.ts` and
+  `use-<verb>-<noun>.ts`.
 - **One purpose per file.** A routes file holds thin handlers; limits, guards and other request policies are middleware in `<module>.middleware.ts`.
 - Each folder exposes its public surface through the package or module `index.ts`.
 
