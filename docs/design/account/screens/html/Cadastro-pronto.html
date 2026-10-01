@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cadastro · pronto</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700..800&amp;family=Figtree:wght@400..700&amp;display=swap">
+<style>
+body{margin:0}
+.tw{min-height:844px;background:#f7f6f2;color:#17191c;font-family:'Figtree',ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
+.tw *{box-sizing:border-box}
+.tw-banner{display:flex;align-items:center;gap:12px;padding:12px 16px;background:#17191c;color:#f7f6f2;font-size:14px;line-height:20px;font-weight:500}
+.tw-layout{flex:1;display:flex;flex-direction:column}
+.tw-art{display:flex;flex-direction:column;gap:16px;padding:0;flex:1 1 0;min-height:160px;max-height:320px}
+.tw-logo{display:none;align-items:center;gap:8px;font-family:'Bricolage Grotesque',sans-serif;font-weight:750;font-size:24px;letter-spacing:-0.03em;color:#17191c;text-decoration:none}
+.tw-logo img{width:32px;height:32px}
+.tw-scene{display:flex;justify-content:center;align-items:flex-end;background:#80dca5;border-radius:0;height:100%;overflow:hidden;padding-top:24px}
+.tw-scene img{width:auto;height:100%;max-width:340px;object-fit:contain;object-position:center bottom}
+.tw-claim{display:none}
+.tw-main{display:flex;justify-content:center;padding:20px 16px 24px}
+.tw-form{width:100%;max-width:400px;display:flex;flex-direction:column;gap:16px}
+.tw-h1{margin:0;font-family:'Bricolage Grotesque',sans-serif;font-weight:750;font-size:30px;line-height:36px;letter-spacing:-0.02em}
+.tw-sub{margin:4px 0 0;font-size:14px;line-height:20px;color:#5b5f66;white-space:nowrap}
+.tw-req{margin:0;font-size:13px;line-height:18px;color:#5b5f66}
+.tw-field{display:flex;flex-direction:column;gap:8px}
+.tw-label{font-size:14px;line-height:20px;font-weight:600}
+.tw-label b{color:#b42318;margin-left:2px}
+.tw-input{display:flex;align-items:center;gap:8px;min-height:48px;padding:0 6px 0 16px;background:#ffffff;border:1px solid #8a877f;border-radius:14px;font-size:16px;line-height:24px}
+.tw-control{flex:1;min-width:0;height:46px;border:0;outline:0;background:transparent;color:#17191c;font:400 16px/24px 'Figtree',sans-serif;padding:0}
+.tw-control::placeholder{color:#676b72}
+.tw-control[type=password]{letter-spacing:0.12em}
+.tw-input.is-focus{border-color:#17191c;box-shadow:0 0 0 1px #17191c}
+.tw-input.is-error{border-color:#b42318;box-shadow:0 0 0 1px #b42318}
+.tw-input.is-readonly{background:#efede7;border-color:#e6e3dc}
+.tw-input.is-readonly .tw-control{color:#5b5f66}
+.tw-toggle{display:flex;align-items:center;gap:6px;min-height:44px;padding:0 10px;border:0;background:transparent;color:#5b5f66;font:600 14px/20px 'Figtree',sans-serif;border-radius:999px;cursor:pointer}
+.tw-error{display:flex;align-items:flex-start;gap:4px;margin:0;font-size:14px;line-height:20px;font-weight:500;color:#b42318}
+.tw-error svg{margin-top:1px;flex:none}
+.tw-row{display:flex;justify-content:flex-end;margin-top:-8px}
+.tw-link{display:inline-flex;align-items:center;min-height:44px;color:#1d7a4c;font-weight:600;font-size:15px;text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:4px}
+.tw-link.is-muted{color:#676b72;pointer-events:none}
+.tw-alert{display:flex;gap:12px;padding:12px 16px;border-radius:14px;font-size:14px;line-height:20px;color:#17191c}
+.tw-alert svg{flex:none;margin-top:1px}
+.tw-alert p{margin:0}
+.tw-alert .tw-alert-body{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.tw-alert.info{background:#e8eefc}.tw-alert.info svg{color:#2f58c7}
+.tw-alert.success{background:#e4f5ea}.tw-alert.success svg{color:#1a7a48}
+.tw-alert.warning{background:#fcf1d9}.tw-alert.warning svg{color:#94600a}
+.tw-alert.danger{background:#fbe9e6}.tw-alert.danger svg{color:#b42318}
+.tw-small-btn{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border-radius:999px;background:#ffffff;color:#17191c;font:600 14px/20px 'Figtree',sans-serif;border:1px solid #8a877f;text-decoration:none}
+.tw-actions{display:flex;flex-direction:column;gap:8px}
+.tw-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:48px;border:0;border-radius:999px;font:650 16px/24px 'Figtree',sans-serif;cursor:pointer}
+.tw-btn.primary{background:#17191c;color:#ffffff}
+.tw-btn.disabled{background:#efede7;color:#676b72;cursor:not-allowed}
+.tw-btn.loading{background:#33373d;color:#ffffff;cursor:progress}
+.tw-hint{margin:0;font-size:14px;line-height:20px;color:#5b5f66}
+.tw-foot{margin:4px 0 0;text-align:center;font-size:15px;line-height:22px;color:#5b5f66}
+.tw-spin{animation:tw-rotate 0.8s linear infinite}
+@keyframes tw-rotate{to{transform:rotate(360deg)}}
+.tw-help{margin:-2px 0 0;font-size:14px;line-height:20px;color:#5b5f66}
+.tw-text{margin:0;font-size:16px;line-height:24px;color:#5b5f66}
+.tw-text strong{color:#17191c;font-weight:600}
+.tw-stack{display:flex;flex-direction:column;gap:8px}
+.tw-tip{display:flex;gap:8px;align-items:flex-start;margin:0;font-size:14px;line-height:20px;color:#5b5f66}
+.tw-tip svg{flex:none;margin-top:1px}
+.tw-btn.secondary{background:#ffffff;color:#17191c;box-shadow:inset 0 0 0 1px #8a877f}
+.tw-btn.secondary.is-wait{background:#efede7;color:#676b72;box-shadow:none;cursor:not-allowed}
+.tw-divider{display:flex;align-items:center;gap:12px;margin:4px 0 0;font-size:14px;line-height:20px;font-weight:600;color:#5b5f66}
+.tw-divider::before,.tw-divider::after{content:"";flex:1;height:1px;background:#e6e3dc}
+@media (max-width:1023px){.tw-panel .tw-art{flex-grow:100}.tw-panel .tw-main{flex:1}.tw-panel .tw-form{flex:1}.tw-panel .tw-push{margin-top:auto}}
+.tw-busy{display:flex;align-items:center;gap:10px;margin:0;font-size:16px;line-height:24px;color:#5b5f66}
+@media (prefers-reduced-motion: reduce){.tw-spin{animation:none}}
+@media (min-width: 1024px){
+  .tw{min-height:900px}
+  .tw-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .tw-art{background:#80dca5;padding:40px 48px;justify-content:space-between;gap:24px;max-height:none;min-height:0}
+  .tw-logo{display:flex}
+  .tw-scene{background:transparent;height:auto;flex:1;border-radius:0;align-items:center;padding-top:0;min-height:0}
+  .tw-scene img{width:min(100%,520px);height:auto;max-width:none}
+  .tw-claim{display:flex;flex-direction:column;gap:12px;max-width:480px}
+  .tw-claim h2{margin:0;font-family:'Bricolage Grotesque',sans-serif;font-weight:750;font-size:44px;line-height:48px;letter-spacing:-0.02em;color:#17191c}
+  .tw-claim p{margin:0;font-size:17px;line-height:26px;color:#17191c}
+  .tw-main{align-items:center;padding:48px}
+}
+</style>
+</head>
+<body>
+<div class="tw">
+
+<div class="tw-layout">
+<aside class="tw-art">
+<a class="tw-logo" href="#"><img src="../../../assets/logo/twise-icone.svg" alt="">twise</a>
+<div class="tw-scene"><img src="../../../assets/corujas/coruja-cadastro.svg" alt=""></div>
+<div class="tw-claim"><h2>Leve, claro, a dois.</h2><p>Claro para os dois, leve para o bolso: o app que mostra quanto vocês ainda podem gastar no mês.</p></div>
+</aside>
+<main class="tw-main">
+<form class="tw-form" novalidate="">
+<div><h1 class="tw-h1">Criar sua conta</h1><p class="tw-sub">Leva menos de um minuto.</p></div>
+<div class="tw-field">
+<label class="tw-label" for="nome">Seu nome<b aria-hidden="true">*</b></label>
+<div class="tw-input "><input class="tw-control" id="nome" name="nome" type="text" autocomplete="name" required="" value="Member A" readonly=""></div>
+</div>
+<div class="tw-field">
+<label class="tw-label" for="email">E-mail<b aria-hidden="true">*</b></label>
+<div class="tw-input "><input class="tw-control" id="email" name="email" type="email" autocomplete="email" required="" value="member.a@exemplo.com" placeholder="nome@exemplo.com" readonly=""></div>
+</div>
+<div class="tw-field">
+<label class="tw-label" for="senha">Senha<b aria-hidden="true">*</b></label>
+<p class="tw-help" id="senha-ajuda">Use pelo menos 12 caracteres. Uma frase fácil de lembrar funciona bem.</p><div class="tw-input is-focus"><input class="tw-control" id="senha" name="senha" type="text" autocomplete="new-password" required="" value="café com pão de queijo" aria-describedby="senha-ajuda" readonly=""><button class="tw-toggle" type="button" aria-label="Ocultar senha" aria-pressed="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.9 4.2A10 10 0 0 1 12 4c6.4 0 10 8 10 8a17 17 0 0 1-2.2 3.2M6.6 6.6A17 17 0 0 0 2 12s3.6 8 10 8a10 10 0 0 0 5.4-1.6M2 2l20 20M14.1 14.1a3 3 0 0 1-4.2-4.2"></path></svg>Ocultar</button></div>
+</div>
+<div class="tw-actions"><button class="tw-btn primary" type="submit">Criar conta</button></div>
+<p class="tw-foot">Já tem conta? <a class="tw-link" href="#">Entrar</a></p>
+</form>
+</main>
+</div>
+</div>
+</body>
+</html>

@@ -41,6 +41,7 @@ where it's used.
 | `navigation/` | `BottomBar`, `Sidebar`, `TopBar`, `WorkspaceSwitcher`, `BackLink`, `Breadcrumb` |
 | `layout/` | `AppShell`, `Page`, `PageHeader`, `Section`, `Stack`, `Grid` |
 | `finance/` | `StatHero`, `InsightCard`, `InvoiceCard`, `EntryRow`, `OccurrenceRow`, `ContactRow`, `ChargePreview`, `AmountSplitEditor` |
+| `brand/` | `Logo`, `OwlScene` (the layered owl scenes and their motion), `AppSplash` |
 | `icons/` | The icon registries (see Icons) |
 
 `finance/` holds patterns with no data fetching: they take props and render. The feature passes

@@ -1,0 +1,28 @@
+<!-- @dsCard group="Ações" height=330 -->
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>Button</title>
+<style>body{margin:0;padding:20px;background:var(--bg-page)}.lbl{margin:0 0 6px;font:600 12px/16px var(--font-sans);color:var(--ink-muted);text-transform:uppercase;letter-spacing:.04em}.phone{width:320px;height:640px;border-radius:36px;overflow:hidden;border:1px solid var(--border);background:var(--bg-page);flex:none}</style></head>
+<body>
+<div class="fn-stack">
+ <div class="fn-row">
+  <button class="fn-btn fn-btn--primary">Salvar lançamento</button>
+  <button class="fn-btn fn-btn--secondary">Cancelar</button>
+  <button class="fn-btn fn-btn--tertiary">Ver fatura</button>
+  <button class="fn-btn fn-btn--danger">Remover membro</button>
+ </div>
+ <div class="fn-row">
+  <button class="fn-btn fn-btn--primary" aria-disabled="true">Entrar</button>
+  <button class="fn-btn fn-btn--primary fn-btn--loading" aria-disabled="true" aria-busy="true"><span class="fn-btn__spinner"></span>Entrando…</button>
+  <button class="fn-btn fn-btn--wait" aria-disabled="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Reenviar em 52 s</button>
+  <button class="fn-btn fn-btn--secondary fn-btn--sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Adicionar cartão</button>
+  <button class="fn-fab" aria-label="Novo lançamento" title="Novo lançamento"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+ </div>
+ <div class="fn-row" style="background:var(--mint);padding:16px;border-radius:var(--radius-lg)">
+  <button class="fn-btn fn-btn--primary">Entrar<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+  <button class="fn-btn fn-btn--outline">Voltar para o login</button>
+  <button class="fn-btn fn-btn--wait" aria-disabled="true" style="background:var(--mint-soft)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Tente de novo em 39:48</button>
+ </div>
+</div>
+</body>
+</html>
