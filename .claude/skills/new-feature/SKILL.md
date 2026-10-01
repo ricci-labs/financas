@@ -5,7 +5,8 @@ description: Build a web feature or screen from its spec (docs/product/requireme
 
 # Build a web feature
 
-Read first: the screen's section in `docs/product/requirements/modules/<module>.md`,
+Read first: the screen's section in `docs/product/requirements/modules/<module>.md`, its design in
+`docs/design/` (the PNG and HTML of each state, `docs/design/README.md`),
 `docs/product/requirements/ui-standards.md`, `docs/architecture/web-application.md` and
 `docs/architecture/web-components.md`. Check the API gaps (`docs/product/requirements/api-gaps.md`)
 for the screen.

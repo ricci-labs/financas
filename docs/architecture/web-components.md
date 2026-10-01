@@ -113,8 +113,9 @@ React Hook Form v7 + `zodResolver` with the **schemas from `@financas/shared`** 
 - Read live values with `useWatch`, never `form.watch()` (it opts the component out of the React
   Compiler).
 - `SubmitButton` implements the button contract: disabled until valid (and dirty on edit forms)
-  with `aria-disabled`, the "Preencha X e Y para continuar." hint, the spinner, one request per
-  press.
+  with `aria-disabled` and no hint sentence (tapping it marks the missing fields and focuses the
+  first), the spinner with the gerund label, one request per press. Waiting is the `Button`'s
+  `waitUntil` prop (countdown that releases itself).
 - Server errors: `applyApiError(form, error)` (`lib/errors/`) puts a code with a field in the
   "Shown as" column of `../product/requirements/error-messages.md` under that field with `setError`, and the rest above the
   buttons.

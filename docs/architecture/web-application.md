@@ -22,7 +22,8 @@ their own, loaders stay in the main chunk as the docs advise).
 | Path (file) | Is |
 |---|---|
 | `__root.tsx` | `createRootRouteWithContext<RouterContext>()`; `RouterContext = { queryClient }` |
-| `(public)/login.tsx`, `signup`, `verify-email`, `forgot-password`, `reset-password`, `invite` | No session needed |
+| `_auth.tsx` + `_auth/login.tsx`, `signup`, `forgot-password`, `reset-password` | No session needed; the pathless `_auth` layout keeps the owl block mounted between them (`AuthLayout`) |
+| `verify-email.tsx`, `invite.tsx` | No session needed; moments (`MomentScreen`) |
 | `_app.tsx` | Pathless layout: session guard + `AppShell` |
 | `_app/index.tsx` | Picks the workspace (last used, or the switcher, or `WS-01`) |
 | `_app/w/$workspaceId/route.tsx` | Loads the workspace and the member's permissions; 404 → switcher |
@@ -38,7 +39,7 @@ their own, loaders stay in the main chunk as the docs advise).
 - Features never call `getRouteApi` or `useParams`; they get params as props, so a feature isn't
   tied to a route ID.
 - **Guards** run in `beforeLoad` through `context.queryClient.ensureQueryData`:
-  - `_app`: `meQueryOptions()`; no session → `redirect({ to: '/login', search: { redirect } })`;
+  - `_app`: `meQueryOptions()`; no session → `redirect({ to: '/login', search: { next } })`;
   - `w/$workspaceId`: the workspace (permissions); `WORKSPACE_NOT_FOUND` → the switcher;
   - each area: `requirePermission(context, 'entries', 'view')` (`lib/permissions.ts`); without it
     the route shows the no-permission state (`../product/requirements/ui-standards.md` → States).
@@ -73,7 +74,7 @@ their own, loaders stay in the main chunk as the docs advise).
 - **Global handling** (`QueryCache` and `MutationCache` `onError`):
   | Error | Does |
   |---|---|
-  | 401 `SESSION_REQUIRED` | `queryClient.clear()`, go to `/login?redirect=<here>` (RNF-SEC-3) |
+  | 401 `SESSION_REQUIRED` | `queryClient.clear()`, go to `/login?next=<here>` with "Sua sessão terminou. Entre de novo." (RNF-SEC-3) |
   | 403 `PERMISSION_DENIED` | Toast with its message; refetch the workspace's permissions |
   | `NetworkError` | The offline banner; writes disabled (RNF-REL-3) |
   | 5xx | The page or form shows "Algo deu errado…" with the `ref` |

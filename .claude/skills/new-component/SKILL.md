@@ -7,7 +7,8 @@ description: Create or extend a shared web component (apps/web/src/components/<f
 
 Read first: `docs/architecture/web-components.md` (layers, file set, props contract, forms),
 `docs/architecture/web-design-tokens.md` (the rule, roles), and the component's entry and states in
-`docs/product/requirements/design-system-brief.md`. Copy comes from the screen specs
+`docs/product/requirements/design-system-brief.md`, and its look in every state in
+`docs/design/design-system/components/<Name>/` (README + `preview.html`). Copy comes from the screen specs
 (`docs/product/requirements/`) and `ui-standards.md`.
 
 ## Steps

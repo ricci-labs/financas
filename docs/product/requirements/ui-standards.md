@@ -1,7 +1,7 @@
 ---
 summary: Rules every web screen follows — field and form validation, the button contract, feedback, loading/empty/error states, money and date inputs, permissions in the UI, destructive actions and how API errors become messages.
 read_when: Designing or building any form, button, list or screen, or reviewing one before merge.
-updated: 2026-09-29
+updated: 2026-10-01
 ---
 
 # UI standards
@@ -12,9 +12,11 @@ Every screen spec in `modules/` assumes these rules. A spec only says where it d
 **Every field of every form follows this, with no exception.**
 
 1. **Label:** always visible above the field, in pt-BR. Required fields are marked with "*" next to
-   the label, and the form starts with "* obrigatório". Optional fields are not marked "(opcional)",
-   unless most fields of that form are required.
-2. **Help text:** under the label when the field needs explaining (format, what it affects), e.g.
+   the label (the "*" is `aria-hidden`; the field has `required`). **Short forms** (up to about 4
+   fields, all required, like log in or sign up) show only the asterisks. **Long forms** that mix
+   required and optional fields also start with "* obrigatório". Optional fields are not marked
+   "(opcional)".
+2. **Help text:** under the label and **before** the input, when the field needs explaining (format, what it affects), e.g.
    "Dia em que a fatura fecha. Compras nesse dia entram na próxima fatura."
 3. **Same rules as the API:** the client validates with the same Zod schema the API uses
    (`@financas/shared`). Limits in the specs (lengths, ranges, formats) come from those schemas; a
@@ -64,8 +66,9 @@ until the form is valid; on edit forms, also until something changed).
 |---|---|
 | Label | A verb that says the outcome: "Salvar conta", "Registrar pagamento", never "OK" or "Enviar" alone |
 | Visibility | Hidden if the role lacks the permission (see Permissions) |
-| Enabled when | Explicit condition. **Submit buttons stay disabled until the whole form is valid** (every required field filled, every rule met) and, on edit forms, until something changed; also while a request runs. A disabled submit shows, right under it, what is missing: "Preencha Valor e Categoria para continuar." (up to 3 field names, else "Preencha os campos obrigatórios (*) para continuar."). It uses `aria-disabled` (still focusable, so screen readers read that hint); tapping it only marks the missing fields and moves focus to the first one, it never sends |
-| Loading | While the request runs: spinner inside the button, label kept, button disabled; other actions of the same form disabled too |
+| Enabled when | Explicit condition. **Submit buttons stay disabled until the whole form is valid** (every required field filled, every rule met) and, on edit forms, until something changed; also while a request runs. A disabled submit uses `aria-disabled` (it stays focusable) and shows **no** sentence under it (decided with the design, 2026-10-01): tapping it only marks the missing fields and moves focus to the first one, it never sends |
+| Loading | While the request runs: spinner inside the button and the label in the gerund ("Entrando…", "Criando conta…", "Trocando senha…"), `aria-busy`; the form's fields read-only and its links paused |
+| Waiting | A button that can't act yet counts down with a clock icon and tabular numbers, then releases itself: resend ("Reenviar em 52 s", 60 s after each send) and limits ("Tente de novo em 39:48", from `Retry-After`) |
 | Double submit | Impossible: one request per press (RNF-REL-1) |
 | Success | Says what happened (a toast or an inline message) and where the user goes next |
 | Failure | Maps the error code to a message (`error-messages.md`); keeps the form as it was |
@@ -73,6 +76,22 @@ until the form is valid; on edit forms, also until something changed).
 | Keyboard | Enter submits the form from any single-line field; Esc closes dialogs |
 | Hierarchy | One primary button per view; secondary and tertiary (link) styles for the rest; destructive in the danger style, never primary |
 | Icon-only | Has a tooltip and an `aria-label` |
+
+## Account screens
+The screens with no workspace yet (`AUTH-*`, `INV-01`, `SHELL-01`) use two layouts, always in the
+light theme. Drawn in `../../design/account/` and `../../design/design-system/components/`
+(`TelaConta`, `Momento`).
+
+| Layout | Used for | Rules |
+|---|---|---|
+| **Auth screen** | Forms: log in, sign up, forgot and new password, sign up through an invitation | Mobile: a mint block flush with the top of the phone, straight edges, no logo, with the owl scene; it is flexible (160–320 px) and shrinks when an alert or a banner appears, so the form is never cut and fits one screen without scrolling. Then the title (`display`, `text-wrap: balance`), a one-line subtitle (14 px), the fields, the alert above the button, the full-width primary button and a centred footer link. Desktop (≥ 1024 px): mint panel on the left (logo, owl, slogan), the form on the right, at most 400 px wide |
+| **Moment** | Screens with no form: waiting, achievements, handoffs, warnings | Full screen, the owl large in the centre, title, short text, actions at the bottom. **Mint** for an achievement or a wait (may show a 3-step track and a dashed "next step" card); **cream** (`sketch-paper`) for a warning or an error, with no exclamation mark, no sparkle and no track. Desktop: the same colour, content grouped in the centre, owl block 400 px, actions at most 400 px |
+
+- The owl scene keeps its base between screens of the same flow; only the object next to the owl
+  and its expression change (`../../design/account/motion.md`).
+- Button labels and durations never break across lines ("24 horas" with a non-breaking space).
+- Arrival messages ("Você saiu.", "Senha trocada…") show under the title with `role="status"`;
+  form errors show above the main button with `role="alert"`.
 
 ## Feedback
 - **Toast** (bottom on mobile, top-right on desktop, 4 s, pausable): confirms an action done away
@@ -133,4 +152,5 @@ Every response error has the shape `{ "error": { "code", "message", "ref" } }`.
 - Unknown codes fall back to "Não foi possível concluir. Tente de novo." plus the `ref`.
 - 5xx always shows the `ref`: "Algo deu errado. Código: {ref}."
 - 429 shows the wait the API gives (`Retry-After`), e.g. "Muitas tentativas. Tente de novo em 15
-  minutos."
+  minutos.", as a warning above the button, and the button counts down until it releases
+  (Button contract → Waiting).

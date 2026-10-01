@@ -1,7 +1,7 @@
 ---
 summary: Index of the web requirements (functional per module, non-functional, UI standards, error messages, design-system brief), the ID scheme, and the order to design screens with Claude Design.
 read_when: Designing or building any web screen, writing a prompt for Claude Design, or checking what the UI must do for a module.
-updated: 2026-09-29
+updated: 2026-10-01
 ---
 
 # Web requirements
@@ -48,6 +48,10 @@ Code, docs and IDs are in English. Everything the user reads (labels, messages, 
 given in pt-BR, in quotes, and is the copy to use.
 
 ## Designing with Claude Design
+**Done for the account area (2026-10-01):** the design system and every `AUTH-*`, `INV-01` and
+`SHELL-01` state live in `../../design/README.md`; where the design changed a rule, these files
+were updated to match.
+
 The goal is richness of detail, so never ask for everything at once.
 
 1. **Design system first.** Give it `design-system-brief.md`, `ui-standards.md` and the
