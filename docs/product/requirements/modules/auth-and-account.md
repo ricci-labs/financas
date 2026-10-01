@@ -6,8 +6,10 @@ updated: 2026-10-01
 
 # Auth and my account
 
-Standards: `../ui-standards.md`. Messages per code: `../error-messages.md`. API: `/api/auth/*`,
-`/api/invitations/*`, `/api/workspaces/:id/members/me/preferences`.
+Standards: `../ui-standards.md` (layouts in Account screens). Messages per code:
+`../error-messages.md`. API: `/api/auth/*`, `/api/invitations/*`,
+`/api/workspaces/:id/members/me/preferences`. **Design:** every screen and state below is drawn in
+`../../../design/account/screens.md` (HTML + PNG); copy quoted here is the final copy.
 
 ## Rules that shape these screens
 - **Session:** an HttpOnly cookie valid 30 days, renewed while used. The web can't read it: it
@@ -15,40 +17,55 @@ Standards: `../ui-standards.md`. Messages per code: `../error-messages.md`. API:
 - **Links carry the token in the fragment** (`#token=`). The web must serve `/login`,
   `/forgot-password`, `/verify-email`, `/reset-password` and `/invite`.
 - **No automatic log in** after verifying an email, resetting a password, or creating an account
-  through an invitation. Each ends on `AUTH-01` with a success message.
+  through an invitation. Each ends on `AUTH-01` with an arrival message.
 - **Neutral answers:** sign-up, resend verification and forgot password always answer "accepted"
   (202), whatever the email, so nobody can learn which emails have accounts. The UI never says
   "this email exists" or "doesn't exist".
+- **"Confira seu e-mail" screens hand off to the inbox:** they name the button to tap in the email
+  ("Toque em **Confirmar e-mail**", "Toque em **Criar nova senha**"), say "Pode fechar esta tela."
+  and "Não chegou? Olhe o spam e a aba Promoções.", and never claim the screen will update.
 - **Limits** (defaults): 5 failed logins per email and 30 per network in 15 min; 3 account emails
   per address and 10 per network per hour (sign-up, resend and forgot share them); 20 invalid links
-  per network per hour. Over a limit the API answers `429` with `Retry-After`.
+  per network per hour. Over a limit the API answers `429` with `Retry-After`, shown as a warning
+  above the button and a countdown button ("Tente de novo em 14:52") that releases itself.
+- **Resend** buttons wait 60 s after each send ("Reenviar em 52 s"); a resend shows the toast
+  "Enviamos de novo." and the wait starts again.
 - **Password:** 12 to 128 characters, no composition rules. Email: up to 254 characters, compared
   without case. Display name: 1 to 80 characters.
 - **Link lifetimes:** verification 24 h, reset 1 h, invitation 7 days; each works once.
 
 ## AUTH-01 Log in (MVP)
-Route `/login`, optionally `?next=<path>`. Also the landing for expired sessions.
+Route `/login`, optionally `?next=<path>`. Also the landing for expired sessions. Auth layout;
+title "Entrar no Twise", subtitle "Bom te ver de novo! Vamos ver como anda o mês?". Opens with
+focus on "E-mail".
 
 **RF-AUTH-1** A person logs in with email and password; on success the web opens `next` if it is
 an app path, otherwise the last workspace, otherwise `WS-01` when they have none.
 
 | Field | Label | Input | Required | Rules |
 |---|---|---|---|---|
-| email | "E-mail" | email, `autocomplete="email"` | yes | valid email, up to 254 |
-| password | "Senha" | password with show/hide, `autocomplete="current-password"` | yes | up to 128 (the minimum is not checked here, so old passwords still work) |
+| email | "E-mail" | email, `autocomplete="email"`, placeholder "nome@exemplo.com" | yes | valid email, up to 254 |
+| password | "Senha" | password with "Mostrar"/"Ocultar", `autocomplete="current-password"` | yes | up to 128 (the minimum is not checked here, so old passwords still work) |
 
 | Action | Enabled when | Loading | Success | Errors |
 |---|---|---|---|---|
-| "Entrar" (primary) | e-mail valid and password filled (button contract) | spinner, fields read-only | go to the destination above | `INVALID_CREDENTIALS` form message, focus on password, password cleared; `EMAIL_NOT_VERIFIED` inline message with the action "Reenviar e-mail de confirmação" (calls resend with the typed email); `TOO_MANY_ATTEMPTS` form message with the wait time, button disabled until it ends; `LOGIN_INVALID` field errors |
+| "Entrar" (primary) | e-mail valid and password filled (button contract) | "Entrando…", fields read-only, links paused | go to the destination above | `INVALID_CREDENTIALS` form message, password cleared and focused, e-mail kept; `EMAIL_NOT_VERIFIED` warning with the action "Reenviar e-mail de confirmação" (resends to the typed email, then "Reenviar em 60 s"); `TOO_MANY_ATTEMPTS` warning + countdown button, with "Enquanto isso, você pode trocar a senha em “Esqueci minha senha”." under it; `LOGIN_INVALID` field errors; 5xx form message with the `ref`, button stays enabled |
 | "Esqueci minha senha" (link) | always | — | `AUTH-04`, email carried over | — |
-| "Criar conta" (link) | only when `GET /api/auth/config` says sign-up is on | — | `AUTH-02` | — |
+| "Criar conta" (link, footer "Ainda não tem conta?") | only when `GET /api/auth/config` says sign-up is on | — | `AUTH-02` | — |
 
-States: arriving from an expired session shows "Sua sessão terminou. Entre de novo."; arriving from
-`AUTH-03`/`AUTH-05`/`INV-01` shows their success message; offline banner.
+**Arrival messages** (under the title, `role="status"`): "Sua sessão terminou. Entre de novo."
+(expired session), "Senha trocada. Entre com a nova senha. Por segurança, saímos de todos os
+aparelhos." (`AUTH-05`), "E-mail confirmado" (`AUTH-03`), "Conta criada. Entre para abrir o espaço
+{workspaceName}." (`INV-01`, with the email filled in and focus on the password), "Você saiu."
+(log out). **Offline:** the banner "Sem conexão. Verifique a internet e tente de novo." and the
+button locked with "Sem conexão. Assim que a internet voltar, o botão libera." under it; typed
+data stays.
 
 ## AUTH-02 Sign up (MVP when enabled)
-Route `/signup`. Shown only when public sign-up is on; otherwise the route shows "O cadastro está
-fechado. Peça um convite a quem usa o Twise." with a link to `AUTH-01`.
+Route `/signup`. Auth layout; title "Criar sua conta", subtitle "Leva menos de um minuto.", focus
+on "Seu nome", footer "Já tem conta? Entrar". When public sign-up is off (or `SIGNUP_DISABLED`)
+the route is a calm moment: "O cadastro está fechado" / "Peça um convite a quem usa o Twise." +
+"Ir para o login"; on `AUTH-01` "Criar conta" doesn't appear.
 
 **RF-AUTH-2** A person creates an account and receives a confirmation email.
 
@@ -56,90 +73,116 @@ fechado. Peça um convite a quem usa o Twise." with a link to `AUTH-01`.
 |---|---|---|---|---|
 | displayName | "Seu nome" | text | yes | trimmed, 1–80 |
 | email | "E-mail" | email | yes | valid, up to 254 |
-| password | "Senha" | new password with show/hide, `autocomplete="new-password"` | yes | 12–128; help "Use pelo menos 12 caracteres. Uma frase fácil de lembrar funciona bem." |
+| password | "Senha" | new password with show/hide, `autocomplete="new-password"` | yes | 12–128; help, always visible above the field: "Use pelo menos 12 caracteres. Uma frase fácil de lembrar funciona bem." |
 
-| Action | Success | Errors |
-|---|---|---|
-| "Criar conta" | a confirmation panel: "Se esse e-mail puder ser usado, enviamos um link de confirmação. Ele vale por 24 horas." with "Reenviar" (60 s cooldown) and "Voltar para o login" | `USER_INVALID` field errors; `SIGNUP_DISABLED` switches to the closed message; `TOO_MANY_ATTEMPTS` |
+| Action | Loading | Success | Errors |
+|---|---|---|---|
+| "Criar conta" | "Criando conta…" | a mint moment "Confira seu e-mail": "Enviamos um e-mail para {email}. Toque em **Confirmar e-mail** e o Twise abre em outra página, já confirmado. O link vale por 24 horas.", the track "Conta criada" → "Confirmar e-mail" → "Entrar", the handoff lines, "Reenviar em 60 s" and "Já confirmou? Voltar para o login" | `USER_INVALID` field errors; `SIGNUP_DISABLED` switches to the closed moment; `TOO_MANY_ATTEMPTS` (typed data stays) |
+
+The success copy stays neutral: when the email already has an account, the API sends "Você já tem
+uma conta", so an email is always sent.
 
 ## AUTH-03 Verify email (MVP)
-Route `/verify-email#token=…` (landing) and a resend form.
+Route `/verify-email#token=…`. One page that changes in place (a moment).
 
 **RF-AUTH-3** Opening the link confirms the email automatically (no button), then offers log in.
 
 - On load: read the token, clear it from the address bar, call `POST /api/auth/verify-email`.
-- Success: "E-mail confirmado. Agora é só entrar." + "Entrar" (to `AUTH-01`).
-- `LINK_INVALID`: "Este link não vale mais: já foi usado ou expirou. Se você já confirmou, é só
-  entrar." + "Entrar" + "Reenviar confirmação" (a form with the email field, same rules as log in).
-- Resend success: the same neutral message as sign-up.
-- `TOO_MANY_ATTEMPTS` with the wait.
+  Mint moment "Confirmando seu e-mail" / "Só um instante." with the track on "E-mail confirmado"
+  (spinner) and "Pode deixar esta tela aberta. Ela muda sozinha."
+- Success: "E-mail confirmado!" / "Agora é só entrar.", the first two steps done, the dashed card
+  "Depois de entrar, vocês montam o espaço do casal e já veem quanto ainda podem gastar no mês."
+  and "Entrar" (to `AUTH-01` with "E-mail confirmado").
+- `LINK_INVALID`: the background turns cream; "Este link não vale mais" / "Já foi usado ou
+  expirou. Se você já confirmou, é só entrar." + "Entrar", and "Ainda não confirmou?" with an
+  "E-mail" field and "Reenviar confirmação" (same rules as log in).
+- Resend success: "Confira seu e-mail" with "Se {email} puder ser usado, enviamos um novo link de
+  confirmação. Toque em **Confirmar e-mail** no e-mail. Ele vale por 24 horas."
+- `TOO_MANY_ATTEMPTS`: calm moment "Vamos dar uma pausa" / "Muitas tentativas com links por aqui.
+  Tente de novo em {minutos} minutos. Se você já confirmou, é só entrar." + "Entrar".
 
 ## AUTH-04 Forgot password (MVP)
-Route `/forgot-password`.
+Route `/forgot-password`. Auth layout; title "Esqueceu a senha?", subtitle "A gente manda um link
+para criar outra.", footer "Lembrou? Voltar para o login".
 
 **RF-AUTH-4** A person asks for a reset link by email.
 
 | Field | Label | Required | Rules |
 |---|---|---|---|
-| email | "E-mail da conta" | yes | valid, up to 254 |
+| email | "E-mail da conta" | yes | valid, up to 254; filled in when coming from `AUTH-01` |
 
-Action "Enviar link" → neutral success: "Se houver uma conta com esse e-mail, enviamos um link para
-trocar a senha. Ele vale por 1 hora." + "Voltar para o login". Errors: `EMAIL_INVALID`,
-`TOO_MANY_ATTEMPTS`.
+Action "Enviar link" → mint moment "Confira seu e-mail": "Se houver uma conta com {email},
+enviamos um e-mail. Toque em **Criar nova senha** e o Twise abre em outra página para você trocar.
+O link vale por 1 hora.", the track "Pedir o link" → "Abrir o e-mail" → "Nova senha", the handoff
+lines and "Voltar para o login" (no resend). Stays conditional: no email is sent without an
+account. Errors: `EMAIL_INVALID` (field), `TOO_MANY_ATTEMPTS`.
 
 ## AUTH-05 Reset password (MVP)
-Route `/reset-password#token=…`.
+Route `/reset-password#token=…`. Auth layout; title "Crie uma nova senha", subtitle "Depois, é só
+entrar com ela.", footer "Lembrou? Voltar para o login".
 
 **RF-AUTH-5** With a valid link, a person sets a new password; every session of the account ends.
 
 | Field | Label | Required | Rules |
 |---|---|---|---|
-| password | "Nova senha" | yes | 12–128, show/hide, `autocomplete="new-password"` |
-| confirmation | "Repita a nova senha" | yes | equal to the new password (client only): "As senhas não são iguais." |
+| password | "Nova senha" | yes | 12–128, show/hide, `autocomplete="new-password"`, the same help as sign-up |
+| confirmation | "Repita a nova senha" | yes | equal to the new password (client only, a web schema): "As senhas não são iguais." on leaving the field, gone as soon as they match |
 
-Action "Trocar senha" → success on `AUTH-01`: "Senha trocada. Entre com a nova senha. Por
-segurança, saímos de todos os aparelhos." Errors: `PASSWORD_INVALID` (field), `LINK_INVALID` (the
-form is replaced by the expired-link message with "Pedir um novo link" → `AUTH-04`),
-`TOO_MANY_ATTEMPTS`.
+Action "Trocar senha" ("Trocando senha…") → `AUTH-01` with "Senha trocada…". Errors:
+`PASSWORD_INVALID` (field), `LINK_INVALID` (the form is replaced by a calm moment "Este link não
+vale mais" / "Já foi usado ou expirou. O link para trocar a senha vale por 1 hora." with "Pedir um
+novo link" → `AUTH-04`), `TOO_MANY_ATTEMPTS` (typed data stays).
 
 The token is read on load and removed from the address bar, but only sent with the new password.
 
 ## INV-01 Invitation (MVP)
-Route `/invite#token=…`.
+Route `/invite#token=…`. A moment.
 
 **RF-AUTH-6** Anyone with the link sees what the invitation is before logging in.
-On load: `POST /api/invitations/preview`. Shows: "{inviterName} convidou você para o espaço
-{workspaceName} como {roleName}." and, for an email invitation, "Convite para {email}", plus the
-expiry ("Vale até 12/10/2026").
+On load: `POST /api/invitations/preview`. Mint moment with the invitation card: "{inviterName}
+convidou você para o espaço {workspaceName} como {roleName}." and, for an email invitation,
+"Convite para {email} · Vale até 12/10/2026".
 
-Invalid states replace the page: `INVITATION_NOT_FOUND` ("Convite não encontrado. Confira o link
-ou peça um novo."), `INVITATION_EXPIRED`, `INVITATION_REVOKED`, `INVITATION_ALREADY_ACCEPTED`
-(each with its message and "Ir para o login").
+Invalid states replace the page with a calm moment and "Ir para o login": `INVITATION_EXPIRED`
+("Este convite expirou" / "Peça um novo a quem convidou. Convites valem por 7 dias."),
+`INVITATION_NOT_FOUND`, `INVITATION_REVOKED`, `INVITATION_ALREADY_ACCEPTED` (messages in
+`../error-messages.md`).
 
-**RF-AUTH-7** Logged-in person: "Entrar no espaço" calls accept, then opens the workspace.
-- `INVITATION_FOR_ANOTHER_EMAIL`: "Este convite é para {email}. Saia e entre com esse e-mail."
-  with "Sair e entrar com outro e-mail".
-- `ALREADY_MEMBER`: "Você já participa deste espaço." + "Abrir o espaço".
+**RF-AUTH-7** Logged-in person: "Entrar no espaço" calls accept; under it "Você está como {email}.
+Não é você? Sair". On success the moment "Vocês estão juntos no {workspaceName}!" / "Agora os dois
+veem o mesmo mês, do mesmo jeito." shows for about 1.5 s ("Abrindo o espaço…"), then the workspace
+opens.
+- `INVITATION_FOR_ANOTHER_EMAIL`: calm moment "Este convite é para outra pessoa" / "Este convite é
+  para {email}. Saia e entre com esse e-mail." + "Sair e entrar com outro e-mail" (log out, then
+  `AUTH-01` with `next` back to the invitation) and "Você está como {email}."
+- `ALREADY_MEMBER`: mint, no celebration: "Você já participa deste espaço" / "Você e {inviterName}
+  já estão juntos no {workspaceName}." + "Abrir o espaço".
 
-**RF-AUTH-8** Not logged in: two choices, "Já tenho conta" (log in, then back to the invitation
-via `next`) and "Criar conta".
+**RF-AUTH-8** Not logged in: "Criar conta" (primary) and "Já tenho conta" (log in, then back to the
+invitation via `next`).
 
-"Criar conta" form:
+"Criar conta" form (auth layout; title "Criar sua conta", subtitle "Para entrar no espaço
+{workspaceName} com {inviterName}."):
 | Field | Label | Required | Rules |
 |---|---|---|---|
-| email | "E-mail" | only for a phone invitation; for an email invitation it is shown read-only with the invited address | valid, up to 254 |
+| email | "E-mail" | only for a phone invitation; for an email invitation it is read-only with the invited address and the help "Convite para este e-mail. Ele não pode ser trocado." | valid, up to 254 |
 | displayName | "Seu nome" | yes | 1–80 |
-| password | "Senha" | yes | 12–128 |
+| password | "Senha" | yes | 12–128, the sign-up help |
 
 Action "Criar conta e entrar no espaço" → when the email is already verified (email invitation):
 `AUTH-01` with "Conta criada. Entre para abrir o espaço {workspaceName}."; when not (phone
-invitation): "Conta criada. Confirme seu e-mail pelo link que enviamos e depois entre." Errors:
-`EMAIL_TAKEN` ("Já existe uma conta com esse e-mail. Entre com ela para aceitar o convite." +
-"Entrar"), `EMAIL_REQUIRED`, `INVITATION_SIGN_UP_INVALID`, the invalid states above,
-`TOO_MANY_ATTEMPTS`.
+invitation): mint moment "Falta só confirmar o e-mail" / "Conta criada. Confirme seu e-mail pelo
+link que enviamos e depois entre para abrir o espaço {workspaceName}." Errors: `EMAIL_TAKEN`
+(warning "Já existe uma conta com esse e-mail. Entre com ela para aceitar o convite.", "Entre com
+ela" links to `AUTH-01` and back), `EMAIL_REQUIRED`, `INVITATION_SIGN_UP_INVALID`, the invalid
+states above, `TOO_MANY_ATTEMPTS`.
 
 ## Session handling (SHELL-01, MVP)
-**RF-AUTH-9** On start, the web calls `GET /api/auth/me`; `401` shows `AUTH-01`.
+**RF-AUTH-9** On start, the web shows the app opening (mint, the owl at 200 px, "twise" and "Leve,
+claro, a dois.") while it calls `GET /api/auth/me`; `401` shows `AUTH-01`. The opening's one-time
+entrance never holds the app beyond 1.2 s (the wink is skipped if the answer came first); after
+1.5 s without an answer, "Abrindo…" appears with a small spinner. No network: `AUTH-01` with the
+offline banner.
 **RF-AUTH-10** Any `401 SESSION_REQUIRED` later clears cached data and opens `AUTH-01` with
 `next`, showing "Sua sessão terminou. Entre de novo." Typed form data is lost; unsaved long forms
 warn before (they can't be saved without a session).

@@ -1,7 +1,7 @@
 ---
 summary: Catalog of every API error code — HTTP status, when it happens, the pt-BR message the user sees, and where it shows (field, form, page, toast).
 read_when: Showing any API error in the web, writing a screen spec, or adding an error code to the API (add it here in the same PR).
-updated: 2026-09-29
+updated: 2026-10-01
 ---
 
 # Error messages
@@ -19,7 +19,7 @@ message.
 | `PERMISSION_DENIED` | 403 | The role lacks the permission (it may have changed meanwhile) | "Você não tem permissão para isso. Peça a um administrador do espaço." | toast; permissions refresh |
 | `WORKSPACE_NOT_FOUND` | 404 | Not a member of the workspace (removed, left, or wrong link) | "Você não tem acesso a este espaço." | page → switcher |
 | `CROSS_SITE_REQUEST` | 403 | A write that didn't come from the app | "Não foi possível confirmar que o pedido veio do app. Recarregue a página." | form |
-| `TOO_MANY_ATTEMPTS` | 429 | Over a limit (login, e-mails, links, password change) | "Muitas tentativas. Tente de novo em {minutos} minutos." (from `Retry-After`) | form |
+| `TOO_MANY_ATTEMPTS` | 429 | Over a limit (login, e-mails, links, password change) | "Muitas tentativas. Tente de novo em {minutos} minutos." (from `Retry-After`) + the countdown button "Tente de novo em {mm:ss}"; on `AUTH-03` the moment "Vamos dar uma pausa" (`modules/auth-and-account.md`) | form |
 | `PAYLOAD_TOO_LARGE` | 413 | The request is too big (an upload over the limit) | "O arquivo ou os dados são grandes demais." (on uploads: see `FILE_TOO_LARGE`) | form |
 | `BAD_REQUEST` | 400 | Malformed request (guard) | "Não foi possível ler o pedido. Recarregue a página e tente de novo." | form |
 | `ROUTE_NOT_FOUND` | 404 | The app called an address that doesn't exist (guard) | "Esta página não existe." | page |
@@ -33,11 +33,11 @@ message.
 |---|---|---|---|---|
 | `LOGIN_INVALID` | 400 | Fields missing or too long (guard) | "Informe e-mail e senha." | form |
 | `INVALID_CREDENTIALS` | 401 | Wrong e-mail or password (never says which) | "E-mail ou senha incorretos." | form |
-| `EMAIL_NOT_VERIFIED` | 403 | Right password, e-mail not confirmed | "Confirme seu e-mail antes de entrar. Procure o link que enviamos." + "Reenviar e-mail" | form |
+| `EMAIL_NOT_VERIFIED` | 403 | Right password, e-mail not confirmed | "Confirme seu e-mail antes de entrar. Procure o link que enviamos." + "Reenviar e-mail de confirmação" | form |
 | `USER_INVALID` | 400 | Sign-up fields invalid | per field (standard messages) | fields |
-| `SIGNUP_DISABLED` | 403 | Public sign-up is off | "O cadastro está fechado. Peça um convite a quem usa o Twise." | page |
+| `SIGNUP_DISABLED` | 403 | Public sign-up is off | title "O cadastro está fechado", text "Peça um convite a quem usa o Twise." + "Ir para o login" | page (calm moment) |
 | `EMAIL_INVALID` | 400 | Invalid e-mail in resend or forgot | "Informe um e-mail válido, como nome@exemplo.com." | field e-mail |
-| `LINK_INVALID` | 400 | Verification or reset link unknown, used or expired | "Este link não vale mais: já foi usado ou expirou." | page |
+| `LINK_INVALID` | 400 | Verification or reset link unknown, used or expired | title "Este link não vale mais", text "Já foi usado ou expirou." + what to do next (`modules/auth-and-account.md` → AUTH-03, AUTH-05) | page (calm moment) |
 | `PASSWORD_INVALID` | 400 | New password outside 12–128 | "Use de 12 a 128 caracteres." | field new password |
 | `CURRENT_PASSWORD_WRONG` | 400 | Wrong current password when changing | "A senha atual está incorreta." | field current password |
 | `PROFILE_INVALID` | 400 | Name empty or over 80 | "Informe seu nome (até 80 caracteres)." | field name |
@@ -50,13 +50,13 @@ message.
 | `INVITATION_INVALID` | 400 | Invite form invalid (both or neither contact) | per field; "Informe um e-mail ou um telefone." | fields |
 | `INVITATION_SIGN_UP_INVALID` | 400 | Account form invalid | per field | fields |
 | `INVITATION_NOT_FOUND` | 404 | Unknown link or invitation | "Convite não encontrado. Confira o link ou peça um novo." | page |
-| `INVITATION_EXPIRED` | 409 | Past 7 days | "Este convite expirou. Peça um novo a quem convidou." | page |
+| `INVITATION_EXPIRED` | 409 | Past 7 days | title "Este convite expirou", text "Peça um novo a quem convidou. Convites valem por 7 dias." | page (calm moment) |
 | `INVITATION_REVOKED` | 409 | Revoked | "Este convite foi cancelado." | page / toast in `MEM-03` |
 | `INVITATION_ALREADY_ACCEPTED` | 409 | Already used | "Este convite já foi aceito. Entre para abrir o espaço." | page / toast |
-| `INVITATION_FOR_ANOTHER_EMAIL` | 403 | Logged in with another e-mail | "Este convite é para {email}. Saia e entre com esse e-mail." | page |
+| `INVITATION_FOR_ANOTHER_EMAIL` | 403 | Logged in with another e-mail | title "Este convite é para outra pessoa", text "Este convite é para {email}. Saia e entre com esse e-mail.", and "Você está como {email}." | page (calm moment) |
 | `INVITATION_PENDING` | 409 | A pending invitation already exists for the contact | "Já existe um convite pendente para esse contato. Revogue o anterior para mandar outro." | form |
 | `WORKSPACE_NOT_AVAILABLE` | 400 | The invited workspace was deleted | "Este espaço não existe mais. O convite não pode ser usado." | page |
-| `ALREADY_MEMBER` | 409 | Already in the workspace | "Você já participa deste espaço." + "Abrir o espaço" | page |
+| `ALREADY_MEMBER` | 409 | Already in the workspace | title "Você já participa deste espaço", text "Você e {inviterName} já estão juntos no {workspaceName}." + "Abrir o espaço" | page (mint moment) |
 | `EMAIL_TAKEN` | 409 | Creating an account through an invitation with an e-mail that has one | "Já existe uma conta com esse e-mail. Entre com ela para aceitar o convite." | form |
 | `EMAIL_REQUIRED` | 400 | Phone invitation without e-mail | "Informe um e-mail para a sua conta." | field e-mail |
 
