@@ -51,6 +51,9 @@ jobs:
       - name: Set up workspace
         uses: ./.github/actions/setup
 
+      - name: Install Chromium for the web tests
+        run: pnpm --filter @financas/web exec playwright install --with-deps --only-shell chromium
+
       - name: Run tests
         run: pnpm test
 
