@@ -118,4 +118,13 @@ describe('the web app next to the API', () => {
     expect(response.status).toBe(200)
     expect(response.headers.get('Content-Type')).toContain('application/manifest+json')
   })
+
+  it('lets mail clients show the email images from their own sites, and only those', async () => {
+    const image = await app.request('/email/owl-key.png')
+    expect(image.headers.get('Cross-Origin-Resource-Policy')).toBe('cross-origin')
+    for (const path of ['/login', '/assets/index-abc123.js', '/theme-init.js']) {
+      const response = await app.request(path)
+      expect(response.headers.get('Cross-Origin-Resource-Policy')).toBe('same-origin')
+    }
+  })
 })
