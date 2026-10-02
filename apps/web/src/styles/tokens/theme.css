@@ -166,6 +166,14 @@
   --shadow-dialog: var(--elevation-dialog);
 }
 
+@utility inset-stroke {
+  box-shadow: inset 0 0 0 var(--stroke-emphasis) currentcolor;
+}
+
+@utility underline-stroke {
+  text-decoration-thickness: var(--stroke-emphasis);
+}
+
 @utility duration-fast {
   transition-duration: var(--duration-fast);
 }

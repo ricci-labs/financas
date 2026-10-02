@@ -2,15 +2,17 @@ import { readFileSync } from 'node:fs'
 
 export const SEMANTIC_TOKENS_FILE = 'apps/web/src/styles/tokens/semantic.css'
 
-const BLOCK = /(:root|\.dark)\s*\{([^}]*)\}/g
+const BLOCK = /([^{}]+)\{([^}]*)\}/g
+const SELECTOR_SEPARATOR = ','
 const DECLARATION = /--([a-z0-9-]+)\s*:\s*([^;]+);/g
 const VARIABLE_REFERENCE = /^var\(--([a-z0-9-]+)\)$/
 const HEX_COLOR = /^#[0-9a-f]{6}$/i
 
 function declarationsOf(css, selector) {
   const declarations = {}
-  for (const [, blockSelector, body] of css.matchAll(BLOCK)) {
-    if (blockSelector === selector) {
+  for (const [, selectorList, body] of css.matchAll(BLOCK)) {
+    const selectors = selectorList.split(SELECTOR_SEPARATOR).map((part) => part.trim())
+    if (selectors.includes(selector)) {
       for (const [, name, value] of body.matchAll(DECLARATION)) {
         declarations[name] = value.trim()
       }

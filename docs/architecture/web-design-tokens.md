@@ -33,7 +33,7 @@ CSS files follow the code rules too: no comments, except tool directives with th
 | Kind | Example | Becomes a class? | Rule |
 |---|---|---|---|
 | Base role | `--ink: #17191c` in `:root`, `#f2f0ea` in `.dark` | Yes, `@theme inline { --color-ink: var(--ink) }` | Named by role, never by hue. A role whose value is the same in both themes (`mint`, `sketch-paper`) is written once |
-| Alias role | `--status-paid: var(--success)`, `--primary: var(--action-primary)` | Yes, same way | Points to a base role or another alias, so it follows the theme. Changing a hue is an edit to the base role only |
+| Alias role | `--status-paid: var(--success)`, `--primary: var(--action-primary)` | Yes, same way | Points to a base role or another alias, so it follows the theme. Declared under `:root, .dark`, so a `.dark` subtree (the workbench's dark panel) resolves them too. Changing a hue is an edit to the base role only |
 | Component token | `--sidebar-*` | Yes, same way | Only when one component needs its own adjustable value; it is an alias by default |
 
 `@theme inline` is required whenever a theme variable points to another variable; without it the
@@ -91,7 +91,10 @@ When to use each one: the design system guide → Colour, and each token's notes
 - **Elevation:** flat by default (cards use `border`). `shadow-float` (floating button, menus,
   toasts) and `shadow-dialog` (dialogs, bottom sheet) only, from the `--elevation-*` values of each
   theme.
-- **Borders:** `1px` for cards and fields, `2px` for focus and errors.
+- **Borders:** `1px` for cards and fields, `2px` for focus and errors. The design's thinner
+  emphasis stroke (`--stroke-emphasis`, 1.5 px) has two utilities, because Tailwind makes no
+  fractional ring or decoration widths: `inset-stroke` (an inset outline in the current colour, the
+  outline button) and `underline-stroke` (the tertiary link underline).
 
 ## Motion and layers
 Tailwind has no duration or z-index namespace, so these are `:root` variables with one `@utility`
@@ -145,7 +148,8 @@ not a token:
   and checked by `check:contrast` as a dot on `bg-page` and `bg-surface`;
 - it is drawn only as a swatch, dot or icon tint, never as a background behind text;
 - it reaches the DOM only through the `--data-color` custom property set by `ColorSwatch` and
-  `CategoryIcon`, the two components allowed a `style` prop.
+  `CategoryIcon`, the two components allowed a `style` prop (besides the development-only
+  workbench, which draws every token by name).
 
 ## Enforcement
 | Check | Fails on | Where |

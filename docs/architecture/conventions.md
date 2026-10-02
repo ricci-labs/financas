@@ -202,6 +202,9 @@ without comments.
   browser mode (`apps/web/vitest.config.ts`), with `vitest-browser-react`. Every component test file
   ends with an `expectNoAccessibilityViolations()` check (`apps/web/src/testing/accessibility.ts`,
   axe-core). Mock the network with `vi.spyOn(globalThis, 'fetch')`, never a real API.
+- `expect.element(...)` retries until it passes (up to its timeout). Use it to wait for something
+  to appear; to check a value **at one instant** (a countdown's first number), read it once:
+  `expect(locator.element().textContent).toBe('60')`, or a later tick hides the bug.
 - Web tests need Chromium once per machine: `pnpm --filter @financas/web exec playwright install
   --only-shell chromium`, plus its system libraries on Linux
   (`sudo pnpm --filter @financas/web exec playwright install-deps chromium`).
