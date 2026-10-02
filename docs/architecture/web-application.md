@@ -208,7 +208,11 @@ the web app):
 `base-uri` and `form-action` `'self'`; `img-src 'self' data: blob:`; `object-src` and
 `frame-ancestors` `'none'`. No `'unsafe-inline'`: the theme script is a file, and React sets styles
 through the CSSOM, which the policy doesn't block (checked in Chromium against the served build,
-2026-10-01). CI's 🐳 job boots the image and checks the page, the fallback, the headers, an asset,
+2026-10-01). A library that injects its own `<style>` element is blocked, though: Sonner did, so in
+production every toast lost its fixed position and fell to the end of the page (seen 2026-10-02).
+Its stylesheet is now imported in `globals.css` (`sonner/dist/styles.css`), and a toast test removes
+the injected styles, as the policy does, and checks that the toaster stays fixed. Any new library
+that injects CSS needs the same treatment. CI's 🐳 job boots the image and checks the page, the fallback, the headers, an asset,
 an email image and an unknown API path.
 
 ## Bundle budget

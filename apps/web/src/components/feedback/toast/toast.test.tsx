@@ -4,6 +4,14 @@ import { describe, expect, it, vi } from 'vitest'
 import { page } from 'vitest/browser'
 import { render } from 'vitest-browser-react'
 
+function removeInjectedSonnerStyles() {
+  for (const style of document.querySelectorAll('style:not([data-vite-dev-id])')) {
+    if (style.textContent?.includes('data-sonner-toaster')) {
+      style.remove()
+    }
+  }
+}
+
 describe('Toast', () => {
   it('shows a short confirmation', async () => {
     await render(<Toaster />)
@@ -23,5 +31,14 @@ describe('Toast', () => {
     await expect
       .element(page.getByText('Lançamento movido para a lixeira.'))
       .not.toBeInTheDocument()
+  })
+
+  it('floats over the page even where the CSP blocks the styles Sonner injects', async () => {
+    removeInjectedSonnerStyles()
+    await render(<Toaster />)
+    showToast('Nova versão disponível')
+    await expect.element(page.getByText('Nova versão disponível')).toBeVisible()
+    const toaster = document.querySelector('[data-sonner-toaster]') as HTMLElement
+    expect(getComputedStyle(toaster).position).toBe('fixed')
   })
 })
