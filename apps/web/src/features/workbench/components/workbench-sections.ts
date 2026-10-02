@@ -1,5 +1,8 @@
 import { buttonExamples } from '@web/components/actions/button'
 import { textLinkExamples } from '@web/components/actions/text-link'
+import { logoExamples } from '@web/components/brand/logo'
+import { owlSceneExamples } from '@web/components/brand/owl-scene'
+import { stepTrackExamples } from '@web/components/display/step-track'
 import { alertExamples } from '@web/components/feedback/alert'
 import { bannerExamples } from '@web/components/feedback/banner'
 import { tipExamples } from '@web/components/feedback/tip'
@@ -19,4 +22,7 @@ export const workbenchSections: readonly ComponentExamples[] = [
   bannerExamples,
   tipExamples,
   toastExamples,
+  stepTrackExamples,
+  owlSceneExamples,
+  logoExamples,
 ]
