@@ -1,7 +1,7 @@
 ---
 summary: How web components are layered and built — shadcn primitives, design-system components with one folder each (variants, types, copy, tests, examples), the props contract, forms, icons, copy, the workbench, tests and lint.
 read_when: Creating, changing or using any component in apps/web; adding a shadcn component; building a form; reviewing a web PR.
-updated: 2026-10-01
+updated: 2026-10-02
 ---
 
 # Web components
@@ -173,8 +173,12 @@ React Hook Form v7 + `zodResolver` with the **schemas from `@financas/shared`** 
   (logo, owl, "Leve, claro, a dois." and its support sentence) and the form on the right.
 - `MomentScreen`: a full screen with no form, `tone` `celebrate` (mint) or `calm` (cream), the
   owl, the title, the body (`aria-live`, since the same page changes state in place) and the
-  actions last; centred on desktop with a 400 px owl block.
+  actions last; centred on desktop with a 400 px owl block. A page whose state changes on its own
+  (`/verify-email`) renders one `MomentScreen` from every branch, so React keeps the element: the
+  title change is announced and the background fades from mint to cream.
 - `NextStepCard`: the dashed "what comes next" card of the celebratory moments.
+- `Divider` (`components/display/divider`): a label between two thin lines ("Ainda não
+  confirmou?"); `surface` `page` or `paper` (cream moments, `sketch-line`).
 - `AppSplash`: the app opening, mint with the brand owl, "twise" and the slogan; `isSlow` adds
   "Abrindo…". The brand owl file keeps its animation layers, with the sleep and wink layers
   hidden (their final state).

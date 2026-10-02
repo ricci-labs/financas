@@ -1,7 +1,7 @@
 ---
 summary: The web's single source of visual values — token tiers and files, naming, colour roles, type, spacing, radius, elevation, motion, layers, breakpoints, dark mode, tokens in JS, and the checks that keep raw values out.
 read_when: Adding or changing a colour, font, size, shadow, animation or theme; styling anything in apps/web; reviewing a web PR.
-updated: 2026-10-01
+updated: 2026-10-02
 ---
 
 # Web design tokens
@@ -63,7 +63,7 @@ When to use each one: the design system guide → Colour, and each token's notes
 | Money | `income`, `income-soft`, `expense`, `expense-soft`, `transfer` (always next to a sign or a word, RNF-A11Y-4) |
 | Feedback | `success`, `warning`, `danger`, `info`, each with `-soft`; `warning-fill` (budget bar, never text) |
 | Status | `status-pending`, `status-overdue`, `status-paid`, `status-partial`, `status-matched`, `status-neutral` (cancelled, skipped), each with `-soft` |
-| Illustration | `sketch-ink`, `sketch-paper` (fixed in both themes; illustrations always sit on `sketch-paper` or `mint-soft`) |
+| Illustration | `sketch-ink`, `sketch-paper`, `sketch-line` (a divider on `sketch-paper`) (fixed in both themes; illustrations always sit on `sketch-paper` or `mint-soft`) |
 | Charts | `chart-1…5` |
 
 ## Typography

@@ -1,7 +1,7 @@
 ---
 summary: Functional requirements for log in, sign-up, email verification, password reset and change, invitations answered by the invitee, session handling, and my account (profile, preferences, notification settings).
 read_when: Designing or building AUTH-*, INV-01 or ME-01, or anything about sessions and login.
-updated: 2026-10-01
+updated: 2026-10-02
 ---
 
 # Auth and my account
@@ -100,6 +100,10 @@ Route `/verify-email#token=…`. One page that changes in place (a moment).
   confirmação. Toque em **Confirmar e-mail** no e-mail. Ele vale por 24 horas."
 - `TOO_MANY_ATTEMPTS`: calm moment "Vamos dar uma pausa" / "Muitas tentativas com links por aqui.
   Tente de novo em {minutos} minutos. Se você já confirmou, é só entrar." + "Entrar".
+- A link with no token is treated as `LINK_INVALID`, with no call.
+- Unexpected failure (5xx) or no connection: calm moment "Não deu para confirmar agora" with the
+  error message (the `ref`, or the offline one), "Tentar de novo" (sends the same token again)
+  and "Entrar".
 
 ## AUTH-04 Forgot password (MVP)
 Route `/forgot-password`. Auth layout; title "Esqueceu a senha?", subtitle "A gente manda um link

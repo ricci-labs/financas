@@ -11,7 +11,14 @@ import { HandoffResendButton } from '@web/features/auth/components/handoff-resen
 const HANDOFF_STEP = 1
 const messages = authMessages.checkEmail
 
-export function CheckYourEmail({ text, values, steps, stepsLabel, resendTo }: CheckYourEmailProps) {
+export function CheckYourEmail({
+  text,
+  values,
+  steps,
+  stepsLabel,
+  resendTo,
+  logInLabel = messages.backToLogIn,
+}: CheckYourEmailProps) {
   return (
     <MomentScreen
       tone="celebrate"
@@ -25,7 +32,7 @@ export function CheckYourEmail({ text, values, steps, stepsLabel, resendTo }: Ch
           <p className="text-body-sm">
             {messages.alreadyConfirmed}{' '}
             <TextLink tone="inherit" render={<Link to="/login" />}>
-              {messages.backToLogIn}
+              {logInLabel}
             </TextLink>
           </p>
         </>

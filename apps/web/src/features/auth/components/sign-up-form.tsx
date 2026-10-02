@@ -12,20 +12,19 @@ import { TextInput } from '@web/components/inputs/text-input'
 import { AuthLayout } from '@web/components/layout/auth-layout'
 import { useSignUp } from '@web/features/auth/api/use-sign-up'
 import { authMessages } from '@web/features/auth/auth.messages'
-import type { SignUpFormProps, SignUpProblem } from '@web/features/auth/auth.types'
+import type { FormProblem, SignUpFormProps } from '@web/features/auth/auth.types'
+import { formProblemOf } from '@web/features/auth/components/form-problem'
 import { useIsOnline } from '@web/hooks/use-is-online'
 import { ApiError } from '@web/lib/api/api-error'
-import { errorMessageFor } from '@web/lib/errors/error-message'
 import { useSchemaForm } from '@web/lib/forms/use-schema-form'
 import { useEffect, useState } from 'react'
 
-const MS_PER_SECOND = 1000
 const messages = authMessages.signUp
 
 export function SignUpForm({ onSent, onClosed }: SignUpFormProps) {
   const isOnline = useIsOnline()
   const signUp = useSignUp()
-  const [problem, setProblem] = useState<SignUpProblem | null>(null)
+  const [problem, setProblem] = useState<FormProblem | null>(null)
   const form = useSchemaForm({
     schema: newUserSchema,
     requiredMessages: messages.required,
@@ -46,7 +45,7 @@ export function SignUpForm({ onSent, onClosed }: SignUpFormProps) {
         onClosed()
         return
       }
-      setProblem(problemOf(error))
+      setProblem(formProblemOf(error))
     }
   }
 
@@ -116,16 +115,4 @@ function sceneOf(isOnline: boolean, isLimited: boolean): OwlSceneName {
     return 'offline'
   }
   return isLimited ? 'wait' : 'signUp'
-}
-
-function problemOf(error: unknown): SignUpProblem {
-  const message = errorMessageFor(error)
-  if (error instanceof ApiError && error.code === 'TOO_MANY_ATTEMPTS') {
-    return {
-      kind: 'limited',
-      message,
-      retryAt: Date.now() + (error.retryAfterSeconds ?? 0) * MS_PER_SECOND,
-    }
-  }
-  return { kind: 'unexpected', message }
 }
