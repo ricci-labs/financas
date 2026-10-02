@@ -11,9 +11,10 @@ import {
   labelVariants,
   requiredMarkVariants,
 } from '@web/components/forms/form-field/form-field.variants'
+import { afterPointerRelease, watchPointerPresses } from '@web/lib/forms/after-pointer-release'
 import { formMessages } from '@web/lib/forms/forms.messages'
 import { CircleAlert } from 'lucide-react'
-import { useId } from 'react'
+import { useEffect, useId } from 'react'
 import { type FieldValues, useController, useFormContext, useFormState } from 'react-hook-form'
 
 const COUNTER_THRESHOLD = 0.8
@@ -28,6 +29,7 @@ export function FormField<Values extends FieldValues>({
   children,
 }: FormFieldProps<Values>) {
   const id = useId()
+  useEffect(watchPointerPresses, [])
   const ids = { help: `${id}-help`, error: `${id}-error` }
   const { control } = useFormContext<Values>()
   const { isSubmitting } = useFormState({ control })
@@ -50,7 +52,7 @@ export function FormField<Values extends FieldValues>({
         value,
         ref: field.ref,
         onChange: field.onChange,
-        onBlur: field.onBlur,
+        onBlur: () => afterPointerRelease(field.onBlur),
         readOnly: isReadOnly || isSubmitting,
         required: isRequired,
         maxLength,

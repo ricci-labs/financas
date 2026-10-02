@@ -65,6 +65,17 @@ describe('FormField', () => {
     await expect.element(email).not.toHaveAttribute('aria-invalid')
   })
 
+  it('still shows the error when leaving the field with a click, once the press ends', async () => {
+    const { screen } = await renderSignUp()
+    await fieldLabelled('E-mail').fill('member.a@')
+    await fieldLabelled('Seu nome').click()
+
+    await expect
+      .element(screen.getByText('Informe um e-mail válido, como nome@exemplo.com.'))
+      .toBeVisible()
+    await expect.element(fieldLabelled('Seu nome')).toHaveFocus()
+  })
+
   it('links the help text before the field and the error to it', async () => {
     await renderSignUp()
     const password = fieldLabelled('Senha')
