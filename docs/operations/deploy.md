@@ -65,6 +65,12 @@ Pipeline: `../engineering/ci-cd.md`. Decision: `../decisions/0010-deploy-ghcr-do
   Netdata, which runs on the host network, scrapes `http://127.0.0.1:9464/metrics`. It is visible on
   the home LAN but never on the internet: the tunnel only carries port 3100, and the router forwards
   nothing. Metrics hold counts only, never data or secrets.
+- **Because of that host-mode port, the service must update `stop-first`** (Dokploy → the app →
+  Advanced → Swarm settings → Update Config, `"Order": "stop-first"`). With Dokploy's default
+  `start-first`, Swarm starts the new task before stopping the old one, the new task can't take
+  `9464`, and the update hangs with `no suitable node (host-mode port already in use on 1 node)`
+  while the old version keeps running (seen 2026-10-02). `stop-first` means a few seconds offline
+  during each deploy.
 - Netdata job: `/etc/netdata/go.d/prometheus.conf` in its config volume, job `financas`, every 10 s;
   charts are named `prometheus_financas.*`. Restart Netdata after editing it.
 
