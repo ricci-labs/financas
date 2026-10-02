@@ -1,0 +1,49 @@
+import { ApiError, NetworkError } from '@web/lib/api/api-error'
+import {
+  errorMessages,
+  NETWORK_ERROR_MESSAGE,
+  UNKNOWN_ERROR_MESSAGE,
+} from '@web/lib/errors/errors.messages'
+import type { MessageValues } from '@web/lib/errors/errors.types'
+
+const INTERNAL_ERROR_CODE = 'INTERNAL_ERROR'
+const SECONDS_PER_MINUTE = 60
+const PLACEHOLDER = /\{([^}]+)\}/g
+const MISSING_REF = '—'
+
+export function errorMessageFor(error: unknown, values: MessageValues = {}): string {
+  if (error instanceof NetworkError) {
+    return NETWORK_ERROR_MESSAGE
+  }
+  if (!(error instanceof ApiError)) {
+    return fill(UNKNOWN_ERROR_MESSAGE, { ref: MISSING_REF })
+  }
+  return fill(templateFor(error), { ...valuesOf(error), ...values })
+}
+
+export function fill(template: string, values: MessageValues): string {
+  return template.replace(PLACEHOLDER, (placeholder, name: string) =>
+    name in values ? String(values[name]) : placeholder,
+  )
+}
+
+function templateFor(error: ApiError): string {
+  const known = errorMessages[error.code]
+  if (known) {
+    return known
+  }
+  return error.isServerError
+    ? (errorMessages[INTERNAL_ERROR_CODE] ?? UNKNOWN_ERROR_MESSAGE)
+    : UNKNOWN_ERROR_MESSAGE
+}
+
+function valuesOf(error: ApiError): MessageValues {
+  const minutes =
+    error.retryAfterSeconds === null
+      ? null
+      : Math.ceil(error.retryAfterSeconds / SECONDS_PER_MINUTE)
+  return {
+    ref: error.ref ?? MISSING_REF,
+    ...(minutes === null ? {} : { minutos: minutes }),
+  }
+}

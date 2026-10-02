@@ -21,7 +21,7 @@ const RESET_SCALE_CLASSES = [
   /^rounded(?:-[trblse]{1,2})?-(?:xs|2xl|3xl|4xl)$/,
 ]
 const NUMERIC_LAYER_OR_DURATION_CLASS = /^(?:z|duration)-\d+$/
-const ARBITRARY_VALUE = /[[(]/
+const ARBITRARY_VALUE = /-\[[^\]]*\]|-\([^)]*\)|^\[[a-z-]+:/
 const REMOVED_BREAKPOINT_VARIANTS = new Set(['sm', '2xl', 'max-sm', 'max-2xl'])
 const ARBITRARY_BREAKPOINT_VARIANT = /^(?:min|max)-\[/
 const VARIANT_SEPARATOR = ':'
