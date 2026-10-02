@@ -10,6 +10,10 @@ import { secureHeaders } from 'hono/secure-headers'
 
 const API_PREFIX = '/api/'
 const ASSETS_PREFIX = '/assets/'
+const EMAIL_IMAGES_PREFIX = '/email/'
+const RESOURCE_POLICY = 'Cross-Origin-Resource-Policy'
+const SAME_ORIGIN = 'same-origin'
+const ANY_ORIGIN = 'cross-origin'
 const INDEX_FILE = 'index.html'
 const HAS_FILE_EXTENSION = /\.[a-z0-9]+$/i
 const CACHE_CONTROL = 'Cache-Control'
@@ -39,13 +43,27 @@ export function createWebApp(logger: Logger, webDistDir: string) {
   const index = cached(REVALIDATE, serveStatic({ root: webDistDir, path: INDEX_FILE }))
   return new Hono<AppEnv>()
     .use(requestContext(logger))
-    .use(secureHeaders({ contentSecurityPolicy: CONTENT_SECURITY_POLICY }))
+    .use(
+      secureHeaders({
+        contentSecurityPolicy: CONTENT_SECURITY_POLICY,
+        crossOriginResourcePolicy: false,
+      }),
+    )
+    .use(resourcePolicy())
     .use(compress())
     .use(`${ASSETS_PREFIX}*`, assets)
     .use('*', files)
     .get('*', onlyForPages(index))
     .onError(handleError)
     .notFound(handleNotFound)
+}
+
+function resourcePolicy(): MiddlewareHandler<AppEnv> {
+  return async (c, next) => {
+    await next()
+    const isEmailImage = c.req.path.startsWith(EMAIL_IMAGES_PREFIX)
+    c.header(RESOURCE_POLICY, isEmailImage ? ANY_ORIGIN : SAME_ORIGIN)
+  }
 }
 
 export function routeByPath(api: NodeFetch, web: NodeFetch): NodeFetch {

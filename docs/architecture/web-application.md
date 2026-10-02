@@ -191,6 +191,12 @@ guard reads to recognise public routes. Kept apart, the API app, its `AppType` a
 | Any other `GET` outside `/api/` (an app page: `/login`, `/w/…`) | `index.html` (SPA fallback) | `no-cache` |
 | Unknown `/api/*` | The API's own `ROUTE_NOT_FOUND`, never `index.html` | — |
 
+`Cross-Origin-Resource-Policy` is `same-origin` on every answer except `/email/*`, which is
+`cross-origin`: mail clients such as Outlook load those images from their own site, and with
+`same-origin` the browser refused them, so every email showed a broken image (seen 2026-10-02;
+Gmail hid it because it fetches images through its own proxy). Those files are only the owls and
+the logo.
+
 Every answer of the web app is compressed (`compress()` from Hono, gzip or deflate as the browser
 asks); the API app is not. Without it the JavaScript went out raw, so RNF-PERF-1's gzipped budget
 didn't hold in production. `sw.js` and `manifest.webmanifest` are "other files": `no-cache`, so a
