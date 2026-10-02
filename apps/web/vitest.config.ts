@@ -40,6 +40,7 @@ export default mergeConfig(
           test: {
             name: 'browser',
             include: ['src/**/*.test.tsx'],
+            setupFiles: ['src/testing/browser-setup.ts'],
             browser: {
               enabled: true,
               headless: true,
