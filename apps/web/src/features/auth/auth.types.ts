@@ -1,4 +1,3 @@
-import type { ButtonProps } from '@web/components/actions/button'
 import type { AlertTone } from '@web/components/feedback/alert'
 import type { previewInvitation } from '@web/features/auth/api/use-preview-invitation'
 import type { useSignedInAccount } from '@web/features/auth/api/use-signed-in-account'
@@ -89,7 +88,6 @@ export type SignUpStepsProps = {
 }
 
 export type LogInButtonProps = {
-  variant?: ButtonProps['variant']
   children: string
 }
 

@@ -148,20 +148,35 @@ describe('AUTH-03 verify email', () => {
     await expectNoAccessibilityViolations(screen.container)
   })
 
-  it('shows the ref of an unexpected failure and tries the same link again', async () => {
+  it('keeps the confirming screen on an unexpected failure, with the ref above "Tentar de novo"', async () => {
     const answers = [apiError('INTERNAL_ERROR', 500), NO_CONTENT()]
     const { screen, sent } = await openLink({
       [VERIFY]: () => answers.shift() ?? NO_CONTENT(),
     })
 
     await expect
-      .element(screen.getByRole('heading', { name: 'Não deu para confirmar agora' }))
+      .element(screen.getByRole('alert'))
+      .toHaveTextContent('Algo deu errado. Tente de novo; se continuar, informe o código abcd1234.')
+    await expect
+      .element(screen.getByRole('heading', { name: 'Confirmando seu e-mail' }))
       .toBeVisible()
-    await expect.element(screen.getByText(/abcd1234/)).toBeVisible()
+    const alert = screen.getByRole('alert').element()
+    const retry = screen.getByRole('button', { name: 'Tentar de novo' }).element()
+    expect(alert.compareDocumentPosition(retry) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     await expectNoAccessibilityViolations(screen.container)
 
     await screen.getByRole('button', { name: 'Tentar de novo' }).click()
     await expect.element(screen.getByRole('heading', { name: 'E-mail confirmado!' })).toBeVisible()
     expect(sent).toEqual([{ token: TOKEN }, { token: TOKEN }])
+  })
+
+  it('says the connection failed when the API cannot be reached', async () => {
+    const { screen } = await openLink({
+      [VERIFY]: () => Promise.reject(new TypeError('Failed to fetch')),
+    })
+    await expect
+      .element(screen.getByRole('alert'))
+      .toHaveTextContent('Sem conexão. Verifique a internet e tente de novo.')
+    await expect.element(screen.getByRole('button', { name: 'Tentar de novo' })).toBeVisible()
   })
 })

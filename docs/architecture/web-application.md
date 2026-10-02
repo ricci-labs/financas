@@ -151,7 +151,9 @@ items are hidden with it (`../product/requirements/ui-standards.md` → Permissi
 
 ## PWA
 `vite-plugin-pwa` with `registerType: 'prompt'`:
-- precache the app shell only (`js`, `css`, `html`, `woff2`, icons); `navigateFallback:
+- precache the app shell only (`js`, `css`, `html`, `woff2`, icons) and the owl scenes: each scene
+  is its own file, loaded when shown, so without the precache the offline owl would be missing
+  exactly when there is no network (seen 2026-10-02); `navigateFallback:
   'index.html'` with `navigateFallbackDenylist: [/^\/api\//]`; **no runtime caching of `/api`**:
   authenticated data never sits in the service worker;
 - a new version shows a toast "Nova versão disponível" with "Atualizar" (`useRegisterSW`);
