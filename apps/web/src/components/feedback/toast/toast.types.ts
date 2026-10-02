@@ -5,4 +5,5 @@ export type ToastAction = {
 
 export type ToastOptions = {
   action?: ToastAction
+  isPersistent?: boolean
 }

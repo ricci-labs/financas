@@ -59,4 +59,5 @@ Node and pnpm live in `~/.local/share/pnpm/bin` (add it to `PATH` in non-login s
 | `pnpm ops:create-user` | Create a verified user who owns a new workspace (interactive; password without echo) |
 | `pnpm ops:migrate` | Apply migrations with the runtime migrator (what the image entrypoint runs) |
 | `pnpm build` | Web build + API bundle |
+| `pnpm check:bundle` | After a web build: the initial JS stays under 250 KB gzipped (runs in CI) |
 | `pnpm format` | Biome write |

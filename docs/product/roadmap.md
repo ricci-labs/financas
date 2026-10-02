@@ -140,7 +140,7 @@ updated: 2026-10-02
   `simulate_purchase` ("posso comprar?", built in #85, decided 2026-09-26), next to `period_overview`.
 - [x] DB: contacts/charges, planning, support tables
 - [x] Observability core (metrics, error fingerprints and refs), Dockerfile, deploy workflow
-- [ ] **Web foundation** (approved 2026-10-01). Standards first (ADR 0027,
+- [x] **Web foundation** (approved 2026-10-01; done 2026-10-02). Standards first (ADR 0027,
   `../architecture/web-application.md`, `../architecture/web-components.md`,
   `../architecture/web-design-tokens.md`); their checks land before the first screen. One PR each:
   1. [x] Standards docs (ADR 0027 + the three web docs) (#141)
@@ -155,7 +155,7 @@ updated: 2026-10-02
      map (the 403 toast and the offline banner come with their components)
   8. [x] Workbench `/dev/components` with the Tokens page
   9. [x] The API serves the SPA (cache headers, SPA fallback, CSP) and the image ships it
-  10. [ ] PWA (shell and owl-scene precache, update toast) and `check:bundle`
+  10. [x] PWA (shell and owl-scene precache, update toast) and `check:bundle`
   Then the account area (user's go-ahead 2026-10-01, design in `../design/account/`), one PR each:
   11. [x] Account components, in the order of `../design/account/components.md`: Button (#156),
       fields and forms (#157), Alert, Tip, Banner, toasts (#158), StepTrack, OwlScene, Logo (#159),

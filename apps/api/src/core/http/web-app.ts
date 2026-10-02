@@ -5,6 +5,7 @@ import type { NodeFetch } from '@api/core/http/web-app.types'
 import type { Logger } from '@api/core/observability/logger'
 import { serveStatic } from '@hono/node-server/serve-static'
 import { Hono, type MiddlewareHandler } from 'hono'
+import { compress } from 'hono/compress'
 import { secureHeaders } from 'hono/secure-headers'
 
 const API_PREFIX = '/api/'
@@ -39,6 +40,7 @@ export function createWebApp(logger: Logger, webDistDir: string) {
   return new Hono<AppEnv>()
     .use(requestContext(logger))
     .use(secureHeaders({ contentSecurityPolicy: CONTENT_SECURITY_POLICY }))
+    .use(compress())
     .use(`${ASSETS_PREFIX}*`, assets)
     .use('*', files)
     .get('*', onlyForPages(index))

@@ -8,6 +8,7 @@ import { afterAll, describe, expect, it } from 'vitest'
 
 const INDEX_HTML = '<!doctype html><div id="root"></div>'
 const ASSET_JS = 'console.log(1)'
+const LARGE_ASSET_JS = `export const owl = '${'o'.repeat(4096)}'`
 const SECRET = 'outside the build'
 const parentDir = mkdtempSync(join(tmpdir(), 'web-parent-'))
 const webDistDir = join(parentDir, 'dist')
@@ -18,6 +19,8 @@ mkdirSync(join(webDistDir, 'email'))
 writeFileSync(join(webDistDir, 'index.html'), INDEX_HTML)
 writeFileSync(join(webDistDir, 'theme-init.js'), 'void 0')
 writeFileSync(join(webDistDir, 'assets', 'index-abc123.js'), ASSET_JS)
+writeFileSync(join(webDistDir, 'assets', 'kit-def456.js'), LARGE_ASSET_JS)
+writeFileSync(join(webDistDir, 'manifest.webmanifest'), '{"name":"Twise"}')
 writeFileSync(join(webDistDir, 'email', 'owl-key.png'), 'png')
 
 const logger = createCapturingLogger('info').logger
@@ -94,5 +97,25 @@ describe('the web app next to the API', () => {
     expect(policy).toContain("script-src 'self'")
     expect(policy).toContain("frame-ancestors 'none'")
     expect(policy).not.toContain('unsafe-inline')
+  })
+
+  it('compresses the files for a client that accepts gzip, keeping their cache rules', async () => {
+    const response = await fetchAny(
+      new Request('http://app.test/assets/kit-def456.js', {
+        headers: { 'Accept-Encoding': 'gzip' },
+      }),
+      NODE_BINDINGS,
+    )
+    expect(response.headers.get('Content-Encoding')).toBe('gzip')
+    expect(response.headers.get('Cache-Control')).toBe('public, max-age=31536000, immutable')
+    expect(
+      await new Response(response.body?.pipeThrough(new DecompressionStream('gzip'))).text(),
+    ).toBe(LARGE_ASSET_JS)
+  })
+
+  it('serves the web manifest with its own type', async () => {
+    const response = await app.request('/manifest.webmanifest')
+    expect(response.status).toBe(200)
+    expect(response.headers.get('Content-Type')).toContain('application/manifest+json')
   })
 })
