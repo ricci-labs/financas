@@ -2,6 +2,7 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { authConfigQueryOptions } from '@web/features/auth/api/auth.queries'
 import { authMessages } from '@web/features/auth/auth.messages'
 import { CheckYourEmail } from '@web/features/auth/components/check-your-email'
+import { ConfirmationHandoffActions } from '@web/features/auth/components/confirmation-handoff-actions'
 import { SignUpClosed } from '@web/features/auth/components/sign-up-closed'
 import { SignUpForm } from '@web/features/auth/components/sign-up-form'
 import { useState } from 'react'
@@ -23,7 +24,7 @@ export function SignUpPage() {
         values={{ email: sentTo }}
         steps={messages.signUpSteps}
         stepsLabel={messages.signUpStepsLabel}
-        resendTo={sentTo}
+        actions={<ConfirmationHandoffActions email={sentTo} logInLabel={messages.backToLogIn} />}
       />
     )
   }

@@ -1,6 +1,7 @@
 import type { ButtonProps } from '@web/components/actions/button'
 import type { AlertTone } from '@web/components/feedback/alert'
 import type { LOGIN_NOTICES, loginSearchSchema } from '@web/features/auth/auth.schemas'
+import type { ReactNode } from 'react'
 import type { z } from 'zod'
 
 export type LoginNotice = (typeof LOGIN_NOTICES)[number]
@@ -37,8 +38,17 @@ export type CheckYourEmailProps = {
   values: Readonly<Record<string, string>>
   steps: readonly string[]
   stepsLabel: string
-  resendTo?: string
-  logInLabel?: string
+  actions: ReactNode
+}
+
+export type ConfirmationHandoffActionsProps = {
+  email: string
+  logInLabel: string
+}
+
+export type ForgotPasswordFormProps = {
+  email?: string
+  onSent: (email: string) => void
 }
 
 export type HandoffResendProps = {

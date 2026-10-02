@@ -113,7 +113,7 @@ para criar outra.", footer "Lembrou? Voltar para o login".
 
 | Field | Label | Required | Rules |
 |---|---|---|---|
-| email | "E-mail da conta" | yes | valid, up to 254; filled in when coming from `AUTH-01` |
+| email | "E-mail da conta" | yes | valid, up to 254; filled in when coming from `AUTH-01` (never through the URL) |
 
 Action "Enviar link" → mint moment "Confira seu e-mail": "Se houver uma conta com {email},
 enviamos um e-mail. Toque em **Criar nova senha** e o Twise abre em outra página para você trocar.
