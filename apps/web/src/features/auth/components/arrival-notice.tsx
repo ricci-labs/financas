@@ -1,7 +1,7 @@
+import { RichText } from '@web/components/display/rich-text'
 import { Alert } from '@web/components/feedback/alert'
 import { authMessages } from '@web/features/auth/auth.messages'
 import type { ArrivalNotice, LoginNotice } from '@web/features/auth/auth.types'
-import { fill } from '@web/lib/format/template'
 
 const NOTICES: Record<LoginNotice, ArrivalNotice> = {
   'session-ended': { tone: 'info', message: authMessages.login.notices['session-ended'] },
@@ -17,7 +17,10 @@ export function arrivalNoticeOf(
   if (joinedWorkspaceName) {
     return (
       <Alert tone="success">
-        {fill(authMessages.login.joined, { workspaceName: joinedWorkspaceName })}
+        <RichText
+          text={authMessages.login.joined}
+          values={{ workspaceName: joinedWorkspaceName }}
+        />
       </Alert>
     )
   }

@@ -177,7 +177,8 @@ React Hook Form v7 + `zodResolver` with the **schemas from `@financas/shared`** 
   owl, the title, the body (`aria-live`, since the same page changes state in place) and the
   actions last; centred on desktop with a 400 px owl block. A page whose state changes on its own
   (`/verify-email`) renders one `MomentScreen` from every branch, so React keeps the element: the
-  title change is announced and the background fades from mint to cream.
+  title change is announced and the background fades from mint to cream. An optional `banner`
+  (the offline banner) sits on top, edge to edge, and takes no room when it renders nothing.
 - `NextStepCard`: the dashed "what comes next" card of the celebratory moments.
 - `Divider` (`components/display/divider`): a label between two thin lines ("Ainda não
   confirmou?"); `surface` `page` or `paper` (cream moments, `sketch-line`).

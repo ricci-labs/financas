@@ -56,7 +56,7 @@ an app path, otherwise the last workspace, otherwise `WS-01` when they have none
 **Arrival messages** (under the title, `role="status"`): "Sua sessão terminou. Entre de novo."
 (expired session), "Senha trocada. Entre com a nova senha. Por segurança, saímos de todos os
 aparelhos." (`AUTH-05`), "E-mail confirmado" (`AUTH-03`), "Conta criada. Entre para abrir o espaço
-{workspaceName}." (`INV-01`, with the email filled in and focus on the password), "Você saiu."
+**{workspaceName}**." (`INV-01`, with the email filled in and focus on the password), "Você saiu."
 (log out). **Offline:** the banner "Sem conexão. Verifique a internet e tente de novo." and the
 button locked with "Sem conexão. Assim que a internet voltar, o botão libera." under it; typed
 data stays.
@@ -101,9 +101,10 @@ Route `/verify-email#token=…`. One page that changes in place (a moment).
 - `TOO_MANY_ATTEMPTS`: calm moment "Vamos dar uma pausa" / "Muitas tentativas com links por aqui.
   Tente de novo em {minutos} minutos. Se você já confirmou, é só entrar." + "Entrar".
 - A link with no token is treated as `LINK_INVALID`, with no call.
-- Unexpected failure (5xx) or no connection: calm moment "Não deu para confirmar agora" with the
-  error message (the `ref`, or the offline one), "Tentar de novo" (sends the same token again)
-  and "Entrar".
+- Unexpected failure (5xx) or no connection: the confirming moment stays, without the spinner,
+  with the error message in an alert above "Tentar de novo" (the `ref` on a 5xx, the "Sem conexão"
+  message on a network failure), and the offline banner on top when there is no connection
+  (design system → Alert). "Tentar de novo" sends the same token again.
 
 ## AUTH-04 Forgot password (MVP)
 Route `/forgot-password`. Auth layout; title "Esqueceu a senha?", subtitle "A gente manda um link
@@ -144,17 +145,18 @@ Route `/invite#token=…`. A moment.
 
 **RF-AUTH-6** Anyone with the link sees what the invitation is before logging in.
 On load: `POST /api/invitations/preview` (the app opening shows meanwhile). Mint moment: title
-"{inviterName} convidou você", text "para o espaço **{workspaceName}** como **{roleName}**." and
-"Convite para **{email}** · Vale até 12/10/2026" (a phone invitation: only "Vale até 12/10/2026";
-the date in São Paulo).
+"{inviterName} convidou você", text "para o espaço **{workspaceName}** como **{roleName}**." and,
+for an email invitation only, "Convite para **{email}** · Vale até 12/10/2026" (the date in São
+Paulo).
 
 Invalid states replace the page with a calm moment and "Ir para o login"; the title is the first
 sentence of the message in `../error-messages.md`, the text the rest: `INVITATION_EXPIRED` ("Este
 convite expirou" / "Peça um novo a quem convidou. Convites valem por 7 dias."),
 `INVITATION_NOT_FOUND` (also a link with no token), `INVITATION_REVOKED`,
 `INVITATION_ALREADY_ACCEPTED`, `WORKSPACE_NOT_AVAILABLE`. `TOO_MANY_ATTEMPTS`: calm "Vamos dar uma
-pausa" with its message. Unexpected failure or no connection: calm "Não deu para abrir o convite"
-with the message and "Tentar de novo".
+pausa" with its message. Unexpected failure or no connection: a calm moment named by the error
+message itself, its first sentence as the title ("Algo deu errado", with the `ref`; "Sem
+conexão"), the offline banner on top when there is no connection, and "Tentar de novo".
 
 Leaving for the log in ("Já tenho conta", "Entre com ela", "Sair e entrar com outro e-mail")
 keeps the invitation: the token travels in the browser's history state, never in the URL

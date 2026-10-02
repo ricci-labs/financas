@@ -13,6 +13,8 @@ export const momentVariants = cva(
   },
 )
 
+export const momentBannerVariants = cva('-mx-4 -mt-5 mb-5 self-stretch empty:hidden')
+
 export const momentArtVariants = cva(
   'flex min-h-45 w-full flex-1 basis-0 items-center justify-center lg:h-100 lg:min-h-0 lg:flex-none',
 )

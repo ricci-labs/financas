@@ -27,7 +27,7 @@ export const authMessages = {
         'Senha trocada. Entre com a nova senha. Por segurança, saímos de todos os aparelhos.',
       'email-verified': 'E-mail confirmado',
     },
-    joined: 'Conta criada. Entre para abrir o espaço {workspaceName}.',
+    joined: 'Conta criada. Entre para abrir o espaço **{workspaceName}**.',
   },
   signUp: {
     title: 'Criar sua conta',
@@ -101,11 +101,7 @@ export const authMessages = {
         `Muitas tentativas com links por aqui. Tente de novo em ${minutes}\u00a0minutos. Se você já confirmou, é só entrar.`,
       logIn: 'Entrar',
     },
-    failed: {
-      title: 'Não deu para confirmar agora',
-      retry: 'Tentar de novo',
-      logIn: 'Entrar',
-    },
+    retry: 'Tentar de novo',
   },
   forgotPassword: {
     title: 'Esqueceu a senha?',
@@ -142,7 +138,6 @@ export const authMessages = {
     title: (inviterName: string) => `${inviterName} convidou você`,
     text: 'para o espaço **{workspaceName}** como **{roleName}**.',
     forEmail: 'Convite para **{email}** · Vale até {date}',
-    validUntil: 'Vale até {date}',
     createAccount: 'Criar conta',
     haveAccount: 'Já tenho conta',
     enter: 'Entrar no espaço',
@@ -210,7 +205,7 @@ export const authMessages = {
     },
     goToLogIn: 'Ir para o login',
     paused: 'Vamos dar uma pausa',
-    failed: { title: 'Não deu para abrir o convite', retry: 'Tentar de novo' },
+    retry: 'Tentar de novo',
   },
   signUpClosed: {
     title: 'O cadastro está fechado',

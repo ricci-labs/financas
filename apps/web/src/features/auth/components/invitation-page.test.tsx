@@ -205,8 +205,11 @@ describe('INV-01 invitation', () => {
 
     await expect.element(screen.getByRole('heading', { name: 'Entrar no Twise' })).toBeVisible()
     await expect
-      .element(screen.getByText('Conta criada. Entre para abrir o espaço Casa.'))
-      .toBeVisible()
+      .element(screen.getByRole('status'))
+      .toHaveTextContent('Conta criada. Entre para abrir o espaço Casa.')
+    await expect
+      .element(screen.getByText('Casa', { exact: true }))
+      .toHaveProperty('tagName', 'STRONG')
     await expect.element(fieldLabelled('E-mail')).toHaveValue(INVITED)
     await expect.element(fieldLabelled('Senha')).toHaveFocus()
     expect(bodies[SIGN_UP]).toEqual([{ token: TOKEN, displayName: 'Member A', password: PASSWORD }])
@@ -217,7 +220,10 @@ describe('INV-01 invitation', () => {
       [PREVIEW]: preview({ email: null, isPhoneInvitation: true }),
       [SIGN_UP]: () => Response.json({ ...JOINED, isEmailVerified: false }, { status: 201 }),
     })
-    await expect.element(screen.getByText('Vale até 12/10/2026')).toBeVisible()
+    await expect
+      .element(screen.getByRole('heading', { name: 'Member B convidou você' }))
+      .toBeVisible()
+    await expect.element(screen.getByText(/Vale até/)).not.toBeInTheDocument()
     await screen.getByRole('button', { name: 'Criar conta' }).click()
 
     await expect.element(fieldLabelled('E-mail')).toHaveFocus()
@@ -258,5 +264,27 @@ describe('INV-01 invitation', () => {
       .element(screen.getByRole('link', { name: 'Entre com ela' }))
       .toHaveAttribute('href', '/login?next=%2Finvite')
     await expectNoAccessibilityViolations(screen.container)
+  })
+
+  it('names an unexpected failure by its message, with the ref, and tries again', async () => {
+    const answers = [apiError('INTERNAL_ERROR', 500), preview()()]
+    const { screen } = await openInvite({ [PREVIEW]: () => answers.shift() ?? preview()() })
+
+    await expect.element(screen.getByRole('heading', { name: 'Algo deu errado' })).toBeVisible()
+    await expect.element(screen.getByText(/abcd1234/)).toBeVisible()
+    await expectNoAccessibilityViolations(screen.container)
+
+    await screen.getByRole('button', { name: 'Tentar de novo' }).click()
+    await expect
+      .element(screen.getByRole('heading', { name: 'Member B convidou você' }))
+      .toBeVisible()
+  })
+
+  it('says the connection failed when the API cannot be reached', async () => {
+    const { screen } = await openInvite({
+      [PREVIEW]: () => Promise.reject(new TypeError('Failed to fetch')),
+    })
+    await expect.element(screen.getByRole('heading', { name: 'Sem conexão' })).toBeVisible()
+    await expect.element(screen.getByText('Verifique a internet e tente de novo.')).toBeVisible()
   })
 })

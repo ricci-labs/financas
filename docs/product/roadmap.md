@@ -155,7 +155,7 @@ updated: 2026-10-02
      map (the 403 toast and the offline banner come with their components)
   8. [x] Workbench `/dev/components` with the Tokens page
   9. [x] The API serves the SPA (cache headers, SPA fallback, CSP) and the image ships it
-  10. [ ] PWA (shell precache, update toast) and `check:bundle`
+  10. [ ] PWA (shell and owl-scene precache, update toast) and `check:bundle`
   Then the account area (user's go-ahead 2026-10-01, design in `../design/account/`), one PR each:
   11. [x] Account components, in the order of `../design/account/components.md`: Button (#156),
       fields and forms (#157), Alert, Tip, Banner, toasts (#158), StepTrack, OwlScene, Logo (#159),

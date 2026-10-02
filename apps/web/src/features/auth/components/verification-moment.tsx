@@ -3,6 +3,8 @@ import { Button } from '@web/components/actions/button'
 import { Divider } from '@web/components/display/divider'
 import { NextStepCard } from '@web/components/display/next-step-card'
 import { StepTrack } from '@web/components/display/step-track'
+import { Alert } from '@web/components/feedback/alert'
+import { OfflineBanner } from '@web/components/feedback/offline-banner'
 import { MomentScreen } from '@web/components/layout/moment-screen'
 import { authMessages } from '@web/features/auth/auth.messages'
 import type {
@@ -25,6 +27,7 @@ export function VerificationMoment({ view, onResent, onRetry }: VerificationMome
           tone="celebrate"
           scene="wait"
           title={messages.confirming.title}
+          banner={<OfflineBanner />}
           actions={<p className="text-body-sm">{messages.confirming.stayHere}</p>}
         >
           <p>{messages.confirming.text}</p>
@@ -85,19 +88,23 @@ export function VerificationMoment({ view, onResent, onRetry }: VerificationMome
     case 'failed':
       return (
         <MomentScreen
-          tone="calm"
+          tone="celebrate"
           scene={view.isOffline ? 'offline' : 'wait'}
-          title={messages.failed.title}
+          title={messages.confirming.title}
+          banner={<OfflineBanner />}
           actions={
             <>
+              <Alert tone="danger" isUrgent>
+                {view.message}
+              </Alert>
               <Button width="full" onClick={onRetry}>
-                {messages.failed.retry}
+                {messages.retry}
               </Button>
-              <LogInButton variant="outline">{messages.failed.logIn}</LogInButton>
             </>
           }
         >
-          <p>{view.message}</p>
+          <p>{messages.confirming.text}</p>
+          <SignUpSteps currentStep={VERIFY_STEP} />
         </MomentScreen>
       )
   }
@@ -114,9 +121,9 @@ function SignUpSteps({ currentStep, isCurrentLoading }: SignUpStepsProps) {
   )
 }
 
-function LogInButton({ variant, children }: LogInButtonProps) {
+function LogInButton({ children }: LogInButtonProps) {
   return (
-    <Button variant={variant} width="full" render={<Link to="/login" />}>
+    <Button width="full" render={<Link to="/login" />}>
       {children}
     </Button>
   )

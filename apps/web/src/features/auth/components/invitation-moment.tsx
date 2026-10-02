@@ -4,6 +4,7 @@ import { TextLink } from '@web/components/actions/text-link'
 import { RichText } from '@web/components/display/rich-text'
 import { StepTrack } from '@web/components/display/step-track'
 import { Alert } from '@web/components/feedback/alert'
+import { OfflineBanner } from '@web/components/feedback/offline-banner'
 import { Spinner } from '@web/components/feedback/spinner'
 import { MomentScreen } from '@web/components/layout/moment-screen'
 import { useLogOut } from '@web/features/auth/api/use-log-out'
@@ -12,6 +13,7 @@ import type { InvitationMomentProps, InvitationSummaryProps } from '@web/feature
 import { GoToLogIn, InvalidInvitation } from '@web/features/auth/components/invalid-invitation'
 import { SignedInLine } from '@web/features/auth/components/signed-in-line'
 import { formatDay } from '@web/lib/format/date'
+import { headlineOf } from '@web/lib/format/headline'
 
 const INVITE_PATH = '/invite'
 const CONFIRM_STEP = 1
@@ -185,26 +187,28 @@ export function InvitationMoment(props: InvitationMomentProps) {
           <p>{view.message}</p>
         </MomentScreen>
       )
-    case 'failed':
+    case 'failed': {
+      const { title, text } = headlineOf(view.message)
       return (
         <MomentScreen
           tone="calm"
           scene={view.isOffline ? 'offline' : 'wait'}
-          title={messages.failed.title}
+          title={title}
+          banner={<OfflineBanner />}
           actions={
             <Button width="full" onClick={onRetry}>
-              {messages.failed.retry}
+              {messages.retry}
             </Button>
           }
         >
-          <p>{view.message}</p>
+          {text && <p>{text}</p>}
         </MomentScreen>
       )
+    }
   }
 }
 
 function InvitationSummary({ invitation }: InvitationSummaryProps) {
-  const date = formatDay(invitation.expiresAt)
   return (
     <>
       <p>
@@ -213,13 +217,14 @@ function InvitationSummary({ invitation }: InvitationSummaryProps) {
           values={{ workspaceName: invitation.workspaceName, roleName: invitation.roleName }}
         />
       </p>
-      <p className="text-body-sm">
-        {invitation.email ? (
-          <RichText text={messages.forEmail} values={{ email: invitation.email, date }} />
-        ) : (
-          <RichText text={messages.validUntil} values={{ date }} />
-        )}
-      </p>
+      {invitation.email && (
+        <p className="text-body-sm">
+          <RichText
+            text={messages.forEmail}
+            values={{ email: invitation.email, date: formatDay(invitation.expiresAt) }}
+          />
+        </p>
+      )}
     </>
   )
 }

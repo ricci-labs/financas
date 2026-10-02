@@ -11,5 +11,6 @@ export type MomentScreenProps = {
   title: string
   children?: ReactNode
   actions?: ReactNode
+  banner?: ReactNode
   className?: string
 }

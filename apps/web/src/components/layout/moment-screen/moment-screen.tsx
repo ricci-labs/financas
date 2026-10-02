@@ -3,6 +3,7 @@ import type { MomentScreenProps } from '@web/components/layout/moment-screen/mom
 import {
   momentActionsVariants,
   momentArtVariants,
+  momentBannerVariants,
   momentBodyVariants,
   momentOwlVariants,
   momentTitleVariants,
@@ -17,6 +18,7 @@ export function MomentScreen({
   title,
   children,
   actions,
+  banner,
   className,
 }: MomentScreenProps) {
   useLightTheme()
@@ -26,6 +28,7 @@ export function MomentScreen({
       data-tone={tone}
       className={cn(momentVariants({ tone }), className)}
     >
+      {banner && <div className={momentBannerVariants()}>{banner}</div>}
       <div className={momentArtVariants()}>
         <OwlScene scene={scene} className={momentOwlVariants()} />
       </div>
