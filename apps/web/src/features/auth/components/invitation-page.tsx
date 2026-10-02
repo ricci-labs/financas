@@ -1,9 +1,9 @@
 import { useNavigate } from '@tanstack/react-router'
-import { AppSplash } from '@web/components/brand/app-splash'
 import { useAcceptInvitation } from '@web/features/auth/api/use-accept-invitation'
 import { usePreviewInvitation } from '@web/features/auth/api/use-preview-invitation'
 import { useSignedInAccount } from '@web/features/auth/api/use-signed-in-account'
 import type { InvitationFlowProps, InvitationStep } from '@web/features/auth/auth.types'
+import { AppOpening } from '@web/features/auth/components/app-opening'
 import { InvalidInvitation } from '@web/features/auth/components/invalid-invitation'
 import { InvitationMoment } from '@web/features/auth/components/invitation-moment'
 import { InvitationSignUpForm } from '@web/features/auth/components/invitation-sign-up-form'
@@ -44,7 +44,7 @@ function InvitationFlow({ token }: InvitationFlowProps) {
   })
 
   if (view.kind === 'opening') {
-    return <AppSplash isSlow={false} />
+    return <AppOpening />
   }
   if (view.kind === 'creatingAccount') {
     return (

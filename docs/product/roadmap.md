@@ -165,7 +165,7 @@ updated: 2026-10-02
   14. [x] `AUTH-03` verify email
   15. [x] `AUTH-04` forgot password (#164) and `AUTH-05` reset password
   16. [x] `INV-01` invitation
-  17. [ ] `SHELL-01` app opening (splash)
+  17. [x] `SHELL-01` app opening (splash; its entrance and the 1.2 s rule come with 18)
   18. [ ] Owl motion (`../design/account/motion.md`)
   Then the other screens, in the order of `requirements/README.md`.
 - [ ] Remaining project skills (`new-module`, `db-migration`, `domain-rule`, `pr`) and Claude Code hooks

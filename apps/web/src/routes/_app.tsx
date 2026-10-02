@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
-import { loadSession } from '@web/features/auth'
+import { AppOpening, loadSession } from '@web/features/auth'
 
 export const Route = createFileRoute('/_app')({
   beforeLoad: async ({ context, location }) => {
@@ -9,5 +9,8 @@ export const Route = createFileRoute('/_app')({
     }
     return { account }
   },
+  pendingComponent: AppOpening,
+  pendingMs: 0,
+  pendingMinMs: 0,
   component: Outlet,
 })
