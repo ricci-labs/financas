@@ -73,6 +73,15 @@ describe('AUTH-01 log in', () => {
     await expect.element(screen.getByRole('heading', { name: 'Criar sua conta' })).toBeVisible()
   })
 
+  it('names each screen in the browser tab, after the brand', async () => {
+    const { app } = await openLogin('/login', {})
+    await expect.poll(() => document.title).toBe('Twise · Entrar')
+    await app.router.navigate({ to: '/signup' })
+    await expect.poll(() => document.title).toBe('Twise · Criar conta')
+    await app.router.navigate({ to: '/forgot-password' })
+    await expect.poll(() => document.title).toBe('Twise · Esqueci a senha')
+  })
+
   it('hides "Criar conta" when sign-up is closed', async () => {
     const { screen } = await openLogin('/login', {
       'GET /api/auth/config': () => Response.json({ isSignupEnabled: false }),

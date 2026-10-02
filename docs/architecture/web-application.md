@@ -36,6 +36,10 @@ tests build their own with a memory history.
 | `dev/components.tsx` | Workbench, development only (`web-components.md`) |
 
 - URLs are English, like the API; the screen IDs map to them in the route's feature.
+- **Every page names its browser tab:** the feature's page calls `usePageTitle(<its messages>.pageTitle)`
+  (`hooks/use-page-title.ts`), which writes "Twise · <screen>" (`lib/page-title/`), e.g. "Twise ·
+  Entrar", "Twise · Criar conta". The name is the screen, not its state, so it stays put while the
+  page changes in place. A new page adds its `pageTitle` to its feature's messages.
 - **A route file only wires:** `validateSearch` (a schema from the feature's `.schemas.ts`),
   `loaderDeps`, a `loader` that calls `ensureQueryData` with the feature's query options, and a
   `component` that renders the feature's page with params and search as props. No markup beyond

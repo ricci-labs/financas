@@ -1,4 +1,5 @@
 export const systemStatusMessages = {
+  pageTitle: 'Início',
   productName: 'Twise',
   slogan: 'Leve, claro, a dois.',
   checking: 'Verificando API…',
