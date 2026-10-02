@@ -29,6 +29,15 @@ export const OWL_KIT_STILLS: Readonly<Record<OwlKitName, OwlKitStills>> = {
   'forgot-sent': { before: 'envelope', after: 'envelope' },
   'reset-expired': { before: 'linkExpired', after: 'linkExpired' },
   closed: { before: 'closed', after: 'closed' },
+  'entrance-welcome': { before: 'welcome', after: 'welcome' },
+  'entrance-sign-up': { before: 'signUp', after: 'signUp' },
+  'entrance-key': { before: 'key', after: 'key' },
+  'entrance-offline': { before: 'offline', after: 'offline' },
+  'entrance-wait': { before: 'wait', after: 'wait' },
+  'entrance-link-expired': { before: 'linkExpired', after: 'linkExpired' },
+  'entrance-invitation': { before: 'invitation', after: 'invitation' },
+  'entrance-together': { before: 'together', after: 'together' },
+  'entrance-envelope': { before: 'envelope', after: 'envelope' },
 }
 
 export function loadedOwlKit(kit: OwlKitName): string | undefined {
@@ -68,7 +77,13 @@ export function drawingOf(source: string): SVGSVGElement {
   return drawing
 }
 
-export function OwlKit({ kit, phase = 'after', className }: OwlKitProps) {
+export function OwlKit({
+  kit,
+  phase = 'after',
+  scene,
+  hidesStillWhileLoading = false,
+  className,
+}: OwlKitProps) {
   const host = useRef<HTMLDivElement>(null)
   const [drawnKit, setDrawnKit] = useState<OwlKitName | null>(null)
   const isReady = drawnKit === kit
@@ -97,10 +112,11 @@ export function OwlKit({ kit, phase = 'after', className }: OwlKitProps) {
       data-slot="owl-kit"
       data-owl-kit={kit}
       data-phase={phase}
+      data-scene={scene}
       aria-hidden="true"
       className={cn(owlKitVariants(), className)}
     >
-      {!isReady && <OwlScene scene={OWL_KIT_STILLS[kit][phase]} />}
+      {!isReady && !hidesStillWhileLoading && <OwlScene scene={OWL_KIT_STILLS[kit][phase]} />}
       <div ref={host} className={owlKitDrawingVariants({ isReady })} />
     </div>
   )

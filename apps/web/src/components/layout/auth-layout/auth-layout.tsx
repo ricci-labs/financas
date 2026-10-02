@@ -1,5 +1,5 @@
 import { Logo } from '@web/components/brand/logo'
-import { OwlScene } from '@web/components/brand/owl-scene'
+import { OwlEntrance } from '@web/components/brand/owl-entrance'
 import { authLayoutMessages } from '@web/components/layout/auth-layout/auth-layout.messages'
 import type { AuthLayoutProps } from '@web/components/layout/auth-layout/auth-layout.types'
 import {
@@ -34,7 +34,7 @@ export function AuthLayout({
       <div className={authGridVariants()}>
         <div className={authArtVariants()}>
           <Logo className="hidden lg:block lg:self-start" />
-          <OwlScene scene={scene} className={authOwlVariants()} />
+          <OwlEntrance scene={scene} isOncePerSession className={authOwlVariants()} />
           <div className={authClaimVariants()}>
             <p className="font-display text-claim">{authLayoutMessages.claim}</p>
             <p className="text-claim-support">{authLayoutMessages.support}</p>

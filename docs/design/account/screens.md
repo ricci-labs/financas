@@ -1,7 +1,7 @@
 ---
 summary: Every account screen and state (log in, sign up, verify email, forgot/reset password, invitation, app opening, emails) with its file, image and designer notes.
 read_when: Building or reviewing any AUTH-*, INV-01 or SHELL-01 screen, or an account email.
-updated: 2026-10-01
+updated: 2026-10-02
 ---
 
 # Account screens
@@ -119,6 +119,22 @@ Route: `/invite#token=`.
 | Convite · você já participa | mobile | [html](screens/html/Convite-ja-participa.html) · [png](screens/png/Convite-ja-participa.png) | ALREADY_MEMBER: no celebration, but mint (it is not an error). "Abrir o espaço". |
 | Convite · expirado | mobile | [html](screens/html/Convite-expirado.html) · [png](screens/png/Convite-expirado.png) | Calm version. Same layout for the others: INVITATION_NOT_FOUND "Convite não encontrado. Confira o link ou peça um novo.", INVITATION_REVOKED "Este convite foi cancelado.", INVITATION_ALREADY_ACCEPTED "Este convite já foi aceito. Entre para abrir o espaço."; all with "Ir para o login". |
 | Convite · para outro e-mail | mobile | [html](screens/html/Convite-outro-email.html) · [png](screens/png/Convite-outro-email.png) | INVITATION_FOR_ANOTHER_EMAIL: logged in with another account. "Sair e entrar com outro e-mail" logs out and opens the login with ?next= back to the invitation. |
+
+## Entrances of static screens
+
+Looped demos of the one-time entrance each static screen plays on open (form screens: first opening in the session only; only the owl moves). The last frame of every demo equals the static screen.
+
+| Screen | Route | Demo | Kit |
+|---|---|---|---|
+| Log in | /login | [html](animations/Animacao-entrada-login.html) | `kit-boas-vindas` |
+| Sign up | /signup | [html](animations/Animacao-entrada-cadastro.html) | `kit-cadastro` |
+| Forgot password · Reset password | /forgot-password, /reset-password | [html](animations/Animacao-entrada-chave.html) | `kit-chave` |
+| Offline (any auth form) | — | [html](animations/Animacao-entrada-sem-conexao.html) | `kit-sem-conexao` |
+| Too many attempts (any auth form) | — | [html](animations/Animacao-entrada-espera.html) | `kit-espera` |
+| Link expired opened directly · invitation expired | /verify-email, /reset-password, /invite | [html](animations/Animacao-entrada-link-vencido.html) | `kit-link-vencido` |
+| Invitation preview | /invite | [html](animations/Animacao-entrada-convite.html) | `kit-convite-previa` |
+| Already a member | /invite | [html](animations/Animacao-entrada-ja-participa.html) | `kit-juntos` |
+| Confirm your email (phone invite) · new link sent | /invite, /verify-email | [html](animations/Animacao-entrada-envelope.html) | `kit-email` |
 
 ## Account emails
 

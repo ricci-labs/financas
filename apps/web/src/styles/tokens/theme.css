@@ -96,6 +96,8 @@
   --spacing-control-sm: 2.25rem;
   --spacing-fab: 3.5rem;
 
+  --aspect-owl: 6 / 5;
+
   --breakpoint-md: 48rem;
   --breakpoint-lg: 64rem;
   --breakpoint-xl: 80rem;

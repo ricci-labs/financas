@@ -2,6 +2,7 @@ import { buttonExamples } from '@web/components/actions/button'
 import { textLinkExamples } from '@web/components/actions/text-link'
 import { appSplashExamples } from '@web/components/brand/app-splash'
 import { logoExamples } from '@web/components/brand/logo'
+import { owlEntranceExamples } from '@web/components/brand/owl-entrance'
 import { owlKitExamples } from '@web/components/brand/owl-kit'
 import { owlSceneExamples } from '@web/components/brand/owl-scene'
 import { dividerExamples } from '@web/components/display/divider'
@@ -34,6 +35,7 @@ export const workbenchSections: readonly ComponentExamples[] = [
   stepTrackExamples,
   owlSceneExamples,
   owlKitExamples,
+  owlEntranceExamples,
   logoExamples,
   nextStepCardExamples,
   richTextExamples,
