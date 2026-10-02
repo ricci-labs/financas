@@ -1,7 +1,8 @@
 import { ApiStatusBadge } from '@web/features/system-status/components/api-status-badge'
 import { systemStatusMessages } from '@web/features/system-status/system-status.messages'
+import type { StatusPageProps } from '@web/features/system-status/system-status.types'
 
-export function StatusPage() {
+export function StatusPage({ action }: StatusPageProps) {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-page px-6">
       <div className="text-center">
@@ -9,6 +10,7 @@ export function StatusPage() {
         <p className="mt-2 text-ink-muted">{systemStatusMessages.slogan}</p>
       </div>
       <ApiStatusBadge />
+      {action}
     </main>
   )
 }

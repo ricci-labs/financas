@@ -5,7 +5,6 @@ export const LOGIN_NOTICES = [
   'logged-out',
   'password-changed',
   'email-verified',
-  'invitation-account-created',
 ] as const
 
 export const loginSearchSchema = z.object({

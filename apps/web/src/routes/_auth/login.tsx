@@ -10,5 +10,8 @@ export const Route = createFileRoute('/_auth/login')({
       throw redirect({ href: appPathOrHome(search.next) })
     }
   },
-  component: LoginPage,
+  component: function LoginRoute() {
+    const { next, notice } = Route.useSearch()
+    return <LoginPage next={next} notice={notice} />
+  },
 })

@@ -7,6 +7,7 @@ import {
   authClaimVariants,
   authColumnVariants,
   authFooterVariants,
+  authGridVariants,
   authLayoutVariants,
   authMainVariants,
   authOwlVariants,
@@ -29,26 +30,28 @@ export function AuthLayout({
   useLightTheme()
   return (
     <div data-slot="auth-layout" className={cn(authLayoutVariants(), className)}>
-      {banner && <div className="lg:col-span-2">{banner}</div>}
-      <div className={authArtVariants()}>
-        <Logo className="hidden lg:block" />
-        <OwlScene scene={scene} className={authOwlVariants()} />
-        <div className={authClaimVariants()}>
-          <p className="font-display text-claim">{authLayoutMessages.claim}</p>
-          <p className="text-claim-support">{authLayoutMessages.support}</p>
+      {banner}
+      <div className={authGridVariants()}>
+        <div className={authArtVariants()}>
+          <Logo className="hidden lg:block lg:self-start" />
+          <OwlScene scene={scene} className={authOwlVariants()} />
+          <div className={authClaimVariants()}>
+            <p className="font-display text-claim">{authLayoutMessages.claim}</p>
+            <p className="text-claim-support">{authLayoutMessages.support}</p>
+          </div>
         </div>
+        <main className={authMainVariants()}>
+          <div className={authColumnVariants()}>
+            <header>
+              <h1 className={authTitleVariants()}>{title}</h1>
+              <p className={authSubtitleVariants()}>{subtitle}</p>
+            </header>
+            {notice}
+            {children}
+            {footer && <p className={authFooterVariants()}>{footer}</p>}
+          </div>
+        </main>
       </div>
-      <main className={authMainVariants()}>
-        <div className={authColumnVariants()}>
-          <header>
-            <h1 className={authTitleVariants()}>{title}</h1>
-            <p className={authSubtitleVariants()}>{subtitle}</p>
-          </header>
-          {notice}
-          {children}
-          {footer && <p className={authFooterVariants()}>{footer}</p>}
-        </div>
-      </main>
     </div>
   )
 }
