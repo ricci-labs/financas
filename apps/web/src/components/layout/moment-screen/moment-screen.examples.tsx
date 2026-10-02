@@ -21,7 +21,7 @@ export const momentScreenExamples: ComponentExamples = {
             actions={<Button width="full">Entrar</Button>}
           >
             <p>Agora é só entrar.</p>
-            <StepTrack label="Etapas do cadastro" steps={SIGN_UP_STEPS} currentStep={2} />
+            <StepTrack label="Seu cadastro" steps={SIGN_UP_STEPS} currentStep={2} />
             <NextStepCard>
               Depois de entrar, vocês montam o espaço do casal e já veem quanto ainda podem gastar
               no mês.

@@ -1,7 +1,7 @@
 ---
 summary: The web's application layer — routes and guards (TanStack Router), server data (TanStack Query over the hc client), errors, permissions, dates and money, PWA, how the API serves the SPA, and the bundle budget.
 read_when: Adding a route or page, fetching or changing server data, handling an API error, touching the PWA, the SPA serving or the build.
-updated: 2026-10-01
+updated: 2026-10-02
 ---
 
 # Web application layer
@@ -106,8 +106,12 @@ tests build their own with a memory history.
   failed (RNF-SEC-4).
 - Only a `401` whose code is `SESSION_REQUIRED` (or `UNAUTHORIZED`) ends a session; the log-in
   form's own `401 INVALID_CREDENTIALS` is a form error.
-- Link tokens (`#token=`) are read by `readFragmentToken()` (`lib/link-token.ts`) and removed with
-  `history.replaceState` before the page renders (RNF-SEC-5).
+- Link tokens (`#token=`) are read once by `useLinkToken()` (`hooks/use-link-token.ts`, parsing with
+  `lib/link-token.ts`) from the router's history, which is a memory history in tests, and removed
+  from the address with `history.replace` in a layout effect, before the browser paints
+  (RNF-SEC-5). The page keeps the token in state, so "Tentar de novo" can send it again.
+- A page that calls the API on its own when it opens (`/verify-email`) guards the call with a ref,
+  so Strict Mode's second effect run in development doesn't spend the link twice.
 - Nothing personal is stored in the browser; the only `localStorage` key is `theme`
   (`web-design-tokens.md` → Dark mode).
 

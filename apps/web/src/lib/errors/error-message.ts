@@ -31,11 +31,14 @@ function templateFor(error: ApiError): string {
     : UNKNOWN_ERROR_MESSAGE
 }
 
+export function retryMinutesOf(error: ApiError): number | null {
+  return error.retryAfterSeconds === null
+    ? null
+    : Math.ceil(error.retryAfterSeconds / SECONDS_PER_MINUTE)
+}
+
 function valuesOf(error: ApiError): MessageValues {
-  const minutes =
-    error.retryAfterSeconds === null
-      ? null
-      : Math.ceil(error.retryAfterSeconds / SECONDS_PER_MINUTE)
+  const minutes = retryMinutesOf(error)
   return {
     ref: error.ref ?? MISSING_REF,
     ...(minutes === null ? {} : { minutos: minutes }),

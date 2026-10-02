@@ -7,11 +7,9 @@ const STEPS = ['Conta criada', 'Confirmar e-mail', 'Entrar']
 
 describe('StepTrack', () => {
   it('is an ordered list that marks the current step', async () => {
-    const screen = await render(
-      <StepTrack label="Etapas do cadastro" steps={STEPS} currentStep={1} />,
-    )
+    const screen = await render(<StepTrack label="Seu cadastro" steps={STEPS} currentStep={1} />)
 
-    await expect.element(screen.getByRole('list', { name: 'Etapas do cadastro' })).toBeVisible()
+    await expect.element(screen.getByRole('list', { name: 'Seu cadastro' })).toBeVisible()
     const items = screen.getByRole('listitem').elements()
     expect(items.map((item) => item.getAttribute('aria-current'))).toEqual([null, 'step', null])
     expect(items.map((item) => item.textContent)).toEqual([
@@ -23,7 +21,7 @@ describe('StepTrack', () => {
 
   it('shows a check on done steps and a spinner on the current one while it loads', async () => {
     const screen = await render(
-      <StepTrack label="Etapas do cadastro" steps={STEPS} currentStep={1} isCurrentLoading />,
+      <StepTrack label="Seu cadastro" steps={STEPS} currentStep={1} isCurrentLoading />,
     )
     const [done, current] = screen.getByRole('listitem').elements()
     expect(done?.querySelector('svg')).not.toBeNull()

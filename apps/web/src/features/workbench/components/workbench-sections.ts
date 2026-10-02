@@ -3,6 +3,7 @@ import { textLinkExamples } from '@web/components/actions/text-link'
 import { appSplashExamples } from '@web/components/brand/app-splash'
 import { logoExamples } from '@web/components/brand/logo'
 import { owlSceneExamples } from '@web/components/brand/owl-scene'
+import { dividerExamples } from '@web/components/display/divider'
 import { nextStepCardExamples } from '@web/components/display/next-step-card'
 import { stepTrackExamples } from '@web/components/display/step-track'
 import { alertExamples } from '@web/components/feedback/alert'
@@ -30,6 +31,7 @@ export const workbenchSections: readonly ComponentExamples[] = [
   owlSceneExamples,
   logoExamples,
   nextStepCardExamples,
+  dividerExamples,
   authLayoutExamples,
   momentScreenExamples,
   appSplashExamples,

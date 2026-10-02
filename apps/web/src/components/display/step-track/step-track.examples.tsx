@@ -9,22 +9,17 @@ export const stepTrackExamples: ComponentExamples = {
   examples: [
     {
       name: 'Confira seu e-mail',
-      render: () => <StepTrack label="Etapas do cadastro" steps={SIGN_UP_STEPS} currentStep={1} />,
+      render: () => <StepTrack label="Seu cadastro" steps={SIGN_UP_STEPS} currentStep={1} />,
     },
     {
       name: 'Confirmando',
       render: () => (
-        <StepTrack
-          label="Etapas do cadastro"
-          steps={SIGN_UP_STEPS}
-          currentStep={1}
-          isCurrentLoading
-        />
+        <StepTrack label="Seu cadastro" steps={SIGN_UP_STEPS} currentStep={1} isCurrentLoading />
       ),
     },
     {
       name: 'Confirmado',
-      render: () => <StepTrack label="Etapas do cadastro" steps={SIGN_UP_STEPS} currentStep={2} />,
+      render: () => <StepTrack label="Seu cadastro" steps={SIGN_UP_STEPS} currentStep={2} />,
     },
     {
       name: 'Senha',

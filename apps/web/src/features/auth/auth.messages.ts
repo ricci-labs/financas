@@ -50,7 +50,9 @@ export const authMessages = {
     signUpText:
       'Enviamos um e-mail para **{email}**. Toque em **Confirmar e-mail** e o Twise abre em outra página, já confirmado. O link vale por 24\u00a0horas.',
     signUpSteps: ['Conta criada', 'Confirmar e-mail', 'Entrar'],
-    signUpStepsLabel: 'Etapas do cadastro',
+    signUpStepsLabel: 'Seu cadastro',
+    resentText:
+      'Se **{email}** puder ser usado, enviamos um novo link de confirmação. Toque em **Confirmar e-mail** no e-mail. Ele vale por 24\u00a0horas.',
     canClose: 'Pode fechar esta tela.',
     tip: 'Não chegou? Olhe o spam e a aba Promoções.',
     resend: 'Reenviar e-mail',
@@ -58,6 +60,45 @@ export const authMessages = {
     resent: 'Enviamos de novo.',
     alreadyConfirmed: 'Já confirmou?',
     backToLogIn: 'Voltar para o login',
+    logIn: 'Entrar',
+  },
+  verifyEmail: {
+    steps: ['Conta criada', 'E-mail confirmado', 'Entrar'],
+    stepsLabel: 'Seu cadastro',
+    confirming: {
+      title: 'Confirmando seu e-mail',
+      text: 'Só um instante.',
+      stayHere: 'Pode deixar esta tela aberta. Ela muda sozinha.',
+    },
+    confirmed: {
+      title: 'E-mail confirmado!',
+      text: 'Agora é só entrar.',
+      next: 'Depois de entrar, vocês montam o espaço do casal e já veem quanto ainda podem gastar no mês.',
+      logIn: 'Entrar',
+    },
+    linkInvalid: {
+      title: 'Este link não vale mais',
+      text: 'Já foi usado ou expirou. Se você já confirmou, é só entrar.',
+      logIn: 'Entrar',
+      notConfirmed: 'Ainda não confirmou?',
+      email: 'E-mail',
+      emailPlaceholder: 'nome@exemplo.com',
+      required: { email: 'Informe seu e-mail.' },
+      resend: 'Reenviar confirmação',
+      resending: 'Reenviando…',
+      retryIn: (seconds: number) => `Tente de novo em ${formatMinutesAndSeconds(seconds)}`,
+    },
+    paused: {
+      title: 'Vamos dar uma pausa',
+      text: (minutes: number) =>
+        `Muitas tentativas com links por aqui. Tente de novo em ${minutes}\u00a0minutos. Se você já confirmou, é só entrar.`,
+      logIn: 'Entrar',
+    },
+    failed: {
+      title: 'Não deu para confirmar agora',
+      retry: 'Tentar de novo',
+      logIn: 'Entrar',
+    },
   },
   signUpClosed: {
     title: 'O cadastro está fechado',
