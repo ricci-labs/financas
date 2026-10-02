@@ -1,7 +1,7 @@
 ---
 summary: GitHub Actions pipelines (PR checks, main build and deploy), image registry, Dokploy trigger, Dependabot policy.
 read_when: Editing .github/workflows, changing the Dockerfile or deploy, or when CI fails.
-updated: 2026-10-01
+updated: 2026-10-02
 ---
 
 # CI/CD
@@ -43,7 +43,7 @@ Triggered by `workflow_run` when CI completes on `main` for a push, and only on 
 out the exact commit CI tested, and runs one deploy at a time.
 1. Build the Docker image (`docker/Dockerfile`, multi-stage) with Buildx and layer cache (`type=gha`,
    shared with the 🐳 CI job, so it is mostly cached).
-2. Push to GHCR: `ghcr.io/ricci-labs/financas:<git-sha>` and `:main`, and write in the job summary
+2. Push to GHCR: `ghcr.io/ricci-labs/twise:<git-sha>` (named after the repository) and `:main`, and write in the job summary
    which image to deploy.
 3. Trigger Dokploy to redeploy the application with the new image (webhook or API call; secret in `DOKPLOY_DEPLOY_WEBHOOK`).
 4. Wait and check `GET /api/health/ready` on the deployed app. If it fails, the workflow fails.
