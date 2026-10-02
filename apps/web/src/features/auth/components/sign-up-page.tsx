@@ -5,11 +5,13 @@ import { CheckYourEmail } from '@web/features/auth/components/check-your-email'
 import { ConfirmationHandoffActions } from '@web/features/auth/components/confirmation-handoff-actions'
 import { SignUpClosed } from '@web/features/auth/components/sign-up-closed'
 import { SignUpForm } from '@web/features/auth/components/sign-up-form'
+import { usePageTitle } from '@web/hooks/use-page-title'
 import { useState } from 'react'
 
 const messages = authMessages.checkEmail
 
 export function SignUpPage() {
+  usePageTitle(authMessages.signUp.pageTitle)
   const { data: config } = useSuspenseQuery(authConfigQueryOptions())
   const [sentTo, setSentTo] = useState<string | null>(null)
   const [isClosed, setIsClosed] = useState(false)

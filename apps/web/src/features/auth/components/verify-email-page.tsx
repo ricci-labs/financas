@@ -7,6 +7,7 @@ import { ConfirmationHandoffActions } from '@web/features/auth/components/confir
 import { VerificationMoment } from '@web/features/auth/components/verification-moment'
 import { useCallOnce } from '@web/hooks/use-call-once'
 import { useLinkToken } from '@web/hooks/use-link-token'
+import { usePageTitle } from '@web/hooks/use-page-title'
 import { ApiError, NetworkError } from '@web/lib/api/api-error'
 import { errorMessageFor, retryMinutesOf } from '@web/lib/errors/error-message'
 import { useEffect, useState } from 'react'
@@ -15,6 +16,7 @@ const LINK_LIMIT_WINDOW_MINUTES = 60
 const messages = authMessages.checkEmail
 
 export function VerifyEmailPage() {
+  usePageTitle(authMessages.verifyEmail.pageTitle)
   const token = useLinkToken()
   const { mutate: confirm, isSuccess, error } = useVerifyEmail()
   const [resentTo, setResentTo] = useState<string | null>(null)

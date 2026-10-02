@@ -19,6 +19,7 @@ import { arrivalNoticeOf } from '@web/features/auth/components/arrival-notice'
 import { ResendVerificationButton } from '@web/features/auth/components/resend-verification-button'
 import { useArrivalState } from '@web/hooks/use-arrival-state'
 import { useIsOnline } from '@web/hooks/use-is-online'
+import { usePageTitle } from '@web/hooks/use-page-title'
 import { ApiError } from '@web/lib/api/api-error'
 import { errorMessageFor } from '@web/lib/errors/error-message'
 import { useSchemaForm } from '@web/lib/forms/use-schema-form'
@@ -30,6 +31,7 @@ const MS_PER_SECOND = 1000
 const messages = authMessages.login
 
 export function LoginPage({ next, notice }: LoginPageProps) {
+  usePageTitle(messages.pageTitle)
   const navigate = useNavigate()
   const { inviteToken, email: arrivalEmail, joinedWorkspaceName } = useArrivalState()
   const isOnline = useIsOnline()

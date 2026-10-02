@@ -2,6 +2,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useAcceptInvitation } from '@web/features/auth/api/use-accept-invitation'
 import { usePreviewInvitation } from '@web/features/auth/api/use-preview-invitation'
 import { useSignedInAccount } from '@web/features/auth/api/use-signed-in-account'
+import { authMessages } from '@web/features/auth/auth.messages'
 import type { InvitationFlowProps, InvitationStep } from '@web/features/auth/auth.types'
 import { AppOpening } from '@web/features/auth/components/app-opening'
 import { InvalidInvitation } from '@web/features/auth/components/invalid-invitation'
@@ -11,11 +12,13 @@ import { invitationViewOf } from '@web/features/auth/components/invitation-view'
 import { useArrivalState } from '@web/hooks/use-arrival-state'
 import { useCallOnce } from '@web/hooks/use-call-once'
 import { useLinkToken } from '@web/hooks/use-link-token'
+import { usePageTitle } from '@web/hooks/use-page-title'
 import { useEffect, useState } from 'react'
 
 const JOINED_PAUSE_MS = 1500
 
 export function InvitationPage() {
+  usePageTitle(authMessages.invitation.pageTitle)
   const linkToken = useLinkToken()
   const { inviteToken } = useArrivalState()
   const token = linkToken ?? inviteToken

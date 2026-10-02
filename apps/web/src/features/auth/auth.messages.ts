@@ -4,6 +4,7 @@ const PASSWORD_HELP = 'Use pelo menos 12 caracteres. Uma frase fácil de lembrar
 
 export const authMessages = {
   login: {
+    pageTitle: 'Entrar',
     title: 'Entrar no Twise',
     subtitle: 'Bom te ver de novo! Vamos ver como anda o mês?',
     email: 'E-mail',
@@ -30,6 +31,7 @@ export const authMessages = {
     joined: 'Conta criada. Entre para abrir o espaço **{workspaceName}**.',
   },
   signUp: {
+    pageTitle: 'Criar conta',
     title: 'Criar sua conta',
     subtitle: 'Leva menos de um minuto.',
     name: 'Seu nome',
@@ -70,6 +72,7 @@ export const authMessages = {
     logIn: 'Entrar',
   },
   verifyEmail: {
+    pageTitle: 'Confirmar e-mail',
     steps: ['Conta criada', 'E-mail confirmado', 'Entrar'],
     stepsLabel: 'Seu cadastro',
     confirming: {
@@ -104,6 +107,7 @@ export const authMessages = {
     retry: 'Tentar de novo',
   },
   forgotPassword: {
+    pageTitle: 'Esqueci a senha',
     title: 'Esqueceu a senha?',
     subtitle: 'A gente manda um link para criar outra.',
     email: 'E-mail da conta',
@@ -116,6 +120,7 @@ export const authMessages = {
     backToLogIn: 'Voltar para o login',
   },
   resetPassword: {
+    pageTitle: 'Nova senha',
     title: 'Crie uma nova senha',
     subtitle: 'Depois, é só entrar com ela.',
     password: 'Nova senha',
@@ -135,6 +140,7 @@ export const authMessages = {
     },
   },
   invitation: {
+    pageTitle: 'Convite',
     title: (inviterName: string) => `${inviterName} convidou você`,
     text: 'para o espaço **{workspaceName}** como **{roleName}**.',
     forEmail: 'Convite para **{email}** · Vale até {date}',
