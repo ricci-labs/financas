@@ -105,20 +105,36 @@ from outside.
 React Hook Form v7 + `zodResolver` with the **schemas from `@financas/shared`** (ADR 0005,
 `../product/requirements/ui-standards.md` → Forms and validation). RHF v8 waits until it's stable.
 
-- `useForm({ resolver: zodResolver(schema), mode: 'onTouched' })`: validates on the first blur,
-  then on every change, which is the rule decided on 2026-09-29.
-- `Form` provides the form; `FormField` is the only way to render a field. It wires the visible
-  label, the "*" for required fields, the help text, the error with its icon, `aria-invalid`,
-  `aria-required` and `aria-describedby` (help + error ids from `useId`), and the counter. Built on
-  shadcn's `Field` parts, which don't wire `aria-describedby` themselves.
-- Fields render through `Controller`, and `field.onBlur` is always passed down, or `onTouched`
-  stops working.
+- `useSchemaForm({ schema, requiredMessages, defaultValues })` (`lib/forms/use-schema-form.ts`) is
+  `useForm` with `zodResolver(schema)` and `mode: 'onTouched'`: validates on the first blur, then
+  on every change, which is the rule decided on 2026-09-29.
+- **Messages in pt-BR without touching the shared schemas** (the API keeps them as they are):
+  `fieldErrorMap(requiredMessages)` (`lib/forms/field-errors.ts`) is passed to the parse, and turns
+  each Zod issue into the `../product/requirements/ui-standards.md` sentence: an empty value (after trimming) → the field's
+  own "Informe…" from `requiredMessages`, `too_small`/`too_big` → "Use pelo menos/no máximo {n}
+  caracteres.", an invalid e-mail → "Informe um e-mail válido, como nome@exemplo.com.". A web-only
+  rule (the password confirmation) writes its pt-BR message in its own web schema.
+- `Form` provides the form (`FormProvider` + `<form noValidate>`, so Enter submits from any field);
+  `FormField` is the only way to render a field. It wires the visible label, the "*" for required
+  fields (`aria-hidden`; the input gets `required`), the help text **before** the input, the error
+  with its icon in an `aria-live` region, `aria-invalid`, `aria-describedby` (help + error ids from
+  `useId`), the counter from 80% of `maxLength`, and `readOnly` while the form is submitting. It
+  hands the input its props through a render function:
+  `<FormField name="email" label="E-mail" isRequired>{(control) => <TextInput {...control} />}</FormField>`.
+- Fields go through `useController`, and `onBlur` is always passed down, or `onTouched` stops
+  working. Components below the form read its state with `useFormState`, never
+  `useFormContext().formState`, which doesn't subscribe a child to changes (the submit button
+  stayed disabled with a valid form until this was fixed).
 - Read live values with `useWatch`, never `form.watch()` (it opts the component out of the React
   Compiler).
-- `SubmitButton` implements the button contract: disabled until valid (and dirty on edit forms)
-  with `aria-disabled` and no hint sentence (tapping it marks the missing fields and focuses the
-  first), the spinner with the gerund label, one request per press. Waiting is the `Button`'s
-  `waitUntil` prop (countdown that releases itself).
+- `SubmitButton` implements the button contract: disabled until valid (and changed, with
+  `requiresChange`, on edit forms) with `aria-disabled` and no hint sentence; pressing it then runs
+  `trigger(undefined, { shouldFocus: true })`, which marks the missing fields and focuses the first.
+  The spinner with the gerund label while submitting, one request per press, and `isBlocked` for
+  outside reasons (offline). Waiting is the `Button`'s `waitUntil` prop.
+- `PasswordInput`'s toggle is named "Mostrar senha" / "Ocultar senha" (visible "Mostrar"/"Ocultar"
+  plus a screen-reader-only "senha"), so its accessible name always contains its visible label
+  (WCAG 2.5.3); it doesn't take the focus from the field.
 - Server errors: `applyApiError(form, error)` (`lib/errors/`) puts a code with a field in the
   "Shown as" column of `../product/requirements/error-messages.md` under that field with `setError`, and the rest above the
   buttons.
