@@ -161,11 +161,14 @@ Visual snapshots (`toMatchScreenshot`) are **Later**, and only from the CI image
 the same.
 
 ## React and lint
-- **React Compiler** on from the start (`babel-plugin-react-compiler` through the Vite React
-  plugin). No manual `useMemo`, `useCallback` or `memo` unless a measured case needs it.
-- Biome covers React and accessibility: the `react` domain (`useExhaustiveDependencies`,
+- **React Compiler** on from the start: `babel({ presets: [reactCompilerPreset()] })` in
+  `vite.config.ts` (`@rolldown/plugin-babel` with the preset from `@vitejs/plugin-react`), so tests
+  and builds run compiled code. No manual `useMemo`, `useCallback` or `memo` unless a measured case
+  needs it.
+- Biome covers React and accessibility (`biome.json`): the `react` domain (`useExhaustiveDependencies`,
   `useHookAtTopLevel`, `noNestedComponentDefinitions`...), the a11y group, and
-  `nursery/useReactCompiler`. No ESLint.
+  `nursery/useReactCompiler` as an error, so code the compiler can't optimise fails the lint. No
+  ESLint.
 - Biome's `useSortedClasses` is not enabled: it still sorts by Tailwind 3 order.
 
 ## Adding a component

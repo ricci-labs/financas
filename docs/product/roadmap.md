@@ -150,7 +150,7 @@ updated: 2026-10-01
   4. [x] Web checks: `lint:tokens`, `lint:copy`, `check:contrast` (#148); web file roles and
      every web import rule (#149)
   5. [x] Claude Code: web checks in the hooks; `new-component` and `new-feature` skills (#144)
-  6. [ ] React Compiler and Biome's React rules
+  6. [x] React Compiler and Biome's React rules
   7. [ ] Router + Query + `unwrap`/`ApiError`, error messages map, guards, empty app shell
   8. [ ] Workbench `/dev/components` with the Tokens page
   9. [ ] The API serves the SPA (cache headers, SPA fallback, CSP) and the image ships it

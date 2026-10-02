@@ -1,33 +1,34 @@
-import react from '@vitejs/plugin-react'
 import { playwright } from '@vitest/browser-playwright'
-import { defineConfig } from 'vitest/config'
+import { defineConfig, mergeConfig } from 'vitest/config'
+import viteConfig from './vite.config'
 
-export default defineConfig({
-  plugins: [react()],
-  resolve: { tsconfigPaths: true },
-  test: {
-    projects: [
-      {
-        extends: true,
-        test: {
-          name: 'unit',
-          include: ['src/**/*.test.ts'],
-          environment: 'node',
-        },
-      },
-      {
-        extends: true,
-        test: {
-          name: 'browser',
-          include: ['src/**/*.test.tsx'],
-          browser: {
-            enabled: true,
-            headless: true,
-            provider: playwright(),
-            instances: [{ browser: 'chromium' }],
+export default mergeConfig(
+  viteConfig,
+  defineConfig({
+    test: {
+      projects: [
+        {
+          extends: true,
+          test: {
+            name: 'unit',
+            include: ['src/**/*.test.ts'],
+            environment: 'node',
           },
         },
-      },
-    ],
-  },
-})
+        {
+          extends: true,
+          test: {
+            name: 'browser',
+            include: ['src/**/*.test.tsx'],
+            browser: {
+              enabled: true,
+              headless: true,
+              provider: playwright(),
+              instances: [{ browser: 'chromium' }],
+            },
+          },
+        },
+      ],
+    },
+  }),
+)

@@ -43,7 +43,16 @@
       },
       "suspicious": {
         "noConsole": "error"
+      },
+      "nursery": {
+        "useReactCompiler": "error"
+      },
+      "a11y": {
+        "recommended": true
       }
+    },
+    "domains": {
+      "react": "recommended"
     }
   },
   "javascript": {
