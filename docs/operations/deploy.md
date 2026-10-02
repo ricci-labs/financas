@@ -1,7 +1,7 @@
 ---
 summary: Production setup on Dokploy — containers, image, env vars, resources, logs rotation, backups (offsite destination later), access through Cloudflare Tunnel + Access on the user's domain, first-deploy steps and checklist.
 read_when: Deploying, changing env vars or runtime config, setting up backups, or exposing the app.
-updated: 2026-10-01
+updated: 2026-10-02
 ---
 
 # Deploy
@@ -19,13 +19,19 @@ Pipeline: `../engineering/ci-cd.md`. Decision: `../decisions/0010-deploy-ghcr-do
   before the app serves anything.
 - Attachments live in the volume `/data/files` (`FILE_STORAGE_DIR` points there).
 - Docker healthcheck: `GET /api/health/live`. Ports: `3100` (HTTP), `9464` (metrics, internal).
+- **The image is named after the repository** (`ghcr.io/${{ github.repository }}` in
+  `deploy.yml`). Since the repository became `ricci-labs/twise`, images go to
+  `ghcr.io/ricci-labs/twise`; the old `ghcr.io/ricci-labs/financas` package stopped at
+  2026-09-30 (`60296b1`), before the web screens. A Dokploy service still pointing at it redeploys
+  that old image without any error, so check the image name (and `version` in
+  `/api/health/ready`) after a deploy.
 - The home link is slow (about 100 KB/s at times), so the first pull of the base layers takes
   minutes. Later deploys only pull the changed app layers.
 
 ## Containers (Dokploy project `financas`)
 | Service | Image | Notes |
 |---|---|---|
-| `financas-api` | `ghcr.io/ricci-labs/financas:<sha>` | Node process: HTTP + SPA + WhatsApp + agent + jobs |
+| `financas-api` | `ghcr.io/ricci-labs/twise:<sha>` | Node process: HTTP + SPA + WhatsApp + agent + jobs |
 | `financas-db` | `postgres:18-alpine` | Own volume. Separate from Dokploy's internal Postgres. Never published on the host network |
 | `cloudflared` | `cloudflare/cloudflared` | The tunnel that publishes the app (Remote access below). Chosen by the user, 2026-09-27 |
 
@@ -59,6 +65,12 @@ Pipeline: `../engineering/ci-cd.md`. Decision: `../decisions/0010-deploy-ghcr-do
   Netdata, which runs on the host network, scrapes `http://127.0.0.1:9464/metrics`. It is visible on
   the home LAN but never on the internet: the tunnel only carries port 3100, and the router forwards
   nothing. Metrics hold counts only, never data or secrets.
+- **Because of that host-mode port, the service must update `stop-first`** (Dokploy → the app →
+  Advanced → Swarm settings → Update Config, `"Order": "stop-first"`). With Dokploy's default
+  `start-first`, Swarm starts the new task before stopping the old one, the new task can't take
+  `9464`, and the update hangs with `no suitable node (host-mode port already in use on 1 node)`
+  while the old version keeps running (seen 2026-10-02). `stop-first` means a few seconds offline
+  during each deploy.
 - Netdata job: `/etc/netdata/go.d/prometheus.conf` in its config volume, job `financas`, every 10 s;
   charts are named `prometheus_financas.*`. Restart Netdata after editing it.
 
@@ -142,7 +154,7 @@ Placeholders: `financas.example.com` is the chosen hostname, `<app name>` the ap
 Dokploy (its service name on `dokploy-network`). Real values go only in Dokploy and Cloudflare,
 never in this repo.
 
-1. **Image public.** GitHub → org `ricci-labs` → Packages → `financas` → Package settings →
+1. **Image public.** GitHub → org `ricci-labs` → Packages → `twise` → Package settings →
    Change visibility → Public. The code is public and the image holds no secrets, so Dokploy needs
    no pull token.
 2. **Database.** Dokploy → Create Database → PostgreSQL: image `postgres:18-alpine`, database
@@ -157,7 +169,7 @@ never in this repo.
    `financas_owner`), then update the matching URL in Dokploy and redeploy.
    Passwords and tokens go straight into Dokploy, never into chats, issues or the repo.
 3. **Application.** Dokploy → Create Application → Docker image
-   `ghcr.io/ricci-labs/financas:main`, no domain in Dokploy (the tunnel reaches it).
+   `ghcr.io/ricci-labs/twise:main`, no domain in Dokploy (the tunnel reaches it).
    - Environment (the table above has the full list):
      ```
      DATABASE_URL=postgres://financas_app:<app password>@<db app name>:5432/financas
