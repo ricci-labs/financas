@@ -42,9 +42,14 @@ export function isSessionRequired(error: unknown): boolean {
 }
 
 const PERMISSION_DENIED_STATUS = 403
+const PERMISSION_DENIED_CODES = new Set(['PERMISSION_DENIED', 'FORBIDDEN'])
 
 export function isPermissionDenied(error: unknown): boolean {
-  return error instanceof ApiError && error.status === PERMISSION_DENIED_STATUS
+  return (
+    error instanceof ApiError &&
+    error.status === PERMISSION_DENIED_STATUS &&
+    PERMISSION_DENIED_CODES.has(error.code)
+  )
 }
 
 export function isRetryable(error: unknown): boolean {

@@ -11,6 +11,7 @@ export function Button({
   variant,
   size,
   width,
+  surface,
   className,
   children,
   isDisabled = false,
@@ -49,7 +50,7 @@ export function Button({
       'data-waiting': isWaiting && !isLoading ? '' : undefined,
       'aria-disabled': isBlocked ? true : undefined,
       'aria-busy': isLoading ? true : undefined,
-      className: cn(buttonVariants({ variant, size, width }), className),
+      className: cn(buttonVariants({ variant, size, width, surface }), className),
       onClick: handleClick,
       children: buttonContent({
         children,
