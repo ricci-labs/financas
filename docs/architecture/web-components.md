@@ -166,6 +166,17 @@ React Hook Form v7 + `zodResolver` with the **schemas from `@financas/shared`** 
   its own chunk, loaded when shown (`preloadOwlKits` ahead of an event), with the still scene in
   its place meanwhile. An arrival kit plays on mount; an event kit waits in `phase="before"` (the
   hourglass turning while the API works) and plays when it flips to `"after"`.
+- **Static screens have entrances too:** `OwlEntrance` (`components/brand/owl-entrance`) plays the
+  entrance kit of a scene (`entrance-welcome`, `entrance-sign-up`, `entrance-key`,
+  `entrance-offline`, `entrance-wait`, `entrance-link-expired`, `entrance-invitation`,
+  `entrance-together`, `entrance-envelope`), from the design's entrance kits, which are drawn with the
+  static scenes' strokes, so the last frame is the static image. `AuthLayout` plays it only on the
+  scene's first opening in the session (`isOncePerSession`), but a scene that comes in later, such
+  as waiting or offline, always plays. `MomentScreen` plays it on every mount; `isStill` keeps a
+  warning still (the invitation for another email). Until a kit's chunk arrives, the owl block stays
+  empty rather than flashing the static image. A scene with no entrance kit (`confirmed`) shows its
+  static image. The kit box has the drawings' 6:5 proportion (`aspect-owl`), so it sizes like the
+  image it replaces.
 - **The sequences are generated, not written:** `pnpm gen:owl-motion`
   (`scripts/generate-owl-motion.mjs`) reads the design's looped demos
   (`docs/design/account/animations/*.html`), keeps each kit's window from its event to its last

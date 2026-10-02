@@ -30,7 +30,7 @@ export function InvitationMoment(props: InvitationMomentProps) {
       return (
         <MomentScreen
           tone="celebrate"
-          kit={{ kit: 'invitation', phase: 'before' }}
+          scene="invitation"
           title={messages.title(view.invitation.inviterName)}
           actions={
             account ? (
@@ -130,6 +130,7 @@ export function InvitationMoment(props: InvitationMomentProps) {
         <MomentScreen
           tone="calm"
           scene="invitation"
+          isStill
           title={messages.anotherEmail.title}
           actions={
             <>

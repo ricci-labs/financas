@@ -1,5 +1,5 @@
+import { OwlEntrance } from '@web/components/brand/owl-entrance'
 import { OwlKit } from '@web/components/brand/owl-kit'
-import { OwlScene } from '@web/components/brand/owl-scene'
 import type { MomentScreenProps } from '@web/components/layout/moment-screen/moment-screen.types'
 import {
   momentActionsVariants,
@@ -18,6 +18,7 @@ export function MomentScreen({
   tone,
   scene,
   kit,
+  isStill,
   title,
   children,
   actions,
@@ -36,7 +37,7 @@ export function MomentScreen({
         {kit ? (
           <OwlKit {...kit} className={momentOwlVariants()} />
         ) : (
-          <OwlScene scene={scene} className={momentOwlVariants()} />
+          <OwlEntrance scene={scene} isStill={isStill} className={momentOwlVariants()} />
         )}
       </div>
       <div className={momentBodyVariants()} aria-live="polite">

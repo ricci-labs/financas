@@ -32,7 +32,8 @@ describe('AuthLayout', () => {
       .element(screen.getByRole('heading', { level: 1, name: 'Entrar no Twise' }))
       .toBeVisible()
     await expect.element(screen.getByRole('link', { name: 'Criar conta' })).toBeVisible()
-    expect(screen.container.querySelector('[data-slot=owl-scene]')?.getAttribute('alt')).toBe('')
+    const owl = screen.container.querySelector('[data-scene]')
+    expect(owl?.getAttribute('alt') ?? owl?.getAttribute('aria-hidden')).toMatch(/^(|true)$/)
     await expectNoAccessibilityViolations(screen.container)
   })
 

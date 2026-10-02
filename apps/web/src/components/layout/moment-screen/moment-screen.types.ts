@@ -6,7 +6,9 @@ import type { ReactNode } from 'react'
 
 export type MomentTone = NonNullable<VariantProps<typeof momentVariants>['tone']>
 
-export type MomentOwl = { scene: OwlSceneName; kit?: never } | { kit: OwlKitProps; scene?: never }
+export type MomentOwl =
+  | { scene: OwlSceneName; isStill?: boolean; kit?: never }
+  | { kit: OwlKitProps; scene?: never; isStill?: never }
 
 export type MomentScreenProps = MomentOwl & {
   tone: MomentTone

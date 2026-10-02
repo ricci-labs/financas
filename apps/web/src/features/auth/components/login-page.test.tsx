@@ -137,9 +137,7 @@ describe('AUTH-01 log in', () => {
         screen.getByText('Enquanto isso, você pode trocar a senha em “Esqueci minha senha”.'),
       )
       .toBeVisible()
-    expect(
-      screen.container.querySelector('[data-slot=owl-scene]')?.getAttribute('data-scene'),
-    ).toBe('wait')
+    expect(screen.container.querySelector('[data-scene]')?.getAttribute('data-scene')).toBe('wait')
   })
 
   it('shows the ref of an unexpected error and keeps what was typed', async () => {
