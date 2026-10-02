@@ -1,4 +1,3 @@
-import { Toaster } from '@web/components/feedback/toast'
 import { AppUpdatePrompt } from '@web/features/app-update/components/app-update-prompt'
 import { expectNoAccessibilityViolations } from '@web/testing/accessibility'
 import { describe, expect, it, vi } from 'vitest'
@@ -18,26 +17,19 @@ vi.mock('virtual:pwa-register/react', () => ({
 describe('AppUpdatePrompt', () => {
   it('says nothing while the running version is the latest', async () => {
     worker.needRefresh = false
-    await render(
-      <>
-        <AppUpdatePrompt />
-        <Toaster />
-      </>,
-    )
-    await new Promise((resolve) => setTimeout(resolve, 300))
-    expect(document.querySelector('[data-slot=toast]')).toBeNull()
+    await render(<AppUpdatePrompt />)
+    expect(document.querySelector('[data-slot=app-update]')).toBeNull()
   })
 
-  it('offers the new version and reloads into it on "Atualizar"', async () => {
+  it('offers the new version in a strip fixed on top, until "Atualizar" reloads into it', async () => {
     worker.needRefresh = true
-    const screen = await render(
-      <>
-        <AppUpdatePrompt />
-        <Toaster />
-      </>,
-    )
+    const screen = await render(<AppUpdatePrompt />)
     await expect.element(page.getByText('Nova versão disponível')).toBeVisible()
-    await expectNoAccessibilityViolations(screen.container.ownerDocument.body)
+    const strip = document.querySelector('[data-slot=app-update]') as HTMLElement
+    expect(getComputedStyle(strip).position).toBe('fixed')
+    expect(strip.getBoundingClientRect().top).toBe(0)
+    await expectNoAccessibilityViolations(screen.container)
+
     await page.getByRole('button', { name: 'Atualizar' }).click()
     expect(worker.update).toHaveBeenCalledWith(true)
   })

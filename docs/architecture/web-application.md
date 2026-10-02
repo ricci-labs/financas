@@ -165,9 +165,11 @@ items are hidden with it (`../product/requirements/ui-standards.md` → Permissi
   `navigateFallback: 'index.html'` with `navigateFallbackDenylist: [/^\/api\//]`; **no runtime
   caching of `/api`**: authenticated data never sits in the service worker.
 - **Updates:** `AppUpdatePrompt` (`features/app-update`, mounted in `AppProviders`) shows the
-  persistent toast "Nova versão disponível" with "Atualizar", which activates the new worker and
-  reloads (`useRegisterSW` from `virtual:pwa-register/react`, so the worker is registered from
-  code, never with an inline script).
+  banner "Nova versão disponível" with "Atualizar", fixed on top of the screen, the same strip as
+  the offline banner (design system → Alert: banners are for states of the whole screen), and it
+  stays until "Atualizar" activates the new worker and reloads (`useRegisterSW` from
+  `virtual:pwa-register/react`, so the worker is registered from code, never with an inline
+  script). It was a toast at first, too easy to miss at the bottom (2026-10-02).
 - **Manifest:** name "Twise", description "Leve, claro, a dois.", `lang: 'pt-BR'`, `display:
   'standalone'`, `start_url: '/'`. `background_color` and `theme_color` are the `mint` token, read
   from `semantic.css` at build time: the design hands off from the icon to the mint app opening

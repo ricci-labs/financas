@@ -152,6 +152,7 @@ React Hook Form v7 + `zodResolver` with the **schemas from `@financas/shared`** 
   `TextLink` with `tone="inherit"`.
 - `Banner`: a full-width ink strip for states of the whole screen; `OfflineBanner` shows it with the
   catalog's network message while the device is offline.
+  It takes an optional `action` at the end (the update banner's "Atualizar").
 - `Tip`: one centred line of help with the Info icon, in the colour of its background's text.
 - Toasts: `showToast(message, { action })` with the `Toaster` mounted once in `AppProviders`
   (`sonner`, styled with tokens); bottom-centre on phones, top-right from 1024 px; 4 s, or 8 s with
