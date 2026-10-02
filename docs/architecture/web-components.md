@@ -134,8 +134,13 @@ React Hook Form v7 + `zodResolver` with the **schemas from `@financas/shared`** 
   `<component>.messages.ts` (design system) or `<feature>.messages.ts` (features), written in pt-BR
   exactly as the screen spec gives it. `pnpm lint:copy` flags JSX text and literal `label`,
   `placeholder`, `title` and `aria-label` props in `.tsx` files.
-- API error messages live in one map, `lib/errors/error-messages.ts`, keyed by code, mirroring
-  `../product/requirements/error-messages.md`; a test fails when the doc lists a code the map lacks.
+- API error messages live in one map, `lib/errors/errors.messages.ts`, keyed by code, with the
+  message of `../product/requirements/error-messages.md` (the title, for the calm pages; the
+  catalog's fallback for the "per field" codes, which the form's own validation already covers).
+  `errors.messages.test.ts` reads the catalog and fails on a missing, extra or different message.
+  `errorMessageFor(error, values)` (`lib/errors/error-message.ts`) picks and fills it: `{ref}`,
+  `{minutos}` from `Retry-After`, the screen's own values; a 5xx with an unknown code shows the
+  `INTERNAL_ERROR` message with its `ref`, and a network failure the "Sem conexão" message.
 - Plurals and numbers through `Intl` (`Intl.PluralRules('pt-BR')`, `formatBrl`), never string
   concatenation.
 - **Later:** if a second language becomes real, move to Lingui; the per-file message objects make

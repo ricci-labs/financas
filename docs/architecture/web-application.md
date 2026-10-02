@@ -91,7 +91,8 @@ tests build their own with a memory history.
   | `NetworkError` | The offline banner; writes disabled (RNF-REL-3) |
   | 5xx | The page or form shows "Algo deu errado…" with the `ref` |
 - **Everything else** is shown where it happened, with the message from
-  `lib/errors/error-messages.ts` for its code (`web-components.md` → Copy), field errors through
+  `lib/errors/errors.messages.ts` for its code, picked by `errorMessageFor` (`web-components.md` →
+  Copy), field errors through
   `applyApiError`.
 - Error boundaries: each route's `errorComponent`, plus one per independent section. "Tentar de
   novo" calls `router.invalidate()` and resets the query error boundary.
