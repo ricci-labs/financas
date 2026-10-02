@@ -41,6 +41,9 @@ jobs:
       - name: Token contrast meets WCAG AA
         run: pnpm check:contrast
 
+      - name: Email colours match the design tokens
+        run: pnpm check:email-colors
+
       - name: Type check
         run: pnpm typecheck
 

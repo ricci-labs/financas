@@ -22,9 +22,12 @@ Subject and sender "Twise" → logo (icon + "twise") → white card, max 520 px,
 
 Footer: "**Twise** · Leve, claro, a dois." + why the email was sent. Light theme only, no animation. Tables + inline styles; Bricolage/Figtree fall back to Arial.
 
-## renderEmail changes
+## renderEmail (built 2026-10-01)
 
-`EmailContent` gains `greeting`, `illustration` (`'email' | 'boas-vindas' | 'chave' | 'fechado' | 'convite'`), `preheader` and `reason`; the HTML renders the fallback URL line from `action.url`. Text version unchanged in order: greeting, heading, paragraphs, action, notes.
+`apps/api/src/core/email/layout.ts`. `EmailContent` has `preheader`, `greeting`, `illustration` (`'envelope' | 'welcome' | 'key' | 'padlock' | 'invitation'`, the scenes `coruja-email`, `coruja-boas-vindas`, `coruja-chave`, `coruja-fechado`, `coruja-convite`) and `reason`, all optional (the reminder emails use none of them yet). Paragraphs may hold spans: plain text, `{ strong }` or `{ link }` (rendered as "label (url)" in the text version). The HTML renders the fallback URL line from `action.url`. The text version keeps the order: greeting, heading, paragraphs, action, notes.
+
+- **Images:** PNG 2x renders of the owl scenes and the logo, in `apps/web/public/email/` (`owl-<scene>.png`, `twise-logo.png`), made from the SVGs in `../assets/` with Chromium. Emails load them from the origin of their action link (`<PUBLIC_URL>/email/…`), so they appear once the API serves the web build (web foundation 9).
+- **Colours:** `brand-colors.gen.ts`, generated from the tokens (`../../architecture/web-design-tokens.md` → Tokens in JavaScript).
 
 ## Templates
 

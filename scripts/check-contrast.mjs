@@ -1,10 +1,5 @@
-import { readFileSync } from 'node:fs'
+import { readThemeValues, resolveColor } from './tokens/semantic-tokens.mjs'
 
-const TOKENS_FILE = 'apps/web/src/styles/tokens/semantic.css'
-const BLOCK = /(:root|\.dark)\s*\{([^}]*)\}/g
-const DECLARATION = /--([a-z0-9-]+)\s*:\s*([^;]+);/g
-const VARIABLE_REFERENCE = /^var\(--([a-z0-9-]+)\)$/
-const HEX_COLOR = /^#([0-9a-f]{6})$/i
 const THEMES = ['light', 'dark']
 const ACCOUNT_SCREEN_THEME = 'light'
 const TEXT_MINIMUM = 4.5
@@ -65,38 +60,6 @@ const UI_PAIRS = [
 ]
 const ACCOUNT_SCREEN_UI_PAIRS = [['focus-ring', 'mint']]
 
-function declarationsOf(css, selector) {
-  const declarations = {}
-  for (const [, blockSelector, body] of css.matchAll(BLOCK)) {
-    if (blockSelector === selector) {
-      for (const [, name, value] of body.matchAll(DECLARATION)) {
-        declarations[name] = value.trim()
-      }
-    }
-  }
-  return declarations
-}
-
-function themeValues(css) {
-  const light = declarationsOf(css, ':root')
-  return { light, dark: { ...light, ...declarationsOf(css, '.dark') } }
-}
-
-function resolveColor(values, name, seen = new Set()) {
-  if (seen.has(name) || !(name in values)) {
-    throw new Error(`--${name} is not defined, or refers to itself`)
-  }
-  const value = values[name]
-  const reference = value.match(VARIABLE_REFERENCE)
-  if (reference) {
-    return resolveColor(values, reference[1], new Set([...seen, name]))
-  }
-  if (!HEX_COLOR.test(value)) {
-    throw new Error(`--${name} must resolve to a #rrggbb colour, found "${value}"`)
-  }
-  return value
-}
-
 function linearChannel(channel) {
   const ratio = channel / CHANNEL_MAX
   return ratio <= LINEAR_THRESHOLD
@@ -128,7 +91,7 @@ function pairProblems(values, theme, pairs, minimum) {
   })
 }
 
-const valuesByTheme = themeValues(readFileSync(TOKENS_FILE, 'utf8'))
+const valuesByTheme = readThemeValues()
 const accountScreenValues = valuesByTheme[ACCOUNT_SCREEN_THEME]
 const problems = [
   ...THEMES.flatMap((theme) => [

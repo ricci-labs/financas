@@ -133,8 +133,10 @@ are preferred for components that live in both the sidebar and the main column.
   `stroke`), the pattern shadcn's charts use; the theme switch is free.
 - **A concrete value** (canvas, a computed shade) is read with `readToken('--color-x')` from
   `lib/tokens.ts` (`getComputedStyle` on `<html>`), re-read when the theme changes. Never copied.
-- **Emails** can't use CSS variables. If they need brand colours, a script generates
-  `apps/api/src/core/email/brand-colors.gen.ts` from `semantic.css`; the CSS stays the source.
+- **Emails** can't use CSS variables. `pnpm gen:email-colors` (`scripts/generate-email-colors.mjs`)
+  writes the light-theme values the email layout needs into
+  `apps/api/src/core/email/brand-colors.gen.ts`; `pnpm check:email-colors` (in `pnpm check` and CI)
+  fails when the file no longer matches the tokens. The CSS stays the source.
 
 ## Data colours
 Accounts and categories store a user-chosen colour as `#RRGGBB` (`ledger.schemas.ts`). It is data,

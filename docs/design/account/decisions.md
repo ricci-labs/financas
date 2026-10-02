@@ -8,7 +8,7 @@ updated: 2026-10-01
 
 Each item says what changed, why, and which file to edit. Apply the doc edits in the same PR that builds the screen.
 
-**Status (2026-10-01):** sections 1–3 and 5 are applied to `product/requirements` (ui-standards, non-functional, auth-and-account, error-messages). Section 4 (emails) is applied with the PR that changes the API emails.
+**Status (2026-10-01):** sections 1–3 and 5 are applied to `product/requirements` (ui-standards, non-functional, auth-and-account, error-messages); section 4 is built in the API emails (`emails.md` → renderEmail).
 
 ## 1. Layout and theme
 

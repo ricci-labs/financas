@@ -9,13 +9,23 @@ export function invitationMessage({
   inviteLink,
 }: InvitationEmail): EmailMessage {
   const rendered = renderEmail({
-    heading: 'Você recebeu um convite',
-    paragraphs: [`${inviterName} convidou você para o workspace "${workspaceName}" no Twise.`],
+    preheader: `${inviterName} convidou você para o espaço ${workspaceName}.`,
+    illustration: 'invitation',
+    greeting: 'Oi!',
+    heading: `${inviterName} convidou você`,
+    paragraphs: [
+      [
+        `${inviterName} convidou você para o espaço `,
+        { strong: workspaceName },
+        ' no Twise, para cuidarem juntos do dinheiro do mês.',
+      ],
+    ],
     action: { label: 'Ver convite', url: inviteLink },
     notes: [
       'O convite vale por 7 dias e só pode ser aceito com este e-mail.',
       'Se você não esperava este convite, ignore este e-mail.',
     ],
+    reason: `Você recebeu este e-mail porque ${inviterName} convidou este endereço.`,
   })
   return {
     template: 'workspace_invitation',
