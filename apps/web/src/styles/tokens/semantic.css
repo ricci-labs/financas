@@ -41,6 +41,8 @@
   --elevation-float: 0 6px 20px rgb(23 25 28 / 12%);
   --elevation-dialog: 0 16px 48px rgb(23 25 28 / 18%);
 
+  --stroke-emphasis: 1.5px;
+
   --duration-fast: 120ms;
   --duration-normal: 200ms;
   --duration-slow: 320ms;
@@ -92,7 +94,8 @@
   --elevation-dialog: 0 16px 48px rgb(0 0 0 / 55%);
 }
 
-:root {
+:root,
+.dark {
   --action-primary: var(--ink);
   --action-secondary: var(--bg-sunken);
   --transfer: var(--ink-muted);

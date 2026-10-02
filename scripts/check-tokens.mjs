@@ -10,6 +10,7 @@ const STYLES_FOLDER = 'apps/web/src/styles/'
 const STYLE_PROP_FOLDERS = [
   'apps/web/src/components/inputs/color-swatch/',
   'apps/web/src/components/display/category-icon/',
+  'apps/web/src/features/workbench/',
 ]
 const RAW_COLOR = /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab|lab|lch|color-mix)\(/i
 const DEFAULT_PALETTE_CLASS =

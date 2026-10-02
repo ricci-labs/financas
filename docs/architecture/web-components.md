@@ -94,7 +94,10 @@ from outside.
 ## Variants
 - `cva` (class-variance-authority) is the only variant API, the one shadcn generates. No
   tailwind-variants, no ad-hoc `Record<variant, string>` maps.
-- Classes are joined with `cn()` from `lib/cn.ts` (shadcn's `cn`), which merges conflicts.
+- Classes are joined with `cn()` from `lib/cn.ts` (shadcn's `cn` engine), which merges conflicts.
+  It is created with our theme's utility names (`lib/tokens.ts` reads them from `theme.css`, the
+  same source as Tailwind), so `text-button` and `text-on-action-primary` are known as a type style
+  and a colour; the stock `cn` would drop one of them as a conflict.
 - Compound states use `compoundVariants` (`{ variant: 'danger', size: 'sm', class: … }`).
 - Every class in a recipe is a token utility (`web-design-tokens.md` → The rule).
 
@@ -147,9 +150,13 @@ React Hook Form v7 + `zodResolver` with the **schemas from `@financas/shared`** 
   that mechanical (RNF-I18N-1).
 
 ## Workbench
-- `/dev/components` exists only in development (`import.meta.env.DEV`; the route is tree-shaken
-  from the build). It renders every `.examples.tsx` by family, plus a **Tokens** page with every
-  colour role, type step, radius, shadow and duration, in light and dark side by side.
+- `/dev/components` exists only in development: the route throws `notFound()` and renders nothing
+  outside `import.meta.env.DEV`, so the build drops the workbench code (`features/workbench`).
+  It shows a **Tokens** gallery (every colour role, type style, radius and shadow, read from the
+  token files) and each component's examples, in light and dark side by side.
+- A component's examples are a `ComponentExamples` value (`lib/examples.types.ts`) exported from
+  its `index.ts` as `<name>Examples`, and listed once in
+  `features/workbench/components/workbench-sections.ts`.
 - It is how a component is reviewed against the Claude Design prototype before a screen uses it.
 - **Storybook 10** replaces it only if the library outgrows it (around 30+ components, or stories
   wanted as tests); the `.examples.tsx` files then become stories.

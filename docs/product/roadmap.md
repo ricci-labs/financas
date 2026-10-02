@@ -153,7 +153,7 @@ updated: 2026-10-01
   6. [x] React Compiler and Biome's React rules
   7. [x] Router + Query + `unwrap`/`ApiError`, guards, empty app shell (#153); error messages
      map (the 403 toast and the offline banner come with their components)
-  8. [ ] Workbench `/dev/components` with the Tokens page
+  8. [x] Workbench `/dev/components` with the Tokens page
   9. [x] The API serves the SPA (cache headers, SPA fallback, CSP) and the image ships it
   10. [ ] PWA (shell precache, update toast) and `check:bundle`
   Then the account area (user's go-ahead 2026-10-01, design in `../design/account/`), one PR each:
