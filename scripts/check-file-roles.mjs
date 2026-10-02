@@ -23,6 +23,7 @@ const WEB_COMPONENT_ROLES = [
   '.messages.ts',
   '.examples.tsx',
   '.test.tsx',
+  '.test.ts',
 ]
 const WEB_FEATURE_FILE = /^apps\/web\/src\/features\/([^/]+)\/([^/]+)$/
 const WEB_FEATURE_ROLES = ['types', 'schemas', 'messages']

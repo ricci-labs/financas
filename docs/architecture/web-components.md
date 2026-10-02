@@ -68,7 +68,7 @@ components/display/amount/
 | `<name>.types.ts` | Props extend the native element's props (`ComponentProps<'button'>`) plus `VariantProps<typeof nameVariants>` |
 | `<name>.messages.ts` | A typed `as const` object; interpolation through functions (`installmentLabel(3, 10)`) |
 | `<name>.examples.tsx` | A list of named examples; the only place outside tests that may hard-code copy and amounts (placeholders only, RNF-PRIV-2) |
-| `<name>.test.tsx` | Each state of the brief that has behaviour, plus the axe check |
+| `<name>.test.tsx` | Each state of the brief that has behaviour, plus the axe check (`<name>.test.ts` for pure logic, run in Node) |
 | `index.ts` | What features import. Nothing else from the folder is imported from outside |
 
 Files are created only when needed (a component with no copy has no `.messages.ts`), always with
@@ -76,7 +76,8 @@ these names. `lint:file-roles` checks the names; depcruise checks that only `ind
 from outside.
 
 ## Props contract
-- **Variant props:** `variant` (visual weight: `primary`, `secondary`, `tertiary`, `danger`),
+- **Variant props:** `variant` (visual weight: `primary`, `secondary`, `outline`, `subtle`,
+  `tertiary`, `danger`; `surface: 'mint'` for buttons on a mint moment),
   `size` (`sm`, `md`, `lg`), `tone` (meaning: `income`, `expense`, `neutral`, a status). Same names
   in every component.
 - **`className` is for placement only** (margin, width, grid position). A different look is a new
@@ -203,6 +204,9 @@ React Hook Form v7 + `zodResolver` with the **schemas from `@financas/shared`** 
   `errorMessageFor(error, values)` (`lib/errors/error-message.ts`) picks and fills it: `{ref}`,
   `{minutos}` from `Retry-After`, the screen's own values; a 5xx with an unknown code shows the
   `INTERNAL_ERROR` message with its `ref`, and a network failure the "Sem conexão" message.
+- Emphasis inside a sentence ("Toque em **Confirmar e-mail**") stays in the message string:
+  `RichText` (`components/display/rich-text`) renders `**bold**` and fills `{values}`, so the
+  copy is never split into pieces in a component.
 - Plurals and numbers through `Intl` (`Intl.PluralRules('pt-BR')`, `formatBrl`), never string
   concatenation.
 - **Later:** if a second language becomes real, move to Lingui; the per-file message objects make

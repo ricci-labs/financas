@@ -5,10 +5,10 @@ import {
   UNKNOWN_ERROR_MESSAGE,
 } from '@web/lib/errors/errors.messages'
 import type { MessageValues } from '@web/lib/errors/errors.types'
+import { fill } from '@web/lib/format/template'
 
 const INTERNAL_ERROR_CODE = 'INTERNAL_ERROR'
 const SECONDS_PER_MINUTE = 60
-const PLACEHOLDER = /\{([^}]+)\}/g
 const MISSING_REF = '—'
 
 export function errorMessageFor(error: unknown, values: MessageValues = {}): string {
@@ -19,12 +19,6 @@ export function errorMessageFor(error: unknown, values: MessageValues = {}): str
     return fill(UNKNOWN_ERROR_MESSAGE, { ref: MISSING_REF })
   }
   return fill(templateFor(error), { ...valuesOf(error), ...values })
-}
-
-export function fill(template: string, values: MessageValues): string {
-  return template.replace(PLACEHOLDER, (placeholder, name: string) =>
-    name in values ? String(values[name]) : placeholder,
-  )
 }
 
 function templateFor(error: ApiError): string {

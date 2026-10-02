@@ -1,5 +1,6 @@
 import { ApiError, NetworkError } from '@web/lib/api/api-error'
-import { errorMessageFor, fill } from '@web/lib/errors/error-message'
+import { errorMessageFor } from '@web/lib/errors/error-message'
+import { fill } from '@web/lib/format/template'
 import { describe, expect, it } from 'vitest'
 
 function apiError(code: string, status: number, extra: Partial<ApiError> = {}) {

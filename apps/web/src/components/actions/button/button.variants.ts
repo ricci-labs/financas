@@ -27,9 +27,13 @@ export const buttonVariants = cva(
         auto: '',
         full: 'w-full',
       },
+      surface: {
+        page: '',
+        mint: 'data-waiting:bg-mint-soft data-waiting:text-ink',
+      },
     },
     compoundVariants: [{ variant: 'tertiary', size: 'md', class: 'px-3' }],
-    defaultVariants: { variant: 'primary', size: 'md', width: 'auto' },
+    defaultVariants: { variant: 'primary', size: 'md', width: 'auto', surface: 'page' },
   },
 )
 

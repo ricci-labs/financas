@@ -25,3 +25,24 @@ export type ArrivalNotice = {
 export type ResendVerificationProps = {
   email: string
 }
+
+export type SignUpFormProps = {
+  onSent: (email: string) => void
+  onClosed: () => void
+}
+
+export type CheckYourEmailProps = {
+  text: string
+  values: Readonly<Record<string, string>>
+  steps: readonly string[]
+  stepsLabel: string
+  resendTo?: string
+}
+
+export type HandoffResendProps = {
+  email: string
+}
+
+export type SignUpProblem =
+  | { kind: 'limited'; message: string; retryAt: number }
+  | { kind: 'unexpected'; message: string }

@@ -1,6 +1,6 @@
 import { credentialsSchema } from '@financas/shared'
 import { useQuery } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { TextLink } from '@web/components/actions/text-link'
 import type { OwlSceneName } from '@web/components/brand/owl-scene'
 import { Alert } from '@web/components/feedback/alert'
@@ -78,7 +78,8 @@ export function LoginPage({ next, notice }: LoginPageProps) {
       footer={
         config.data?.isSignupEnabled && (
           <>
-            {messages.noAccount} <TextLink href="/signup">{messages.createAccount}</TextLink>
+            {messages.noAccount}{' '}
+            <TextLink render={<Link to="/signup" />}>{messages.createAccount}</TextLink>
           </>
         )
       }

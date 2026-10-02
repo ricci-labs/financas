@@ -161,7 +161,7 @@ updated: 2026-10-01
       fields and forms (#157), Alert, Tip, Banner, toasts (#158), StepTrack, OwlScene, Logo (#159),
       AuthLayout, MomentScreen, AppSplash
   12. [x] `AUTH-01` log in, with `SHELL-01` session handling (arrival messages, `next`, log out)
-  13. [ ] `AUTH-02` sign up and its "Confira seu e-mail" handoff
+  13. [x] `AUTH-02` sign up and its "Confira seu e-mail" handoff
   14. [ ] `AUTH-03` verify email
   15. [ ] `AUTH-04` forgot password and `AUTH-05` reset password
   16. [ ] `INV-01` invitation
