@@ -1,6 +1,10 @@
 import type { ButtonProps } from '@web/components/actions/button'
 import type { AlertTone } from '@web/components/feedback/alert'
-import type { LOGIN_NOTICES, loginSearchSchema } from '@web/features/auth/auth.schemas'
+import type {
+  LOGIN_NOTICES,
+  loginSearchSchema,
+  newPasswordSchema,
+} from '@web/features/auth/auth.schemas'
 import type { ReactNode } from 'react'
 import type { z } from 'zod'
 
@@ -84,4 +88,11 @@ export type SignUpStepsProps = {
 export type LogInButtonProps = {
   variant?: ButtonProps['variant']
   children: string
+}
+
+export type NewPasswordFields = z.output<typeof newPasswordSchema>
+
+export type ResetPasswordFormProps = {
+  token: string
+  onLinkInvalid: () => void
 }
