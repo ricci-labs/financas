@@ -36,7 +36,3 @@ export const buttonVariants = cva(
     defaultVariants: { variant: 'primary', size: 'md', width: 'auto', surface: 'page' },
   },
 )
-
-export const spinnerVariants = cva(
-  'size-4.5 shrink-0 animate-spin rounded-full border-2 border-current border-r-transparent',
-)

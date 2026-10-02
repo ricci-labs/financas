@@ -1,6 +1,7 @@
 import { Alert } from '@web/components/feedback/alert'
 import { authMessages } from '@web/features/auth/auth.messages'
 import type { ArrivalNotice, LoginNotice } from '@web/features/auth/auth.types'
+import { fill } from '@web/lib/format/template'
 
 const NOTICES: Record<LoginNotice, ArrivalNotice> = {
   'session-ended': { tone: 'info', message: authMessages.login.notices['session-ended'] },
@@ -9,7 +10,17 @@ const NOTICES: Record<LoginNotice, ArrivalNotice> = {
   'email-verified': { tone: 'success', message: authMessages.login.notices['email-verified'] },
 }
 
-export function arrivalNoticeOf(notice: LoginNotice | undefined) {
+export function arrivalNoticeOf(
+  notice: LoginNotice | undefined,
+  joinedWorkspaceName: string | undefined,
+) {
+  if (joinedWorkspaceName) {
+    return (
+      <Alert tone="success">
+        {fill(authMessages.login.joined, { workspaceName: joinedWorkspaceName })}
+      </Alert>
+    )
+  }
   if (!notice) {
     return null
   }

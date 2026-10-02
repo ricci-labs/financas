@@ -7,5 +7,7 @@ declare module '@tanstack/react-router' {
 
   interface HistoryState {
     email?: string
+    inviteToken?: string
+    joinedWorkspaceName?: string
   }
 }

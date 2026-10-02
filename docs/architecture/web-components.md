@@ -161,6 +161,8 @@ React Hook Form v7 + `zodResolver` with the **schemas from `@financas/shared`** 
   `confirmed`, `key`, `linkExpired`, `closed`, `invitation`, `together`) as a decorative image.
   The motion (`docs/design/account/motion.md`) comes later on the layered kits.
 - `Logo` is the full logo or the icon, named "twise" for screen readers.
+- `Spinner` (`components/feedback/spinner`, `sm`/`md`/`lg`) is the one spinner: buttons, the
+  step track, the app opening and "Abrindo o espaço…" all use it.
 - `StepTrack` is the 3-step journey of the moments: an `<ol>` with `aria-label`, the current step
   with `aria-current="step"` (a spinner while it loads), a solid line up to it and a dashed one
   after (no rounding on the dashed line, which Chrome would draw solid).
@@ -210,7 +212,9 @@ React Hook Form v7 + `zodResolver` with the **schemas from `@financas/shared`** 
   `INTERNAL_ERROR` message with its `ref`, and a network failure the "Sem conexão" message.
 - Emphasis inside a sentence ("Toque em **Confirmar e-mail**") stays in the message string:
   `RichText` (`components/display/rich-text`) renders `**bold**` and fills `{values}`, so the
-  copy is never split into pieces in a component.
+  copy is never split into pieces in a component. A link inside a sentence is marked `[like this]`
+  and drawn by the `link` render prop ("[Entre com ela] para aceitar o convite."). Markers are read
+  from the message only, never from the values it fills in.
 - Plurals and numbers through `Intl` (`Intl.PluralRules('pt-BR')`, `formatBrl`), never string
   concatenation.
 - **Later:** if a second language becomes real, move to Lingui; the per-file message objects make
@@ -232,7 +236,7 @@ React Hook Form v7 + `zodResolver` with the **schemas from `@financas/shared`** 
 | Kind | Tool | Covers |
 |---|---|---|
 | Pure logic (formatters, mappers) | Vitest (node) | Like `packages/shared` |
-| Components | Vitest browser mode (Playwright provider, `vitest-browser-react`) | States with behaviour, keyboard, focus; `expectNoA11yViolations()` (axe-core) in each test file |
+| Components | Vitest browser mode (Playwright provider, `vitest-browser-react`) | States with behaviour, keyboard, focus; `expectNoAccessibilityViolations()` (axe-core) in each test file, which first waits for running transitions to end, so contrast is never measured mid-fade |
 | Journeys J1–J11 | Playwright e2e + `@axe-core/playwright` | `../product/requirements/experience.md` journeys against the real API (RNF-QUAL-2) |
 
 Browser mode runs components in a real browser, which focus management, popovers and layout need.

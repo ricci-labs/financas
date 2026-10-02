@@ -36,7 +36,3 @@ export const stepLineVariants = cva('absolute top-3.25 right-1/2 -left-1/2 mx-4.
     },
   },
 })
-
-export const stepSpinnerVariants = cva(
-  'size-3.5 animate-spin rounded-full border-2 border-current border-r-transparent',
-)

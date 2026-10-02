@@ -164,7 +164,7 @@ updated: 2026-10-02
   13. [x] `AUTH-02` sign up and its "Confira seu e-mail" handoff
   14. [x] `AUTH-03` verify email
   15. [x] `AUTH-04` forgot password (#164) and `AUTH-05` reset password
-  16. [ ] `INV-01` invitation
+  16. [x] `INV-01` invitation
   17. [ ] `SHELL-01` app opening (splash)
   18. [ ] Owl motion (`../design/account/motion.md`)
   Then the other screens, in the order of `requirements/README.md`.

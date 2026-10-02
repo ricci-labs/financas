@@ -55,12 +55,16 @@ tests build their own with a memory history.
 - Search params are the state of a list (period, filters, sort), so a link reproduces the view.
 - `/login` takes `next` (where to go after logging in) and `notice` (the arrival message:
   `session-ended`, `logged-out`, `password-changed`, `email-verified`), validated by
-  `loginSearchSchema`; anything else is dropped. The invitation's "Conta criada…" message comes
-  with `INV-01`, which also needs the workspace name.
-- **An e-mail carried to the next screen never goes in the URL** (where history, logs and shared
-  links would keep it): it travels in the router's history state (`HistoryState.email`, declared in
-  `app/router.types.ts`) and is read with `useArrivalEmail()`. "Esqueci minha senha" carries the
-  e-mail typed on the log in this way. A reload simply opens the screen empty.
+  `loginSearchSchema`; anything else is dropped.
+- **What a screen hands to the next never goes in the URL** (where history, logs and shared links
+  would keep it): it travels in the router's history state (`HistoryState` in
+  `app/router.types.ts`), read with `useArrivalState()`. A reload of the same entry keeps it; a
+  fresh visit opens the screen empty.
+  | Field | Set by | Read by |
+  |---|---|---|
+  | `email` | "Esqueci minha senha"; the invitation's sign-up and its "Entre com ela" | `/forgot-password` and `/login` fill it in (the log in then focuses the password) |
+  | `inviteToken` | `/invite` ("Já tenho conta", "Entre com ela", "Sair e entrar com outro e-mail") | `/login` hands it on to `next`; `/invite` uses it when the address has no `#token=` |
+  | `joinedWorkspaceName` | The invitation's sign-up with a verified e-mail | `/login` shows "Conta criada. Entre para abrir o espaço {workspaceName}." |
 
 ## Server data
 - **Only `features/<feature>/api/` calls the backend**, through `apiClient` (`lib/api-client.ts`).
@@ -114,8 +118,13 @@ tests build their own with a memory history.
   `lib/link-token.ts`) from the router's history, which is a memory history in tests, and removed
   from the address with `history.replace` in a layout effect, before the browser paints
   (RNF-SEC-5). The page keeps the token in state, so "Tentar de novo" can send it again.
-- A page that calls the API on its own when it opens (`/verify-email`) guards the call with a ref,
-  so Strict Mode's second effect run in development doesn't spend the link twice.
+- A page that calls the API on its own when it opens (`/verify-email`, `/invite`) does it through
+  `useCallOnce(token, call)` (`hooks/use-call-once.ts`), whose ref keeps Strict Mode's second
+  effect run in development from spending the link twice.
+- `/invite` loads the session in its loader (`loadSession`) and reads it with
+  `useSignedInAccount()`, which never fetches again: a logged-out visitor causes one `401`, not a
+  second one that would clear the cache under the page. After joining, the moment stays 1.5 s and
+  opens `/`; it will open the workspace once `_app/w/$workspaceId` exists.
 - Nothing personal is stored in the browser; the only `localStorage` key is `theme`
   (`web-design-tokens.md` → Dark mode).
 
