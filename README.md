@@ -1,14 +1,18 @@
 <div align="center">
 
-# 💸 Twise
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/design/assets/logo/twise-logo-claro.svg">
+  <img src="docs/design/assets/logo/twise-logo.svg" alt="twise" width="280">
+</picture>
 
-### *Light, clear, together.*
+### *Leve, claro, a dois.*
+<sub>(light, clear, together)</sub>
 
 **Clear for both of you, light on the pocket: the app that shows how much you can still spend this month.**
 
 Household finance for couples, with a web dashboard and (soon) a WhatsApp assistant.
 
-[![Status](https://img.shields.io/badge/status-API%20live%20%C2%B7%20web%20next-3b82f6?style=flat-square)](docs/product/roadmap.md)
+[![Status](https://img.shields.io/badge/status-API%20%2B%20account%20screens%20live-80dca5?style=flat-square)](docs/product/roadmap.md)
 [![Node](https://img.shields.io/badge/node-24%20LTS-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/typescript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![pnpm](https://img.shields.io/badge/pnpm-workspaces-F69220?style=flat-square&logo=pnpm&logoColor=white)](https://pnpm.io)
@@ -23,7 +27,23 @@ Household finance for couples, with a web dashboard and (soon) a WhatsApp assist
 
 > [!NOTE]
 > **The backend is done and running in production** on a home server: ledger, cards and invoices, shared purchases and charges, planning, dashboard metrics and alerts, reminders, attachments and an audit log, all behind a typed HTTP API ([Postman collection](docs/api/postman.md)).
-> **Next:** the web app, whose [requirements](docs/product/requirements/README.md) are written screen by screen, and then the WhatsApp channel with the Claude agent. Follow along in the [roadmap](docs/product/roadmap.md).
+> **The web app has started:** its foundation (design tokens, components, checks) and every account screen are live: log in, sign up, email confirmation, password reset, invitations and the app opening, as an installable PWA.
+> **Next:** the dashboard and the other screens, whose [requirements](docs/product/requirements/README.md) are written screen by screen, and then the WhatsApp channel with the Claude agent. Follow along in the [roadmap](docs/product/roadmap.md).
+
+## A first look
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/assets/readme/login.png" alt="Log in screen with the owl" width="200"><br><sub>Log in</sub></td>
+    <td align="center"><img src="docs/assets/readme/check-your-email.png" alt="Check your email screen after sign up" width="200"><br><sub>Sign up → check your email</sub></td>
+    <td align="center"><img src="docs/assets/readme/email-confirmed.png" alt="Email confirmed screen" width="200"><br><sub>Email confirmed</sub></td>
+    <td align="center"><img src="docs/assets/readme/invitation.png" alt="Invitation to a shared workspace" width="200"><br><sub>Invitation</sub></td>
+  </tr>
+</table>
+
+<img src="docs/assets/readme/login-desktop.png" alt="Log in on desktop: mint panel with the owl and the slogan, form on the right" width="100%">
+
+The owl is the mascot: each screen has its own scene, and the moments animate once (the hourglass turns while the email is confirmed, the check draws itself, the second owl arrives when an invitation is accepted). The motion is generated from the [design's demos](docs/design/account/motion.md), and with reduced motion everything jumps to its final state. *(Sample data only: Member A, Member B, Casa.)*
 
 ## Why it exists
 
@@ -75,7 +95,7 @@ The web dashboard shows the **period overview** (fixed income, spent, committed,
 | 📎 | **Receipts** | Attach receipts to entries and charges | ✅ API · WhatsApp photos next |
 | 👥 | **Workspaces** | Isolated spaces ("Home", "Personal") with members, invitations and module-level permissions | ✅ API |
 | 🕵️ | **History** | Append-only audit log of every change, with who, when and from where | ✅ API |
-| 🖥️ | **Web app** | Mobile-first dashboard for the couple | 🔜 next |
+| 🖥️ | **Web app** | Mobile-first PWA for the couple: installable, works with a weak signal, light and dark themes | ✅ account screens · 🔜 dashboard |
 | 💬 | **WhatsApp agent** | Records expenses, income, transfers and paybacks in natural language. Always asks before saving | 🔜 after the web |
 
 ## How it works
@@ -129,7 +149,7 @@ The code name is `financas`: it names the repository, the packages (`@financas/*
 financas/
 ├── apps/
 │   ├── api/        # Hono API + jobs (+ WhatsApp and agent later), one process; Drizzle migrations
-│   └── web/        # React SPA, served by the API (next)
+│   └── web/        # React SPA + PWA, served by the API (design tokens, components, account screens)
 ├── packages/
 │   └── shared/     # Zod schemas and pure domain rules, grouped by area (ledger, planning, reports…)
 ├── scripts/        # quality checks and ops:* helpers (health, logs, trace, errors, metrics, jobs)
@@ -151,9 +171,10 @@ pnpm dev                  # API on :3100 + web (Vite, proxies /api)
 
 | Command | Does |
 |---|---|
-| `pnpm check` | Lint, no comments, file roles, typecheck, dependency rules, unit tests, docs links |
+| `pnpm check` | Lint, no comments, file roles, design tokens, copy, contrast, typecheck, dependency rules, unit and component tests, docs links |
 | `pnpm test:integration` | Database tests (RLS, ledger invariants, every route) |
 | `pnpm build` | Web build + API bundle |
+| `pnpm check:bundle` | After a web build: the initial JavaScript stays under 250 KB gzipped |
 
 The API can be explored with the [Postman collection](docs/api/postman.md). Deploying on your own server: [`docs/operations/deploy.md`](docs/operations/deploy.md).
 
@@ -164,6 +185,7 @@ The docs are written to be read by people **and by AI agents**: every file start
 | Area | Start with |
 |---|---|
 | Product | [Vision](docs/product/vision.md) · [Roadmap](docs/product/roadmap.md) · [Web requirements](docs/product/requirements/README.md) |
+| Design | [Design system](docs/design/design-system/README.md) · [Account screens](docs/design/account/screens.md) · [Web components](docs/architecture/web-components.md) · [Design tokens](docs/architecture/web-design-tokens.md) |
 | Domain | [Glossary](docs/domain/glossary.md) · [Data model](docs/domain/model/README.md) · [Diagrams](docs/domain/model/diagrams.md) · [Invoices and installments](docs/domain/billing-and-installments.md) |
 | Architecture | [Overview](docs/architecture/overview.md) · [Structure](docs/architecture/structure.md) · [Dependency rules](docs/architecture/dependency-rules.md) |
 | Engineering | [Git and PRs](docs/engineering/git-workflow.md) · [CI/CD](docs/engineering/ci-cd.md) · [Working with Claude](docs/engineering/claude-workflow.md) |
@@ -179,7 +201,9 @@ The docs are written to be read by people **and by AI agents**: every file start
 - [x] Backend: auth, workspaces, ledger, cards, contacts and charges, planning, dashboard metrics and alerts, reminders, attachments, audit log
 - [x] Observability, Docker image, deploy on Dokploy, daily backups
 - [x] Web requirements: experience, UI standards, design system brief, every screen
-- [ ] **Web app**: design system, then screen by screen
+- [x] **Web foundation**: design tokens, components, checks, PWA and the bundle budget
+- [x] **Account screens**: log in, sign up, email confirmation, password reset, invitations, app opening, owl motion
+- [ ] **Web app**: the dashboard and the other screens, one by one
 - [ ] **WhatsApp channel and Claude agent**
 - [ ] Voice notes and receipt photos on WhatsApp
 - [ ] Bank statement and invoice import
