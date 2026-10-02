@@ -41,15 +41,10 @@ is fixed in the same step that introduced it.
 
 | Event | Hook | What it does |
 |---|---|---|
-| `PostToolUse` (Edit/Write/MultiEdit) | `check-edited-file.mjs` | For a `.ts`/`.tsx` file under `apps/` or `packages/`: formats it with Biome, then runs the no-comments and file-roles checks on it. A problem blocks with exit 2, and Claude gets the report to fix now. |
+| `PostToolUse` (Edit/Write/MultiEdit) | `check-edited-file.mjs` | For a `.ts`/`.tsx` file under `apps/` or `packages/`: formats it with Biome, then runs the no-comments, file-roles, web tokens and web copy checks on it (the web checks only look at `apps/web/src`). For a token file (`apps/web/src/styles/tokens/*.css`): the contrast check and the email-colours check. A problem blocks with exit 2, and Claude gets the report to fix now. |
 | `Stop` | `check-changed-files.mjs` | Runs the same checks on every `.ts`/`.tsx` file changed since `origin/main`, including files written through Bash, which the edit hook can't see. A problem stops Claude from finishing the turn until it's fixed (one retry, then it reports). |
-| `PreToolUse` (Edit/Write/MultiEdit) | `guard.mjs` | Denies edits to `.env` files (`.env.example` is fine) and to committed migrations in `apps/api/drizzle/`. |
+| `PreToolUse` (Edit/Write/MultiEdit) | `guard.mjs` | Denies edits to `.env` files (`.env.example` is fine), to committed migrations in `apps/api/drizzle/`, and to generated files (`routeTree.gen.ts`, `brand-colors.gen.ts`), naming their source. |
 | `PreToolUse` (Bash) | `guard.mjs` | Denies `--no-verify` and `git commit -n` (hooks can't be skipped), and a force push to `main`. |
-
-**Planned for the web (with the web checks, web foundation 4):** the edit hook also runs `lint:tokens` and `lint:copy`
-on files under `apps/web/src`, and `check:contrast` when a file in `styles/tokens/` changes; the
-Stop hook runs the same over the changed files; `guard.mjs` denies edits to the generated
-`routeTree.gen.ts`.
 
 Hooks load when a session starts. After changing them, open `/hooks` once or restart Claude Code.
 

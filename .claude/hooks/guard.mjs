@@ -4,6 +4,13 @@ import { projectRoot, readHookInput } from './conventions.mjs'
 
 const ENV_FILE = /(^|\/)\.env(\.(?!example$)[^/]+)?$/
 const MIGRATION_FILE = /^apps\/api\/drizzle\//
+const GENERATED_FILES = new Map([
+  ['apps/web/src/routeTree.gen.ts', 'TanStack Router writes it from the files in routes/'],
+  [
+    'apps/api/src/core/email/brand-colors.gen.ts',
+    'run pnpm gen:email-colors after changing the tokens',
+  ],
+])
 const SKIPPED_HOOKS = /--no-verify\b|\bgit\s+commit\b[^|;&\n]*\s-n\b/
 const FORCE_PUSH = /\bgit\s+push\b[^|;&\n]*(--force\b|--force-with-lease\b|\s-f\b|\s\+)/
 const MAIN_BRANCH = 'main'
@@ -33,6 +40,9 @@ function fileRisk() {
   const relativePath = relative(root, path)
   if (ENV_FILE.test(relativePath)) {
     return 'Env files hold secrets and are edited by the user only (CLAUDE.md). Change .env.example instead.'
+  }
+  if (GENERATED_FILES.has(relativePath)) {
+    return `This file is generated: ${GENERATED_FILES.get(relativePath)}. Change its source instead.`
   }
   if (MIGRATION_FILE.test(relativePath) && isTracked(relativePath)) {
     return 'This migration is already committed. Never edit an applied migration: generate a new one (docs/architecture/conventions.md → Migrations).'
