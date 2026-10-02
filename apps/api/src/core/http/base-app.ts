@@ -9,7 +9,6 @@ import { secureHeaders } from 'hono/secure-headers'
 
 export const MAX_REQUEST_BODY_BYTES = 100 * 1024
 const PAYLOAD_TOO_LARGE = 413
-
 export function createBaseApp(logger: Logger, uploads?: UploadRoutes) {
   return new Hono<AppEnv>()
     .use(requestContext(logger))

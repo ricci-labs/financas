@@ -131,20 +131,30 @@ items are hidden with it (`../product/requirements/ui-standards.md` → Permissi
   colours from the `background` and `primary` tokens.
 
 ## Served by the API
-The SPA build is copied into the API image and served by the same process (ADR 0005), after the
-`/api` routes:
+The SPA build is copied into the API image (`/app/web`, `WEB_DIST_DIR`) and served by the same
+process (ADR 0005), from a **second Hono app**: `createWebApp(logger, WEB_DIST_DIR)`
+(`core/http/web-app.ts`). `main.ts` hands the server `routeByPath(api, web)`: `/api/*` goes to the
+API app, everything else to the web app. Mounting the web routes inside the API app was tried and
+broke it: their `*` routes became the last matched route of every API request, which the session
+guard reads to recognise public routes. Kept apart, the API app, its `AppType` and its own headers
+(attachments answer with `Content-Security-Policy: sandbox`) stay untouched. In development
+`WEB_DIST_DIR` is unset and Vite serves the web.
 
-| Path | Cache-Control |
-|---|---|
-| `/assets/*` (hashed names) | `public, max-age=31536000, immutable` |
-| `index.html`, `sw.js`, `manifest.webmanifest`, `theme-init.js` | `no-cache` |
-| Any other path that isn't `/api/*` | `index.html` (SPA fallback), `no-cache` |
-| Unknown `/api/*` | The API's own `ROUTE_NOT_FOUND`, never `index.html` |
+| Path | Answer | Cache-Control |
+|---|---|---|
+| `/assets/*` (hashed names) | the file, or 404 | `public, max-age=31536000, immutable` |
+| Other files (`index.html`, `theme-init.js`, `email/*.png`…) | the file, or 404 (never the page) | `no-cache` |
+| Any other `GET` outside `/api/` (an app page: `/login`, `/w/…`) | `index.html` (SPA fallback) | `no-cache` |
+| Unknown `/api/*` | The API's own `ROUTE_NOT_FOUND`, never `index.html` | — |
 
-The Content-Security-Policy (Hono `secureHeaders`): `default-src 'self'`, `script-src 'self'`,
-`connect-src 'self'`, `img-src 'self' data: blob:`, `worker-src 'self'`, `object-src 'none'`,
-`base-uri 'self'`, `frame-ancestors 'none'`. **Assumption:** `style-src 'self'` works (React sets
-styles through the CSSOM); checked with Recharts when the first chart lands.
+The Content-Security-Policy (`CONTENT_SECURITY_POLICY` in `core/http/web-app.ts`, on every answer of
+the web app):
+`default-src`, `script-src`, `style-src`, `font-src`, `connect-src`, `worker-src`, `manifest-src`,
+`base-uri` and `form-action` `'self'`; `img-src 'self' data: blob:`; `object-src` and
+`frame-ancestors` `'none'`. No `'unsafe-inline'`: the theme script is a file, and React sets styles
+through the CSSOM, which the policy doesn't block (checked in Chromium against the served build,
+2026-10-01). CI's 🐳 job boots the image and checks the page, the fallback, the headers, an asset,
+an email image and an unknown API path.
 
 ## Bundle budget
 - `pnpm check:bundle` (`scripts/check-bundle.mjs`) reads Vite's `build.manifest`, walks the entry's
