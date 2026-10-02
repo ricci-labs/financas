@@ -51,6 +51,10 @@ export const authMessages = {
       'Enviamos um e-mail para **{email}**. Toque em **Confirmar e-mail** e o Twise abre em outra página, já confirmado. O link vale por 24\u00a0horas.',
     signUpSteps: ['Conta criada', 'Confirmar e-mail', 'Entrar'],
     signUpStepsLabel: 'Seu cadastro',
+    forgotPasswordText:
+      'Se houver uma conta com **{email}**, enviamos um e-mail. Toque em **Criar nova senha** e o Twise abre em outra página para você trocar. O link vale por 1\u00a0hora.',
+    forgotPasswordSteps: ['Pedir o link', 'Abrir o e-mail', 'Nova senha'],
+    forgotPasswordStepsLabel: 'Trocar a senha',
     resentText:
       'Se **{email}** puder ser usado, enviamos um novo link de confirmação. Toque em **Confirmar e-mail** no e-mail. Ele vale por 24\u00a0horas.',
     canClose: 'Pode fechar esta tela.',
@@ -99,6 +103,18 @@ export const authMessages = {
       retry: 'Tentar de novo',
       logIn: 'Entrar',
     },
+  },
+  forgotPassword: {
+    title: 'Esqueceu a senha?',
+    subtitle: 'A gente manda um link para criar outra.',
+    email: 'E-mail da conta',
+    emailPlaceholder: 'nome@exemplo.com',
+    required: { email: 'Informe seu e-mail.' },
+    submit: 'Enviar link',
+    submitting: 'Enviando link…',
+    retryIn: (seconds: number) => `Tente de novo em ${formatMinutesAndSeconds(seconds)}`,
+    remembered: 'Lembrou?',
+    backToLogIn: 'Voltar para o login',
   },
   signUpClosed: {
     title: 'O cadastro está fechado',

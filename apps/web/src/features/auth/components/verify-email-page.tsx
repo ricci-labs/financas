@@ -2,6 +2,7 @@ import { useVerifyEmail } from '@web/features/auth/api/use-verify-email'
 import { authMessages } from '@web/features/auth/auth.messages'
 import type { VerificationView } from '@web/features/auth/auth.types'
 import { CheckYourEmail } from '@web/features/auth/components/check-your-email'
+import { ConfirmationHandoffActions } from '@web/features/auth/components/confirmation-handoff-actions'
 import { VerificationMoment } from '@web/features/auth/components/verification-moment'
 import { useLinkToken } from '@web/hooks/use-link-token'
 import { ApiError, NetworkError } from '@web/lib/api/api-error'
@@ -32,8 +33,7 @@ export function VerifyEmailPage() {
         values={{ email: resentTo }}
         steps={messages.signUpSteps}
         stepsLabel={messages.signUpStepsLabel}
-        resendTo={resentTo}
-        logInLabel={messages.logIn}
+        actions={<ConfirmationHandoffActions email={resentTo} logInLabel={messages.logIn} />}
       />
     )
   }

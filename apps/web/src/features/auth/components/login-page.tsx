@@ -23,6 +23,7 @@ import { errorMessageFor } from '@web/lib/errors/error-message'
 import { useSchemaForm } from '@web/lib/forms/use-schema-form'
 import { appPathOrHome } from '@web/lib/navigation'
 import { useEffect, useState } from 'react'
+import { useWatch } from 'react-hook-form'
 
 const MS_PER_SECOND = 1000
 const messages = authMessages.login
@@ -58,6 +59,7 @@ export function LoginPage({ next, notice }: LoginPageProps) {
     }
   }
 
+  const typedEmail = useWatch({ control: form.control, name: 'email' }).trim()
   const isLimited = problem?.kind === 'limited'
   const topNotice =
     problem?.kind === 'unverified' ? (
@@ -100,7 +102,9 @@ export function LoginPage({ next, notice }: LoginPageProps) {
           {(control) => <PasswordInput autoComplete="current-password" {...control} />}
         </FormField>
         <p className="-mt-2 flex justify-end">
-          <TextLink href="/forgot-password">{messages.forgotPassword}</TextLink>
+          <TextLink render={<Link to="/forgot-password" state={{ email: typedEmail }} />}>
+            {messages.forgotPassword}
+          </TextLink>
         </p>
         {problem && problem.kind !== 'unverified' && (
           <Alert tone={isLimited ? 'warning' : 'danger'} isUrgent>

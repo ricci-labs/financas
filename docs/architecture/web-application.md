@@ -57,6 +57,10 @@ tests build their own with a memory history.
   `session-ended`, `logged-out`, `password-changed`, `email-verified`), validated by
   `loginSearchSchema`; anything else is dropped. The invitation's "Conta criada…" message comes
   with `INV-01`, which also needs the workspace name.
+- **An e-mail carried to the next screen never goes in the URL** (where history, logs and shared
+  links would keep it): it travels in the router's history state (`HistoryState.email`, declared in
+  `app/router.types.ts`) and is read with `useArrivalEmail()`. "Esqueci minha senha" carries the
+  e-mail typed on the log in this way. A reload simply opens the screen empty.
 
 ## Server data
 - **Only `features/<feature>/api/` calls the backend**, through `apiClient` (`lib/api-client.ts`).
