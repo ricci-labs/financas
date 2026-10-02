@@ -8,7 +8,7 @@ export function ResetPasswordPage() {
   const [isLinkInvalid, setIsLinkInvalid] = useState(false)
 
   if (!token || isLinkInvalid) {
-    return <PasswordLinkInvalid />
+    return <PasswordLinkInvalid wasTried={isLinkInvalid} />
   }
   return <ResetPasswordForm token={token} onLinkInvalid={() => setIsLinkInvalid(true)} />
 }

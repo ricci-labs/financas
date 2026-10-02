@@ -9,7 +9,7 @@ export function SignUpClosed() {
   return (
     <MomentScreen
       tone="calm"
-      scene="closed"
+      kit={{ kit: 'closed' }}
       title={messages.title}
       actions={
         <Button width="full" render={<Link to="/login" />}>

@@ -47,6 +47,8 @@
   --duration-fast: 120ms;
   --duration-normal: 200ms;
   --duration-slow: 320ms;
+  --duration-swap: 250ms;
+  --duration-raise: 300ms;
 
   --z-sticky: 10;
   --z-overlay: 40;

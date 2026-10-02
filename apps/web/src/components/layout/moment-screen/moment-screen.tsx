@@ -1,3 +1,4 @@
+import { OwlKit } from '@web/components/brand/owl-kit'
 import { OwlScene } from '@web/components/brand/owl-scene'
 import type { MomentScreenProps } from '@web/components/layout/moment-screen/moment-screen.types'
 import {
@@ -6,6 +7,7 @@ import {
   momentBannerVariants,
   momentBodyVariants,
   momentOwlVariants,
+  momentTextVariants,
   momentTitleVariants,
   momentVariants,
 } from '@web/components/layout/moment-screen/moment-screen.variants'
@@ -15,6 +17,7 @@ import { cn } from '@web/lib/cn'
 export function MomentScreen({
   tone,
   scene,
+  kit,
   title,
   children,
   actions,
@@ -30,13 +33,23 @@ export function MomentScreen({
     >
       {banner && <div className={momentBannerVariants()}>{banner}</div>}
       <div className={momentArtVariants()}>
-        <OwlScene scene={scene} className={momentOwlVariants()} />
+        {kit ? (
+          <OwlKit {...kit} className={momentOwlVariants()} />
+        ) : (
+          <OwlScene scene={scene} className={momentOwlVariants()} />
+        )}
       </div>
       <div className={momentBodyVariants()} aria-live="polite">
-        <h1 className={momentTitleVariants()}>{title}</h1>
-        {children}
+        <div key={title} className={momentTextVariants()}>
+          <h1 className={momentTitleVariants()}>{title}</h1>
+          {children}
+        </div>
       </div>
-      {actions && <div className={momentActionsVariants()}>{actions}</div>}
+      {actions && (
+        <div key={title} className={momentActionsVariants()}>
+          {actions}
+        </div>
+      )}
     </main>
   )
 }

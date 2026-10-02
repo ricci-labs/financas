@@ -1,3 +1,4 @@
+import type { OwlKitName } from '@web/components/brand/owl-kit'
 import type { AlertTone } from '@web/components/feedback/alert'
 import type { previewInvitation } from '@web/features/auth/api/use-preview-invitation'
 import type { useSignedInAccount } from '@web/features/auth/api/use-signed-in-account'
@@ -45,6 +46,7 @@ export type CheckYourEmailProps = {
   steps: readonly string[]
   stepsLabel: string
   actions: ReactNode
+  kit?: OwlKitName
 }
 
 export type ConfirmationHandoffActionsProps = {
@@ -72,7 +74,7 @@ export type ResendConfirmationFormProps = {
 export type VerificationView =
   | { kind: 'confirming' }
   | { kind: 'confirmed' }
-  | { kind: 'linkInvalid' }
+  | { kind: 'linkInvalid'; wasChecked: boolean }
   | { kind: 'paused'; minutes: number }
   | { kind: 'failed'; message: string; isOffline: boolean }
 
@@ -165,4 +167,8 @@ export type InvitationFlowProps = {
 
 export type InvalidInvitationProps = {
   code: InvalidInvitationCode
+}
+
+export type PasswordLinkInvalidProps = {
+  wasTried: boolean
 }

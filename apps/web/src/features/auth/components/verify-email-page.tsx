@@ -1,3 +1,4 @@
+import { preloadOwlKits } from '@web/components/brand/owl-kit'
 import { useVerifyEmail } from '@web/features/auth/api/use-verify-email'
 import { authMessages } from '@web/features/auth/auth.messages'
 import type { VerificationView } from '@web/features/auth/auth.types'
@@ -8,7 +9,7 @@ import { useCallOnce } from '@web/hooks/use-call-once'
 import { useLinkToken } from '@web/hooks/use-link-token'
 import { ApiError, NetworkError } from '@web/lib/api/api-error'
 import { errorMessageFor, retryMinutesOf } from '@web/lib/errors/error-message'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const LINK_LIMIT_WINDOW_MINUTES = 60
 const messages = authMessages.checkEmail
@@ -18,6 +19,7 @@ export function VerifyEmailPage() {
   const { mutate: confirm, isSuccess, error } = useVerifyEmail()
   const [resentTo, setResentTo] = useState<string | null>(null)
   useCallOnce(token, confirm)
+  useEffect(() => preloadOwlKits(['confirm-expired']), [])
 
   if (resentTo) {
     return (
@@ -41,7 +43,7 @@ export function VerifyEmailPage() {
 
 function viewOf(token: string | null, isSuccess: boolean, error: Error | null): VerificationView {
   if (!token) {
-    return { kind: 'linkInvalid' }
+    return { kind: 'linkInvalid', wasChecked: false }
   }
   if (isSuccess) {
     return { kind: 'confirmed' }
@@ -53,7 +55,7 @@ function viewOf(token: string | null, isSuccess: boolean, error: Error | null): 
     return { kind: 'paused', minutes: retryMinutesOf(error) ?? LINK_LIMIT_WINDOW_MINUTES }
   }
   if (error instanceof ApiError && !error.isServerError) {
-    return { kind: 'linkInvalid' }
+    return { kind: 'linkInvalid', wasChecked: true }
   }
   return {
     kind: 'failed',

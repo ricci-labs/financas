@@ -30,7 +30,7 @@ export function InvitationMoment(props: InvitationMomentProps) {
       return (
         <MomentScreen
           tone="celebrate"
-          scene="invitation"
+          kit={{ kit: 'invitation', phase: 'before' }}
           title={messages.title(view.invitation.inviterName)}
           actions={
             account ? (
@@ -90,7 +90,7 @@ export function InvitationMoment(props: InvitationMomentProps) {
       return (
         <MomentScreen
           tone="celebrate"
-          scene="together"
+          kit={{ kit: 'invitation', phase: 'after' }}
           title={messages.joined.title(view.invitation.workspaceName)}
           actions={
             <p className="flex items-center justify-center gap-2 text-body-sm">

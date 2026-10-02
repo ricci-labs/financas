@@ -102,6 +102,24 @@
 
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-emphasized: cubic-bezier(0.3, 0, 0, 1.3);
+
+  --animate-moment-text: moment-text var(--duration-swap) ease var(--moment-text-delay, 0s) both;
+  --animate-moment-actions: moment-actions var(--duration-raise) ease
+    var(--moment-actions-delay, 0s) both;
+
+  @keyframes moment-text {
+    from {
+      opacity: 0;
+      transform: translateY(0.5rem);
+    }
+  }
+
+  @keyframes moment-actions {
+    from {
+      opacity: 0;
+      transform: translateY(1rem);
+    }
+  }
 }
 
 @theme inline {

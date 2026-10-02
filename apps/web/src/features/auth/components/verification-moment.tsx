@@ -25,7 +25,7 @@ export function VerificationMoment({ view, onResent, onRetry }: VerificationMome
       return (
         <MomentScreen
           tone="celebrate"
-          scene="wait"
+          kit={{ kit: 'confirm', phase: 'before' }}
           title={messages.confirming.title}
           banner={<OfflineBanner />}
           actions={<p className="text-body-sm">{messages.confirming.stayHere}</p>}
@@ -38,7 +38,7 @@ export function VerificationMoment({ view, onResent, onRetry }: VerificationMome
       return (
         <MomentScreen
           tone="celebrate"
-          scene="confirmed"
+          kit={{ kit: 'confirm', phase: 'after' }}
           title={messages.confirmed.title}
           actions={
             <>
@@ -61,7 +61,9 @@ export function VerificationMoment({ view, onResent, onRetry }: VerificationMome
       return (
         <MomentScreen
           tone="calm"
-          scene="linkExpired"
+          {...(view.wasChecked
+            ? { kit: { kit: 'confirm-expired', phase: 'after' } as const }
+            : { scene: 'linkExpired' as const })}
           title={messages.linkInvalid.title}
           actions={
             <>
