@@ -12,7 +12,7 @@ export function Toaster() {
   return <SonnerToaster position={isDesktop ? 'top-right' : 'bottom-center'} />
 }
 
-export function showToast(message: string, { action }: ToastOptions = {}) {
+export function showToast(message: string, { action, isPersistent = false }: ToastOptions = {}) {
   sonnerToast.custom(
     (id) => (
       <div data-slot="toast" className={toastVariants()}>
@@ -31,6 +31,13 @@ export function showToast(message: string, { action }: ToastOptions = {}) {
         )}
       </div>
     ),
-    { id: message, duration: action ? UNDO_DURATION_MS : TOAST_DURATION_MS },
+    { id: message, duration: durationOf(Boolean(action), isPersistent) },
   )
+}
+
+function durationOf(hasAction: boolean, isPersistent: boolean): number {
+  if (isPersistent) {
+    return Number.POSITIVE_INFINITY
+  }
+  return hasAction ? UNDO_DURATION_MS : TOAST_DURATION_MS
 }

@@ -113,6 +113,9 @@ jobs:
       - name: Build web and API
         run: pnpm build
 
+      - name: Check the initial bundle size
+        run: pnpm check:bundle
+
   image:
     name: 🐳 Docker image
     runs-on: ubuntu-latest
@@ -165,6 +168,12 @@ jobs:
           curl -fsS -D asset-headers.txt -o /dev/null "http://127.0.0.1:3100$asset"
           grep -qi '^cache-control: public, max-age=31536000, immutable' asset-headers.txt
           curl -fsS -o /dev/null http://127.0.0.1:3100/email/owl-key.png
+          curl -fsS -H 'Accept-Encoding: gzip' -D gzip-headers.txt -o /dev/null "http://127.0.0.1:3100$asset"
+          grep -qi '^content-encoding: gzip' gzip-headers.txt
+          curl -fsS -D sw-headers.txt -o /dev/null http://127.0.0.1:3100/sw.js
+          grep -qi '^cache-control: no-cache' sw-headers.txt
+          curl -fsS http://127.0.0.1:3100/manifest.webmanifest | grep -q '"name":"Twise"'
+          echo "$page" | grep -q 'rel="manifest"'
           curl -s http://127.0.0.1:3100/api/nope | grep -q '"error"'
 
       - name: Every migration was applied

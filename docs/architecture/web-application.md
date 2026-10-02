@@ -152,16 +152,27 @@ items are hidden with it (`../product/requirements/ui-standards.md` → Permissi
 - **Later:** Temporal, once Safari ships it.
 
 ## PWA
-`vite-plugin-pwa` with `registerType: 'prompt'`:
-- precache the app shell only (`js`, `css`, `html`, `woff2`, icons) and the owl scenes: each scene
-  is its own file, loaded when shown, so without the precache the offline owl would be missing
-  exactly when there is no network (seen 2026-10-02); `navigateFallback:
-  'index.html'` with `navigateFallbackDenylist: [/^\/api\//]`; **no runtime caching of `/api`**:
-  authenticated data never sits in the service worker;
-- a new version shows a toast "Nova versão disponível" with "Atualizar" (`useRegisterSW`);
-- the worker is registered from code, never with an inline script;
-- manifest: name "Twise", `lang: 'pt-BR'`, `display: 'standalone'`, 192/512 and maskable icons,
-  colours from the `background` and `primary` tokens.
+`vite-plugin-pwa` (`vite.config.ts`) with `registerType: 'prompt'` and `injectRegister: false`:
+- **Precache:** every built `js`, `css`, `html`, `woff2`, `svg` and `png` except the email images
+  (`email/**`). That is the shell, every route's chunk and every owl scene and kit (about 2.2 MB
+  before compression, fetched once per version in the background after the first load). The owl
+  scenes are in it because each is its own file, loaded when shown: without the precache the
+  offline owl would be missing exactly when there is no network (seen 2026-10-02).
+  `navigateFallback: 'index.html'` with `navigateFallbackDenylist: [/^\/api\//]`; **no runtime
+  caching of `/api`**: authenticated data never sits in the service worker.
+- **Updates:** `AppUpdatePrompt` (`features/app-update`, mounted in `AppProviders`) shows the
+  persistent toast "Nova versão disponível" with "Atualizar", which activates the new worker and
+  reloads (`useRegisterSW` from `virtual:pwa-register/react`, so the worker is registered from
+  code, never with an inline script).
+- **Manifest:** name "Twise", description "Leve, claro, a dois.", `lang: 'pt-BR'`, `display:
+  'standalone'`, `start_url: '/'`. `background_color` and `theme_color` are the `mint` token, read
+  from `semantic.css` at build time: the design hands off from the icon to the mint app opening
+  with no seam (`docs/design/account/screens.md` → App opening).
+- **Icons:** `public/icons/` (192, 512, maskable 512 with the owl in the safe zone, the 180 px
+  Apple icon and the SVG favicon), generated from the design's `twise-icone.svg` by `pnpm
+  gen:app-icons` (`scripts/generate-app-icons.mjs`, Chromium through Playwright; run it again
+  when the icon changes). `index.html` links the favicon and the Apple icon, and sets
+  `viewport-fit=cover` for the phone's safe areas (RNF-RESP-2).
 
 ## Served by the API
 The SPA build is copied into the API image (`/app/web`, `WEB_DIST_DIR`) and served by the same
@@ -180,6 +191,11 @@ guard reads to recognise public routes. Kept apart, the API app, its `AppType` a
 | Any other `GET` outside `/api/` (an app page: `/login`, `/w/…`) | `index.html` (SPA fallback) | `no-cache` |
 | Unknown `/api/*` | The API's own `ROUTE_NOT_FOUND`, never `index.html` | — |
 
+Every answer of the web app is compressed (`compress()` from Hono, gzip or deflate as the browser
+asks); the API app is not. Without it the JavaScript went out raw, so RNF-PERF-1's gzipped budget
+didn't hold in production. `sw.js` and `manifest.webmanifest` are "other files": `no-cache`, so a
+new worker is seen on the next visit.
+
 The Content-Security-Policy (`CONTENT_SECURITY_POLICY` in `core/http/web-app.ts`, on every answer of
 the web app):
 `default-src`, `script-src`, `style-src`, `font-src`, `connect-src`, `worker-src`, `manifest-src`,
@@ -192,6 +208,7 @@ an email image and an unknown API path.
 ## Bundle budget
 - `pnpm check:bundle` (`scripts/check-bundle.mjs`) reads Vite's `build.manifest`, walks the entry's
   **static** imports, gzips each file and fails above **250 KB** (RNF-PERF-1). Runs in CI after the
-  build.
+  build (📦). It lists each file, largest first; on 2026-10-02 the initial load was 208 KB, so a
+  big addition to a shared chunk shows up here first.
 - Recharts and other heavy libraries are reached only from route components, which are split, so
   they never land in the initial chunk.

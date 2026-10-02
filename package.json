@@ -39,6 +39,8 @@
     "gen:email-colors": "node scripts/generate-email-colors.mjs",
     "check:email-colors": "node scripts/generate-email-colors.mjs --check",
     "gen:owl-motion": "node scripts/generate-owl-motion.mjs",
+    "gen:app-icons": "node scripts/generate-app-icons.mjs",
+    "check:bundle": "node scripts/check-bundle.mjs",
     "check:owl-motion": "node scripts/generate-owl-motion.mjs --check"
   },
   "devDependencies": {
