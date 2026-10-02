@@ -54,8 +54,9 @@ tests build their own with a memory history.
   and the shared pending, error and not-found components from `components/feedback/`.
 - Search params are the state of a list (period, filters, sort), so a link reproduces the view.
 - `/login` takes `next` (where to go after logging in) and `notice` (the arrival message:
-  `session-ended`, `logged-out`, `password-changed`, `email-verified`,
-  `invitation-account-created`), validated by `loginSearchSchema`; anything else is dropped.
+  `session-ended`, `logged-out`, `password-changed`, `email-verified`), validated by
+  `loginSearchSchema`; anything else is dropped. The invitation's "Conta criada…" message comes
+  with `INV-01`, which also needs the workspace name.
 
 ## Server data
 - **Only `features/<feature>/api/` calls the backend**, through `apiClient` (`lib/api-client.ts`).
@@ -99,7 +100,12 @@ tests build their own with a memory history.
 
 ## Session and links
 - No auth state outside Query: the session is the `HttpOnly` cookie; "who am I" is `['me']`.
-- Log out: call the API, then `queryClient.clear()` and go to `/login` (RNF-SEC-4).
+- Log in (`useLogIn`): on success the whole cache is cleared (a new session sees nothing of the
+  last one) and the page opens `appPathOrHome(next)`. Log out (`useLogOut`, the "Sair" button):
+  call the API, then `queryClient.clear()` and `/login?notice=logged-out`, even if the call
+  failed (RNF-SEC-4).
+- Only a `401` whose code is `SESSION_REQUIRED` (or `UNAUTHORIZED`) ends a session; the log-in
+  form's own `401 INVALID_CREDENTIALS` is a form error.
 - Link tokens (`#token=`) are read by `readFragmentToken()` (`lib/link-token.ts`) and removed with
   `history.replaceState` before the page renders (RNF-SEC-5).
 - Nothing personal is stored in the browser; the only `localStorage` key is `theme`

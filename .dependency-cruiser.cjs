@@ -109,8 +109,9 @@ module.exports = {
     {
       name: 'web-features-know-no-routes',
       severity: 'error',
-      comment: 'Features never import routes or app; routes compose features (web rule 1).',
-      from: { path: '^apps/web/src/features/' },
+      comment:
+        'Features never import routes or app; routes compose features (web rule 1). A screen test may start the whole app.',
+      from: { path: '^apps/web/src/features/', pathNot: '\\.test\\.tsx?$' },
       to: { path: '^apps/web/src/(routes|app)/' },
     },
     {

@@ -1,8 +1,8 @@
 import { cva } from 'class-variance-authority'
 
-export const authLayoutVariants = cva(
-  'flex min-h-dvh flex-col bg-page text-ink lg:grid lg:grid-cols-2',
-)
+export const authLayoutVariants = cva('flex min-h-dvh flex-col bg-page text-ink')
+
+export const authGridVariants = cva('flex flex-1 flex-col lg:grid lg:grid-cols-2')
 
 export const authArtVariants = cva([
   'flex min-h-40 max-h-80 flex-1 basis-0 items-end justify-center overflow-hidden bg-mint pt-6 text-on-mint',

@@ -205,6 +205,9 @@ without comments.
 - Find fields by their role and name (`getByRole('textbox', { name: 'E-mail' })`), or with
   `fieldLabelled('Senha')` (`src/testing/fields.ts`) for password inputs, which have no role;
   `getByLabelText` doesn't find our fields, because the label also holds the `aria-hidden` "*".
+- Tests that go offline (`navigator.onLine` + an `offline` event) dispatch `online` in their
+  `afterEach`: TanStack Query's `onlineManager` is global and keeps every later query paused
+  otherwise.
 - Browser tests load the app's CSS (`src/testing/browser-setup.ts`), so computed styles and axe's
   colour-contrast check see the real tokens.
 - `expect.element(...)` retries until it passes (up to its timeout). Use it to wait for something

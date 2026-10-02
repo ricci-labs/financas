@@ -31,8 +31,14 @@ export class NetworkError extends Error {
   }
 }
 
+const SESSION_ENDED_CODES = new Set(['SESSION_REQUIRED', 'UNAUTHORIZED'])
+
 export function isSessionRequired(error: unknown): boolean {
-  return error instanceof ApiError && error.status === SESSION_REQUIRED_STATUS
+  return (
+    error instanceof ApiError &&
+    error.status === SESSION_REQUIRED_STATUS &&
+    SESSION_ENDED_CODES.has(error.code)
+  )
 }
 
 const PERMISSION_DENIED_STATUS = 403

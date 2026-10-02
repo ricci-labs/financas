@@ -49,7 +49,7 @@ in the last column).
 
 | # | Rule | Why | depcruise rule |
 |---|---|---|---|
-| 1 | Flow is `lib, hooks, styles → components → features → routes`. Never the reverse | Shared code can't depend on a screen | `web-shared-code-knows-no-screen`, `web-features-know-no-routes` |
+| 1 | Flow is `lib, hooks, styles → components → features → routes`. Never the reverse. A feature's test file may start the whole app (`app/`) to test a screen through its route | Shared code can't depend on a screen | `web-shared-code-knows-no-screen`, `web-features-know-no-routes` |
 | 2 | A feature never imports another feature. Routes compose features | Features stay replaceable; shared parts move to `components/` | `web-features-isolated` |
 | 3 | Only `features/*/api/` calls the backend (through `lib/api-client.ts`) | One place per feature knows the API | `web-only-feature-api-calls-backend` |
 | 4 | `components/` never imports from `features/` or `routes/` | The design system has no screen knowledge | `web-shared-code-knows-no-screen` |

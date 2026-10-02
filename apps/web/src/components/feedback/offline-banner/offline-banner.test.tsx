@@ -13,6 +13,7 @@ function goOffline(isOffline: boolean) {
 describe('OfflineBanner', () => {
   afterEach(() => {
     vi.restoreAllMocks()
+    window.dispatchEvent(new Event('online'))
   })
 
   it('appears while the device is offline and leaves when the connection is back', async () => {

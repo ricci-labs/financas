@@ -1,21 +1,32 @@
+import type { FakeAnswer } from '@web/testing/testing.types'
 import { vi } from 'vitest'
 
 const SESSION_REQUIRED = 401
+const NOT_FOUND = 404
 
-export function fakeApi(answers: Record<string, () => Response>) {
-  return vi.spyOn(globalThis, 'fetch').mockImplementation((input) => {
-    const path = new URL(input instanceof Request ? input.url : String(input), location.href)
-      .pathname
-    const answer = answers[path]
-    return Promise.resolve(answer ? answer() : Response.json({}, { status: 404 }))
+export function fakeApi(answers: Record<string, FakeAnswer>) {
+  return vi.spyOn(globalThis, 'fetch').mockImplementation((input, init) => {
+    const request = new Request(
+      input instanceof Request ? input : new URL(String(input), location.href),
+      init,
+    )
+    const { pathname } = new URL(request.url)
+    const method = request.method.toUpperCase()
+    const answer = answers[`${method} ${pathname}`] ?? answers[pathname]
+    return Promise.resolve(answer ? answer(request) : Response.json({}, { status: NOT_FOUND }))
   })
 }
 
+export function apiError(
+  code: string,
+  status: number,
+  headers: Record<string, string> = {},
+): Response {
+  return Response.json({ error: { code, message: code, ref: 'abcd1234' } }, { status, headers })
+}
+
 export function sessionRequired(): Response {
-  return Response.json(
-    { error: { code: 'SESSION_REQUIRED', message: 'Log in first', ref: 'abcd1234' } },
-    { status: SESSION_REQUIRED },
-  )
+  return apiError('SESSION_REQUIRED', SESSION_REQUIRED)
 }
 
 export function account(): Response {
