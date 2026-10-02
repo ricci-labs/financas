@@ -4,10 +4,11 @@ import type { VerificationView } from '@web/features/auth/auth.types'
 import { CheckYourEmail } from '@web/features/auth/components/check-your-email'
 import { ConfirmationHandoffActions } from '@web/features/auth/components/confirmation-handoff-actions'
 import { VerificationMoment } from '@web/features/auth/components/verification-moment'
+import { useCallOnce } from '@web/hooks/use-call-once'
 import { useLinkToken } from '@web/hooks/use-link-token'
 import { ApiError, NetworkError } from '@web/lib/api/api-error'
 import { errorMessageFor, retryMinutesOf } from '@web/lib/errors/error-message'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 
 const LINK_LIMIT_WINDOW_MINUTES = 60
 const messages = authMessages.checkEmail
@@ -15,16 +16,8 @@ const messages = authMessages.checkEmail
 export function VerifyEmailPage() {
   const token = useLinkToken()
   const { mutate: confirm, isSuccess, error } = useVerifyEmail()
-  const hasStarted = useRef(false)
   const [resentTo, setResentTo] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!token || hasStarted.current) {
-      return
-    }
-    hasStarted.current = true
-    confirm(token)
-  }, [token, confirm])
+  useCallOnce(token, confirm)
 
   if (resentTo) {
     return (

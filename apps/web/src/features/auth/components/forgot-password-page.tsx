@@ -3,13 +3,13 @@ import { Button } from '@web/components/actions/button'
 import { authMessages } from '@web/features/auth/auth.messages'
 import { CheckYourEmail } from '@web/features/auth/components/check-your-email'
 import { ForgotPasswordForm } from '@web/features/auth/components/forgot-password-form'
-import { useArrivalEmail } from '@web/hooks/use-arrival-email'
+import { useArrivalState } from '@web/hooks/use-arrival-state'
 import { useState } from 'react'
 
 const messages = authMessages.checkEmail
 
 export function ForgotPasswordPage() {
-  const arrivalEmail = useArrivalEmail()
+  const { email: arrivalEmail } = useArrivalState()
   const [sentTo, setSentTo] = useState<string | null>(null)
 
   if (sentTo) {

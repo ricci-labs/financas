@@ -17,6 +17,7 @@ import { authMessages } from '@web/features/auth/auth.messages'
 import type { LoginPageProps, LoginProblem } from '@web/features/auth/auth.types'
 import { arrivalNoticeOf } from '@web/features/auth/components/arrival-notice'
 import { ResendVerificationButton } from '@web/features/auth/components/resend-verification-button'
+import { useArrivalState } from '@web/hooks/use-arrival-state'
 import { useIsOnline } from '@web/hooks/use-is-online'
 import { ApiError } from '@web/lib/api/api-error'
 import { errorMessageFor } from '@web/lib/errors/error-message'
@@ -30,6 +31,7 @@ const messages = authMessages.login
 
 export function LoginPage({ next, notice }: LoginPageProps) {
   const navigate = useNavigate()
+  const { inviteToken, email: arrivalEmail, joinedWorkspaceName } = useArrivalState()
   const isOnline = useIsOnline()
   const logIn = useLogIn()
   const config = useQuery(authConfigQueryOptions())
@@ -37,18 +39,18 @@ export function LoginPage({ next, notice }: LoginPageProps) {
   const form = useSchemaForm({
     schema: credentialsSchema,
     requiredMessages: messages.required,
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: arrivalEmail ?? '', password: '' },
   })
 
   useEffect(() => {
-    form.setFocus('email')
-  }, [form])
+    form.setFocus(arrivalEmail ? 'password' : 'email')
+  }, [form, arrivalEmail])
 
   async function logInWith(credentials: { email: string; password: string }) {
     setProblem(null)
     try {
       await logIn.mutateAsync(credentials)
-      await navigate({ href: appPathOrHome(next) })
+      await navigate({ href: appPathOrHome(next), state: { inviteToken } })
     } catch (error) {
       const found = problemOf(error, credentials.email)
       setProblem(found)
@@ -67,7 +69,7 @@ export function LoginPage({ next, notice }: LoginPageProps) {
         {problem.message}
       </Alert>
     ) : (
-      arrivalNoticeOf(notice)
+      arrivalNoticeOf(notice, joinedWorkspaceName)
     )
 
   return (

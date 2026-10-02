@@ -6,10 +6,10 @@ import type {
 import {
   stepDotVariants,
   stepLineVariants,
-  stepSpinnerVariants,
   stepTrackVariants,
   stepVariants,
 } from '@web/components/display/step-track/step-track.variants'
+import { Spinner } from '@web/components/feedback/spinner'
 import { Check } from 'lucide-react'
 
 export function StepTrack({ label, steps, currentStep, isCurrentLoading = false }: StepTrackProps) {
@@ -50,7 +50,7 @@ function StepMark({
     return <Check />
   }
   if (isLoading) {
-    return <span className={stepSpinnerVariants()} />
+    return <Spinner size="sm" />
   }
   return position
 }

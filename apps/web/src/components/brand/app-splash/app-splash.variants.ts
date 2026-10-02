@@ -7,7 +7,3 @@ export const appSplashVariants = cva(
 export const appSplashOwlVariants = cva('size-50 select-none')
 
 export const appSplashSlowVariants = cva('mt-6 flex items-center gap-2 text-body-sm')
-
-export const appSplashSpinnerVariants = cva(
-  'size-4 animate-spin rounded-full border-2 border-current border-r-transparent',
-)

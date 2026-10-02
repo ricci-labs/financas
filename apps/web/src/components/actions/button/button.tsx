@@ -1,6 +1,7 @@
 import { useRender } from '@base-ui/react/use-render'
 import type { ButtonContentProps, ButtonProps } from '@web/components/actions/button/button.types'
-import { buttonVariants, spinnerVariants } from '@web/components/actions/button/button.variants'
+import { buttonVariants } from '@web/components/actions/button/button.variants'
+import { Spinner } from '@web/components/feedback/spinner'
 import { useSecondsUntil } from '@web/hooks/use-seconds-until'
 import { cn } from '@web/lib/cn'
 import { Clock } from 'lucide-react'
@@ -75,7 +76,7 @@ function buttonContent({
   if (isLoading) {
     return (
       <>
-        <span className={spinnerVariants()} aria-hidden="true" />
+        <Spinner size="lg" />
         {loadingLabel ?? children}
       </>
     )

@@ -4,9 +4,9 @@ import type { AppSplashProps } from '@web/components/brand/app-splash/app-splash
 import {
   appSplashOwlVariants,
   appSplashSlowVariants,
-  appSplashSpinnerVariants,
   appSplashVariants,
 } from '@web/components/brand/app-splash/app-splash.variants'
+import { Spinner } from '@web/components/feedback/spinner'
 import { useLightTheme } from '@web/hooks/use-light-theme'
 import { cn } from '@web/lib/cn'
 
@@ -20,7 +20,7 @@ export function AppSplash({ isSlow, className }: AppSplashProps) {
       <p className={appSplashSlowVariants()} role="status">
         {isSlow && (
           <>
-            <span aria-hidden="true" className={appSplashSpinnerVariants()} />
+            <Spinner />
             {appSplashMessages.opening}
           </>
         )}

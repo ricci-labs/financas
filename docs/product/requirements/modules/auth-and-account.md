@@ -143,14 +143,22 @@ The token is read on load and removed from the address bar, but only sent with t
 Route `/invite#token=…`. A moment.
 
 **RF-AUTH-6** Anyone with the link sees what the invitation is before logging in.
-On load: `POST /api/invitations/preview`. Mint moment with the invitation card: "{inviterName}
-convidou você para o espaço {workspaceName} como {roleName}." and, for an email invitation,
-"Convite para {email} · Vale até 12/10/2026".
+On load: `POST /api/invitations/preview` (the app opening shows meanwhile). Mint moment: title
+"{inviterName} convidou você", text "para o espaço **{workspaceName}** como **{roleName}**." and
+"Convite para **{email}** · Vale até 12/10/2026" (a phone invitation: only "Vale até 12/10/2026";
+the date in São Paulo).
 
-Invalid states replace the page with a calm moment and "Ir para o login": `INVITATION_EXPIRED`
-("Este convite expirou" / "Peça um novo a quem convidou. Convites valem por 7 dias."),
-`INVITATION_NOT_FOUND`, `INVITATION_REVOKED`, `INVITATION_ALREADY_ACCEPTED` (messages in
-`../error-messages.md`).
+Invalid states replace the page with a calm moment and "Ir para o login"; the title is the first
+sentence of the message in `../error-messages.md`, the text the rest: `INVITATION_EXPIRED` ("Este
+convite expirou" / "Peça um novo a quem convidou. Convites valem por 7 dias."),
+`INVITATION_NOT_FOUND` (also a link with no token), `INVITATION_REVOKED`,
+`INVITATION_ALREADY_ACCEPTED`, `WORKSPACE_NOT_AVAILABLE`. `TOO_MANY_ATTEMPTS`: calm "Vamos dar uma
+pausa" with its message. Unexpected failure or no connection: calm "Não deu para abrir o convite"
+with the message and "Tentar de novo".
+
+Leaving for the log in ("Já tenho conta", "Entre com ela", "Sair e entrar com outro e-mail")
+keeps the invitation: the token travels in the browser's history state, never in the URL
+(`../../../architecture/web-application.md` → Routes), and the log in returns to `/invite`.
 
 **RF-AUTH-7** Logged-in person: "Entrar no espaço" calls accept; under it "Você está como {email}.
 Não é você? Sair". On success the moment "Vocês estão juntos no {workspaceName}!" / "Agora os dois
