@@ -14,6 +14,7 @@ export const buttonVariants = cva(
         primary: 'bg-action-primary text-on-action-primary hover:bg-action-primary-hover',
         secondary: 'bg-action-secondary text-ink hover:bg-action-secondary-hover',
         outline: 'inset-stroke bg-surface text-ink',
+        subtle: 'bg-surface text-ink inset-ring-1 inset-ring-border-control hover:bg-sunken',
         tertiary: 'bg-transparent px-3 text-mint-ink underline underline-stroke underline-offset-3',
         danger: 'bg-danger-soft text-danger hover:inset-ring-2 hover:inset-ring-danger',
       },

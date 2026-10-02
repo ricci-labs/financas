@@ -75,4 +75,25 @@ describe('app router', () => {
     await expect.element(screen.getByRole('heading', { name: LOGIN_TITLE })).toBeVisible()
     await expectNoAccessibilityViolations(screen.container)
   })
+  it('says when the role lost a permission and reloads the permissions', async () => {
+    const api = fakeApi({ [ME]: account, [HEALTH]: healthy })
+    const { app, screen } = await startAt('/')
+    await expect.element(screen.getByRole('heading', { name: 'Twise' })).toBeVisible()
+
+    api.mockImplementation(() =>
+      Promise.resolve(
+        Response.json(
+          { error: { code: 'PERMISSION_DENIED', message: 'No', ref: 'abcd1234' } },
+          { status: 403 },
+        ),
+      ),
+    )
+    await app.queryClient.refetchQueries()
+
+    await expect
+      .element(
+        screen.getByText('Você não tem permissão para isso. Peça a um administrador do espaço.'),
+      )
+      .toBeVisible()
+  })
 })
