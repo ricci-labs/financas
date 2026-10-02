@@ -157,8 +157,9 @@ updated: 2026-10-01
   9. [x] The API serves the SPA (cache headers, SPA fallback, CSP) and the image ships it
   10. [ ] PWA (shell precache, update toast) and `check:bundle`
   Then the account area (user's go-ahead 2026-10-01, design in `../design/account/`), one PR each:
-  11. [ ] Account components, in the order of `../design/account/components.md`: [x] Button (#156),
-      [x] fields and forms (#157), [x] Alert, Tip, Banner, toasts (#158); [x] StepTrack, OwlScene, Logo; [ ] layouts
+  11. [x] Account components, in the order of `../design/account/components.md`: Button (#156),
+      fields and forms (#157), Alert, Tip, Banner, toasts (#158), StepTrack, OwlScene, Logo (#159),
+      AuthLayout, MomentScreen, AppSplash
   12. [ ] `AUTH-01` log in, with `SHELL-01` session handling (arrival messages, `next`, log out)
   13. [ ] `AUTH-02` sign up and its "Confira seu e-mail" handoff
   14. [ ] `AUTH-03` verify email

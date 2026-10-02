@@ -78,6 +78,10 @@ When to use each one: the design system guide → Colour, and each token's notes
   `text-title-sm`. A display style also needs `font-display`.
 - `text-xs`, `text-sm` and `text-base` exist only as aliases of `caption`, `body-sm` and `body`, so
   shadcn components work.
+- **Component type styles** (tier 3), from the account components' design CSS: `screen-title`
+  (30/36, auth and moment titles), `screen-title-lg` (36/42, moment titles on desktop), `claim`
+  (the desktop panel's "Leve, claro, a dois.", the same metrics as `amount-hero`),
+  `claim-support` (17/26), `brand` (64, the opening's "twise") and `slogan` (18/24).
 - **Amounts** always use `tabular-nums`. It lives inside the `Amount` component, so no screen has
   to remember it (`web-components.md`). Inputs use 16 px (`body`) so iPhones don't zoom.
 

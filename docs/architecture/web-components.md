@@ -164,6 +164,24 @@ React Hook Form v7 + `zodResolver` with the **schemas from `@financas/shared`** 
   with `aria-current="step"` (a spinner while it loads), a solid line up to it and a dashed one
   after (no rounding on the dashed line, which Chrome would draw solid).
 
+## Account layouts
+- `AuthLayout` (`components/layout/auth-layout`): the auth screen of
+  `../product/requirements/ui-standards.md` → Account screens. On phones, a mint block with the
+  owl, flexible from 160 to 320 px, then the title, subtitle, `notice`, the form and the footer
+  link, in a 400 px column; an optional `banner` on top. From 1024 px, a mint panel on the left
+  (logo, owl, "Leve, claro, a dois." and its support sentence) and the form on the right.
+- `MomentScreen`: a full screen with no form, `tone` `celebrate` (mint) or `calm` (cream), the
+  owl, the title, the body (`aria-live`, since the same page changes state in place) and the
+  actions last; centred on desktop with a 400 px owl block.
+- `NextStepCard`: the dashed "what comes next" card of the celebratory moments.
+- `AppSplash`: the app opening, mint with the brand owl, "twise" and the slogan; `isSlow` adds
+  "Abrindo…". The brand owl file keeps its animation layers, with the sleep and wink layers
+  hidden (their final state).
+- All three call `useLightTheme()`: account screens are always light, whatever the person chose,
+  and the chosen theme comes back when they leave.
+- They are page components today: each screen renders its layout. The owl motion (roadmap 18)
+  will lift `AuthLayout` into the `_auth` route, so the scene stays mounted between screens.
+
 ## Icons
 - `lucide-react`, named imports only (each icon is its own module). Never the `icons` namespace or
   `DynamicIcon`, which pull in the whole set.
