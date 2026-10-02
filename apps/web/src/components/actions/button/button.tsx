@@ -39,9 +39,11 @@ export function Button({
   }
 
   return useRender({
-    render: render ?? <button type={type} />,
+    render,
+    defaultTagName: 'button',
     props: {
       ...props,
+      type: render ? undefined : type,
       'data-slot': 'button',
       'data-loading': isLoading ? '' : undefined,
       'data-waiting': isWaiting && !isLoading ? '' : undefined,

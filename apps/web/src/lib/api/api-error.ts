@@ -35,6 +35,12 @@ export function isSessionRequired(error: unknown): boolean {
   return error instanceof ApiError && error.status === SESSION_REQUIRED_STATUS
 }
 
+const PERMISSION_DENIED_STATUS = 403
+
+export function isPermissionDenied(error: unknown): boolean {
+  return error instanceof ApiError && error.status === PERMISSION_DENIED_STATUS
+}
+
 export function isRetryable(error: unknown): boolean {
   return error instanceof NetworkError || (error instanceof ApiError && error.isServerError)
 }

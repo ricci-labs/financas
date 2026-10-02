@@ -12,6 +12,14 @@ export const buttonExamples: ComponentExamples = {
     { name: 'Primária', render: () => <Button>Salvar lançamento</Button> },
     { name: 'Secundária', render: () => <Button variant="secondary">Cancelar</Button> },
     { name: 'Contorno', render: () => <Button variant="outline">Já tenho conta</Button> },
+    {
+      name: 'Discreto (dentro de alertas)',
+      render: () => (
+        <Button variant="subtle" size="sm">
+          Reenviar e-mail de confirmação
+        </Button>
+      ),
+    },
     { name: 'Terciária', render: () => <Button variant="tertiary">Esqueci minha senha</Button> },
     { name: 'Perigo', render: () => <Button variant="danger">Remover membro</Button> },
     {

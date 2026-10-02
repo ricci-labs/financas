@@ -139,6 +139,18 @@ React Hook Form v7 + `zodResolver` with the **schemas from `@financas/shared`** 
   "Shown as" column of `../product/requirements/error-messages.md` under that field with `setError`, and the rest above the
   buttons.
 
+## Feedback
+- `Alert` (`tone`: info, success, warning, danger; always with its icon): form errors above the
+  main button with `isUrgent` (`role="alert"`), arrival messages under the title without it
+  (`role="status"`); an `action` slot takes a small `subtle` button or the message holds a
+  `TextLink` with `tone="inherit"`.
+- `Banner`: a full-width ink strip for states of the whole screen; `OfflineBanner` shows it with the
+  catalog's network message while the device is offline.
+- `Tip`: one centred line of help with the Info icon, in the colour of its background's text.
+- Toasts: `showToast(message, { action })` with the `Toaster` mounted once in `AppProviders`
+  (`sonner`, styled with tokens); bottom-centre on phones, top-right from 1024 px; 4 s, or 8 s with
+  "Desfazer". Toasts with the same message replace each other (never two about the same thing).
+
 ## Icons
 - `lucide-react`, named imports only (each icon is its own module). Never the `icons` namespace or
   `DynamicIcon`, which pull in the whole set.
