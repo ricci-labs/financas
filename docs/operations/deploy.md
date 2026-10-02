@@ -1,7 +1,7 @@
 ---
 summary: Production setup on Dokploy — containers, image, env vars, resources, logs rotation, backups (offsite destination later), access through Cloudflare Tunnel + Access on the user's domain, first-deploy steps and checklist.
 read_when: Deploying, changing env vars or runtime config, setting up backups, or exposing the app.
-updated: 2026-09-28
+updated: 2026-10-01
 ---
 
 # Deploy
@@ -47,6 +47,7 @@ Pipeline: `../engineering/ci-cd.md`. Decision: `../decisions/0010-deploy-ghcr-do
 | `EMAIL_OUTBOX_DIR` | Development only: folder for `.eml` files when `SMTP_HOST` is empty |
 | `FILE_STORAGE_DIR` | Where attachments live (default `.private/files`). In production, a mounted Docker volume that is part of the backups |
 | `FILE_MAX_BYTES` | Largest upload accepted (default 10 MB) |
+| `WEB_DIST_DIR` | The web build the API serves (`/` and every app page, `/assets/*` cached for a year, `/email/*` images). Set by the image to `/app/web`; leave it alone. Unset in development (Vite serves the web) |
 | `LOG_LEVEL` | `info` in prod |
 | `OTEL_SERVICE_NAME`, `OTEL_METRICS_EXPORTER`, `OTEL_EXPORTER_PROMETHEUS_HOST`, `OTEL_EXPORTER_PROMETHEUS_PORT` | Observability Level 0 (`observability.md`). Production: `OTEL_METRICS_EXPORTER=prometheus`. Defaults: `financas-api`, `none` (no metrics port), `0.0.0.0`, `9464` |
 | `UPTIME_KUMA_PUSH_URL_<JOB>` | Heartbeats (optional) |

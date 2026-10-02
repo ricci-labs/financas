@@ -13,6 +13,7 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm install --frozen-lockfile --ignore-scripts
 COPY . .
 RUN pnpm --filter @financas/api build
+RUN pnpm --filter @financas/web build
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm --filter @financas/api deploy --prod /out
 
@@ -21,13 +22,15 @@ ARG APP_VERSION=dev
 ENV NODE_ENV=production \
     PORT=3100 \
     APP_VERSION=$APP_VERSION \
-    FILE_STORAGE_DIR=/data/files
+    FILE_STORAGE_DIR=/data/files \
+    WEB_DIST_DIR=/app/web
 WORKDIR /app
 RUN mkdir -p /data/files && chown node:node /data/files
 COPY --from=build --chown=node:node /out/package.json ./
 COPY --from=build --chown=node:node /out/node_modules ./node_modules
 COPY --from=build --chown=node:node /out/dist ./dist
 COPY --from=build --chown=node:node /out/drizzle ./drizzle
+COPY --from=build --chown=node:node /repo/apps/web/dist ./web
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 USER node
 EXPOSE 3100 9464

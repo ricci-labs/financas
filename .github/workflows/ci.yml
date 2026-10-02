@@ -154,6 +154,19 @@ jobs:
             sleep 2
           done
 
+      - name: Image serves the web app with its headers
+        run: |
+          set -x
+          page=$(curl -fsS -D headers.txt http://127.0.0.1:3100/login)
+          echo "$page" | grep -q '<div id="root"></div>'
+          grep -qi "^content-security-policy: .*default-src 'self'" headers.txt
+          grep -qi '^cache-control: no-cache' headers.txt
+          asset=$(echo "$page" | grep -o '/assets/[^"]*\.js' | head -1)
+          curl -fsS -D asset-headers.txt -o /dev/null "http://127.0.0.1:3100$asset"
+          grep -qi '^cache-control: public, max-age=31536000, immutable' asset-headers.txt
+          curl -fsS -o /dev/null http://127.0.0.1:3100/email/owl-key.png
+          curl -s http://127.0.0.1:3100/api/nope | grep -q '"error"'
+
       - name: Every migration was applied
         run: |
           applied=$(docker compose -f compose.dev.yml exec -T db \

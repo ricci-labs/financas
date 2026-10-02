@@ -5,6 +5,7 @@ import { loadEnv, publicUrlOf } from '@api/core/config/env'
 import { createDatabase } from '@api/core/db/client'
 import { createMailer } from '@api/core/email/mailer'
 import { sessionCookieSettings } from '@api/core/http/session-cookie'
+import { createWebApp, routeByPath } from '@api/core/http/web-app'
 import { createLogger } from '@api/core/observability/logger'
 import { startMetrics } from '@api/core/observability/meter-provider'
 import { exitOnCrash } from '@api/core/observability/process'
@@ -64,7 +65,11 @@ const scheduler = startScheduler(SCHEDULED_JOBS, {
   timezone: SCHEDULE_TIMEZONE,
 })
 
-const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
+const fetch = env.WEB_DIST_DIR
+  ? routeByPath(app.fetch, createWebApp(logger, env.WEB_DIST_DIR).fetch)
+  : app.fetch
+
+const server = serve({ fetch, port: env.PORT }, (info) => {
   logger.info({ event: 'app.started', port: info.port }, 'API listening')
 })
 
