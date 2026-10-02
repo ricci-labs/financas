@@ -1,4 +1,4 @@
-import { App } from '@web/app/app'
+import { AppProviders } from '@web/app/providers'
 import '@web/styles/globals.css'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -10,6 +10,6 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <App />
+    <AppProviders />
   </StrictMode>,
 )

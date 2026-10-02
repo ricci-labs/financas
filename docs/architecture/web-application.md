@@ -17,7 +17,11 @@ Routes decide **what** is on a page; features decide **how** it looks and talks 
 
 ## Routes
 TanStack Router, file-based, `autoCodeSplitting: true` (no `.lazy.tsx` files; components split on
-their own, loaders stay in the main chunk as the docs advise).
+their own, loaders stay in the main chunk as the docs advise). The plugin writes
+`src/routeTree.gen.ts`, which is committed (type checking needs it before any build) and never
+edited by hand (the guard hook denies it). `app/router.ts` exports `createApp(history?)`, which
+builds the query client and the router together, and `app`, the instance `main.tsx` renders;
+tests build their own with a memory history.
 
 | Path (file) | Is |
 |---|---|
@@ -39,13 +43,19 @@ their own, loaders stay in the main chunk as the docs advise).
 - Features never call `getRouteApi` or `useParams`; they get params as props, so a feature isn't
   tied to a route ID.
 - **Guards** run in `beforeLoad` through `context.queryClient.ensureQueryData`:
-  - `_app`: `meQueryOptions()`; no session → `redirect({ to: '/login', search: { next } })`;
+  - `_app`: `loadSession(context.queryClient)` (features/auth: `ensureQueryData(meQueryOptions())`,
+    `null` on `401`); no session → `redirect({ to: '/login', search: { next } })`;
+  - `_auth/login`: a session already open → `redirect` to `appPathOrHome(next)` (`lib/navigation.ts`
+    accepts only paths of the app, never another site or `//host`);
   - `w/$workspaceId`: the workspace (permissions); `WORKSPACE_NOT_FOUND` → the switcher;
   - each area: `requirePermission(context, 'entries', 'view')` (`lib/permissions.ts`); without it
     the route shows the no-permission state (`../product/requirements/ui-standards.md` → States).
 - Router defaults: `defaultPreload: 'intent'`, `defaultPreloadStaleTime: 0` (Query owns the cache),
   and the shared pending, error and not-found components from `components/feedback/`.
 - Search params are the state of a list (period, filters, sort), so a link reproduces the view.
+- `/login` takes `next` (where to go after logging in) and `notice` (the arrival message:
+  `session-ended`, `logged-out`, `password-changed`, `email-verified`,
+  `invitation-account-created`), validated by `loginSearchSchema`; anything else is dropped.
 
 ## Server data
 - **Only `features/<feature>/api/` calls the backend**, through `apiClient` (`lib/api-client.ts`).
@@ -68,13 +78,15 @@ their own, loaders stay in the main chunk as the docs advise).
 ## API client and errors
 - `apiClient = hc<AppType>('/')` with the API's type only (`dependency-rules.md`). If type-checking
   slows down, the API exports a pre-compiled client type (`hcWithType`), per the Hono RPC guide.
-- `unwrap(response)` (`lib/api/unwrap.ts`) returns the typed body or throws an `ApiError`
-  (`status`, `code`, `ref`, `retryAfterSeconds`), parsed from `{ error: { code, message, ref } }`.
-  A response that isn't that shape becomes `UNKNOWN`; a failed fetch becomes `NetworkError`.
+- `unwrap(request)` (`lib/api/unwrap.ts`) returns the typed body or throws an `ApiError`
+  (`status`, `code`, `ref`, `retryAfterSeconds`, `isServerError`), parsed from
+  `{ error: { code, message, ref } }`; `unwrapEmpty` does the same for answers with no body (204).
+  A response that isn't that shape becomes `UNKNOWN`; a failed fetch becomes `NetworkError`. It
+  never imports `hono/client`: it takes any response with `ok`, `status`, `headers` and `json()`.
 - **Global handling** (`QueryCache` and `MutationCache` `onError`):
   | Error | Does |
   |---|---|
-  | 401 `SESSION_REQUIRED` | `queryClient.clear()`, go to `/login?next=<here>` with "Sua sessão terminou. Entre de novo." (RNF-SEC-3) |
+  | 401 `SESSION_REQUIRED` | `queryClient.clear()`; if there was a session (the `['me']` query had data), go to `/login?next=<here>&notice=session-ended` ("Sua sessão terminou. Entre de novo.", RNF-SEC-3); a first visit just lands on `/login` |
   | 403 `PERMISSION_DENIED` | Toast with its message; refetch the workspace's permissions |
   | `NetworkError` | The offline banner; writes disabled (RNF-REL-3) |
   | 5xx | The page or form shows "Algo deu errado…" with the `ref` |
