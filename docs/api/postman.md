@@ -1,7 +1,7 @@
 ---
 summary: Postman collection of every API route (docs/api/financas.postman_collection.json), how to import and run it locally or against the deployed app, and how it is kept complete.
 read_when: Testing the API by hand or with the Collection Runner, or adding, renaming or removing a route (the collection must follow).
-updated: 2026-09-27
+updated: 2026-10-02
 ---
 
 # Postman collection
@@ -26,6 +26,9 @@ Files:
    The two **Attachments** uploads need a file picked in the `file` field.
 5. **Manual flows** need an emailed token (`linkToken`, `invitationToken`: the value after
    `#token=` in the link), a second user, or a destructive choice. Run them one by one.
+   **Invite by email** sends a real invitation email to `inviteEmail` (a collection variable,
+   `member.b@example.test` by default: set it to an inbox you control); take `invitationToken` from
+   that email's link. **Invite by phone**, in the main run, answers the link to share instead.
 
 ## What the collection does for you
 - **Writes get an `Origin` header.** The API refuses writes that don't prove they come from the app
