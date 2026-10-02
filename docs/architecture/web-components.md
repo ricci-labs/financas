@@ -126,6 +126,11 @@ React Hook Form v7 + `zodResolver` with the **schemas from `@financas/shared`** 
   working. Components below the form read its state with `useFormState`, never
   `useFormContext().formState`, which doesn't subscribe a child to changes (the submit button
   stayed disabled with a valid form until this was fixed).
+- **A blur caused by a press waits for the press to end** (`afterPointerRelease`,
+  `lib/forms/after-pointer-release.ts`). Pressing a link below a field moves the focus out of it at
+  once; showing the error right then pushed the link down, the press ended somewhere else and the
+  browser dropped the click, so "Esqueci minha senha" or "Criar conta" needed two taps (seen
+  2026-10-02). With the keyboard (Tab) the error still shows at once.
 - Read live values with `useWatch`, never `form.watch()` (it opts the component out of the React
   Compiler).
 - `SubmitButton` implements the button contract: disabled until valid (and changed, with

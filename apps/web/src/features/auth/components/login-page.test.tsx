@@ -59,6 +59,20 @@ describe('AUTH-01 log in', () => {
     await expectNoAccessibilityViolations(screen.container)
   })
 
+  it('follows "Esqueci minha senha" on the first click, even with the focus on an empty e-mail', async () => {
+    const { screen } = await openLogin('/login', {})
+    await expect.element(fieldLabelled('E-mail')).toHaveFocus()
+    await screen.getByRole('link', { name: 'Esqueci minha senha' }).click()
+    await expect.element(screen.getByRole('heading', { name: 'Esqueceu a senha?' })).toBeVisible()
+  })
+
+  it('follows a link on the first click even when leaving the field shows its error', async () => {
+    const { screen } = await openLogin('/login', {})
+    await fieldLabelled('E-mail').fill('nome@')
+    await screen.getByRole('link', { name: 'Criar conta' }).click()
+    await expect.element(screen.getByRole('heading', { name: 'Criar sua conta' })).toBeVisible()
+  })
+
   it('hides "Criar conta" when sign-up is closed', async () => {
     const { screen } = await openLogin('/login', {
       'GET /api/auth/config': () => Response.json({ isSignupEnabled: false }),
