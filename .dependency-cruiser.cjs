@@ -99,6 +99,81 @@ module.exports = {
       to: { path: '^apps/api/src/core/db', pathNot: '^apps/api/src/core/db/db\\.types\\.ts$' },
     },
     {
+      name: 'web-shared-code-knows-no-screen',
+      severity: 'error',
+      comment:
+        'components, lib, hooks and styles never import features, routes or app (web rules 1 and 4).',
+      from: { path: '^apps/web/src/(components|lib|hooks|styles)/' },
+      to: { path: '^apps/web/src/(features|routes|app)/' },
+    },
+    {
+      name: 'web-features-know-no-routes',
+      severity: 'error',
+      comment: 'Features never import routes or app; routes compose features (web rule 1).',
+      from: { path: '^apps/web/src/features/' },
+      to: { path: '^apps/web/src/(routes|app)/' },
+    },
+    {
+      name: 'web-only-feature-api-calls-backend',
+      severity: 'error',
+      comment: 'Only features/*/api/ uses the API client (web rule 3).',
+      from: { path: '^apps/web/src/', pathNot: '^apps/web/src/(features/[^/]+/api/|lib/api)' },
+      to: { path: '^apps/web/src/lib/api-client\\.ts$' },
+    },
+    {
+      name: 'web-primitives-behind-design-system',
+      severity: 'error',
+      comment:
+        'Only design-system components import shadcn primitives in components/ui (web rule 5).',
+      from: { path: '^apps/web/src/', pathNot: '^apps/web/src/components/' },
+      to: { path: '^apps/web/src/components/ui/' },
+    },
+    {
+      name: 'web-component-public-surface',
+      severity: 'error',
+      comment: 'From outside a component folder, import only its index.ts (web rule 6).',
+      from: { path: '^apps/web/src/', pathNot: '^apps/web/src/components/(?!ui/)[^/]+/[^/]+/' },
+      to: { path: '^apps/web/src/components/(?!ui/)[^/]+/[^/]+/', pathNot: '/index\\.ts$' },
+    },
+    {
+      name: 'web-component-to-component-surface',
+      severity: 'error',
+      comment: 'A component imports another component only through its index.ts (web rule 6).',
+      from: { path: '^apps/web/src/components/((?!ui/)[^/]+/[^/]+)/' },
+      to: {
+        path: '^apps/web/src/components/(?!ui/)[^/]+/[^/]+/',
+        pathNot: ['^apps/web/src/components/$1/', '/index\\.ts$'],
+      },
+    },
+    {
+      name: 'web-feature-public-surface',
+      severity: 'error',
+      comment: 'From outside a feature, import only its index.ts (web rule 6).',
+      from: { path: '^apps/web/src/', pathNot: '^apps/web/src/features/' },
+      to: {
+        path: '^apps/web/src/features/[^/]+/',
+        pathNot: '^apps/web/src/features/[^/]+/index\\.ts$',
+      },
+    },
+    {
+      name: 'web-routes-only-wire',
+      severity: 'error',
+      comment: 'Routes import features, design-system components and lib only (web rule 7).',
+      from: { path: '^apps/web/src/routes/' },
+      to: {
+        path: '^apps/web/src/',
+        pathNot:
+          '^apps/web/src/(features/[^/]+/index\\.ts|components/(?!ui/)[^/]+/[^/]+/index\\.ts|lib/|routes/)',
+      },
+    },
+    {
+      name: 'web-hono-client-in-one-place',
+      severity: 'error',
+      comment: 'Only lib/api-client.ts imports hono/client (web rule 8).',
+      from: { path: '^apps/web/', pathNot: '^apps/web/src/lib/api-client\\.ts$' },
+      to: { path: 'node_modules/hono/dist/(cjs/|types/)?client/' },
+    },
+    {
       name: 'web-features-isolated',
       severity: 'error',
       comment: 'A web feature never imports another feature (web rule 2).',
@@ -111,7 +186,7 @@ module.exports = {
     parser: 'swc',
     tsPreCompilationDeps: true,
     tsConfig: { fileName: 'tsconfig.base.json' },
-    exclude: { path: '(^|/)(dist|node_modules)/' },
+    exclude: { path: '^(apps|packages)/[^/]+/dist/' },
     enhancedResolveOptions: {
       exportsFields: ['exports'],
       conditionNames: ['import', 'require', 'node', 'default', 'types'],

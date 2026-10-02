@@ -15,6 +15,19 @@ const MODULE_FILE = /^apps\/api\/src\/modules\/([^/]+)\/(.+)$/
 const MODULE_ROLES = ['table', 'types', 'repository', 'service', 'routes', 'middleware', 'emails']
 const USE_CASE_FILE = /^use-cases\/[a-z][a-z-]*\.ts$/
 const MODULE_TEST_FILE = /^[a-z][a-z-]*(\.[a-z][a-z-]*)?(\.integration)?\.test\.ts$/
+const WEB_COMPONENT_FILE = /^apps\/web\/src\/components\/(?!ui\/)([^/]+)\/([^/]+)\/(.+)$/
+const WEB_COMPONENT_ROLES = [
+  '.tsx',
+  '.variants.ts',
+  '.types.ts',
+  '.messages.ts',
+  '.examples.tsx',
+  '.test.tsx',
+]
+const WEB_FEATURE_FILE = /^apps\/web\/src\/features\/([^/]+)\/([^/]+)$/
+const WEB_FEATURE_ROLES = ['types', 'schemas', 'messages']
+const WEB_FEATURE_API_FILE = /^apps\/web\/src\/features\/([^/]+)\/api\/([^/]+)$/
+const WEB_HOOK_FILE = /^use-[a-z][a-z-]*(\.test)?\.ts$/
 
 function isCheckedFile(path) {
   return SOURCE_EXTENSIONS.has(extname(path)) && !GENERATED_FILE.test(path)
@@ -128,6 +141,54 @@ function misnamedModuleFile(path) {
   return [{ line: 1, problem: `module files are named ${moduleName}.<role>.ts (structure.md)` }]
 }
 
+function misnamedWebComponentFile(relativePath) {
+  const match = relativePath.match(WEB_COMPONENT_FILE)
+  if (!match) {
+    return []
+  }
+  const [, family, component, fileName] = match
+  const isRoleFile = WEB_COMPONENT_ROLES.some((role) => fileName === `${component}${role}`)
+  if (fileName === 'index.ts' || isRoleFile) {
+    return []
+  }
+  return [
+    {
+      line: 1,
+      problem: `component files are named ${component}.<role> or index.ts (components/${family}/${component}, web-components.md)`,
+    },
+  ]
+}
+
+function misnamedWebFeatureFile(relativePath) {
+  const rootMatch = relativePath.match(WEB_FEATURE_FILE)
+  if (rootMatch) {
+    const [, feature, fileName] = rootMatch
+    const isRoleFile = WEB_FEATURE_ROLES.some((role) => fileName === `${feature}.${role}.ts`)
+    return fileName === 'index.ts' || isRoleFile
+      ? []
+      : [
+          {
+            line: 1,
+            problem: `feature root files are index.ts or ${feature}.<types|schemas|messages>.ts`,
+          },
+        ]
+  }
+  const apiMatch = relativePath.match(WEB_FEATURE_API_FILE)
+  if (apiMatch) {
+    const [, feature, fileName] = apiMatch
+    const isKnown = fileName === `${feature}.queries.ts` || WEB_HOOK_FILE.test(fileName)
+    return isKnown
+      ? []
+      : [
+          {
+            line: 1,
+            problem: `feature api files are ${feature}.queries.ts or use-<verb>-<noun>.ts`,
+          },
+        ]
+  }
+  return []
+}
+
 function findViolations(path) {
   const source = readFileSync(path, 'utf8')
   const { program } = parseSync(path, source)
@@ -135,6 +196,8 @@ function findViolations(path) {
     ...typesOutsideTypeFiles(path, source, program),
     ...schemasOutsideSchemaFiles(path, source, program),
     ...misnamedModuleFile(path),
+    ...misnamedWebComponentFile(relative(process.cwd(), path)),
+    ...misnamedWebFeatureFile(relative(process.cwd(), path)),
   ].map(({ line, problem }) => `${relative(process.cwd(), path)}:${line} ${problem}`)
 }
 

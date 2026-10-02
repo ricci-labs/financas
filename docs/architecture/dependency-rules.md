@@ -44,19 +44,19 @@ routes / agent tools / jobs / channels
 | 9 | Every DB access runs through `core/db/tx.ts` with a workspace set, except global tables (`users`...) and the narrow lookups of ADRs 0019 and 0025 (jobs list workspace ids, then work per workspace) | Tenant isolation (ADR 0012) |
 
 ## Web
-Layers: `web-components.md` → Layers. Rules 1–4 are enforced by depcruise today; rules 5–8 are
-added to `.dependency-cruiser.cjs` with the web foundation.
+Layers: `web-components.md` → Layers. Every rule is enforced by `.dependency-cruiser.cjs` (rule name
+in the last column).
 
-| # | Rule | Why |
-|---|---|---|
-| 1 | Flow is `lib, hooks, styles → components → features → routes`. Never the reverse | Shared code can't depend on a screen |
-| 2 | A feature never imports another feature. Routes compose features | Features stay replaceable; shared parts move to `components/` |
-| 3 | Only `features/*/api/` calls the backend (through `lib/api-client.ts`) | One place per feature knows the API |
-| 4 | `components/` never imports from `features/` or `routes/` | The design system has no screen knowledge |
-| 5 | Only `components/<family>/` imports `components/ui/` | Features see one import surface; primitives can change under it |
-| 6 | From outside a component folder, import only its `index.ts`; from outside a feature, only its `index.ts` | Public surface, like API modules |
-| 7 | `routes/` imports features and `components/<family>/` only (plus the router) | Routes stay thin |
-| 8 | Only `lib/api-client.ts` imports `hono/client`; the web imports only `type` from `apps/api` | Rule 3, and no API runtime in the bundle |
+| # | Rule | Why | depcruise rule |
+|---|---|---|---|
+| 1 | Flow is `lib, hooks, styles → components → features → routes`. Never the reverse | Shared code can't depend on a screen | `web-shared-code-knows-no-screen`, `web-features-know-no-routes` |
+| 2 | A feature never imports another feature. Routes compose features | Features stay replaceable; shared parts move to `components/` | `web-features-isolated` |
+| 3 | Only `features/*/api/` calls the backend (through `lib/api-client.ts`) | One place per feature knows the API | `web-only-feature-api-calls-backend` |
+| 4 | `components/` never imports from `features/` or `routes/` | The design system has no screen knowledge | `web-shared-code-knows-no-screen` |
+| 5 | Only `components/<family>/` imports `components/ui/` | Features see one import surface; primitives can change under it | `web-primitives-behind-design-system` |
+| 6 | From outside a component folder, import only its `index.ts`; from outside a feature, only its `index.ts` | Public surface, like API modules | `web-component-public-surface`, `web-component-to-component-surface`, `web-feature-public-surface` |
+| 7 | `routes/` imports features (`index.ts`), design-system components (`index.ts`) and `lib/` only, plus the router | Routes stay thin | `web-routes-only-wire` |
+| 8 | Only `lib/api-client.ts` imports `hono/client`; the web imports only `type` from `apps/api` | Rule 3, and no API runtime in the bundle | `web-hono-client-in-one-place`, `web-no-api-runtime` |
 
 ## Allowed cross-module calls (keep this list current)
 | Caller | Callee | Reason |
