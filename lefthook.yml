@@ -14,6 +14,15 @@ pre-commit:
     - name: file-roles
       glob: '*.{ts,tsx}'
       run: node scripts/check-file-roles.mjs {staged_files}
+    - name: web-tokens
+      glob: 'apps/web/src/**/*.{ts,tsx}'
+      run: node scripts/check-tokens.mjs {staged_files}
+    - name: web-copy
+      glob: 'apps/web/src/**/*.tsx'
+      run: node scripts/check-copy.mjs {staged_files}
+    - name: web-contrast
+      glob: 'apps/web/src/styles/tokens/*.css'
+      run: node scripts/check-contrast.mjs
     - name: gitleaks
       run: command -v gitleaks >/dev/null && gitleaks git --pre-commit --staged --redact --no-banner . || echo "gitleaks not installed locally, CI still checks"
 

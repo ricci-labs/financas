@@ -1,4 +1,5 @@
 import { useApiStatus } from '@web/features/system-status/api/use-api-status'
+import { systemStatusMessages } from '@web/features/system-status/system-status.messages'
 import type { ApiStatus } from '@web/features/system-status/system-status.types'
 
 const BADGE_STYLES: Record<ApiStatus['state'], string> = {
@@ -10,11 +11,11 @@ const BADGE_STYLES: Record<ApiStatus['state'], string> = {
 function describe(status: ApiStatus): string {
   switch (status.state) {
     case 'checking':
-      return 'Verificando API…'
+      return systemStatusMessages.checking
     case 'online':
-      return `API online · ${status.version}`
+      return systemStatusMessages.online(status.version)
     case 'offline':
-      return 'API offline'
+      return systemStatusMessages.offline
   }
 }
 
