@@ -1,5 +1,7 @@
 import { formatMinutesAndSeconds, formatSeconds } from '@web/lib/format/countdown'
 
+const PASSWORD_HELP = 'Use pelo menos 12 caracteres. Uma frase fácil de lembrar funciona bem.'
+
 export const authMessages = {
   login: {
     title: 'Entrar no Twise',
@@ -33,7 +35,7 @@ export const authMessages = {
     email: 'E-mail',
     emailPlaceholder: 'nome@exemplo.com',
     password: 'Senha',
-    passwordHelp: 'Use pelo menos 12 caracteres. Uma frase fácil de lembrar funciona bem.',
+    passwordHelp: PASSWORD_HELP,
     required: {
       displayName: 'Informe seu nome.',
       email: 'Informe seu e-mail.',
@@ -115,6 +117,25 @@ export const authMessages = {
     retryIn: (seconds: number) => `Tente de novo em ${formatMinutesAndSeconds(seconds)}`,
     remembered: 'Lembrou?',
     backToLogIn: 'Voltar para o login',
+  },
+  resetPassword: {
+    title: 'Crie uma nova senha',
+    subtitle: 'Depois, é só entrar com ela.',
+    password: 'Nova senha',
+    passwordHelp: PASSWORD_HELP,
+    confirmation: 'Repita a nova senha',
+    required: { password: 'Informe a nova senha.', confirmation: 'Repita a nova senha.' },
+    mismatch: 'As senhas não são iguais.',
+    submit: 'Trocar senha',
+    submitting: 'Trocando senha…',
+    retryIn: (seconds: number) => `Tente de novo em ${formatMinutesAndSeconds(seconds)}`,
+    remembered: 'Lembrou?',
+    backToLogIn: 'Voltar para o login',
+    linkInvalid: {
+      title: 'Este link não vale mais',
+      text: 'Já foi usado ou expirou. O link para trocar a senha vale por 1\u00a0hora.',
+      askAgain: 'Pedir um novo link',
+    },
   },
   signUpClosed: {
     title: 'O cadastro está fechado',
