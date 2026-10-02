@@ -225,7 +225,7 @@ components.json              # shadcn config
 public/                      # PWA icons, theme-init.js (the only file here with logic)
 src/
 ├── main.tsx
-├── app/                     # providers.tsx, router.ts, theme-provider.tsx
+├── app/                     # providers.tsx, router.ts (createApp), theme-provider.tsx
 ├── routes/                  # TanStack file-based routes; THIN, they only wire features
 │   ├── __root.tsx
 │   ├── (public)/            # login, signup, verify-email, forgot-password, reset-password, invite
@@ -244,8 +244,8 @@ src/
 │   ├── ui/                  # shadcn primitives, close to upstream; only layer 2 imports them
 │   └── <family>/<component>/ # design system: actions, inputs, forms, feedback, display, charts,
 │                            # navigation, layout, finance, icons; one folder and file set each
-├── lib/                     # api-client, api/unwrap, query-client, query-keys, errors/, format/,
-│                            # permissions, link-token, tokens, cn
+├── lib/                     # api-client, api/ (ApiError, unwrap), query-client, query-keys,
+│                            # navigation, router-context, errors/, format/, permissions, cn
 ├── hooks/                   # generic hooks only
 └── styles/
     ├── globals.css          # imports + @layer base
