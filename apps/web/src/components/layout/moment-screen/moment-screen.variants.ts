@@ -21,12 +21,14 @@ export const momentArtVariants = cva(
 
 export const momentOwlVariants = cva('max-w-90 object-center lg:max-w-120')
 
-export const momentBodyVariants = cva(
-  'flex w-full max-w-100 flex-col items-center gap-2 text-body lg:max-w-140',
-)
+export const momentBodyVariants = cva('w-full max-w-100 text-body lg:max-w-140')
+
+export const momentTextVariants = cva('flex flex-col items-center gap-2 animate-moment-text')
 
 export const momentTitleVariants = cva(
   'font-display text-screen-title text-balance lg:text-screen-title-lg',
 )
 
-export const momentActionsVariants = cva('mt-6 flex w-full max-w-100 flex-col gap-3 lg:mt-8')
+export const momentActionsVariants = cva(
+  'mt-6 flex w-full max-w-100 flex-col gap-3 animate-moment-actions lg:mt-8',
+)

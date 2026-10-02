@@ -11,6 +11,9 @@ const ME = 'GET /api/auth/me'
 const SLOW_MS = 1500
 const UNDER_SLOW_MS = 1000
 const APP_AND_LOG_IN_CHECKS = 2
+const HOLD_MS = 1200
+const HOLD_LIMIT_MS = 2000
+const RENDER_ALLOWANCE_MS = 100
 
 async function openApp(me: FakeAnswer) {
   const calls = { me: 0 }
@@ -54,14 +57,29 @@ describe('SHELL-01 app opening', () => {
 
   it('opens the log in when there is no session', async () => {
     const { app, screen } = await openApp(sessionRequired)
-    await expect.element(screen.getByRole('heading', { name: 'Entrar no Twise' })).toBeVisible()
+    await expect
+      .element(screen.getByRole('heading', { name: 'Entrar no Twise' }), { timeout: HOLD_LIMIT_MS })
+      .toBeVisible()
     expect(splash()).toBeNull()
     expect(app.router.state.location.pathname).toBe('/login')
   })
 
   it('opens the log in at once when the API cannot be reached, with no retries', async () => {
     const { screen, calls } = await openApp(() => Promise.reject(new TypeError('Failed to fetch')))
-    await expect.element(screen.getByRole('heading', { name: 'Entrar no Twise' })).toBeVisible()
+    await expect
+      .element(screen.getByRole('heading', { name: 'Entrar no Twise' }), { timeout: HOLD_LIMIT_MS })
+      .toBeVisible()
     expect(calls.me).toBe(APP_AND_LOG_IN_CHECKS)
+  })
+
+  it('plays its entrance for up to 1.2 s even when the session answers at once', async () => {
+    const { app } = await openApp(account)
+    const openedAt = performance.now()
+    await expect.poll(splash).not.toBeNull()
+    expect(document.querySelector('[data-slot=app-splash] svg #o-corpo')).not.toBeNull()
+
+    await expect.poll(splash, { timeout: HOLD_LIMIT_MS }).toBeNull()
+    expect(performance.now() - openedAt).toBeGreaterThanOrEqual(HOLD_MS - RENDER_ALLOWANCE_MS)
+    expect(app.router.state.location.pathname).toBe('/')
   })
 })

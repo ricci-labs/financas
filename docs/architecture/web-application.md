@@ -46,8 +46,10 @@ tests build their own with a memory history.
   - `_app`: `loadSession(context.queryClient)` (features/auth: `ensureQueryData(meQueryOptions())`,
     `null` on `401` and on a network failure); no session → `redirect({ to: '/login', search: {
     next } })`. While it runs, `_app`'s `pendingComponent` is the app opening (`AppOpening`,
-    `SHELL-01`), shown at once (`pendingMs: 0`) and held no longer than the check
-    (`pendingMinMs: 0`), with "Abrindo…" after 1.5 s. Navigation inside the app never shows it,
+    `SHELL-01`), shown at once (`pendingMs: 0`), with "Abrindo…" after 1.5 s. The guard also
+    awaits `context.waitForOpening()` (`lib/app-opening.ts`), so the brand entrance gets up to
+    1.2 s on the first opening and never more; the wink (at 1.55 s) plays only when the session
+    takes longer. With reduced motion there is no hold. Navigation inside the app never shows it,
     since the `_app` match stays rendered. The `['me']` query runs with `networkMode: 'always'`
     and retries only `5xx`: offline, Query would otherwise pause it and the opening would never
     end; with no network, the app goes straight to the log in, where the offline banner shows;

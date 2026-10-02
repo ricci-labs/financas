@@ -7,7 +7,15 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!**/dist", "!**/routeTree.gen.ts", "!apps/api/drizzle", "!docs/design"]
+    "includes": [
+      "**",
+      "!**/dist",
+      "!**/routeTree.gen.ts",
+      "!apps/api/drizzle",
+      "!docs/design",
+      "!apps/web/src/assets/owl-kits",
+      "!apps/web/src/styles/owl-motion.gen.css"
+    ]
   },
   "formatter": {
     "enabled": true,

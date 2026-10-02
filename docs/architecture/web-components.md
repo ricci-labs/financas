@@ -159,7 +159,23 @@ React Hook Form v7 + `zodResolver` with the **schemas from `@financas/shared`** 
   the JavaScript bundle. A new or changed drawing is copied again from the design package.
 - `OwlScene` draws a scene by name (`welcome`, `wait`, `envelope`, `offline`, `signUp`,
   `confirmed`, `key`, `linkExpired`, `closed`, `invitation`, `together`) as a decorative image.
-  The motion (`docs/design/account/motion.md`) comes later on the layered kits.
+- **Owl motion** (`docs/design/account/motion.md`) plays on the layered kits, the only drawings
+  made for it: `OwlKit` (`components/brand/owl-kit`) draws one inline (`confirm`,
+  `confirm-expired`, `invitation`, `sign-up-sent`, `forgot-sent`, `reset-expired`, `closed`; the
+  files are `assets/owl-kits/`, copied from `docs/design/assets/corujas-em-camadas/`). Each kit is
+  its own chunk, loaded when shown (`preloadOwlKits` ahead of an event), with the still scene in
+  its place meanwhile. An arrival kit plays on mount; an event kit waits in `phase="before"` (the
+  hourglass turning while the API works) and plays when it flips to `"after"`.
+- **The sequences are generated, not written:** `pnpm gen:owl-motion`
+  (`scripts/generate-owl-motion.mjs`) reads the design's looped demos
+  (`docs/design/account/animations/*.html`), keeps each kit's window from its event to its last
+  change and writes one-shot keyframes to `styles/owl-motion.gen.css`, with the designed timings
+  and easings. It also writes when each moment's text and actions come in
+  (`--moment-text-delay`, `--moment-actions-delay`). `pnpm check:owl-motion` (in `pnpm check`)
+  fails when the file drifts from the demos. The brand owl of the app opening comes from the same
+  generator.
+- With `prefers-reduced-motion`, every duration and delay is zero (`globals.css`), so each
+  sequence shows its final state at once.
 - `Logo` is the full logo or the icon, named "twise" for screen readers.
 - `Spinner` (`components/feedback/spinner`, `sm`/`md`/`lg`) is the one spinner: buttons, the
   step track, the app opening and "Abrindo o espaço…" all use it.
@@ -173,6 +189,10 @@ React Hook Form v7 + `zodResolver` with the **schemas from `@financas/shared`** 
   owl, flexible from 160 to 320 px, then the title, subtitle, `notice`, the form and the footer
   link, in a 400 px column; an optional `banner` on top. From 1024 px, a mint panel on the left
   (logo, owl, "Leve, claro, a dois." and its support sentence) and the form on the right.
+- `MomentScreen` motion: it takes a `scene` or a `kit`; its text and actions come in again when the
+  title changes ("Trocar texto": 8 px down and in, 250 ms; "Subir ações": 16 px, 300 ms), inside
+  the persistent `aria-live` body, so the new state is still announced. The old text is replaced,
+  not faded out.
 - `MomentScreen`: a full screen with no form, `tone` `celebrate` (mint) or `calm` (cream), the
   owl, the title, the body (`aria-live`, since the same page changes state in place) and the
   actions last; centred on desktop with a 400 px owl block. A page whose state changes on its own
@@ -187,8 +207,10 @@ React Hook Form v7 + `zodResolver` with the **schemas from `@financas/shared`** 
   hidden (their final state).
 - All three call `useLightTheme()`: account screens are always light, whatever the person chose,
   and the chosen theme comes back when they leave.
-- They are page components today: each screen renders its layout. The owl motion (roadmap 18)
-  will lift `AuthLayout` into the `_auth` route, so the scene stays mounted between screens.
+- They are page components: each screen renders its layout. The design keeps the owl block
+  mounted between log in, sign up and the password screens so only the object changes, but no
+  layered kit exists for those changes (welcome → form card → key), so lifting `AuthLayout` into
+  the `_auth` route would change nothing visible yet; it waits for those kits.
 
 ## Icons
 - `lucide-react`, named imports only (each icon is its own module). Never the `icons` namespace or

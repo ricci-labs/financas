@@ -19,6 +19,7 @@ export function ForgotPasswordPage() {
         values={{ email: sentTo }}
         steps={messages.forgotPasswordSteps}
         stepsLabel={messages.forgotPasswordStepsLabel}
+        kit="forgot-sent"
         actions={
           <Button variant="outline" width="full" render={<Link to="/login" />}>
             {messages.backToLogIn}

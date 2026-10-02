@@ -8,11 +8,18 @@ import type { CheckYourEmailProps } from '@web/features/auth/auth.types'
 const HANDOFF_STEP = 1
 const messages = authMessages.checkEmail
 
-export function CheckYourEmail({ text, values, steps, stepsLabel, actions }: CheckYourEmailProps) {
+export function CheckYourEmail({
+  text,
+  values,
+  steps,
+  stepsLabel,
+  actions,
+  kit,
+}: CheckYourEmailProps) {
   return (
     <MomentScreen
       tone="celebrate"
-      scene="envelope"
+      {...(kit ? { kit: { kit } } : { scene: 'envelope' as const })}
       title={messages.title}
       actions={
         <>

@@ -1,6 +1,7 @@
 import { createRouter, type RouterHistory } from '@tanstack/react-router'
 import { showToast } from '@web/components/feedback/toast'
 import { hadSession } from '@web/features/auth'
+import { createOpeningPause } from '@web/lib/app-opening'
 import { errorMessageFor } from '@web/lib/errors/error-message'
 import { createQueryClient } from '@web/lib/query-client'
 import { queryKeys, WORKSPACE_KEY_PREFIX } from '@web/lib/query-keys'
@@ -14,7 +15,7 @@ export function createApp(history?: RouterHistory) {
   const router = createRouter({
     routeTree,
     history,
-    context: { queryClient },
+    context: { queryClient, waitForOpening: createOpeningPause() },
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
     scrollRestoration: true,

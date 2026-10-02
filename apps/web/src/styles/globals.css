@@ -5,6 +5,7 @@
 @import "@fontsource-variable/figtree";
 @import "./tokens/semantic.css";
 @import "./tokens/theme.css";
+@import "./owl-motion.gen.css";
 
 @layer base {
   * {
@@ -25,6 +26,8 @@
     ::after {
       /* biome-ignore lint/complexity/noImportantStyles: reduced motion must win over every component's own animation */
       animation-duration: 0ms !important;
+      /* biome-ignore lint/complexity/noImportantStyles: reduced motion must skip every sequence's delays too */
+      animation-delay: 0ms !important;
       /* biome-ignore lint/complexity/noImportantStyles: reduced motion must win over every component's own animation */
       animation-iteration-count: 1 !important;
       /* biome-ignore lint/complexity/noImportantStyles: reduced motion must win over every component's own transition */

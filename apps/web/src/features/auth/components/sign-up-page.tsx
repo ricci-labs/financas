@@ -24,6 +24,7 @@ export function SignUpPage() {
         values={{ email: sentTo }}
         steps={messages.signUpSteps}
         stepsLabel={messages.signUpStepsLabel}
+        kit="sign-up-sent"
         actions={<ConfirmationHandoffActions email={sentTo} logInLabel={messages.backToLogIn} />}
       />
     )

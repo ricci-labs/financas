@@ -3,7 +3,10 @@ import { AppOpening, loadSession } from '@web/features/auth'
 
 export const Route = createFileRoute('/_app')({
   beforeLoad: async ({ context, location }) => {
-    const account = await loadSession(context.queryClient)
+    const [account] = await Promise.all([
+      loadSession(context.queryClient),
+      context.waitForOpening(),
+    ])
     if (!account) {
       throw redirect({ to: '/login', search: { next: location.href } })
     }
