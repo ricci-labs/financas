@@ -41,6 +41,10 @@
   ],
   "variable": [
     {
+      "key": "inviteEmail",
+      "value": "member.b@example.test"
+    },
+    {
       "key": "baseUrl",
       "value": "http://localhost:5173"
     },
@@ -3599,6 +3603,45 @@
             },
             "description": "Ends your other sessions. Update the password variable afterwards."
           }
+        },
+        {
+          "name": "Invite by email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/invitations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "workspaces", "{{workspaceId}}", "invitations"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{inviteEmail}}\",\n  \"roleId\": \"{{memberRoleId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Sends a real invitation email to inviteEmail: set it to an inbox you control. The answer has no shareableLink, since the link goes only to that inbox; invitationToken is the value after #token= in the emailed link."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('answers 201', () => pm.response.to.have.status(201))",
+                  "if (pm.response.code < 300) { pm.collectionVariables.set('invitationId', pm.response.json().invitationId) }"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Preview invitation",
