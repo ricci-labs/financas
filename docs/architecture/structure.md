@@ -246,6 +246,7 @@ src/
 │                            # navigation, layout, finance, icons; one folder and file set each
 ├── lib/                     # api-client, api/ (ApiError, unwrap), query-client, query-keys,
 │                            # navigation, router-context, errors/, format/, permissions, cn
+├── assets/                  # owls/ and brand/ SVGs from docs/design/assets (shipped as files)
 ├── hooks/                   # generic hooks only
 └── styles/
     ├── globals.css          # imports + @layer base

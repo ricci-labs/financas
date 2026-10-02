@@ -151,6 +151,19 @@ React Hook Form v7 + `zodResolver` with the **schemas from `@financas/shared`** 
   (`sonner`, styled with tokens); bottom-centre on phones, top-right from 1024 px; 4 s, or 8 s with
   "Desfazer". Toasts with the same message replace each other (never two about the same thing).
 
+## Brand and illustrations
+- The owl scenes and the logo are SVG files in `apps/web/src/assets/` (`owls/`, `brand/`), copied
+  from `docs/design/assets/` with English names (`coruja-boas-vindas` → `owls/welcome.svg`…). Vite
+  ships each as its own hashed file, loaded only by the screen that shows it, so they never weigh on
+  the JavaScript bundle. A new or changed drawing is copied again from the design package.
+- `OwlScene` draws a scene by name (`welcome`, `wait`, `envelope`, `offline`, `signUp`,
+  `confirmed`, `key`, `linkExpired`, `closed`, `invitation`, `together`) as a decorative image.
+  The motion (`docs/design/account/motion.md`) comes later on the layered kits.
+- `Logo` is the full logo or the icon, named "twise" for screen readers.
+- `StepTrack` is the 3-step journey of the moments: an `<ol>` with `aria-label`, the current step
+  with `aria-current="step"` (a spinner while it loads), a solid line up to it and a dashed one
+  after (no rounding on the dashed line, which Chrome would draw solid).
+
 ## Icons
 - `lucide-react`, named imports only (each icon is its own module). Never the `icons` namespace or
   `DynamicIcon`, which pull in the whole set.
