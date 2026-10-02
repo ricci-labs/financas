@@ -144,18 +144,27 @@ updated: 2026-10-01
   `../architecture/web-application.md`, `../architecture/web-components.md`,
   `../architecture/web-design-tokens.md`); their checks land before the first screen. One PR each:
   1. [x] Standards docs (ADR 0027 + the three web docs) (#141)
-  2. [ ] Web tests: Vitest browser mode (Chromium), axe helper, web tests in `pnpm check` and CI
+  2. [x] Web tests: Vitest browser mode (Chromium), axe helper, web tests in `pnpm check` and CI
   3. [x] Tokens: `styles/tokens/` with placeholder values until the Claude Design system, the font,
      dark mode without inline script, shadcn init (Base UI), `cn`
-  4. [ ] Web checks: [x] `lint:tokens`, `lint:copy`, `check:contrast` (the status badge and the
-     placeholder page migrated); [ ] web file roles, depcruise web rules 5–8
-  5. [ ] Claude Code: web checks in the hooks; `new-component` and `new-feature` skills
+  4. [x] Web checks: `lint:tokens`, `lint:copy`, `check:contrast` (#148); web file roles and
+     every web import rule (#149)
+  5. [x] Claude Code: web checks in the hooks; `new-component` and `new-feature` skills (#144)
   6. [ ] React Compiler and Biome's React rules
   7. [ ] Router + Query + `unwrap`/`ApiError`, error messages map, guards, empty app shell
   8. [ ] Workbench `/dev/components` with the Tokens page
   9. [ ] The API serves the SPA (cache headers, SPA fallback, CSP) and the image ships it
   10. [ ] PWA (shell precache, update toast) and `check:bundle`
-  Then the screens, in the order of `requirements/README.md`, starting with `AUTH-01`.
+  Then the account area (user's go-ahead 2026-10-01, design in `../design/account/`), one PR each:
+  11. [ ] Account components, in the order of `../design/account/components.md`
+  12. [ ] `AUTH-01` log in, with `SHELL-01` session handling (arrival messages, `next`, log out)
+  13. [ ] `AUTH-02` sign up and its "Confira seu e-mail" handoff
+  14. [ ] `AUTH-03` verify email
+  15. [ ] `AUTH-04` forgot password and `AUTH-05` reset password
+  16. [ ] `INV-01` invitation
+  17. [ ] `SHELL-01` app opening (splash)
+  18. [ ] Owl motion (`../design/account/motion.md`)
+  Then the other screens, in the order of `requirements/README.md`.
 - [ ] Remaining project skills (`new-module`, `db-migration`, `domain-rule`, `pr`) and Claude Code hooks
 
 ## Phase 1: MVP
